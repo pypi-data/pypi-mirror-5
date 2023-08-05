@@ -1,0 +1,52 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      tal:omit-tag="">
+
+  <div class="media">
+
+    <ul class="visualNoMarker manageableList"
+        i18n:domain="raptus.article"
+        tal:condition="view/media">
+      <tal:item repeat="item view/media">
+      <li>
+        <div class="wrapped">
+          <metal:manage use-macro="context/raptus_article_macros/macros/manage"></metal:manage>
+          <img src=""
+               tal:condition="item/image|nothing"
+               tal:replace="structure item/image" />
+          <h2>
+            <span tal:content="item/title">Title</span>
+            <small tal:condition="item/description"
+                   tal:content="item/description">Description</small>
+          </h2>
+        </div>
+        <ul class="visualNoMarker manageableList">
+          <tal:child repeat="child item/childs">
+          <li tal:define="item child">
+            <metal:manage use-macro="context/raptus_article_macros/macros/manage"></metal:manage>
+            <tal:img condition="not:item/url|nothing">
+              <img src=""
+                   tal:condition="item/image|nothing"
+                   tal:replace="structure item/image" />
+            </tal:img>
+            <a href="" class="autoFlowPlayer video"
+               tal:condition="python: not item.get('embed', 0) and item.get('url', 0)"
+               tal:attributes="href item/url;">
+              <img src="" tal:condition="item/image|nothing" tal:replace="structure item/image" />
+            </a>
+            <tal:embed condition="item/code|nothing"
+                       replace="structure item/code" />
+          </li>
+          </tal:child>
+        </ul>
+      </li>
+      </tal:item>
+    </ul>
+
+  </div>
+
+</html>
