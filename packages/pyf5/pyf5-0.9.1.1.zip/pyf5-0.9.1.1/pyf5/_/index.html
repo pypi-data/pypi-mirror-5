@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link href="/_/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/_/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="/_/css/index.less" type="text/css" rel="stylesheet/less">
+    <script src="/_/js/libs/less.js"></script>
+    <script src="/_/js/libs/jquery-1.8.2.min.js"></script>
+    <script src="/_/js/libs/jquery.cookie.js"></script>
+    <script src="/_/js/libs/knockout-2.2.1.js"></script>
+    <script src="/_/js/libs/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+
+        <div class="span4">
+            <h3>项目列表</h3>
+
+            <form id="project-add-form" data-bind="submit: onSubmitProjectPath">
+                <div class="input-append">
+                    <input class="span3" id="new-path-input"
+                           type="text" placeholder="请输入目录...">
+                    <button id="project-add-btn" class="btn btn-success" type="submit">添加</button>
+                </div>
+            </form>
+
+            <table id="projects" class="table table-hover">
+                <tbody data-bind="foreach:projects">
+                    <tr class="project" data-bind="css:{selected: $parent.currentProject() == $data}">
+                        <td class="path">
+                            <a href="javascript:" data-bind="text:path, click:$parent.selectProject"></a>
+                        </td>
+                        <td class="op">
+                            <a href="javascript:" title="从列表中去除"
+                               data-toggle="tooltip" data-bind="click:$root.askRemoveProject">
+                                <i class="icon-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+
+        <div id="right-panel" class="span8">
+
+            <a id="script-hint-link" script="display:none"
+               href="javascript:vm.showScriptHint()" class="pull-right"
+               title="动态页面的嵌入代码" data-toggle="tooltip" data-placement="left">
+                <i class="icon-chevron-left"></i><i class="icon-chevron-right"></i>
+            </a>
+
+            <h3>文件列表</h3>
+
+            <div id="script-hint" class="alert alert-info" style="display:none">
+                <a href="javascript:vm.hideScriptHint()" class="close">&times;</a>
+                动态网站请在&lt;/body&gt;之前插入:<br/>
+                &lt;script src="http://<span id="host"></span>/_/js/reloader.js"&gt;&lt;/script&gt;
+            </div>
+
+            <!-- ko with: currentProject -->
+            <table id="file-list" class="table table-hover">
+                <thead>
+                    <tr>
+                        <td colspan="2">
+
+                            <ul id="folder-segments">
+                                <li><a href="javascript:"
+                                       data-bind="text:path, click:$root.clickFolderSegment"></a></li>
+                                <!-- ko foreach: $root.folderSegments -->
+                                <li><a href="javascript:"
+                                       data-bind="text: '/' + $data.name(), click:$root.clickFolderSegment"></a></li>
+                                <!-- /ko -->
+                            </ul>
+
+                        </td>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach:$root.files">
+                    <tr data-bind="css:{blocked:isBlocked}">
+                        <td class="file">
+                            <a href="javascript:" class="icon" target="_blank"
+                               data-bind="text:name, css:type, click:$root.clickFile, attr:{href:url}"></a>
+                        </td>
+                        <td class="span1 op">
+                            <a href="javascript:" class="op block" data-toggle="tooltip" title="停止监听更新"
+                               data-bind="click:$root.toggleBlock">
+                                <i class="icon-ban-circle"></i>
+                            </a>
+                            <a href="javascript:" class="op unblock" data-toggle="tooltip" title="恢复监听更新"
+                               data-bind="click:$root.toggleBlock">
+                                <i class="icon-ok-circle"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <!-- /ko -->
+        </div>
+    </div>
+</div>
+
+<script src="/_/js/index.js"></script>
+</body>
+</html>
