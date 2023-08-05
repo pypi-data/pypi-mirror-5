@@ -1,0 +1,81 @@
+=====================
+django_localflavor_nz
+=====================
+
+Country-specific Django helpers for New Zealand.
+
+
+What's in the New Zealand localflavor?
+======================================
+
+* forms.NZRegionSelect - a ``Select`` widget 
+  with a list of New Zealand regions.
+
+* forms.NZProvinceSelect - a ``Select`` widget 
+  with a list of New Zealand provinces.
+
+* forms.NZNorthIslandSelect - a ``Select`` widget 
+  with a list of Norh Island city and district councils.
+
+* forms.NZSouthIslandSelect - a ``Select`` widget 
+  with a list of South Island city and district councils.
+
+* forms.NZPostCodeField - a form field that validates input 
+  as a New Zealand postal code. Valid format is XXXX, where X is a digit.
+
+* forms.NZPhoneNumberField - a form field that validates input 
+  as a New Zealand phone number. Validates local and international land line
+  and mobile numbers just as well as 0800 number validation.
+
+* forms.NZBankAccountNumberField - a form field that validates input
+  as a New Zealand bank account number. Validates the format XX-XXXX-XXXXXXX-XX(X).
+  When strict checking is enabled the bank ID part of account number is validatedm too. 
+
+See the source code for full details.
+
+NZ specific ``settings``
+------------------------
+
+* ``LOCALFLAVOR_NZ_STRICT`` defaults to ``False``. Add it to your ``settings`` 
+  if you want to enable strict validation. Currently, if set to ``True``,
+  ``NZBankAccountNumberField`` will also validate if given bank account number's
+  bank id is one of the valid ones. See ``django_localflavor_nz.forms.BANK_IDS``
+  for full list of valid bank IDs.
+
+
+About django-localflavor-nz
+===========================
+
+``django_localflavor_nz`` package was created by Marek Kuziel, because
+New Zealand "localflavor" didn't make it to Django before 
+``django.contrib.localflavor`` was deprecated in Django 1.5.
+
+Installation
+------------
+
+Install the package ``easy_install django-localflavor_nz`` or 
+``pip install django-localflavor_nz``.
+
+Add ``django_localflavor_nz`` to ``INSTALLED_APPS`` in your ``settings``.
+
+Testing
+-------
+
+``django test django_localflavor_nz`` will run the tests for this localflavor.
+
+
+About localflavors
+==================
+
+Django's localflavor packages offer additional functionality for particular
+countries or cultures.
+
+For example, these might include form fields for your country's postal codes,
+phone number formats or government ID numbers.
+
+The localflavors code used to live in Django proper -- in django.contrib.localflavor -- 
+but was separated into standalone packages in Django 1.5 to keep the framework's core clean.
+
+For other localflavor packages, see https://github.com/django/
+
+
