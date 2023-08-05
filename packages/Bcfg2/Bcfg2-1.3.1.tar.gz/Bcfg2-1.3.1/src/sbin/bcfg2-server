@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+"""The XML-RPC Bcfg2 server."""
+
+import os
+import sys
+import logging
+import Bcfg2.Logger
+import Bcfg2.Options
+from Bcfg2.Server.Core import CoreInitError
+
+LOGGER = logging.getLogger('bcfg2-server')
+
+def main():
+    optinfo = dict()
+    optinfo.update(Bcfg2.Options.CLI_COMMON_OPTIONS)
+    optinfo.update(Bcfg2.Options.SERVER_COMMON_OPTIONS)
+    optinfo.update(Bcfg2.Options.DAEMON_COMMON_OPTIONS)
+    setup = Bcfg2.Options.OptionParser(optinfo)
+    setup.parse(sys.argv[1:])
+    # check whether the specified bcfg2.conf exists
+    if not os.path.exists(setup['configfile']):
+        print("Could not read %s" % setup['configfile'])
+        sys.exit(1)
+    
+    if setup['backend'] not in ['best', 'cherrypy', 'builtin']:
+        print("Unknown server backend %s, using 'best'" % setup['backend'])
+        setup['backend'] = 'best'
+    if setup['backend'] == 'cherrypy':
+        try:
+            from Bcfg2.Server.CherryPyCore import Core
+        except ImportError:
+            err = sys.exc_info()[1]
+            print("Unable to import CherryPy server core: %s" % err)
+            raise
+    elif setup['backend'] == 'builtin' or setup['backend'] == 'best':
+        from Bcfg2.Server.BuiltinCore import Core
+
+    try:
+        core = Core(setup)
+        core.run()
+    except CoreInitError:
+        msg = sys.exc_info()[1]
+        LOGGER.error(msg)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        sys.exit(1)
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
