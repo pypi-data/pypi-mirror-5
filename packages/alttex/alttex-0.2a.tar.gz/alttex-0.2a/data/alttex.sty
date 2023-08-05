@@ -1,0 +1,186 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            Package declaration
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{alttex}[2013/01/13 Custom Package]
+%\RequirePackage{pythontex}
+
+% Package options
+%\DeclareOption{foo}{
+%  \renewcommand{\familydefault}{\sfdefault}
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                             PiTutor workflow
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% piTutor performs many operations under-the-hood before generating the 
+% individualized tests from LaTeX files. Even though the input TeX files are 
+% valid tex, they do not generate the desired output if run directely through 
+% the LaTeX processor.
+%
+%   1) Move files to working directory
+%   2) \ALT expansion. Creates many files
+%   3) Jinja template application
+%   4) Special commands substitutions (for \multiplechoice, \truefalse, etc)
+%   5) Consolidate multiple files
+%   6) Tex execution
+%   7) Insertion of python code
+%   8) Re-execute TeX until no changes occur
+%   9) Move back outputs to callee's folder
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                    Step 1: Move files to working directory
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% In order to preserve a clean building environment, the default behavior is to 
+% create symlinks of all files and directories in the current working dir to 
+% a subdirectory called "tmp-piTutor". The contents of this directory are a 
+% cache used to accelerate the building process and can be safely removed.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       Step 2: Alternatives handling
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% The \ALT preprocessor enables the creation of multiple versions of a 
+% document from a single source. The commands are geared to the creation of 
+% quizzes but can also be used to other purposes.
+%
+% The basic syntax for creating alternatives are the commands
+%
+% Inline commands:
+%     \ALT{a|b|c|...}
+%     \ALT[ans]{a|b|c...}
+%     \ONLY[ans]{foo bar foo \ALT{a|b|c|...}}
+%
+% Environments:
+%     \begin[ans]{ALTBLOCK}
+%     a \NEXT b \NEXT ...
+%     \end{ALTBLOCK}
+%
+%     \begin[ans]{ONLYBLOCK}
+%     foo bar foo \ALT{a|b|c}
+%     \end{ONLYBLOCK}
+%
+% The document is thus processed and a different .tex file for each section/version 
+% is created
+%
+% Here we define dummies that just print interrogation marks in the position of
+% the alternatives.
+%
+
+% TODO: maybe move these definitions to a separate "alttex" package
+\newcommand{\ALT}[2][empty]{??}
+\newcommand{\IF}[2]{??}
+\newcommand{\ELSE}[1]{??}
+%\newcommand{\NEXT}{\,}
+%\newenvironment{ALTBLOCK}[1][]{\begingroup}{\endgroup}
+%\newenvironment{ONLYBLOCK}[1][]{\begingroup}{\endgroup}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                          Step 3: JINJA2 templates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% TODO: organize description
+% Aliases for Jinja2 markup. These are defined as empty verb-like commands and
+% just output interrogation marks in the PDF output. However, they can be 
+% translated by the Jinja templating engine and used to generate a templete for
+% creating LaTeX files.
+% 
+% Jinja templates are mostly used when one wants to separate Python code from 
+% LaTeX presentation. Jinja template expressions may also be used in order to
+% automate the creation of certain documents with repetitive structures.
+%
+% Think of Jinja as a kind of pre-processor.
+%
+% Variable blocks: A variable input block can be defined as \VAR{foo|bar}. 
+% This prints the value of the variable "foo" processed with the "bar" filter.  
+\newcommand{\VAR}[1]{??}
+
+% Command blocks: Can run loops, conditionals and other commands. The example
+% bellow shows a simple loop that print the first 10 numbers
+%
+%               \CMD{for i in range(10)}\VAR{i + 1}, \CMD{endfor}
+\newcommand{\CMD}[1]{??}
+
+% Comment blocks: Can put anything that shall not be passed to the LaTeX 
+% processor
+\newcommand{\CMT}[1]{}
+
+% Line commands: Jinja also accepts the following syntax
+%
+%   %- for i in range(10)
+%   Hello \VAR{i}
+%   %- endfor
+%   %! This is a template comment line, and shall not appear in the final
+%   %! rendered document
+%
+% No special command needs to be defined since it is interpreted by LaTeX
+% as a comment.
+
+% Data block: Optionally, Jinja variables may be initialized by some source of
+% data source. It can be, for example, a Python script or a JSON data structure.
+% A file with the same name (but the appropriate extension) of the TeX source
+% suffices to define a data source. One can override this behavior using the
+% \DATASOURCE[data type]{<filename>} command.
+% Optionally, the content of this script or data file can be included verbatim 
+% inside the DATA environment.
+\newcommand{\DATASOURCE}[2][none]{}
+\newenvironment{DATA}[2][opt]{\begingroup}{\endgroup}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       Step 4: Commands substitutions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
+% type of questions environments
+%\ifplastex
+%\else
+%\newenvironment{multiplechoice}[1][]{\begingroup}{\endgroup}
+%\newenvironment{truefalse}[1][]{\begingroup}{\endgroup}
+%\newenvironment{association}[1][]{\begingroup}{\endgroup}
+%\newenvironment{introtext}[1][]{\begingroup}{\endgroup}
+%\newenvironment{openanswer}[1][]{\begingroup}{\endgroup}
+%\newenvironment{items}{\enumerate}{\endenumerate}
+%\fi
+
+% Empty commands
+%\ifplastex
+%\else
+%\newcommand{\solution}[1]{\textbf{Solu��o}\\ {\color{blue} {#1}}}
+%\newcommand{\feedback}[1]{\par{\color{red}\textbf{Feedback:} {#1}}}
+%
+%\def\comment#1{}
+%\def\grade#1{}
+%\def\answer#1{}
+%\def\associatewith#1{~$\rightarrow$~ #1}
+%\def\emptyassociation{}
+%\def\answerinput#1{}
+%\def\sp{ }
+%\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       Step 5: Consolidate multiple files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                             Step 6: Tex execution
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       Step 7: Insertion of python code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                  Step 8: Re-execute TeX until no changes occur
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                  Step 9: Move back outputs to callee's folder
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% One different file is created for each section in the \ALT commands.
