@@ -1,0 +1,123 @@
+`pyojo` Documentation Index
+===========================
+
+This is yet another python framework for web applications, 
+but this one provides a set of helpers to generate the 
+javascript to be sent to the  page, and a route configuration 
+system to deduce the response to be sent.
+
+ 
+API Reference
+-------------
+
+.. autosummary::
+   :toctree: api/
+   :template: package.rst
+   :hidden: 
+
+   pyojo
+
+
+.. toctree::
+   :maxdepth: 3
+
+   toctree
+
+
+Introduction
+============
+
+Serving python modules
+---------------------- 
+
+Pyojo allows to use python modules as web content. If the URL 
+requested corresponds to a python module, the response will be 
+the result of the "GET", "POST", "PUT" or "DELETE" function.
+For example:
+
+If we have the following code at srv/script_js.py::
+
+    def GET(request):
+        return "alert('Hi!');"
+
+The URL /script.js will return this javascript code.
+
+You can modify this modules without restarting pyojo, by default
+they are reloaded at every request.
+
+
+Route map definition
+-------------------- 
+
+The route map configuration system uses three decorators:
+
+* *route*: Declares the a python callable to call when a url 
+  is requested. The function arguments can be query, environ 
+  or none. If it is a pyojo.Response class, it will be
+  initialized and then one of the methods GET, POST, PUT or 
+  DELETE will be called.  
+
+* *command*: Sets the entry point to a class that handles 
+  a request by importing a module and executing it. This 
+  commands can have a list of tasks to be done before and after 
+  the command call.
+
+* *task*: Registers a task name that can be required from the
+  command route handlers.
+
+
+Javascript generation
+--------------------- 
+
+The ''pyojo.js'' module provides a set of utilities to generate
+javascript code. The idea is to declare code blocks to be sent,
+and let pyojo write the javascript.
+
+This package is intended to use the Dojo Toolkit from python.  
+
+Examples
+========
+
+Standalone pyojo server
+-----------------------
+
+The simplest example:
+
+.. code-block:: python
+
+   import pyojo
+   from pyojo.server.wsgi import main
+  
+   @pyojo.route("/")
+   def home():
+       return "Hello World!"
+
+   main()
+
+
+WSGI Application
+----------------
+ 
+A complete WSGI application:
+
+.. code-block:: python
+
+   import pyojo
+
+   @pyojo.route("/")
+   def home(request):
+       return pyojo.pretty(request.environ)
+
+   def application(environ, start_response):
+       request = pyojo.Request(environ)        
+       response = request.get_response()    
+       start_response(request.status, request.get_response_headers())
+       return response
+
+
+Related Documentation
+======================
+
+* `The Dojo Toolkit <http://dojotoolkit.org/>`_
+
+
