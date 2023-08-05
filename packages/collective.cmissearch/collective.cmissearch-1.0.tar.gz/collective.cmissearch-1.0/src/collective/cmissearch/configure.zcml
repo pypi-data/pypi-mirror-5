@@ -1,0 +1,74 @@
+<configure
+   xmlns="http://namespaces.zope.org/zope"
+   xmlns:browser="http://namespaces.zope.org/browser"
+   xmlns:i18n="http://namespaces.zope.org/i18n"
+   xmlns:five="http://namespaces.zope.org/five"
+   xmlns:zcml="http://namespaces.zope.org/zcml"
+   xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+   xmlns:plone="http://namespaces.plone.org/plone"
+   i18n_domain="collective.cmissearch">
+
+  <include package="collective.cmisbrowser" />
+  <include package="plone.app.portlets" />
+
+  <five:registerPackage package="." initialize=".initialize" />
+  <i18n:registerTranslations directory="i18n" />
+
+  <browser:page
+     for="*"
+     name="cmis_search"
+     class=".search.SearchPage"
+     template="templates/searchpage.pt"
+     permission="zope2.View"
+     />
+     
+  <browser:page
+     for="*"
+     name="cmis_simple_search"
+     class=".search.SimpleSearchPage"
+     template="templates/simplesearchpage.pt"
+     permission="zope2.View"
+     />
+
+  <adapter
+     for=".interfaces.ISearchContext"
+     provides=".interfaces.ISearchSource"
+     factory=".default.PloneSearchSource"
+     />
+
+  <adapter
+     for="collective.cmisbrowser.interfaces.ICMISBrowser"
+     provides=".interfaces.ISearchSource"
+     factory=".cmis.CMISSearchSource"
+     />
+
+  <adapter
+     for="collective.cmisbrowser.interfaces.ICMISBrowser"
+     provides=".interfaces.ICMISSearchConfiguration"
+     factory=".cmis.CMISSearchConfiguration"
+     />
+
+  <browser:page
+     for="collective.cmisbrowser.interfaces.ICMISBrowser"
+     name="search_settings"
+     class=".cmis.CMISEditSearchSettings"
+     permission="cmf.ModifyPortalContent"
+     />
+
+  <genericsetup:registerProfile
+     name="default"
+     title="collective.cmissearch"
+     directory="profiles/default"
+     description="Extension profile for collective.cmissearch."
+     provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <plone:portlet
+     name="collective.cmissearch.portlet"
+     interface=".portlets.ISearchPortlet"
+     assignment=".portlets.SearchPortlet"
+     renderer=".portlets.SearchPortletRenderer"
+     addview=".portlets.SearchPortletAddForm"
+     />
+
+</configure>
