@@ -1,0 +1,40 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="c2.app.downloaduser">
+
+  <five:registerPackage package="." initialize=".initialize" />
+
+  <!--<include package="Products.CMFCore"-->
+             <!--zcml:condition="have plone-41"-->
+             <!--file="permissions.zcml" />-->
+
+    <include package=".browser" />
+
+
+    <include package="plone.behavior" file="meta.zcml" />
+    <plone:behavior
+        title="Content Download users"
+        description="Adds the ability to record of download user"
+        provides="c2.app.downloaduser.interfaces.IDownloadUser"
+        />
+
+    <genericsetup:registerProfile
+            name="default"
+            title="c2.app.downloaduser"
+            directory="profiles/default"
+            description="Extensionprofile for c2.app.downloaduser"
+            provides="Products.GenericSetup.interfaces.EXTENSION"
+            />
+
+
+    <subscriber
+      zcml:condition="installed c2.app.zipdownload"
+        for="*
+            c2.app.zipdownload.interfaces.IFileDownloadEvent"
+        handler=".event.notify_record"
+        />
+</configure>
