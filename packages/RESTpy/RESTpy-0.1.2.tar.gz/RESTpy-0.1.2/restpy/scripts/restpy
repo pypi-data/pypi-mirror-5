@@ -1,0 +1,175 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+
+import restpy.scripts
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("type",
+                    help="The type of content to generate.",
+                    choices=["project", "service"])
+
+parser.add_argument("name",
+                    help="The name of the directory to create.")
+
+parser.add_argument("-m", "--models",
+                    help="Generate SQLAlchemy models for a service.",
+                    action="store_true")
+
+
+def make_project(args, script_directory, project_templates, target_directory):
+
+    os.mkdir(os.path.join(target_directory, 'services'))
+
+    project_name = args.name
+    current_user = os.getlogin()
+
+    # Load and customize project templates.
+    with open(os.path.join(project_templates, '__init__.tpl'), 'r') as f:
+        package_text = f.read()
+
+    with open(os.path.join(project_templates, 'application.tpl'), 'r') as f:
+        application_text = f.read()
+
+    with open(os.path.join(project_templates, 'config.tpl'), 'r') as f:
+        config_text = (f.read().
+                       replace('{{TEMPLATE_USER}}', current_user).
+                       replace('{{TEMPLATE_NAME}}', project_name))
+
+    with open(os.path.join(project_templates, 'connection.tpl'), 'r') as f:
+        connection_text = (f.read().
+                           replace('{{TEMPLATE_USER}}', current_user).
+                           replace('{{TEMPLATE_NAME}}', project_name))
+
+    with open(os.path.join(project_templates, 'endpoints.tpl'), 'r') as f:
+        endpoints_text = (f.read().
+                          replace('{{TEMPLATE_ENDPOINT}}',
+                                  project_name.title()
+                                  )
+                          )
+
+    with open(os.path.join(project_templates, 'run.tpl'), 'r') as f:
+        run_text = f.read()
+
+    with open(os.path.join(project_templates, 'urls.tpl'), 'r') as f:
+        urls_text = (f.read().
+                     replace('{{TEMPLATE_ENDPOINT}}', project_name.title())
+                     )
+
+    # Create project files.
+    with open(os.path.join(target_directory, '__init__.py'), 'w') as f:
+        f.write(package_text)
+
+    with open(os.path.join(target_directory,
+                           'services',
+                           '__init__.py'), 'w') as f:
+        f.write(package_text)
+
+    with open(os.path.join(target_directory,
+                           'services',
+                           'connection.py'), 'w') as f:
+        f.write(connection_text)
+
+    with open(os.path.join(target_directory, 'application.py'), 'w') as f:
+        f.write(application_text)
+
+    with open(os.path.join(target_directory, 'config.py'), 'w') as f:
+        f.write(config_text)
+
+    with open(os.path.join(target_directory, 'endpoints.py'), 'w') as f:
+        f.write(endpoints_text)
+
+    with open(os.path.join(target_directory, 'run.py'), 'w') as f:
+        f.write(run_text)
+
+    with open(os.path.join(target_directory, 'urls.py'), 'w') as f:
+        f.write(urls_text)
+
+
+def make_service(args, script_directory, service_templates, target_directory):
+
+    project_name = args.name
+
+    # Load and customize project templates.
+    with open(os.path.join(service_templates, '__init__.tpl'), 'r') as f:
+        package_text = f.read()
+
+    if args.models:
+        with open(os.path.join(service_templates, 'models.tpl'), 'r') as f:
+            models_text = (f.read().
+                           replace('{{TEMPLATE_NAME}}', project_name).
+                           replace('{{TEMPLATE_MODEL}}',
+                                   project_name.title()
+                                   )
+                           )
+
+        with open(os.path.join(service_templates,
+                               'endpoints_with_models.tpl'), 'r') as f:
+            endpoints_text = (f.read().
+                              replace('{{TEMPLATE_MODEL}}',
+                                      project_name.title()
+                                      )
+                              )
+    else:
+        with open(os.path.join(service_templates, 'endpoints.tpl'), 'r') as f:
+            endpoints_text = (f.read().
+                              replace('{{TEMPLATE_MODEL}}',
+                                      project_name.title()
+                                      )
+                              )
+
+    with open(os.path.join(service_templates, 'schema.tpl'), 'r') as f:
+        schema_text = f.read().replace('{{TEMPLATE_NAME}}', project_name)
+
+    with open(os.path.join(service_templates, 'urls.tpl'), 'r') as f:
+        urls_text = f.read().replace('{{TEMPLATE_NAME}}', project_name)
+
+    # Create project files.
+    with open(os.path.join(target_directory, '__init__.py'), 'w') as f:
+        f.write(package_text)
+
+    if args.models:
+        with open(os.path.join(target_directory, 'models.py'), 'w') as f:
+            f.write(models_text)
+
+    with open(os.path.join(target_directory, 'schema.py'), 'w') as f:
+        f.write(schema_text)
+
+    with open(os.path.join(target_directory, 'endpoints.py'), 'w') as f:
+        f.write(endpoints_text)
+
+    with open(os.path.join(target_directory, 'urls.py'), 'w') as f:
+        f.write(urls_text)
+
+
+def main():
+
+    args = parser.parse_args()
+
+    script_directory = os.path.dirname(restpy.scripts.__file__)
+    project_templates = os.path.join(script_directory, "project_templates")
+    service_templates = os.path.join(script_directory, "service_templates")
+    target_directory = os.path.join(os.getcwd(), args.name)
+
+    os.mkdir(target_directory)
+
+    if args.type == "project":
+
+        make_project(args,
+                     script_directory,
+                     project_templates,
+                     target_directory
+                     )
+        return
+
+    make_service(args,
+                 script_directory,
+                 service_templates,
+                 target_directory
+                 )
+
+if __name__ == '__main__':
+
+    main()
