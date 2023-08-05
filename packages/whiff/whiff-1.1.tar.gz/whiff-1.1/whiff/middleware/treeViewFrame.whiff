@@ -1,0 +1,55 @@
+{{env
+        whiff.content_type: "text/html",
+	whiff.parse_cgi: true,
+	whiff.strip: true
+/}}
+
+{{comment: focusNode must be provided either as a cgi parameter or as a "require" parameter/}}
+
+{{cgi-default expandIds}} [] {{/cgi-default}}
+{{cgi-default addNode}}{{/cgi-default}}
+{{cgi-default delNode}}{{/cgi-default}}
+{{cgi-default dictionary}} null {{/cgi-default}}
+{{cgi-default infoPath}} null {{/cgi-default}}
+{{cgi-default rootId}}
+	{{include "whiff_middleware/getResource"}} ["freshName", "treeViewRootId"] {{/include}}
+{{/cgi-default}}
+{{cgi-default callback}}
+	{{include "whiff_middleware/getResource"}} ["freshName", "treeViewCallback"] {{/include}}
+{{/cgi-default}}
+
+{{require focusNode}} {{get-cgi focusNode/}} {{/require}}
+{{require infoPath}} {{get-cgi infoPath/}} {{/require}}
+{{require dictionary}} {{get-cgi dictionary/}} {{/require}}
+
+<form id="{{get-cgi callback/}}form" action="{{get-env whiff.entry_point/}}" method="POST">
+	<input type="hidden" id="{{get-cgi callback/}}expandIds" name="expandIds" value="">
+	<input type="hidden" id="{{get-cgi callback/}}addNode" name="addNode" value="">
+	<input type="hidden" id="{{get-cgi callback/}}delNode" name="delNode" value="">
+	<input type="hidden" id="{{get-cgi callback/}}dictionary" name="dictionary" value="">
+	<input type="hidden" id="{{get-cgi callback/}}infoPath" name="infoPath" value="">
+</form>
+<script>
+function {{get-cgi callback/}}(divId, target, nodes, addNode, delNode) {
+	//al("reViewTree:: divId="+divId+"\n target="+target+"\n nodes="+nodes+"\n addNode="+addNode+"\n delNode="+delNode);
+	document.getElementById("{{get-cgi callback/}}addNode").value = addNode;
+	document.getElementById("{{get-cgi callback/}}delNode").value = delNode;
+	document.getElementById("{{get-cgi callback/}}expandIds").value = jswhiff_as_json(nodes);
+	document.getElementById("{{get-cgi callback/}}dictionary").value = {{include "whiff_middleware/asJson"}} {{use dictionary/}} {{/include}};
+	document.getElementById("{{get-cgi callback/}}infoPath").value = {{include "whiff_middleware/asJson"}} {{use infoPath/}} {{/include}};
+	document.getElementById("{{get-cgi callback/}}form").submit();
+}
+{{include "whiff_middleware/whiff.js"/}}
+</script>
+
+{{include "treeView"}}
+	{{using infoPath}} {{use infoPath/}} {{/using}}
+	{{using dictionary}} {{use dictionary/}} {{/using}}
+	{{using focusNode}} {{use focusNode/}} {{/using}}
+	{{using expandIds}} {{include "unquoteHtml"}} {{get-cgi expandIds/}} {{/include}} {{/using}}
+	{{using addNode}} {{get-cgi addNode/}} {{/using}}
+	{{using delNode}} {{get-cgi delNode/}} {{/using}}
+	{{using rootId}} {{get-cgi rootId/}} {{/using}}
+	{{using callback}} {{get-cgi callback/}} {{/using}}
+	{{using withContainer}} true {{/using}}
+{{/include}}

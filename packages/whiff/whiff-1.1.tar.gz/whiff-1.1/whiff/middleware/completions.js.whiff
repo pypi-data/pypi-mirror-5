@@ -1,0 +1,505 @@
+{{env
+        whiff.content_type: "application/javascript"
+/}}
+
+{{require prefix}}jswhiff{{/require}}
+
+function {{use prefix/}}_positionOfElement(element, top) {
+    var e = element;
+    var x = 0;
+    var y = 0;
+    var hist = "";
+    while (e) {
+       hist += +"\n"+e+" "+e.offsetLeft+" "+e.offsetTop+" "+x+" "+y;
+       x+= e.offsetLeft;
+       y+= e.offsetTop;
+       e = e.offsetParent;
+    }
+    if (top==null) {
+       y+= element.offsetHeight;
+       hist += "\n"+element.offsetHeight;
+    }
+    //al("final position "+x+","+y+" "+hist);
+    return {x: x, y: y}
+}
+
+function {{use prefix/}}_PositionElementAt(element, targetElement, xoffset, yoffset) {
+    if (!xoffset) {
+        xoffset = 0;
+    }
+    if (!yoffset) {
+        yoffset = 0;
+    }
+    var p = {{use prefix/}}_positionOfElement(targetElement);
+    var dx = p.x+xoffset;
+    var dy = p.y+yoffset;
+    //al("positioning element "+element+" at "+dx+" "+dy+" ("+p.x+","+p.y+")");
+    element.style.left = dx + "px";
+    element.style.top = dy + "px";
+    element.style.visibility = "visible";
+}
+
+function {{use prefix/}}_startsWith(stringValue, stringPrefix) {
+    stringValue = stringValue.toUpperCase();
+    stringPrefix = stringPrefix.toUpperCase();
+    if (stringValue==stringPrefix) {
+        return true;
+    }
+    var length = stringPrefix.length;
+    if (length<stringValue.length) {
+        var p= stringValue.substring(0, length);
+        var result = (p==stringPrefix); 
+        //al("compared "+p+" from "+stringValue+" with "+stringPrefix+" got "+result);
+        return result;
+    }
+    return false;
+}
+
+// event mapper object
+function {{use prefix/}}_EventMapper(inputId, hiddenId, positionerId, defaultSelectedId, valuePreviewId, debugId, reloadFn) {
+    this.reloadFn = reloadFn;
+    this.disabled = true;
+    this.arrowLast = false;
+    this.debugId = debugId;
+    this.inputId = inputId;
+    this.hiddenId = hiddenId;
+    if (!positionerId) {
+	positionerId = inputId;
+	}
+    this.positionerId = positionerId;
+    this.defaultSelectedId = this.selectedId = defaultSelectedId;
+    this.valuePreviewId = valuePreviewId;
+    this.selectionValue = {};
+    this.idToBoundElementInfo = {};
+    this.focusClassName = "{{use prefix/}}_EMfocus"; // default css style name
+    this.clickClassName = "{{use prefix/}}_EMclick"; // default css style name
+    this.xoffset = 10;  // offsets for div positioning
+    this.yoffset = 2;
+    // maybe later add map for focussed Style
+    // now bind methods of eventMapper to events for input target
+    var self = this;
+    var inputElement = document.getElementById(inputId);
+    var eventList = [
+        //"onabort",
+                     //"onblur",
+        "onchange", "onclick", "ondblclick",
+       //"onerror",
+        "onfocus", "onkeydown"
+        //,"onkeypress" //, "onkeyup"
+                     //"onload",
+       //, "onmousedown"
+        //, "onmousemove"
+        //, "onmouseout"
+        //, "onmouseover"
+        //, "onmouseup"
+       //,"onreset"
+                     //, "onresize"
+                     //, "onselect"
+                     //, "onsubmit"
+                     //, "onunload"
+                     ];
+    for (var i=0; i<eventList.length; i++) {
+        var eventName = eventList[i];
+        function checkInput() {
+            self.checkEnabled(eventName);
+        }
+        inputElement[eventName] = checkInput;
+    }
+    //al("for inputId "+inputId+" got "+inputElement);
+    function inputFocus() {
+        return self.focus(inputId, inputElement);
+    }
+    function inputKeyDown(event) {
+        return self.keyDown(event, inputId, inputElement);
+    }
+    function blurAction(text) {
+        function inputBlur() {
+            //self.debug("blur "+text);
+            return self.disable(text);
+        }
+        return inputBlur
+    }
+    inputElement.onblur = blurAction("input onblur event");
+    //inputElement.onmouseout = blurAction("input mouse out");
+    inputElement.onfocus = inputFocus;
+    inputElement.onkeydown = inputKeyDown;
+    this.inputElement = inputElement;
+    hiddenElement = document.getElementById(inputId);
+    //hiddenElement.onmouseout = blurAction("hidden element mouse out");
+}
+
+function {{use prefix/}}_EMdebug(text) {
+    if (this.debugId) {
+        var debugElement = document.getElementById(this.debugId);
+        debugElement.innerHTML = text;
+    }
+}
+{{use prefix/}}_EventMapper.prototype.debug = {{use prefix/}}_EMdebug;
+
+function {{use prefix/}}_EMcheckEnabled(eventName) {
+    this.debug("checkEnabled "+eventName);
+    if (this.disabled) {
+        this.focus()
+    }
+}
+{{use prefix/}}_EventMapper.prototype.checkEnabled = {{use prefix/}}_EMcheckEnabled;
+
+function {{use prefix/}}_EMdisable(text) {
+    this.debug("disable "+text);
+    if (this.selectedId) {
+        this.doMouseOut(this.selectedId, true);
+    }
+    var hiddenElement = document.getElementById(this.hiddenId);
+    hiddenElement.style.visibility = "hidden";
+    this.disabled = true;
+}
+{{use prefix/}}_EventMapper.prototype.disable = {{use prefix/}}_EMdisable;
+
+// focus on the input element
+function {{use prefix/}}_EMfocus(inputId, inputElement) {
+    //this.debug("focus "+inputId+" "+inputElement);
+    this.disabled = false;
+    //var inputElement = this.inputElement;
+    //al("getting positioner "+this.positionerId+" for hidden "+this.hiddenId);
+    var positionerElement = document.getElementById(this.positionerId);
+    var hiddenElement = document.getElementById(this.hiddenId);
+    if (!this.selectedId && this.defaultSelectedId) {
+        this.selectedId = this.defaultSelectedId;
+    }
+    if (this.selectedId) {
+        this.doMouseOver(this.selectedId);
+    }
+    {{use prefix/}}_PositionElementAt(hiddenElement, positionerElement, this.xoffset, this.yoffset);
+}
+{{use prefix/}}_EventMapper.prototype.focus = {{use prefix/}}_EMfocus;
+
+// interpret a keypress in the input element
+function {{use prefix/}}_EMkeyDown(event, inputId, inputElement) {
+    this.debug("keydown");
+    if (this.disabled) {
+        return true;
+    }
+    var keynum = 0;
+    var self = this;  // oh yea, this is javascript...
+    if (window.event) {
+        // I smell internet exploiter
+	event = window.event;
+	//al("event:" + event);
+	if (event.charCode) {
+	    keynum = event.charCode;
+	} else {
+	    keynum = event.keyCode;
+	}
+    } else if (event.which) {
+        // I smell something else
+        keynum = event.which;
+    }
+    switch(keynum) {
+        case 9: //tab
+	    return self.doTab(keynum, event, inputId, inputElement);
+	    break;
+        case 38: //up arrow
+	    return self.doUpArrow(keynum, event, inputId, inputElement);
+	    break;
+        case 13: // enter:  capture it once and close the popup
+	    //var result = self.doTab(keynum, event, inputId, inputElement);
+            var result = true;
+            if (this.selectedId) {
+                result = false;
+                }
+	    self.disable("enter key");
+            return result;
+	    break
+        case 40: //down arrow
+	    return self.doDownArrow(keynum, event, inputId, inputElement);
+	    break;
+        case 37: //left arrow
+	    return self.doLeftArrow(keynum, event, inputId, inputElement);
+	    break;
+        case 39: //right arrow
+	    return self.doRightArrow(keynum, event, inputId, inputElement);
+	    break;
+        default:
+	    // default method provided for possible overloading
+            return self.doKeyNum(keynum, event, inputId, inputElement);
+	    break;
+    }
+}
+{{use prefix/}}_EventMapper.prototype.keyDown = {{use prefix/}}_EMkeyDown;
+
+function {{use prefix/}}_EMdoTab(keynum, event, inputId, inputElement) {
+    this.debug("doTab");
+    // if a suggestion is selected, adopt that suggestion
+    if (this.selectedId) {
+        // replace text if prefix matches
+        this.doMouseDown(this.selectedId, true);
+        return false;
+    }
+    return true; // default: pass on the character
+}
+{{use prefix/}}_EventMapper.prototype.doTab = {{use prefix/}}_EMdoTab;
+
+function {{use prefix/}}_EMdoUpArrow(keynum, event, inputId, inputElement) {
+    this.debug("doUpArrow");
+    this.arrowLast = true;
+    if (this.selectedId) {
+        var elementInfo = this.idToBoundElementInfo[this.selectedId];
+        if (elementInfo && elementInfo.upId) {
+            this.moveMouseOver(this.selectedId, elementInfo.upId);
+	    return false;
+	}
+    }
+    return true; // default: pass on the character
+}
+{{use prefix/}}_EventMapper.prototype.doUpArrow = {{use prefix/}}_EMdoUpArrow;
+
+function {{use prefix/}}_EMdoDownArrow(keynum, event, inputId, inputElement) {
+    this.debug("doDownArrow");
+    this.arrowLast = true;
+    if (this.selectedId) {
+        var elementInfo = this.idToBoundElementInfo[this.selectedId];
+        if (elementInfo && elementInfo.downId) {
+            this.moveMouseOver(this.selectedId, elementInfo.downId);
+	    return false;
+	}
+    }
+    return true; // default: pass on the character
+}
+{{use prefix/}}_EventMapper.prototype.doDownArrow = {{use prefix/}}_EMdoDownArrow;
+
+function {{use prefix/}}_EMdoLeftArrow(keynum, event, inputId, inputElement) {
+    this.debug("doLeftArrow");
+    this.arrowLast = true;
+    if (this.selectedId) {
+        var elementInfo = this.idToBoundElementInfo[this.selectedId];
+        if (elementInfo && elementInfo.leftId) {
+            this.moveMouseOver(this.selectedId, elementInfo.leftId);
+	    return false;
+	}
+    }
+    return true; // default: pass on the character
+}
+{{use prefix/}}_EventMapper.prototype.doLeftArrow = {{use prefix/}}_EMdoLeftArrow;
+
+function {{use prefix/}}_EMdoRightArrow(keynum, event, inputId, inputElement) {
+    this.debug("doRightArrow");
+    this.arrowLast = true;
+    if (this.selectedId) {
+        var elementInfo = this.idToBoundElementInfo[this.selectedId];
+        if (elementInfo && elementInfo.rightId) {
+            this.moveMouseOver(this.selectedId, elementInfo.rightId);
+	    return false;
+	}
+    }
+    return true; // default: pass on the character
+}
+{{use prefix/}}_EventMapper.prototype.doRightArrow = {{use prefix/}}_EMdoRightArrow;
+
+function {{use prefix/}}_EMdoKeyNum(keynum, event, inputId, inputElement) {
+    this.debug("doKeyNum");
+    this.arrowLast = false;
+    // try to find a match??
+    idmap = this.idToBoundElementInfo;
+    var inputElement = this.inputElement;
+    if (event.charCode) {
+      keynum = event.charCode;
+    }
+    //al(event + " keynum "+keynum);
+    var ch = String.fromCharCode(keynum);
+    var currentValue = inputElement.value + ch;
+    var found = false;
+    //al(inputElement.value+" looking for "+currentValue);
+    for (var ident in idmap) {
+        info = idmap[ident];
+	if (info.matches(currentValue)) {
+	    this.doMouseOver(ident);
+            found = true;
+	    break;
+	}
+    }
+    if (keynum>47 && this.reloadFn!=null && !found) {
+        // no  match: try a reload after 100 milliseconds
+        //this.reloadFn()
+        setTimeout(this.reloadFn, 100)
+	//return false; no!
+    }
+    //al("event "+event+" charCode "+event.charCode);
+    return true; // default: pass on the character
+}
+{{use prefix/}}_EventMapper.prototype.doKeyNum = {{use prefix/}}_EMdoKeyNum;
+
+function {{use prefix/}}_EMmoveMouseOver(selectedId, newSelectedId) {
+    //this.debug("moveMouseOver");
+    if (this.disabled) {
+       return;
+    }
+    this.debug("moving mouse over from "+selectedId+" to "+newSelectedId);
+    this.doMouseOut(selectedId);
+    this.doMouseOver(newSelectedId);
+}
+{{use prefix/}}_EventMapper.prototype.moveMouseOver = {{use prefix/}}_EMmoveMouseOver;
+
+function {{use prefix/}}_EMdoMouseOut(selectedId, noreset) {
+    //this.debug("doMouseOut "+selectedId);
+    if (this.disabled) {
+       return;
+    }
+    var element = document.getElementById(selectedId);
+    elementInfo = this.idToBoundElementInfo[selectedId];
+    if (elementInfo && element) {
+        ////al("setting classname to "+elementInfo.blurClass);
+        element.className = elementInfo.blurClass;
+    } // else case should probably be an exception
+    if (!noreset && this.selectedId==selectedId) {
+        this.selectedId = null;
+    }
+}
+{{use prefix/}}_EventMapper.prototype.doMouseOut = {{use prefix/}}_EMdoMouseOut;
+
+function {{use prefix/}}_EMdoMouseOver(selectedId) {
+    //this.debug("doMouseOver "+selectedId);
+    if (this.disabled) {
+       return;
+    }
+    if (this.selectedId) {
+       this.doMouseOut(this.selectedId);
+    }
+    var element = document.getElementById(selectedId);
+    var elementInfo = this.idToBoundElementInfo[selectedId];
+    if (element && elementInfo) {
+        element.className = this.focusClassName;
+	this.selectedId = selectedId;
+	//element.scrollIntoView(true);
+	var previewId = this.valuePreviewId;
+	if (previewId) {
+	    var previewElt = document.getElementById(previewId)
+	    previewElt.innerHTML = ""+elementInfo.suggestionValue;
+	}
+    } // else case should probably be an exception
+}
+{{use prefix/}}_EventMapper.prototype.doMouseOver = {{use prefix/}}_EMdoMouseOver;
+
+function {{use prefix/}}_EMdoMouseDown(selectedId, checkPrefix) {
+    //this.debug("doMouseDown "+selectedId);
+    if (this.disabled) {
+       return;
+    }
+    var element = document.getElementById(selectedId);
+    elementInfo = this.idToBoundElementInfo[selectedId];
+    if (elementInfo) {
+        elementInfo.onClick(this, selectedId, checkPrefix); // for possible overloading
+	//element.scrollIntoView(true);
+    } // else case should probably be an exception
+}
+{{use prefix/}}_EventMapper.prototype.doMouseDown = {{use prefix/}}_EMdoMouseDown;
+
+// bind events for element Id (in suggestions) to an event mapper
+function {{use prefix/}}_EMbind(elementId, elementInfo) {
+    this.debug("bind "+elementId);
+    var self = this; // for closures
+    var element = document.getElementById(elementId);
+    //al("for "+elementId+" got "+element);
+    function mouseDown() {
+        return self.doMouseDown(elementId);
+    }
+    element.onmousedown = mouseDown;
+    function mouseOut() {
+        return self.doMouseOut(elementId);
+    }
+    element.onmouseout = mouseOut;
+    function mouseOver() {
+        return self.doMouseOver(elementId);
+    }
+    element.onmouseover = mouseOver;
+    elementInfo.blurClass = element.className;
+    elementInfo.elementId = elementId;
+    elementInfo.element = element;
+    self.idToBoundElementInfo[elementId] = elementInfo;
+}
+{{use prefix/}}_EventMapper.prototype.bind = {{use prefix/}}_EMbind;
+
+// convenience function
+function {{use prefix/}}_EMbind0(elementId, value, up, down, left, right, disable, action) {
+    this.debug("bind0 "+elementId);
+    var info = new {{use prefix/}}_BoundElementInfo();
+    info.suggestionValue = value;
+    info.leftId = left;
+    info.rightId = right;
+    info.upId = up;
+    info.downId = down;
+    if (disable) {
+        info.onClick = {{use prefix/}}_disableClick;
+    }
+    info.selectAction = action;
+    this.bind(elementId, info)
+}
+{{use prefix/}}_EventMapper.prototype.bind0 = {{use prefix/}}_EMbind0;
+
+function {{use prefix/}}_BoundElementInfo() {
+    this.elementId = null;
+    this.element = null;
+    // set these after init, if appropriate
+    this.leftId = null;
+    this.rightId = null;
+    this.upId = null;
+    this.downId = null;
+    this.suggestionValue = null;
+    this.append = false;
+    this.blurClass = null;
+    this.selectAction = null;
+}
+
+// use this function to mark a bound element to disable the suggestions.
+function {{use prefix/}}_disableClick(eventMapper, selectedId) {
+    eventMapper.disable("disable clicked")
+}
+
+function {{use prefix/}}_BEonClick(eventMapper, selectedId, checkPrefix) {
+    // if the select action is defined use it
+    if (this.selectAction!=null) {
+        return this.selectAction();
+        }
+    // otherwise set the input
+    var inputElement = eventMapper.inputElement;
+    var selectedElement = this.element;
+    selectedElement.className = eventMapper.clickClassName;
+    // eventually improve to handle appending, etcetera
+    var newvalue = ""+this.suggestionValue;
+    //al("onclick arrowlast="+eventMapper.arrowLast);
+    if (checkPrefix && !eventMapper.arrowLast) {
+        var currentValue = inputElement.value;
+        if (newvalue==currentValue || !{{use prefix/}}_startsWith(newvalue, currentValue)) {
+            eventMapper.disable("tab prefix doesn't match or no change");
+            return;
+            }
+        }
+    eventMapper.arrowLast = false; 
+    inputElement.value = newvalue;
+}
+{{use prefix/}}_BoundElementInfo.prototype.onClick = {{use prefix/}}_BEonClick;
+
+function {{use prefix/}}_BEmatches(currentValue) {
+    result = {{use prefix/}}_startsWith(""+this.suggestionValue, currentValue);
+    //al("check startsWith "+this.suggestionValue+" "+currentValue+" gives "+result);
+    return result; // default
+}
+{{use prefix/}}_BoundElementInfo.prototype.matches = {{use prefix/}}_BEmatches;
+
+
+function {{use prefix/}}_bindSuggestions(inputElementId, suggestionDivId, positionerId, previewId, bindingDictionaries,
+                                                 doFocus, debugId, reloadFn) {
+	var initialSuggestionId = null;
+	if (bindingDictionaries.length>0) {
+		initialSuggestionId = bindingDictionaries[0]["id"];
+	}
+	var em = new {{use prefix/}}_EventMapper(inputElementId, suggestionDivId, positionerId, initialSuggestionId, previewId,
+                                                         debugId, reloadFn);
+	for (var i=0; i<bindingDictionaries.length; i++) {
+		var B = bindingDictionaries[i];
+		em.bind0(B["id"], B["v"], B["u"], B["d"], B["l"], B["r"], B["disable"], B["action"]);
+	}
+        if (doFocus) {
+            em.focus();
+            }
+	return em;
+}

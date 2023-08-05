@@ -1,0 +1,295 @@
+{{env
+        whiff.content_type: "application/javascript"
+/}}
+
+{{require prefix}}jswhiff{{/require}}
+
+{{include "insertIfNeeded"}}
+    {{using doneFlag}} ["local", "{{use prefix/}}_whiff.js"] {{/using}}
+    {{using text}}
+// Javascript support for WHIFF
+
+var {{use prefix/}}_QUOTEMAPPING = {
+    '"' : '"',
+    '\\' : '\\',
+    '/': '/',
+    "\b" : "b",
+    "\f" : "f",
+    "\n" : "n",
+    "\r" : "r",
+    "\t" : "t"
+    };
+
+function {{use prefix/}}_as_json(thing, L) {
+    if (thing==null) {
+        return "null";
+    }
+    if (L==null) {
+        L=[];
+    }
+    if (thing instanceof Array) {
+        L.push("[\n");
+	var inside = false;
+	for (var i=0; i<thing.length; i++) {
+	    if (inside) {
+	        L.push(",\n");
+	    }
+	    inside = true;
+	    var elt = thing[i];
+	    var selt = {{use prefix/}}_as_json(elt);
+	    L.push(selt);
+	}
+	L.push("\n]");
+    } else if (thing instanceof Object) {
+        //al("encoding object "+thing+" "+(thing instanceof Object));
+        L.push("{\n");
+	var inside = false;
+	for (var a in thing) {
+	    if (inside) {
+	        L.push(",\n");
+	    }
+	    inside = true;
+	    var elt = thing[a];
+	    var selt = {{use prefix/}}_as_json(elt);
+	    var sa = {{use prefix/}}_as_json(a)
+	    L.push(sa+" : "+selt);
+	}
+	L.push("\n}");
+    } else { //if (thing instanceof String) 
+        //al("encoding string "+thing+" "+(thing instanceof Object));
+        // if it has a length, it must be a string (?)
+        var len = thing.length;
+	//al("for "+thing+" length is "+len);
+        if ((thing instanceof String) || (len==0) || len) {
+            // convert to quoted string
+	    thing = ""+thing;
+            L.push('"');
+	    for (var i=0; i<thing.length; i++) {
+	        var ch = thing.charAt(i);
+	        var qchar = {{use prefix/}}_QUOTEMAPPING[ch];
+	        if (qchar) {
+	            L.push("\\"+qchar);
+	        } else {
+	            L.push(ch);
+	        }
+	    }
+	    L.push('"');
+	} else {
+            // hope for the best
+            L.push(""+thing);
+    	}
+    }
+    return L.join("");
+}
+
+function {{use prefix/}}_find_form_elt_values_matching_prefix(prefix) {
+	result = [];
+	lenprefix = prefix.length;
+	var forms = document.forms;
+	for (var formnum=0; formnum<forms.length; formnum++) {
+		var form = forms[formnum];
+		var elements = form.elements;
+		//al("looking at form "+form+" with elts "+form.elements.length)
+		for (var eltnum=0; eltnum<elements.length; eltnum++) {
+			var elt = elements[eltnum];
+			var name = elt.name;
+			// select is a special case: any other special cases?
+			var value = null;
+			if (elt.type.substring(0,6)=="select") {
+				var selected = elt.selectedIndex;
+				if (selected>=0) {
+					var option = elt.options[selected];
+					value = option.value;
+				}
+				//al("for select "+elt+" got "+value);
+			} else if ((elt.type.substring(0,5)=="check") || elt.type.substring(0,5)=="radio") {
+				if (elt.checked) {
+					value = elt.value;
+					//al(elt.type+" "+name+" checked with value "+elt.value);
+				} else {
+					value = null;
+				}
+			} else {
+				value = elt.value;
+			}
+			var pname = name.substring(0,lenprefix);
+			//al("looking at elt "+elt+" "+name+" "+value+" pname="+pname);
+			if (pname==prefix && value!=null) {
+				//al("matched!");
+				sname = name.substring(lenprefix, name.length);
+				pair = [sname, value];
+				result.push(pair)
+			}
+		}
+	}
+	return result;
+}
+
+function {{use prefix/}}_exec_template(url, template_string_list, cgi_prefix, asynchronous, relativeUrl, cgi_pairs, contentCallback) {
+	//al("now constructing callback "+relativeUrl);
+	var callback = new {{use prefix/}}_Template_Callback(url, template_string_list, cgi_prefix, asynchronous, 
+		relativeUrl, cgi_pairs, contentCallback);
+	//al("now calling callback.exec()");
+	callback.exec();
+	//al("{{use prefix/}}_exec_template done");
+}
+
+// callback object
+
+function {{use prefix/}}_Template_Callback(url, template_string_list, cgi_prefix, asynchronous, relativeUrl, cgi_pairs, contentCallback) {
+	this.ready = 4; // ready state complete
+	this.request = null; // request object for active connection
+	this.url = url;
+	this.asynchronous = asynchronous;
+	this.relativeUrl = relativeUrl;
+	//al("init relativeUrl="+this.relativeUrl);
+	this.contentCallback = contentCallback;
+	if (cgi_pairs==null) {
+		this.cgi_pairs = [];
+	} else {
+		this.cgi_pairs = cgi_pairs;
+	}
+	if (template_string_list==null) {
+		this.template_string_list = [];
+	} else {
+		this.template_string_list = template_string_list;
+	}
+	if (cgi_prefix==null) {
+		this.cgi_prefix = "";
+	} else {
+		this.cgi_prefix = cgi_prefix;
+	}
+}
+
+function {{use prefix/}}_Template_Callback_add_template(template_string_list) {
+	var old_list = this.template_string_list;
+	if (old_list==null || old_list.length<1) {
+		this.template_string_list = template_string_list
+	} else {
+		for (var i=0; i<template_string_list.length; i++) {
+			var elt = template_string_list[i];
+			old_list.push(elt);
+		}
+	}
+}
+{{use prefix/}}_Template_Callback.prototype.add_template = {{use prefix/}}_Template_Callback_add_template;
+
+function {{use prefix/}}_Template_Callback_exec() {
+	var cgi_prefix = this.cgi_prefix;
+	var template_string_list = this.template_string_list;
+	if (template_string_list==null || template_string_list.length<1) {
+		// ignore attempt to execute empty template (????)
+		return;
+	}
+	// construct the payload for the http request
+	var payload_list = {{use prefix/}}_find_form_elt_values_matching_prefix(cgi_prefix);
+	//al("call back cgi_pairs "+this.cgi_pairs);
+	for (var i=0; i<this.cgi_pairs.length; i++) {
+		var pair = this.cgi_pairs[i];
+		payload_list.push(pair);
+	}
+	for (var i=0; i<template_string_list.length; i++) {
+		var s = template_string_list[i];
+		payload_list.push(s);
+	}
+	// pentultimate element is the prefix (might be null)
+	payload_list.push(""+cgi_prefix);
+	// final element is the relative URL (might be null)
+	//al("pushing relative url "+this.relativeUrl);
+	payload_list.push(""+this.relativeUrl);
+	//al("payload list="+payload_list);
+	var payload_string = {{use prefix/}}_as_json(payload_list);
+	//al("callback payload="+payload_string);
+	if (this.asynchronous==true) {
+		this.async_request(payload_string);
+	} else {
+		this.sync_request(payload_string);
+	}
+}
+{{use prefix/}}_Template_Callback.prototype.exec = {{use prefix/}}_Template_Callback_exec;
+
+function {{use prefix/}}_Template_Callback_async_request(payload) {
+	var request = {{use prefix/}}_initXMLHTTPRequest();
+	//this.request = request; // store for callback...
+	var method="POST";
+	var async = true;
+	var url = this.url;
+	request.open(method, url, async);
+	// fun with javascript namespaces
+	var me = this;
+	function onready_callback() {
+		return me.exec_response(request);
+	}
+	request.onreadystatechange = onready_callback;
+	request.setRequestHeader("Content-Type", "application/x-whiff-template");
+	//al("posting to "+ url + "\n using request "+request+ "\n using send=" +request.send);
+	//al("posting async data "+ payload);
+	request.send(payload);
+	// onreadystatechange called by mainloop when response recvd (no blocking)
+}
+{{use prefix/}}_Template_Callback.prototype.async_request = {{use prefix/}}_Template_Callback_async_request;
+
+function {{use prefix/}}_Template_Callback_sync_request(payload) {
+	var request = {{use prefix/}}_initXMLHTTPRequest();
+	var method = "POST";
+	var async = false;
+	var url = this.url;
+	//al("posting to "+ url);
+	//al("posting sync data "+ payload);
+	request.open(method, url, async);
+	request.setRequestHeader("Content-Type", "application/x-whiff-template");
+	request.send(payload);
+	// blocks page in browser until response is recv'd
+	this.exec_response(request);	
+}
+{{use prefix/}}_Template_Callback.prototype.sync_request = {{use prefix/}}_Template_Callback_sync_request;
+
+function {{use prefix/}}_Template_Callback_exec_response(request) {
+	if (request==null) {
+		request = this.request;
+	}
+	if (request==null) {
+		throw new Error("exec_response called with no request available");
+	}
+	var state = request.readyState;
+	if (state==this.ready) {
+	   var content_type = request.getResponseHeader("Content-Type");
+	   if (this.contentCallback) { // send the content to user supplied callback
+	        return this.contentCallback( request.responseText, content_type );
+	   } else { // default: exec the response only if it is javascript
+		//al("got content type: "+content_type);
+		var data = request.responseText;
+		//al("got data: "+data);
+		if (content_type!=null && content_type!="application/javascript"
+			&&content_type!="text/plain") {
+			throw new Error("don't know what to do with "+content_type+"\n"+data)
+		}
+		this.exec_data(data);
+	   }
+	}
+}
+{{use prefix/}}_Template_Callback.prototype.exec_response = {{use prefix/}}_Template_Callback_exec_response;
+
+function {{use prefix/}}_Template_Callback_exec_data(data) {
+	// provided for possible overloading
+	//al(" evalling "+data);
+	eval(data);
+}
+{{use prefix/}}_Template_Callback.prototype.exec_data = {{use prefix/}}_Template_Callback_exec_data;
+
+
+function {{use prefix/}}_initXMLHTTPRequest() {
+        var result = null;
+        if (window.XMLHttpRequest) {
+                ////al("xmlhttp");
+                result = new XMLHttpRequest();
+        } else if (window.ActiveXObject) {
+                ////al("microsoft");
+                result = new ActiveXObject("Microsoft.XMLHTTP");
+        } else {
+                throw new Error("failed to create XMLHTTPRequest");
+        }
+        return result;
+}
+{{/using}}
+{{/include}}

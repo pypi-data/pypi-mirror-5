@@ -1,0 +1,101 @@
+{{env
+        whiff.content_type: "text/html",
+	whiff.parse_cgi: true,
+        whiff.strip: true
+/}}
+
+{{comment: focusNode must be provided either as a cgi parameter or as a "require" parameter/}}
+
+{{cgi-default expandIds}} [] {{/cgi-default}}
+{{cgi-default addNode}}{{/cgi-default}}
+{{cgi-default delNode}}{{/cgi-default}}
+{{cgi-default dictionary}} null {{/cgi-default}}
+{{cgi-default infoPath}} null {{/cgi-default}}
+{{cgi-default rootId}}
+	{{include "whiff_middleware/getResource"}}["freshName", "treeViewRoot"]{{/include}}
+{{/cgi-default}}
+{{cgi-default callback}}
+        {{include "whiff_middleware/getResource"}} ["freshName", "treeViewCallback"] {{/include}}
+{{/cgi-default}}
+{{cgi-default focusFn}}
+        {{include "whiff_middleware/getResource"}} ["freshName", "treeViewFocus"] {{/include}}
+{{/cgi-default}}
+
+{{require focusNode}} {{get-cgi focusNode/}} {{/require}}
+{{require infoPath}} {{get-cgi infoPath/}} {{/require}}
+{{require dictionary}} {{get-cgi dictionary/}} {{/require}}
+{{require focusFn}} {{get-cgi focusFn/}} {{/require}}
+
+<script>
+function {{use focusFn/}}(target) {
+	var divId = {{include "whiff_middleware/asJson"}} {{get-cgi rootId/}} {{/include}};
+	return {{get-cgi callback/}}(divId, target, [], "", "")
+}
+
+function {{get-cgi callback/}}(divId, target, nodes, addNode, delNode) {
+	{{include "whiff_middleware/EvalPageFunction"}}
+		{{using page}}
+			{{include "whiff_middleware/setInnerHtml"}}
+				{{using "elementName"}} {{get-cgi rootId/}} {{/using}}
+				{{using "page"}}
+					{{include "treeView"}} 
+						{{using withContainer}}false{{/using}} 
+						{{using focusNode}} {{get-cgi focusNode/}} {{/using}} 
+						{{using dictionary}} 
+							{{include "whiff_middleware/unquoteHtml"}}
+								{{get-cgi dictionary/}} 
+							{{/include}}
+						{{/using}}
+						{{using infoPath}} 
+							{{include "whiff_middleware/unquoteHtml"}}
+								{{get-cgi infoPath/}} 
+							{{/include}}
+						{{/using}}
+					        {{using expandIds}}
+					                {{include "whiff_middleware/unquoteHtml"}}
+                					        {{get-cgi expandIds/}}
+               						{{/include}}
+	`					{{/using}}
+						{{using addNode}} {{get-cgi addNode/}} {{/using}}
+						{{using delNode}} {{get-cgi delNode/}} {{/using}}
+						{{using rootId}} {{get-cgi rootId/}} {{/using}}
+						{{using callback}} {{get-cgi callback/}} {{/using}}
+					{{/include}}
+				{{/using}}
+			{{/include}}
+		{{/using}}
+		{{using cgi_pairs}}
+			[
+			[ "rootId", divId ],
+			[ "expandIds", jswhiff_as_json(nodes) ],
+			[ "addNode", addNode ],
+			[ "delNode", delNode ],
+			[ "dictionary", {{include "whiff_middleware/asJson"}} {{use dictionary/}} {{/include}} ],
+			[ "infoPath", {{include "whiff_middleware/asJson"}} {{use infoPath/}} {{/include}} ],
+			[ "focusNode", target ],
+			[ "rootId", {{include "whiff_middleware/asJson"}} {{get-cgi rootId/}} {{/include}} ],
+			[ "callback", {{include "whiff_middleware/asJson"}} {{get-cgi callback/}} {{/include}} ]
+			]
+		{{/using}}
+		{{using doCall}}true{{/using}}
+	{{/include}}
+}
+{{include "whiff_middleware/whiff.js"/}}
+</script>
+
+{{include "treeView"}}
+        {{using infoPath}} {{use infoPath/}} {{/using}}
+	{{using dictionary}} {{use dictionary/}} {{/using}}
+        {{using focusNode}} {{use focusNode/}}  {{/using}}
+        {{using expandIds}} 
+		{{include "whiff_middleware/unquoteHtml"}}
+			{{get-cgi expandIds/}} 
+		{{/include}}
+	{{/using}}
+        {{using addNode}} {{get-cgi addNode/}} {{/using}}
+        {{using delNode}} {{get-cgi delNode/}} {{/using}}
+        {{using rootId}} {{get-cgi rootId/}} {{/using}}
+        {{using callback}} {{get-cgi callback/}} {{/using}}
+        {{using withContainer}} true {{/using}}
+{{/include}}
+

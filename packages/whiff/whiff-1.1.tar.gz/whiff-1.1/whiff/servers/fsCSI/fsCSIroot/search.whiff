@@ -1,0 +1,213 @@
+{{env
+   whiff.content_type: "text/html",
+   whiff.parse_cgi:  true
+/}}
+
+{{cgi-default _any}}{{/cgi-default}}
+{{cgi-default _start}}0{{/cgi-default}}
+{{cgi-default _stop}}100{{/cgi-default}}
+
+<html>
+        <head>
+        <title> fsCSI search interface (using jquery) </title>
+
+<style>
+{{include "whiff_middleware/pygmentsCss"/}}
+</style>
+
+{{include "whiff_middleware/jquery/jQueryLib"/}}
+<link type="text/css" href="whiff_middleware/jquery/css/ui-lightness/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
+
+
+    <script>
+
+    {{include "whiff_middleware/whiff.js"/}}
+
+    </script>
+
+    </head>
+    <body onload="setUpFields()" style="font-family:Verdana, Arial, Helvetica, sans-serif;">
+
+	<table border>
+	<tr>
+	<td valign="top" rowspan="2" bgcolor="#7799ee"><font color="orange">
+	<div style="overflow-y:auto; overflow-x:auto; width:300px;">
+
+		<form action="{{get-env whiff.entry_point/}}">
+			<input name="_submit" type="submit" value="submit"> <span id="spinner">*</span> <br>
+			<input type="button" name="_clear" onclick="clearAllInputs()" value="clear"> <br>
+			look for: <input name="_any" id="_anySOURCE" autocomplete="off"  value="{{get-cgi _any/}}"> <br>
+			<div id="otherAttributeInputs">
+			</div>
+		</form>
+
+	</div>
+	</td>
+
+	<td valign="top" bgcolor="#eeeeaa">
+	<div style="overflow-y:auto; overflow-x:auto; width:800px; height:300px">
+		<!-- source links area -->
+		Source links :: <br>
+		<div id="LINKS">
+		No links loaded
+		</div>
+	</div>
+
+	</td>
+	</tr>
+
+	<tr>
+	<td bgcolor="salmon" valign="top">
+	<div id="sourceText" style="overflow-y:auto; overflow-x:auto; width:800px; height:500px">
+		source text area (empty)
+	</div>
+	</td>
+	</tr>
+
+	</table>
+
+<pre id="debug" style="visibility:hidden;">
+debug dump here
+</pre>
+
+{{include "whiff_middleware/jquery/jQueryUIBase"}}
+                {{using targetId}} _anySOURCE {{/using}}
+                {{using widget}} autocomplete {{/using}}
+		{{using option_minLength}} 0 {{/using}}
+		{{using option_source}} getCompletions {{/using}}
+		{{using option_change}} doChange {{/using}}
+{{/include}}
+
+<script>
+
+var completionsInfo = [ [], [], [] ]
+var count = 0;
+var callBackActive = false;
+var otherAttributes = {};
+
+function setUpFields() {
+{{include "fieldSetup"/}}
+{{include "getCompletionInfo2"/}}
+}
+
+function clearInput(name) {
+    var inp = document.getElementById(name);
+    inp.value = "";
+}
+
+function clearAllInputs() {
+    clearInput("_anySOURCE");
+    for (var name in otherAttributes) {
+        clearInput(name);
+    }
+}
+
+function addField(name, initvalue) {
+    // don't add field twice
+    if (otherAttributes[name]==true) {
+        return;
+    }
+    // create a form field for the attribute
+    var otherAttsDiv = document.getElementById("otherAttributeInputs");
+    var newDiv = document.createElement("DIV");
+    newDiv.innerHTML = name+':<INPUT NAME="'+name+'" VALUE="'+initvalue+'" ID="'+name+'">';
+    otherAttsDiv.appendChild(newDiv);
+    otherAttributes[name] = true;
+    // attach a completion widget to the new input
+    function getAttributeCompletions(request, callback) {
+        return getCompletions(request, callback, name);
+    }
+    // make the widget using jquery magic
+    $("#"+name).autocomplete({
+        "source": getAttributeCompletions,
+	"minLength": 0
+    });
+}
+
+//addField("this", "that");
+//addField("other", "thing");
+
+function doChange() {
+	 debugReport("getting completions");
+	    var debug = document.getElementById("debug");
+	    var inp = document.getElementById("_anySOURCE");
+	    var value = inp.value;
+	    count += 1;
+	 if (!callBackActive) {
+	    debug.innerHTML += "\n\nat count="+count+" calling for "+value;
+	    callBackActive = true;
+	    spin();
+	 	 {{include "whiff_middleware/runAsyncJavascript" Url: "getCompletionInfo2"/}}
+	 } else {
+	    debug.innerHTML += "\n\nat count="+count+" still waiting... "+value;
+	    }
+}
+
+function getCompletions(request, callback, name) {
+	 doChange();
+	 var term = request.term;
+	 var resultList = completionsInfo[1];
+	 if (name) {
+	     var completionsMapping = completionsInfo[2];
+             var matches = completionsMapping[name];
+	     if (matches) {
+	     	resultList = matches;
+	     } else {
+	        resultList = [];
+	     }
+	 }
+	 callback(resultList);
+}
+
+function processCompletionInfo() {
+    var completionsMapping = completionsInfo[2];
+    for (var name in completionsMapping) {
+        addField(name, "");
+    }
+    var ids = completionsInfo[0];
+    var linksdiv = document.getElementById("LINKS");
+    var links = []
+    for (var i=0; i<ids.length; i++) {
+        var page = ids[i];
+	var onclick = "viewContent('"+page+"')";
+	var link = '<a href="#" onclick="'+onclick+'"> '+page+'</a>';
+	links.push(link)
+    }
+    linksdiv.innerHTML = links.join("\n<br>\n")
+}
+
+function debugReport(message) {
+	    var debug = document.getElementById("debug");
+	    debug.innerHTML = message+"\n\n"+completionsInfo[1].join("\n")
+}
+
+// XXXX someday simplify this
+function viewContent(path) {
+	{{include "whiff_middleware/resetHTML" 
+		  id: "sourceText",
+		  Url: "colorizePath"}}
+	    path: path
+	{{/include}}
+}
+
+function spin() {
+    var index = 0;
+    var spinchars = "|/-\\.oO*";
+    var nspin = spinchars.length;
+    var spinElt = document.getElementById("spinner");
+    function repeat() {
+        if (callBackActive) {
+	   index = index % nspin;
+	   spinElt.innerHTML = ""+spinchars.charAt(index); //spinchars[index];
+	   index++;
+	   setTimeout(repeat, 100);
+	} else {
+	   spinElt.innerHTML = ""+count;
+	}
+    }
+    repeat();
+}
+</script>
+
+    </body>
+</html>
