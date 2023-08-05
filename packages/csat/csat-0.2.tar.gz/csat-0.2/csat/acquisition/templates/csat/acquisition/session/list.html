@@ -1,0 +1,69 @@
+{% extends "csat/acquisition/session/base.html" %}
+
+{% block page_title %}Acquisition sessions{% endblock %}
+
+
+{% block content %}
+<ul class="session-list tiled-list">
+	{% for session in sessions %}
+	<li class="flip-box session-details {% if session.dark_thumbnail %}dark{% else %}clear{% endif %}" data-background="{{ session.thumbnail_background }}" id="session-{{ session.pk }}">
+		<div class="front-panel">
+			{% if session.thumbnail %}
+			<img class="thumb" src="{{ session.thumbnail.url }}"/>
+			{% else %}
+			<div class="thumb no-thumb"></div>
+			{% endif %}
+
+			<strong>{{ session.name }}</strong>
+
+			<span class="status {% if session.status == session.CONFIGURED -%}
+				icon-cogs
+				{%- elif session.status == session.RUNNING -%}
+				icon-spinner icon-spin
+				{%- elif session.status == session.FAILED -%}
+				icon-warning-sign
+				{%- elif session.status == session.COMPLETED -%}
+				icon-ok
+				{%- endif -%}"></span>
+		</div>
+		<div class="back-panel">
+			<strong>{{ session.name }}</strong>
+			<div class="description">
+				{{ session.description|truncate(100)|markdown }}
+			</div>
+			<div class="collectors muted">{{ session.collectors.count() }} collectors</div>
+			<span class="status {% if session.status == session.CONFIGURED -%}
+				icon-cogs
+				{%- elif session.status == session.RUNNING -%}
+				icon-spinner icon-spin
+				{%- elif session.status == session.FAILED -%}
+				icon-warning-sign
+				{%- elif session.status == session.COMPLETED -%}
+				icon-ok
+				{%- endif -%}"></span>
+
+			<div class="btn-group">
+				<a class="btn" href="{% url "csat:acquisition:session" pk=session.pk %}"><i class="icon-screenshot"></i> Details</a>
+				{% if session.status in (session.COMPLETED, session.FAILED) %}
+				<a class="btn" href="{% url "csat:visualization:standalone-viewer" %}?url={{ session.get_graph_url() }}"><i class="icon-sitemap"></i> Graph</a>
+				{% elif session.status == session.RUNNING %}
+				<button class="btn" disabled="disabled"><i class="icon-sitemap"></i> Graph</button>
+				{% else %}
+				<a class="btn" href="{% url "csat:acquisition:session-edit" pk=session.pk %}"><i class="icon-edit"></i> Edit</a>
+				{% endif %}
+				<a class="btn btn-danger" href="{% url "csat:acquisition:session-delete" pk=session.pk %}?prev={{ request.path }}"><i class="icon-remove"></i> Delete</a>
+			</div>
+		</div>
+	</li>
+	{% endfor %}
+	<li class="flip-box inactive add-new">
+		<div class="front-panel">
+			<a href="{% url "csat:acquisition:session-create" %}">
+				<i class="icon-plus"></i>
+				<strong>Add new</strong>
+			</a>
+		</div>
+		<div class="back-panel"></div>
+	</li>
+</ul>
+{% endblock %}
