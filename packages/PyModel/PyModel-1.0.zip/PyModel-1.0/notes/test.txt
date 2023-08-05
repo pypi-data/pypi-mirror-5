@@ -1,0 +1,320 @@
+Notes on tests
+
+Introduction
+Prerequisites
+Running tests
+Command summary
+Commands and modules
+Test scripts
+Checking test script output
+Output files
+Using other unit testing frameworks
+
+
+Introduction
+
+These notes explain how to script and run tests on the PyModel
+software itself.  These notes are not about using PyModel to test
+other programs -- that is described elsewhere.
+
+These notes explain how to re-execute the test scripts included in the
+distribution, including the tests of all the samples.  These scripts
+demonstrate the samples, as well as testing PyModel itself.
+
+These notes describe our unit tests, along with our little homemade
+unit testing commands: tpath, trun, tdiff, and tclean.  These commands
+are independent of the rest of PyModel (they could be used to test any
+program that writes to stdout).  We use these (instead of a
+conventional unit test framework like unittest or nose) because:
+
+ - The units we test here are not function calls or method calls,
+ but entire program invocations including command line arguments.
+
+ - The results that our tests check are not function or method return
+ values, but the entire output from a program run, including all the
+ output to stdout and stderr, and (sometimes) other output files.
+
+The last section (below) explains how to script tests similar to ours
+using the unittest module from the Python standard library.
+
+
+Prerequisites
+
+These directions apply to both Windows and Unix-like systems
+(including Linux and Mac OS X).  The directions assume that Python is
+already installed and your environment is configured so you can run it
+(if not, see http://docs.python.org/2/using/).  It also assumes that
+the upacked PyModel directories are present on your system, the
+contents of its PyModel/pymodel directory are on your Python path, the
+contents of its PyModel/bin directory are on your execution path, and
+your current directory is on your Python path.  You can achieve this
+by executing PyModel/bin/pymodel_paths, or the commands therein.
+Alternatively, you can install the contents of PyModel/pymodel and
+PyModel/bin into system directories but then you may need to execute
+the command "source tpath" in each session (terminal window) before
+you execute any PyModel commands (or just "tpath" on Windows).
+For more details see PyModel/INSTALL.txt.
+
+
+Running tests
+
+Confirm that PyModel works for you by running some of the test scripts
+in the samples directories.  For example, in
+PyModel/samples/PowerSwitch, type the command:
+
+ trun test 
+
+(not python test.py).  You should then see output from several runs of
+the pmt program as it executes the PowerSwitch model.
+
+To run regression tests that confirm tests generate the expected output, type:
+
+ tdiff trun test
+
+if there are more test*.py files besides test.py, you can run them too:
+
+ tdiff trun test_scenarios
+
+etc.  If messages indicate differences were found, there may be a
+problem.  Or maybe not (see Checking test script output, below).  If
+messages indicate there is no .ref file, it means that this test
+script is not deterministic and the tdiff command is not meaningful
+-- instead just run trun test (or whatever).
+
+
+Command Summary
+
+commands in bin directory
+  tpath     - put current directory on PYTHONPATH, needed by trun
+  tpath.bat - ditto, batch script for Windows
+  trun      - execute test script module named in argument
+  tdiff     - execute command (usually trun ...), compare output to reference
+  tdiff.bat - ditto, batch script for Windows
+  tclean    - remove output files created by running test scripts
+  tclean.bat - ditto, batch script for Windows
+
+The tdiff command was called clogdiff in PyModel versions before 1.0.
+The clogdiff command is retained for backwards compatibility, but is
+deprecated.
+
+Programs and scripts in the pymodel directory
+  trun.py - executes test script module given as argument
+  
+In each model directory: samples/PowerSwitch,  samples/WebApplication/Model,...
+
+  test.py - test script module, executed by trun
+  test.log - most recent output from test.py, including stdout and stderr, 
+              saved by tdiff 
+  test.ref - sample test.log from from test.py, including stdout and stderr, 
+              renamed by hand, used by tdiff
+  test_scenarios.py, test_graphics.py, ...  - other test script modules
+  test_scenarios.ref ...  - etc., like test.ref
+  fsmpy/ - directory of FSM Python modules written by pma.py (maybe via pmv.py)
+            moved here by hand
+  svg/ - directory of .svg graphics files written by pma.py + pmg.py + 
+          dot scripts (maybe via pmv.py), moved here by hand
+  pdf/ -  ditto, .pdf (not many of these), moved here by hand
+
+
+Programs, Modules, and Commands
+
+In these notes, "the foo module" or "the foo program" means the Python
+module in the file foo.py.  The "the bar command" means the bar shell
+script on Unix-like systems, and the bar.bat batch command file on
+Windows.  Both are provided; simply invoking "bar" invokes the right
+command on either kind of system.  In general we use Python modules to
+perform operations that can easily be coded in a system-independent
+way, and shell scripts (or batch commands) for operations that are
+more easily coded with particular system-dependent commands (for
+example: setting the execution path, checking differences between
+files).
+
+Invoke the four PyModel programs on the command line or in scripts by
+name, without using the .py extension (pmt not pmt.py).  You can also
+include the .py extension (pmt.py not just pmt); some older scripts you
+may still have used this form.  BUT to use this form, you must put
+PyModel/pymodel on your execution path (not just your Python path).
+
+
+Test scripts
+
+The pymodel directory contains a trun module for running test
+scripts.
+
+A test script for trun is another module that MUST contain an
+attribute named cases: the list of test cases, represented by pairs of
+strings.  In each pair, the first string is a description of the test
+case and the second string is the command line that invokes the test
+case.  
+
+Here are the contents of the script in samples/WebApplication/Model/test.py:
+
+cases = [
+ ('Test: -a option includes only Initialize Action',
+  'pmt -n 10 -a Initialize WebModel'),
+
+ ('Test: -e option excludes all Login, Logout actions',
+  'pmt -n 10 -e Login_Start -e Login_Finish -e Logout WebModel'),
+]
+
+The trun module takes one argument, the module name of the script (NOT
+the file name, there is no path prefix or .py suffix).  The trun
+module imports the script, then iterates over the cases list, printing
+each description and invoking each command.
+
+It is typical to put a script named test in each source directory that
+contains modules to test.  This command executes it:
+
+ trun test
+
+For this command to work, the pymodel directory must be on the Python
+path, and the current directory must be on the Python path.  This is
+necessary to enable PyModel tools (such as pmt) in the pymodel
+directory to import modules in the current directory.  The
+PyModel/bin/pymodel_paths command assigns these paths.  
+
+
+Checking test script output
+
+Executing a test script typically writes a lot of output to the
+terminal (that is, to stdout and stderr).  For regression testing, use
+the tdiff command in the pymodel directory.  tdiff runs a
+command, collects the output to stdout and stderr in a log file and
+compares it to a reference log file.  To use it, make a reference log
+file first:
+
+ trun test >& test.ref
+
+(But on Windows systems you must use > and >& and only stdout not
+stderr is captured in test.ref.)
+
+Then invoke tdiff:
+
+ tdiff trun test
+
+On Unix-like systems (including Linux and Mac OS X), tdiff prints
+no output when there are no differences, and only prints out any
+differences that it finds.  On Windows systems, tdiff.bat prints
+
+ Comparing files test.log and TEST.REF
+ FC: no differences encountered
+
+when there are no differences.
+
+Be warned that on Windows systems "tdiff trun test_graphics" writes
+a lot of output to the screen, but the line "FC: no differences
+encountered" should appear at the end. (On Unix-like systems, nothing
+more should appear.)  Apparently all this output is stderr output from
+the graphviz dot program, which is not captured or checked by
+tdiff.
+
+Be warned that if you use .ref files generated on one system and
+execute tdiff on another system, differences may be reported even
+when the programs work correctly, in cases where PyModel randomly
+selects actions and action arguments (as it does in many scripts).
+Apparently, the functions from the random module that PyModel uses
+behave differently on different systems, even when started with the
+same seed (the pmt -s option, which is supposed to make the random
+selections repeatable).  In particular, some of the .ref files
+included in the PyModel distribution may cause tdiff to report
+differences on your system.
+
+Differences may also be reported because command prompts or file paths
+appear in the output, and these were different when the .ref file was
+generated.
+
+If tdiff reports differences, examine the output (in the .log file)
+to determine whether the differences indicate errors, or are merely
+due to different randomly selected choices on your system, or to
+environmental differences like command prompts or file paths.  In the
+latter case, you can create a new .ref file for your system by copying
+the latest .log file over the .ref file.
+
+In some of the test scripts, the random seed (given in the pmt -s
+option) was chosen (found by trial and error) that results in
+interesting test behavior (a long run with many different actions).
+That same seed value might not result in such interesting behavior on
+your system, so you may wish to edit the test script to experiment
+with different seed values.  In some samples there are variant test
+scripts with different seed values.  For example in samples/Socket
+there is test.py, test_windows.py, and test_linux.py, along with the
+corresponding .ref files.
+
+In the .log and .ref files, the output from all the test cases (that
+is generated by the programs under test) appears first in the file,
+then all the test descriptions from the test script that are printed
+by trun appear after all the test case output, at the end of the file.
+
+If a test case crashes (raises an unhandled exception) on Windows, the
+traceback goes to the screen, not the log file.  I can't find anything
+in Windows like Unix >& to redirect error output also.
+
+
+Output files
+
+The PyModel pmt command only writes to the terminal (to stdout and
+stderr), but other PyModel commands write output files: pma writes
+another module (.py file) that contains the generated FSM, pmg
+writes a .dot file with commands for the Graphviz dot program, and the
+various dot commands (dotsvg etc.) write graphics files: .svg, .pdf,
+.ps etc.  The pmv program invokes all of these programs and causes all
+of these files to be written.
+
+The PyModel programs write all of these output files in the current
+working directory, so each time you repeat a test, all of its output
+files are overwritten (in the same way that the test.log file is
+overwitten).  In the PyModel distribution, we provide copies of some
+of the output files we made (on our development system) so you can
+compare them to yours (that you generate when you repeat the tests on
+your system).  In some samples directories, there may be an fsmpy
+directory which contains FSM modules written by pma, and there may
+be an svg or pdf directory which contains .svg files written by pma +
+pmg + dot (or pmv).  You may wish to copy output files that you
+generate into these directories, so you can compare them to output
+from tests that you run later (in much the same way that the .ref
+files are used to compare output to stdout).
+
+The pmclean command removes these test output files from the current
+directory.  It does not remove them from the fsmpy or svg
+subdirectories (or any other subdirectories).  All of the files
+removed by pmclean can be easily recreated just by running the test
+scripts again.
+
+
+Using other unit testing frameworks
+
+Our trun and tdiff commands, along with our test scripts, comprise
+a very simple homemade unit testing framework, an alternative to the
+popular Python unit test frameworks such as unittest or nose.
+
+We chose to create our own (very simple) unit test framework for this
+project for two reasons:
+
+1. The units we want to test are not function calls or method calls,
+but entire program invocations including command line arguments.
+
+2. The results we want our tests to check are not function or method
+return values, but the entire output from a program run.
+
+The popular unit test frameworks are not so well-suited for this kind
+of test.  However, you can use one of the popular frameworks if you
+prefer, as an alterative to our trun command and our test scripts.
+There is an example in the samples/populations directory.  The module
+test_populations there works with unittest to run the same tests
+as in tests.  That is, instead of
+
+ trun tests  # test with our homemade framework
+
+You can do 
+
+ python test_populations.py -v   # test with unittest
+
+You can see that test_populations.py is more verbose than test.py, and
+the test output is also more verbose (the -v option here just commands
+unittest to print the docstring for each test case).  The
+test_populations.py module merely executes the tests, it does not
+check the results (it uses no assertions).  To check the results, you
+could capture and check the output using our tdiff command, just as
+you would do with with test.py.
+
+Revised May 2013
