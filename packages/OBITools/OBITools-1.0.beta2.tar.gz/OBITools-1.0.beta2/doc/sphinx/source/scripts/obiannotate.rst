@@ -1,0 +1,13 @@
+.. automodule:: obiannotate
+
+   .. include:: ../optionsSet/sequenceEdit.txt
+   
+   .. include:: ../optionsSet/sequenceFilter.txt
+   
+   .. include:: ../optionsSet/taxonomyFilter.txt
+   
+   .. include:: ../optionsSet/inputformat.txt
+   
+   .. include:: ../optionsSet/outputformat.txt
+
+   .. include:: ../optionsSet/defaultoptions.txt
