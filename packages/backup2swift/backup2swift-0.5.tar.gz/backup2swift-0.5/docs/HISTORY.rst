@@ -1,0 +1,74 @@
+History
+-------
+
+0.5 (2012-05-30)
+^^^^^^^^^^^^^^^^
+
+* New features
+
+  * upload / retrieve / delete in parallel
+  * support to delete multiple objects
+
+* Bug fix
+
+  * fixes fail to raise IOError if default config file exists
+  * fail to use "rotate_limit" option on configuration file
+  * support pep8 less than version 1.3
+
+0.4 (2012-05-29)
+^^^^^^^^^^^^^^^^
+
+* New features
+
+  * support default config file 
+  * specify any container
+  * support to retrieve multiple objects
+  * specify multiple upload files
+
+* Bug fix
+
+  * fixes spelling error
+  * remove pychecker for travis
+
+0.3.2 (2012-05-24)
+^^^^^^^^^^^^^^^^^^
+
+* fixes fail backup and rotate with verifing default SSL certificate
+
+0.3.1 (2012-05-20)
+^^^^^^^^^^^^^^^^^^
+
+* add option to ignore verifing of SSL certificate
+
+0.3 (2012-05-17)
+^^^^^^^^^^^^^^^^
+
+* add retrieve backup object command
+
+0.2 (2012-05-10)
+^^^^^^^^^^^^^^^^
+
+* add backup object command
+* fixes man manual
+
+0.1.3 (2012-05-10)
+^^^^^^^^^^^^^^^^^^
+
+* applied changing api of swiftsc.client.is_container()
+* add how to setup and usage
+
+0.1.2 (2012-05-09)
+^^^^^^^^^^^^^^^^^^
+
+* fixes #3 failed to execute in python2.6
+
+0.1.1 (2012-05-08)
+^^^^^^^^^^^^^^^^^^
+
+* fixes #1 fail to execute firstly when there is no container
+
+0.1 (2012-05-08)
+^^^^^^^^^^^^^^^^
+
+* first release
+
