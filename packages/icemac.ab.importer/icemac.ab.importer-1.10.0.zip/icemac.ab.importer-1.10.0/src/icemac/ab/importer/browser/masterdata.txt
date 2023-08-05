@@ -1,0 +1,48 @@
+=============
+ Master data
+=============
+
+The importer shows up in the master data section of the addressbook. But is
+not visible for all users.
+
+
+Manager
+=======
+
+A manager can see the importer in the master data:
+
+>>> from icemac.addressbook.testing import Browser
+>>> manager = Browser()
+>>> manager.login('mgr')
+>>> manager.open('http://localhost/++skin++AddressBook/ab')
+>>> manager.getLink('Master data').click()
+>>> print manager.contents
+<!DOCTYPE ...
+    <li>
+      <a href="http://localhost/++skin++AddressBook/ab/++attribute++importer"><span>Import data</span></a>
+</li>...
+
+Editor
+======
+
+An editor cannot see the importer in the master data:
+
+>>> editor = Browser()
+>>> editor.login('editor')
+>>> editor.open('http://localhost/++skin++AddressBook/ab')
+>>> editor.getLink('Master data').click()
+>>> '++attribute++importer' in editor.contents
+False
+
+
+Visitor
+=======
+
+A visitor cannot see the importer in the master data:
+
+>>> visitor = Browser()
+>>> visitor.login('visitor')
+>>> visitor.open('http://localhost/++skin++AddressBook/ab')
+>>> visitor.getLink('Master data').click()
+>>> '++attribute++importer' in editor.contents
+False
