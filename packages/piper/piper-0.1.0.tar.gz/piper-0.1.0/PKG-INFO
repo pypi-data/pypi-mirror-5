@@ -1,0 +1,85 @@
+Metadata-Version: 1.1
+Name: piper
+Version: 0.1.0
+Summary: A shell-like object pipeline
+Home-page: http://www.github.com/staticshock/piper
+Author: Anton Backer
+Author-email: olegov@gmail.com
+License: ISC
+Description: Piper is a pipeline for python objects. It's great. Go, use it.
+        
+        Piper enables you to write clean, decoupled functions to process all that dirty
+        data you have. It borrows freely from the UNIX philosophy, processing data much
+        like a shell pipeline. Chain together simple, orthogonal functions, and reduce
+        spaghetti by 95%.
+        
+        Install
+        =======
+        ::
+        
+            pip install piper
+        
+        Overview
+        ========
+        
+        Each pipe in the pipeline takes an item and a context. It returns an iterable
+        of the outputs, which get passed to the next pipe. It's strictly serial, so at
+        each stage of the pipeline the first object gets fully processed before
+        anything is done with the second.
+        
+        ``flow`` takes an iterable (your data set), and a list of functions ("pipes") to
+        pass it through. The output of each pipe serves as the input to the next. The
+        final result is just another iterable.
+        
+        ``Session`` is a communication facility. You can use it as a simple way to share
+        state between pipes, and to skip the remainder of the pipeline for specific
+        outputs.
+        
+        ``pipe`` turns a simple 1-input 1-output function into one that can fit in the
+        pipeline.
+        
+        ``verbose`` is a pipe decorator that prints all the goings on to stdout.
+        
+        Example
+        =======
+        ::
+        
+            import csv
+            from dateutil.parser import parse as parsedate
+            from piper import flow
+        
+            def to_dict(row, session):
+                if 'headings' not in session:
+                    session['headings'] = row
+                    return
+                val = dict(zip(session['headings'], row))
+                val['date'] = parsedate(val['date'])
+                val['cost'] = float(val['price']) * float(val['quantity'])
+                yield val
+        
+            def skip_mondays(row, session):
+                if row['date'].weekday() != 0:
+                    yield row
+        
+            def get_cost(row, session):
+                yield row['cost']
+        
+            rows = csv.reader(some_csv_content)
+            pipeline = [
+                to_dict,
+                skip_mondays,
+                get_cost,
+            ]
+        
+            for cost in flow(rows, pipeline):
+                print(cost)
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: ISC License (ISCL)
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.2
