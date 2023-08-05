@@ -1,0 +1,65 @@
+{% macro flash_messages() -%}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{category}} fade in">
+          <a href="#" class="close" data-dismiss="alert">&times;</a>
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+{%- endmacro %}
+
+{% macro networkbar_links(siteid, links, toplevel=false, appurl='#') %}
+  {%- for link in links %}
+    <li id="hg-networkbar-{{ link.name }}" {%- if siteid == link.name %} class="{% if toplevel and loop.first %}strong {% endif %}selected"{% elif link.sep %} class="hg-menu-section"{% elif toplevel and loop.first %} class="strong"{% endif %}>
+      {%- if link.children -%}
+        <a href="{{ link.url or '#' }}" class="hg-submenu">{{ link.title }}</a>
+        <ul>
+          {{ networkbar_links(siteid, link.children) }}
+        </ul>
+      {%- else -%}
+        {%- if link.sep -%}
+          {{ link.title }}
+        {%- else -%}
+          <a href="{{ link.url or (toplevel and appurl or '#') }}">{{ link.title }}</a>
+        {%- endif -%}
+      {%- endif -%}
+    </li>
+  {%- endfor %}
+{% endmacro %}
+
+{% macro networkbar(siteid=none, login=false, baseclass=none, containerclass="container") -%}
+  <div id="hg-bar" class="no-print {%- if baseclass %} {{ baseclass }}{% endif %}">
+    <div class="{{ containerclass }}">
+      {%- if config.get('NETWORKBAR_LINKS') %}
+        <ul id="hg-barlinks">
+          {{ networkbar_links(siteid, config['NETWORKBAR_LINKS'], toplevel=true, appurl=request.url_root) }}
+        </ul>
+      {%- endif %}
+      {%- if login %}
+        <ul id="hg-usertools">
+          {% if g.user -%}
+            <li class="profile">
+              {%- with orgs = g.user.organization_links() %}{% if orgs %}
+                <a href="#" class="hg-submenu">{{ g.user.fullname }}</a>
+                <ul>
+                  <li><a href="{{ g.user.profile_url }}">My profile</a></li>
+                  {%- for org in orgs %}
+                    <li><a href="{{ org.link }}">{{ org.title }}</a></li>
+                  {%- endfor %}
+                </ul>
+              {%- else %}
+                <a href="{{ g.user.profile_url }}">{{ g.user.fullname }}</a>
+              {% endif %}{%- endwith %}
+            </li>
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+          {%- else %}
+            <li><a href="{{ url_for('login') }}">Login or sign up</a></li>
+          {%- endif %}      
+        </ul>
+      {%- endif %}
+    </div>
+  </div>
+{%- endmacro %}
