@@ -1,0 +1,45 @@
+<configure
+    xmlns='http://namespaces.zope.org/zope'
+    i18n_domain='zope'
+    >
+
+  <interface
+      interface=".interfaces.IZopachePageTemplate"
+      type="zope.app.content.interfaces.IContentType"
+      />
+
+  <class class=".pagetemplate.ZopachePageTemplate">
+    <factory
+        id="zopache.ZopachePageTemplate"
+        title="Zopache Page Template"
+        description="A simple, content-based Page Template"
+        />
+    <require
+        permission="zope.View"
+        attributes="__call__ macros"
+        />
+    <require
+        permission="zope.ManageContent"
+        interface=".interfaces.IZopachePageTemplate"
+        set_attributes="source expand evaluateInlineCode content_type"
+        />
+    <require
+        permission="zope.View"
+        interface=".interfaces.IRenderZopachePageTemplate"
+        />
+    <implements
+        interface="zope.annotation.interfaces.IAttributeAnnotatable"
+        />
+  </class>
+
+  <adapter
+      for=".interfaces.IZopachePageTemplate"
+      provides="zope.size.interfaces.ISized"
+      factory=".pagetemplate.Sized"
+      trusted="y"
+      permission="zope.ManageContent"
+      />
+
+  <include package=".browser" />
+
+</configure>
