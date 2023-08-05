@@ -1,0 +1,95 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      i18n:domain="raptus.article"
+      tal:omit-tag=""
+      tal:define="articles view/articles">
+
+  <ul class="visualNoMarker manageableList slideshow"
+      tal:condition="python: len(articles) > 1">
+    <tal:item repeat="item articles">
+    <li class="header slideshow-header component"
+        tal:define="first repeat/item/start"
+        tal:attributes="style string:background-image:url('${item/image}');
+                        class python:('current' if first else '') + ' header slideshow-header component'">
+      <metal:manage use-macro="context/raptus_article_macros/macros/manage"></metal:manage>
+      <div class="wrapped">
+        <div class="content">
+          <h2>
+            <a href=""
+               tal:omit-tag="not:item/url"
+               tal:attributes="href item/url"
+               tal:content="item/title">
+              Title
+            </a>
+          </h2>
+          <p class="description"
+             tal:condition="item/description">
+            <a href=""
+               tal:omit-tag="not:item/url"
+               tal:attributes="href item/url"
+               tal:content="item/description">
+              Description
+            </a>
+          </p>
+          <tal:nodetail condition="not:item/brain/hasDetail">
+            <div class="body" tal:condition="item/obj/getText">
+              <metal:field use-macro="python:item['obj'].widget('text', mode='view')">
+                Body text
+              </metal:field>
+            </div>
+          </tal:nodetail>
+        </div>
+        <img src="" alt="" class="hiddenStructure"
+             tal:attributes="src string:${item/obj/absolute_url}/image_thumb;
+                             alt item/title;" />
+      </div>
+    </li>
+    </tal:item>
+  </ul>
+
+
+  <tal:single condition="python: len(articles) == 1">
+  <tal:item repeat="item articles">
+  <div class="header slideshow-header single component"
+       tal:attributes="style string:background-image:url('${item/image}');">
+    <metal:manage use-macro="context/raptus_article_macros/macros/manage"></metal:manage>
+    <div class="wrapped">
+      <div class="content">
+        <h2>
+          <a href=""
+             tal:omit-tag="not:item/url"
+             tal:attributes="href item/url"
+             tal:content="item/title">
+            Title
+          </a>
+        </h2>
+        <p class="description"
+           tal:condition="item/description">
+          <a href=""
+             tal:omit-tag="not:item/url"
+             tal:attributes="href item/url"
+             tal:content="item/description">
+            Description
+          </a>
+        </p>
+        <tal:nodetail condition="not:item/brain/hasDetail">
+          <div class="body" tal:condition="item/obj/getText">
+            <metal:field use-macro="python:item['obj'].widget('text', mode='view')">
+              Body text
+            </metal:field>
+          </div>
+        </tal:nodetail>
+      </div>
+      <img src="" alt="" class="hiddenStructure"
+           tal:attributes="src string:${item/obj/absolute_url}/image_thumb;
+                           alt item/title;" />
+    </div>
+  </div>
+  </tal:item>
+  </tal:single>
+
+</html>
