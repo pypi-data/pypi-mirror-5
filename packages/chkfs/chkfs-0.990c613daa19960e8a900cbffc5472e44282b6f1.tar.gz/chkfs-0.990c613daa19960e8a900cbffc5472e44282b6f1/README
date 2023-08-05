@@ -1,0 +1,128 @@
+chkfs - A commandline tool for storing filesystems inside a chkstore.
+
+
+This stores a filesystem using the chkstore library.  Use case goals include:
+
+* Backup many different old hard drives with redundant copies of
+  filesystems in a deduplicating manner.
+
+* Store in a self-describing transparent format, so that if a user finds
+  themselves with a typical fresh linux install but not network and no
+  access to this code, they can still restore backups using bzip2, cat,
+  cp, etc...
+
+* Incremental backup with atomically consistent cached progress state:
+  If a backup process dies, it can be restarted and catch up to its
+  previous run without using heavy resources.
+
+  - Atomically consistent means a backup process can die suddenly at
+    any step without corrupting the store.
+
+  - Consistency *also* anticipates multiple writing processes can
+    update the storage simultaneously without a loss of consistency.
+    The only failure in this case is to overwrite a "snapshot pointer".
+    Dangling snapshot pointers can be reconstructed with an expensive scan
+    of the store.
+
+  - Cached means the progress tracking state can be removed, and the
+    only effect is that the next backup run will use more disk I/O
+    and time, but will not lose information or revert any committed
+    backup state.
+
+* Support many different backup source filesystems (old dos FAT, iso9660,
+  ntfs...).  Support for reading the filesystems comes from the kernel
+  by dint of mounting, but the backup tool should save all relevant
+  filesystem metadata.
+
+  - This includes filenames in any encoding. The known encodings are
+    ASCII and utf8, but if neither encoding can represent a filename,
+    an "unknown" encoding stores the binary data directly.  Encodings are
+    "sniffed" by first validating against ASCII, then utf8, then falling
+    back to unknown.  This means the encoding is only a hint, because
+    a non-ASCII or non-UTF8 filename may be misinterpreted as either of
+    those encodings.  However, no data is lost or corrupted.
+
+* Restore portions of the stored data.
+
+  - The stored data can be inspected and restored in a fine-grained
+    manner, such as by retrieving a single file from a large snapshot,
+    or a transitive directory.
+
+* Recursive directory structures.
+
+  - OSX, tahoe-lafs, and some other filesystems allow recursive directory
+    structures.  (In OSX for example, directories may be hard-linked.)
+
+
+Unsupported Use Cases:
+
+* Deletion.  My philosophy is to buy a new hard drive and to save data
+  forever.  There is a security risk, but OTOH, it's impossible to tell
+  how valuable any datum may be in the future.
+
+* Redundancy.  The underlying filesystem or storage drivers can handle
+  this, and it's best to leave that complexity in a different layer.
+
+* High Availability.  If the storage node explodes, all data is lost.
+  To prevent this, delegate to another tool such as tahoe-lafs.
+
+* Privacy.  Delegate to the underlying filesystem.
+
+* Crossing Trust Boundaries.  This is intended for a case where anyone
+  with read access to the store can read everything.  If a user needs
+  privacy within a backup, they could encrypt files before backing up
+  and manage that complexity
+
+* Keeping chkfs storage on "unusual" or old filesystems: The design
+  is intended to *store* old filesystem contents, but not to store *on*
+  old filesystems.  In particular, chkstore and chkfs assume directories
+  can hold many, many entries, with names at least around 80 ascii
+  bytes long.  (They also currently assume the storage filesystem
+  supports hardlinks for efficient commits, and O_CREAT|O_EXCL for
+  avoiding multi-process collisions.)
+
+
+Future use case:
+
+* A read-only fuse interface for convenient restore out of the chkfs.
+
+
+Bonus use cases:
+
+* Integration as a backend in other networked/decentralized data stores
+  such as camlistore or tahoe-lafs.
+
+
+FAQ:
+
+* Why not cp -a or cp -r?
+
+  - This is lossy in some ways in which chkfs is not: The vfs metadata
+    about the source is not copied, the source filesystem may have
+    metadata which cannot be stored in the target filesystem (including
+    different filename encoding issues).  chkfs also suffers some of
+    these limitations by relying on the vfs layer for reading source
+    filesystems.  Also it sacrifices the convenient utility of having
+    the backup files available directly as a filesystem (without a
+    fuse interface), so chkfs lose the ability to run find | grep,
+    for instance.
+
+* Why not tar or many of the existing very mature unix backup systems?
+
+  - The "old school" solutions I'm aware of do not support all of the
+    use cases above without excessive headache.  The tradeoff is
+    that old-school solutions are well tested in a large variety of
+    circumstances and widely available.
+
+* Why not camlistore, tahoe-lafs, freenet, or decentralized storage
+  tech X?
+
+  - I don't need decentralization for personal backups.  There's no need
+    for networking, redundancy, or trust boundary complexity.  (See the
+    unsupported features section.)
+
+* Why not bup or another scheme which is better at dedup?
+
+  - chkfs prefers a "fairly transparent" store, as described above.
+    It should be possible to restore a backup without using this tool but
+    only bzip2, cp, vim, etc...
