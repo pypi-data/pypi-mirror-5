@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: Latin-1 -*-
+# vim: tabstop=4 shiftwidth=4 expandtab
+
+""" A simple script to download data from AVISO
+"""
+
+from optparse import OptionParser
+from os.path import dirname, basename
+
+import aviso
+
+# ============================================================================
+
+# ==== Parsing the options on command line
+parser = OptionParser()
+
+parser.add_option("-c", "--config", dest="cfg_file",
+            help="Config file")
+
+parser.add_option("-R", "--region", dest="region",
+            help="Area to download S/W/N/E")
+
+parser.add_option("-D", dest="date",
+            help="Timing limits 1998-07-21/1999-01-01", default='/')
+
+parser.add_option("--logfile", dest="logfile",
+            help="Logfile")
+
+parser.add_option("--timestep", dest="dt",
+            help="Time step [days] between snapshots", default=7)
+
+parser.add_option("-u", "--username", dest="username",
+            help="username at AVISO")
+
+parser.add_option("-p", "--password", dest="password",
+            help="password at AVISO")
+
+parser.add_option("--map", dest="map",
+        help="Type of map: 'madt' or 'msla' or 'madt+msla'", default='madt')
+
+parser.add_option("--type", dest="type",
+        help="Type of data: 'upd' or 'ref'", default='upd')
+
+parser.add_option("-o", "--output", dest="output",
+        help="output", default='./aviso.nc')
+
+parser.add_option("--products", dest="products",
+        help="Estimate products like 'W,zeta'")
+
+
+(options, args) = parser.parse_args()
+cfg_file = options.cfg_file
+
+# ============================================================================
+# Checking the must to
+#for op in ['username', 'password']:
+
+# Extracting boundary coordinates
+LatIni, LonIni, LatFin, LonFin = options.region.split('/')
+
+cfg = {'username': options.username,
+        'password': options.password,
+        'limits':{'t_step': int(options.dt),
+            'latini': float(LatIni),
+            'latfin': float(LatFin),
+            'lonini': float(LonIni),
+            'lonfin': float(LonFin),
+            },
+        'map': options.map,
+        'type': options.type,
+        'datadir': dirname(options.output),
+        'filename': basename(options.output),
+        'force_download': True,
+        'logfile': 'aviso.log'
+        }
+
+try:
+    d_ini, d_fin = options.date.split('/')
+    if d_ini != '': cfg['limits']['d_ini'] = d_ini
+    if d_fin != '': cfg['limits']['d_fin'] = d_fin
+except:
+    pass
+
+aviso.AVISO_fetch(cfg)
+#if hasattr(options, 'products'):
+if options.products is not None:
+    print "Hey ho!"
+    aviso.Products(cfg)
+
+#data = aviso.Aviso_map(metadata=cfg)
