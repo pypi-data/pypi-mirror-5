@@ -1,0 +1,111 @@
+<?xml version="1.0" ?>
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="collective.geo.opensearch">
+
+  <include package="plone.app.contentmenu" />
+
+
+  <browser:menuItem
+      title="Open Search Map View"
+      for="plone.app.folder.folder.IATUnifiedFolder"
+      menu="plone_displayviews"
+      action="osmapfolder_view.html"
+      description="View all open search links inside this folder as a meta search and display on a map."
+      />
+
+
+
+
+  <browser:page
+      for="plone.app.folder.folder.IATUnifiedFolder"
+      name="osmapfolder_view.html"
+      class=".folderview.FolderView"
+      template="folderview.pt"
+      allowed_interface=".folderview.IFolderView"
+      permission="zope2.View"
+      />
+
+
+  <adapter
+      for=".folderview.IFolderView
+           zope.interface.Interface
+           zope.interface.Interface
+           zope.interface.Interface"
+      factory=".maplayers.KMLFolderMapLayers"
+      />
+
+
+
+  <browser:menuItem
+      title="Open Search Map View"
+      for="Products.ATContentTypes.interfaces.link.IATLink"
+      menu="plone_displayviews"
+      action="feed_map_view.html"
+      description="Set OpenSearch map view."
+      />
+
+
+  <browser:page
+      for="Products.ATContentTypes.interfaces.link.IATLink"
+      name="feed_map_view.html"
+      class=".mapview.MapView"
+      template="mapview.pt"
+      allowed_interface=".mapview.IMapView"
+      permission="zope2.View"
+      />
+
+
+  <adapter
+      for="collective.opensearch.browser.oslinkview.IOsLinkView
+           zope.interface.Interface
+           zope.interface.Interface
+           zope.interface.Interface"
+      factory=".maplayers.KMLMapLayers"
+      />
+
+
+
+  <browser:page
+      for="*"
+      name="opensearch_rss.xml"
+      class=".rssview.RSSView"
+      template="rssview.pt"
+      allowed_interface=".rssview.IRSSView"
+      permission="zope2.View"
+      layer="..interfaces.ICgoLayer"
+      />
+
+
+  <browser:page
+      for="*"
+      name="opensearch_atom.xml"
+      class=".atomview.AtomView"
+      template="atomview.pt"
+      allowed_interface=".atomview.IAtomView"
+      permission="zope2.View"
+      layer="..interfaces.ICgoLayer"
+      />
+
+
+
+  <browser:page
+      for="*"
+      name="opensearch_kml.kml"
+      class=".kmlview.KMLView"
+      allowed_interface=".kmlview.IKMLView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="Products.ATContentTypes.interfaces.link.IATLink"
+      name="opensearch_link.kml"
+      class=".extkmlview.ExtKMLView"
+      allowed_interface=".extkmlview.IExtKMLView"
+      permission="zope2.View"
+      />
+
+
+</configure>
