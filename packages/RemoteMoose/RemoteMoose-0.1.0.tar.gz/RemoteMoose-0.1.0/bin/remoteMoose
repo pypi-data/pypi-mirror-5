@@ -1,0 +1,99 @@
+#!/usr/bin/python
+###############################################################################
+#                                                                             #
+#    remotemoose                                                              #
+#                                                                             #
+#    Entry point. See remotemoose/remotemoose.py for internals                #
+#                                                                             #
+#    Copyright (C) Michael Imelfort                                           #
+#                                                                             #
+###############################################################################
+#                                                                             #
+#             8888888b.          888b     d888                                #                   
+#             888   Y88b         8888b   d8888                                #                   
+#             888    888         88888b.d88888                                #
+#             888   d88P .d88b.  888Y88888P888  .d88b.   .d88b.               #
+#             8888888P" d8P  Y8b 888 Y888P 888 d88""88b d88""88b              #
+#             888 T88b  88888888 888  Y8P  888 888  888 888  888              #             
+#             888  T88b Y8b.     888   "   888 Y88..88P Y88..88P              #
+#             888   T88b "Y8888  888       888  "Y88P"   "Y88P"               #
+#                                                                             #
+###############################################################################
+#                                                                             #
+#    This program is free software: you can redistribute it and/or modify     #
+#    it under the terms of the GNU General Public License as published by     #
+#    the Free Software Foundation, either version 3 of the License, or        #
+#    (at your option) any later version.                                      #
+#                                                                             #
+#    This program is distributed in the hope that it will be useful,          #
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of           #
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            #
+#    GNU General Public License for more details.                             #
+#                                                                             #
+#    You should have received a copy of the GNU General Public License        #
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.     #
+#                                                                             #
+###############################################################################
+
+__author__ = "Michael Imelfort"
+__copyright__ = "Copyright 2012"
+__credits__ = ["Michael Imelfort"]
+__license__ = "GPL3"
+__version__ = "0.1.0"
+__maintainer__ = "Michael Imelfort"
+__email__ = "mike@mikeimelfort.com"
+__status__ = "Alpha"
+
+###############################################################################
+
+import argparse
+import sys
+import re
+from remotemoose import remoteMoose
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+if __name__ == '__main__':
+
+    #-------------------------------------------------
+    # intialise the options parser
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                     description='Password management for neanderthals.')
+    parser.add_argument('-k', '--keyphrase', default="", help="key phrase to generate randomness from")
+    parser.add_argument('-f', '--filename', default='card', help="file prefix of the card")
+    parser.add_argument('-x', '--complexity', type=int, default=4, help="1: lc only, 2: lc+num, 3: lc+uc+num, 4: lc+uc+num+punc, 5:crazy")
+    parser.add_argument('-a', '--accounts', default=[], nargs='+', help="accounts to use with this card [MAX 14]")
+        
+    #-------------------------------------------------
+    # get and check options
+    args = parser.parse_args()
+
+    #-------------------------------------------------
+    # do what we came here to do
+    try:
+        RM_parser = remoteMoose.RMOptionsParser()
+        if(False):
+            import cProfile
+            cProfile.run('RM_parser.parseOptions(args)', 'prof')
+            ##########################################
+            ##########################################
+            # Use this in python console!
+            #import pstats
+            #p = pstats.Stats('prof')
+            #p.sort_stats('cumulative').print_stats(10)
+            #p.sort_stats('time').print_stats(10)
+            ##########################################
+            ##########################################            
+        else:        
+            RM_parser.parseOptions(args)
+    except:
+        print "Unexpected error:", sys.exc_info()[0]
+        raise
+    
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
