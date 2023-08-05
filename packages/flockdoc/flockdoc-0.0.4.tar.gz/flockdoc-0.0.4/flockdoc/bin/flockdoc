@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+'''flockdoc'''
+import argparse
+import sys
+
+from flockdoc.processor import render_all
+from flockdoc.renderer import env
+
+parser = argparse.ArgumentParser(__doc__)
+parser.add_argument(
+    '-q', '--quiet',
+    default=False, action='store_true',
+    help='be quiet verbose (default True)'
+)
+
+subparsers = parser.add_subparsers(title='subcommands')
+
+## RENDERING ##
+render = subparsers.add_parser('render')
+render.add_argument(
+    '-i', '--in',
+    dest='in_', metavar='IN', default='site',
+    help='process these files (default "site")'
+)
+render.add_argument(
+    '-o', '--out',
+    default='generated',
+    help='output processed files here (default "generated")'
+)
+render.add_argument(
+    '-c', '--code',
+    default='code',
+    help='location of code files (default "code")'
+)
+
+def do_render(args):
+    if not args.quiet:
+        print 'Beginning render from %r' % args.in_
+
+    render_all(args.in_, args.out, args.code, not args.quiet)
+
+    if not args.quiet:
+        print 'Done with render. Look in %r' % args.out
+
+render.set_defaults(func=do_render)
+
+## HTML OUTPUT ##
+html = subparsers.add_parser('show_html')
+
+html.add_argument('filename', help='file to render', choices=env.list_templates())
+
+def do_html(args):
+    with open(env.get_template(args.filename).filename) as tmpl:
+        sys.stdout.write(tmpl.read())
+
+html.set_defaults(func=do_html)
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    args.func(args)
