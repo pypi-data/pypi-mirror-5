@@ -1,0 +1,102 @@
+stages=[
+dict(
+    name='pcfg',
+    mode='pcfg',
+    split=True,
+    markorigin=True, #when splitting nodes, mark origin: VP_2 => {VP*1, VP*2}
+),
+dict(
+   name='plcfrs',
+   mode='plcfrs',
+   prune=True,    #whether to use previous chart to prune parsing of this stage
+   splitprune=True, #VP_2[101] is treated as { VP*[100], VP*[001] } during parsing
+   k=50,     #number of coarse plcfrs derivations to prune with; k=0 => filter only
+),
+#dict(
+#   name='2dop-k',
+#   mode='plcfrs',
+#   prune=True,    #whether to use previous chart to prune parsing of this stage
+#   splitprune=True, #VP_2[101] is treated as { VP*[100], VP*[001] } during parsing
+#   k=50,     #number of coarse plcfrs derivations to prune with; k=0 => filter only
+#   dop=True,
+#   usedoubledop=True,
+#   iterate=False, #for double dop, whether to include fragments of fragments
+#   complement=False, #for double dop, whether to include fragments which form
+#           #the complement of the maximal recurring fragments extracted
+#   sample=False, kbest=True,
+#   m=10000,      #number of derivations to sample/enumerate
+#   estimator="dop1", # choices: dop1, ewe
+#   objective="mpp", # choices: shortest, sl-dop[-simple]
+#),
+
+dict(
+    name='pcfg-posterior',
+    mode='pcfg-posterior',
+    split=True,
+    prune=False,
+    markorigin=True, #when splitting nodes, mark origin: VP_2 => {VP*1, VP*2}
+),
+dict(
+   name='plcfrs-posterior',
+   mode='plcfrs',
+   prune=True,    #whether to use previous chart to prune parsing of this stage
+   splitprune=True, #VP_2[101] is treated as { VP*[100], VP*[001] } during parsing
+   k=1e-8,     #number of coarse plcfrs derivations to prune with; k=0 => filter only
+),
+#dict(
+#   name='2dop-p',
+#   mode='plcfrs',
+#   prune=True,    #whether to use previous chart to prune parsing of this stage
+#   splitprune=True, #VP_2[101] is treated as { VP*[100], VP*[001] } during parsing
+#   k=0.001,     #number of coarse plcfrs derivations to prune with; k=0 => filter only
+#   dop=True,
+#   usedoubledop=True,
+#   iterate=False, #for double dop, whether to include fragments of fragments
+#   complement=False, #for double dop, whether to include fragments which form
+#           #the complement of the maximal recurring fragments extracted
+#   sample=False, kbest=True,
+#   m=10000,      #number of derivations to sample/enumerate
+#   estimator="dop1", # choices: dop1, ewe
+#   objective="mpp", # choices: shortest, sl-dop[-simple]
+#   sldop_n=7,
+#   neverblockre=None, #do not prune nodes with label that match regex
+#   getestimates=None, #compute & store estimates
+#   useestimates=None, #load & use estimates
+#),
+],
+corpusdir=".", corpusfmt="discbracket",
+traincorpus="t1.dbr", trainencoding="ascii", trainnumsents=17,
+testcorpus="t1.dbr", testencoding="ascii", testnumsents=1,
+skip=0, # skip (additional) sentences between train & test set
+skiptrain=True,
+testmaxwords=100,  # max number of words for sentences in test corpus
+trainmaxwords=100, # max number of words for sentences in train corpus
+punct="move", # re-attach punctuation to appropriate constituents
+unfolded=False, # apply transformations for Negra/Tiger to make trees less flat
+# postagging: pass None to use tags from treebank.
+postagging=None,
+#dict(
+#		# choices: unknownword (assign during parsing),
+#		#		treetagger, stanford (external taggers)
+#		method="unknownword",
+#		# choices unknownword: 4, 6, base,
+#		# for treetagger / stanford: [filename of external tagger model]
+#		model="4",
+#		# options for unknown word models:
+#		unknownthreshold=1, # use probs of rare words for unknown words
+#		openclassthreshold=0, # add unseen tags for known words. 0 to disable.
+#		simplelexsmooth=True, # disable sophisticated smoothing
+#),
+evalparam="proper.prm",
+headrules="negra.headrules",
+bintype="binarize", # choices: binarize, nltk, optimal, optimalhead
+factor="right",
+revmarkov=True,
+v=1,
+h=1,
+leftmostunary=True,
+rightmostunary=True,
+fanout_marks_before_bin=False,
+tailmarker="",
+quiet=False, reallyquiet=False, #quiet=no per sentence results
+numproc=1,  #increase to use multiple CPUs. Set to None to use all CPUs.
