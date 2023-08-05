@@ -1,0 +1,56 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:article="http://namespaces.zope.org/article"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="raptus.article">
+
+    <article:component
+        name="mediagallery"
+        component=".mediagallery.Component"
+        selection="raptus.article.core.interfaces.IArticle"
+        viewlet=".mediagallery.Viewlet"
+        manager="plone.app.layout.viewlets.interfaces.IBelowContent" />
+
+    <adapter
+        name="mediagallery"
+        factory=".mediagallery.Component"
+        for="raptus.article.alias.interfaces.IAlias"
+        provides="raptus.article.core.interfaces.IComponentSelection"
+        zcml:condition="installed raptus.article.alias"
+        />
+
+    <adapter
+        name="mediagallery"
+        factory=".mediagallery.Component"
+        provides="raptus.article.core.interfaces.IComponentSelection"
+        for="Products.ATContentTypes.interfaces.IATImage"
+        />
+
+    <adapter
+        name="mediagallery"
+        factory=".mediagallery.Component"
+        provides="raptus.article.core.interfaces.IComponentSelection"
+        for="raptus.article.media.interfaces.IVideo"
+        zcml:condition="installed raptus.article.media"
+        />
+
+    <adapter
+        name="mediagallery"
+        factory=".mediagallery.Component"
+        provides="raptus.article.core.interfaces.IComponentSelection"
+        for="raptus.article.media.interfaces.IVideoEmbed"
+        zcml:condition="installed raptus.article.media"
+        />
+
+    <adapter
+        for="raptus.article.media.interfaces.IVideo"
+        factory="raptus.article.teaser.teaser.Teaser"
+        zcml:condition="installed raptus.article.media"
+        />
+
+    <browser:resource
+        name="mediagallery.js"
+        file="mediagallery.js" />
+
+</configure>
