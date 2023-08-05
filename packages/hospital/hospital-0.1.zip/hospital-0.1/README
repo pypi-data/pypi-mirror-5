@@ -1,0 +1,52 @@
+#################################
+hospital: healthchecks for Python
+#################################
+
+``hospital`` makes it easy to setup and use health checks in Python.
+
+Health checks are kind of tests applied to running applications and services:
+
+* while developing the application, write health checks ;
+* after a deployment, run health checks to make sure everything went fine ;
+* include health checks in supervision/monitoring tools ;
+* in case of incidents, use health checks to diagnose problems.
+
+
+*******
+Example
+*******
+
+.. code-block:: python
+
+   from hospital import HealthCheck
+
+   class DatabaseHealthCheck(HealthCheck):
+       def test_open_connection(self):
+           """Can open connection to database."""
+ 
+       def test_ping_host(self):
+           """Can ping database host."""
+
+       def test_driver(self):
+           """Database's client library for Python can be imported."""
+
+       def diagnose_database_connection(self):
+           """Can connect to database."""
+           self.assertAny(self.test_open_connection,
+   		       self.test_ping_host,
+   		       self.test_driver)
+
+       def fix_database_driver(self):
+           """Trigger installation of database library."""
+           my_provisioner.install(database_library, confirm=True)
+
+
+*********
+Resources
+*********
+
+* Documentation: https://hospital.readthedocs.org
+* PyPI page: https://pypi.python.org/pypi/hospital
+* Code repository: https://github.com/python-hospital/hospital
+* Bugtracker: https://github.com/python-hospital/hospital/issues
+* Continuous integration: https://travis-ci.org/python-hospital/hospital
