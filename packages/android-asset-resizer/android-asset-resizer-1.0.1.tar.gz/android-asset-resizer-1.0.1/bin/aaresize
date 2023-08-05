@@ -1,0 +1,95 @@
+#!/usr/bin/python
+
+import os
+import sys
+import argparse
+
+from PIL import Image
+from android_asset_resizer.resizer import AssetResizer
+
+SOURCE_DENSITY_CHOICES = ('xxhdpi', 'xhdpi',)
+PIL_FILTER_CHOICES = ('NEAREST', 'BILINEAR', 'BICUBIC', 'ANTIALIAS')
+PIL_FILTER_MAP = {
+    'NEAREST': Image.NEAREST,
+    'BILINEAR': Image.BILINEAR,
+    'BICUBIC': Image.BICUBIC,
+    'ANTIALIAS': Image.ANTIALIAS
+}
+
+DEFAULT_DENSITY = 'xhdpi'
+DEFAULT_FILTER = 'ANTIALIAS'
+DEFAULT_OUT_PATH = os.getcwd()
+DEFAULT_OUT_MODE = 0755
+
+def uprint(msg, newline=True, quiet=False):
+    """
+    Unbuffered print.
+    """
+    if not quiet:
+        sys.stdout.write("%s%s" % (msg, "\n" if newline else ''))
+        sys.stdout.flush()
+
+def main():
+    # Create our parser
+    parser = argparse.ArgumentParser(description='Resize image assets for an Android project')
+
+    # Set up our command-line arguments
+    parser.add_argument('-d', '--density', default=DEFAULT_DENSITY, choices=SOURCE_DENSITY_CHOICES,
+            help='the density of the source images')
+    parser.add_argument('-p', '--prefix',
+            help='a prefix to add to the filename')
+    parser.add_argument('-f', '--filter', default=DEFAULT_FILTER, choices=PIL_FILTER_CHOICES,
+            help='the image filter to use')
+    parser.add_argument('-o', '--out',
+            help='the path to the output directory')
+    parser.add_argument('-q', '--quiet', action='store_true',
+            help='suppress all output except for errors')
+    parser.add_argument('pattern', nargs='+',
+            help='the path to the source images with matching pattern')
+
+    # Get our arguments
+    args = parser.parse_args()
+
+    # Get our output directory
+    if args.out:
+        out_dir = os.path.abspath(args.out)
+
+        if os.path.isfile(out_dir):
+            parser.error('The specified out is not a directory!')
+    else:
+        out_dir = DEFAULT_OUT_PATH
+
+    # Create the output directory if necessary
+    try:
+        os.makedirs(out_dir, DEFAULT_OUT_MODE)
+    except OSError as e:
+        pass
+
+    # Get our resizer
+    resizer = AssetResizer(out_dir, source_density=args.density,
+            prefix=args.prefix, image_filter=PIL_FILTER_MAP.get(args.filter))
+
+    # Make our resource directories
+    resizer.mkres()
+
+    # Resize the assets
+    count = 0
+    for path in args.pattern:
+        _, filename = os.path.split(path)
+
+        uprint('Resizing: %s' % filename, quiet=args.quiet)
+        try:
+            resizer.resize(path)
+            uprint('  DONE', quiet=args.quiet)
+            count += 1
+        except IOError as e:
+            uprint('  FAILED', quiet=args.quiet)
+            uprint('  %s' % e.strerror)
+
+    uprint("Resized %s asset%s" % (count, 's' if count > 1 else ''), quiet=args.quiet)
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit()
