@@ -1,0 +1,41 @@
+import os
+import time
+
+import bootstrappy
+from bootstrappy import tmpl_context as c, session, auth_id, permissions
+from bootstrappy.decorators import xml, xml_render, html, html_render, jsonify, authorize,\
+    credential, authenticated, redirect, forward
+from bootstrappy.util import save_auth, remove_auth
+
+from ${package}.model import User
+from base import ControllerBase
+
+
+class Auth(ControllerBase):
+
+    @html('login.html')
+    def login(self, *args, **kwargs):
+        if self.request.method == 'POST':
+            if 'username' in self.request.params:
+                username = self.request.params['username']
+                password = self.request.params['password']
+
+                user = User.by_username(username)
+                if user and user.validate_password(password):
+                    self.request = save_auth(self.request, user)
+                    return forward(user.defaults['login_url'])
+            else:
+                return html_render()
+
+        if 'user' in session:
+            user = session['user']
+            return html_render(user=user)
+        else:
+            return html_render()
+
+    def logout(self, *args, **kwargs):
+        if 'REMOTE_USER' in self.request.environ:
+            del self.request.environ['REMOTE_USER']
+        session.invalidate()
+        session.delete()
+        return self.login()
