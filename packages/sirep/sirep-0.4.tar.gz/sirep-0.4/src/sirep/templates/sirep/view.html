@@ -1,0 +1,119 @@
+{% extends "admin/base_site.html" %}
+{% load admin_list sirep_tags i18n %}
+{% load admin_urls %}
+{% load static from staticfiles %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/sirep.css' %}" />
+    {{ block.super }}
+{% endblock %}
+
+{% block extrahead %}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script src="{% static 'admin/js/core.js' %}"></script>
+    <script src="{% static 'admin/js/jquery.js' %}"></script>
+    <script src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script>
+        django.jQuery(document).ready(function() {
+            django.jQuery('#generate-csv-report, #generate-csv-report-current-page').click(function() {
+                django.jQuery('.report-loading').height(django.jQuery(window).height());
+                django.jQuery('.report-loading').show();
+            });
+
+            django.jQuery('.report-loading').click(function() {
+                django.jQuery('.report-loading').hide();
+            });
+
+            django.jQuery('#apply-filtering-to-current-page').click(function() {
+                window.location = "{{ request.path }}?" + django.jQuery('.report-form').serialize();
+                return;
+            });
+        });
+    </script>
+    {{ report_form.media }}
+    {{ block.super }}
+{% endblock extrahead %}
+
+{% block bodyclass %}change-list{% endblock %}
+
+{% block breadcrumbs %}
+<div id="breadcrumbs">
+     <a href="/admin/">{% trans "Home" %}</a> &rsaquo;
+     <a href="{% url 'sirep.reports_list' %}">{% trans "Reports" %}</a> &rsaquo;
+     {{ report.verbose_name }}
+</div>
+{% endblock %}
+
+{% block pretitle %}
+    <h1>{% trans "Generate CSV report" %}</h1>
+    {% url 'sirep.view_csv' slug as sirep_view_csv_url %}
+    {% blocktrans with sirep_view_csv_url as sirep_view_csv_url and request.GET.urlencode as url_params %}
+    <p>You can <a href="{{ sirep_view_csv_url }}?{{ url_params }}" id="generate-csv-report-current-page">Generate a CSV report from current page</a> or use
+    the form below to customise the params.</p><br />
+    {% endblocktrans %}
+    <form class="report-form" method="get" action="{% url 'sirep.view_csv' slug %}">
+        {{ report_form.non_field_errors }}
+        {% for field in report_form %}
+        <div class="fieldWrapper">
+            {{ field.errors }}
+            {{ field.label_tag }}: {{ field }}
+        </div>
+        {% endfor %}
+        <div class="buttonWrapper">
+            <button id="generate-csv-report">{% trans "Generate" %} </button>
+        </div>
+    </form>
+
+    <div class="buttonWrapper">
+        <button id="apply-filtering-to-current-page">{% trans "Apply the filtering above to the current page" %} </button>
+    </div>
+
+    <div class="report-loading">
+        <div>
+            <h4>{% trans "Generating the CSV. Please wait." %}</h4>
+            <p>{% trans "Note: Large report may take some time to generate, please be patient and don't close the browser window." %}</p>
+        </div>
+    </div>
+{% endblock pretitle %}
+
+{% block content %}
+
+  <div id="content-main">
+    {% block object-tools %}{% endblock %}
+
+    <div class="module{% if cl.has_filters %} filtered{% endif %}" id="changelist">
+      {% block result_list %}
+      <div id="changelist" class="filtered">
+			<table style="width: 102% !important;">
+				<thead>
+                    <tr>
+                        {% for head in report.get_headers %}
+                            <th style="width:auto; color: #000; font-weight: bold;">{#<a href="javascript:;">#}{{ head }}{#</a>#}</th>
+                        {% endfor %}
+                    </tr>
+				</thead>
+			{% for row in report.items %}
+				<tr class="row{% if forloop.counter0|divisibleby:'2' %}1{%else%}2{% endif %}">
+                    {%for val in row %}
+                        <td colspan="{{ report.header_count }}" style="text-align: left;"><strong>{{val}}</strong></td>
+                    {% endfor %}
+				</tr>
+			{% endfor %}
+			</table>
+
+            <ul class="reporting-pagination">
+            {% if report.has_previous and report.previous %}<li><a href="{{ request.path }}?{{ GET_PARAM_PAGE }}={{ report.previous }}&amp;{{ request.GET.urlencode|strip_page_param }}" rel="prev">{% trans "Previous page" %}</a></li>{% endif %}
+            {% for i in report.page_range %}
+                {% if i == report.page %}
+                    <li class="current"><span>{{ i }}</span></li>
+                {% else %}
+                    <li><a href="{% if i == 1 %}{{ request.path }}?{{ request.GET.urlencode|strip_page_param }}{% else %}{{ request.path }}?{{ GET_PARAM_PAGE }}={{ i }}&amp;{{ request.GET.urlencode|strip_page_param }}{% endif %}" title="Page {{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if report.has_next and report.next %}<li><a href="{{ request.path }}?{{ GET_PARAM_PAGE }}={{ report.next }}&amp;{{ request.GET.urlencode|strip_page_param }}" rel="next">{% trans "Next page" %}</a></li>{% endif %}
+            </ul>
+      </div>
+      {% endblock %}
+    </div>
+  </div>
+{% endblock %}

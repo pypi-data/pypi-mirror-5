@@ -1,0 +1,38 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load url from future %}
+{% load static from staticfiles %}
+
+{% block extrastyle %}
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/sirep.css' %}" />
+    {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+<div id="breadcrumbs">
+     <a href="/admin/">{% trans "Home" %}</a> &rsaquo;
+     {% trans "Reports" %}
+</div>
+{% endblock %}
+
+{% block bodyclass %}sirep-list{% endblock %}
+
+{% block content %}
+<div id="content" class="content-grid">
+    <h1>{% trans "Reports" %}</h1>
+    <div class="container-grid">
+        <div class="column span-12" id="apps_init">
+            <div class="module" id="app_ads">                
+                <ul class="reports">
+                {% for rep in reports %}
+                    <li>
+                        <a href="{% url 'sirep.view_report' rep.slug %}{% if rep.report.default_filter %}?{{ rep.report.default_filter }}{% endif %}">{{ rep.verbose_name }}</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <br class="clear">
+</div>
+{% endblock %}
