@@ -1,0 +1,189 @@
+Metadata-Version: 1.1
+Name: plib.io
+Version: 0.9
+Summary: Flexible handling of I/O channels.
+Home-page: http://pypi.python.org/pypi/plib.io
+Author: Peter A. Donis
+Author-email: peterdonis@alum.mit.edu
+License: UNKNOWN
+Description: The PLIB.IO package contains classes that encapsulate various forms
+        of client/server I/O channels.
+        
+        The ``setup.py`` script for PLIB.IO uses the ``setuputils``
+        helper module, which helps to automate away much of the
+        boilerplate in Python setup scripts. This module is available
+        as a separate release at http://pypi.python.org/pypi/setuputils.
+        
+        The PLIB.IO Packages and Modules
+        ================================
+        
+        The ``base`` sub-package contains base classes that implement
+        common basic functionality that is built on by the rest of PLIB.IO.
+        
+        Most of the remaining sub-packages fall into four main categories:
+        
+        - **Device Types**: ``socket`` and ``serial``. Each device type has
+          a ``BaseClient`` and ``BaseServer`` class; the ``socket`` type
+          also has a ``BaseRequest`` class. These will usually not need to
+          be used directly; they are used by the I/O mode classes, and are
+          factored out so that each I/O mode sees the same API for a given
+          device type.
+        
+        - **Channel Types**: The ``comm`` sub-package contains classes that
+          implement the basic functionality of the three types of I/O
+          channels: clients, servers, and "persistent" (the latter is only
+          available with the async I/O mode--see below). Each I/O mode then
+          builds on these base classes to implement its specific channels.
+        
+        - **I/O modes**: ``async`` and ``blocking`` (the latter does not just
+          mean synchronous: it includes a forking TCP socket server). Each
+          I/O mode has a client and server class for both device types, and
+          a request class for the ``socket`` device type: the class names are
+          ``SerialClient``, ``SerialServer``, ``SocketClient``, ``SocketServer``,
+          and ``BaseRequestHandler``. The ``async`` type also has "persistent"
+          classes, which support full-duplex asynchronous communication; these
+          are the ``PersistentSerial``, ``PersistentSocket``, and
+          ``PersistentRequestHandler`` classes. Mixin versions of these classes
+          (class names with ``Mixin`` at the end) are also provided, for use
+          if alternate data handling is desired (see next bullet), but it is
+          normally not necessary to use these "by hand"--see "automatic mixins"
+          below.
+        
+        - **Data Handling**: the I/O mode classes given above include basic
+          data handling, but it is *very* basic: the only way it can detect
+          that a "message" has been fully received is to detect a closed
+          channel. For some applications this is enough, but often more
+          sophisticated and robust data handling is needed. The ``data``
+          sub-package provides three mixin classes for this purpose,
+          ``ShutdownReadWrite``, ``TerminatorReadWrite`` and ``ReadWrite``.
+          The first of these detects the end of a received message by a
+          shutdown of the other end of the data channel, but keeps the channel
+          open to allow further writes (all the other classes default to
+          closing the channel when the other end closes). The other two
+          classes allow the detection of multiple "messages" in the data
+          stream, either by detecting a "terminator" string or by having
+          each message include its length at the beginning. These classes
+          also format outgoing messages the same way.
+        
+        There is also a ``mixins`` sub-package containing classes that
+        are used as mixins by the other sub-packages, and a ``classes``
+        sub-package containing higher-level classes that use the API.
+        Finally, there is a ``utils`` module that implements the automatic
+        mixin functionality described below.
+        
+        Automatic Mixins
+        ----------------
+        
+        To derive your own client or server classes with alternate data
+        handling "by hand", you would need to use the "mixin" versions of
+        the appropriate I/O mode classes, and splice the data handling
+        class into the middle of the base class list; for example::
+        
+            from plib.io.async import SerialClientMixin, SerialBase
+            from plib.io.data import TerminatorReadWrite
+            
+            class AsyncSerialClientWithTerminator(SerialClientMixin,
+                TerminatorReadWrite, SerialBase): pass
+        
+        This is a bit clumsy, but necessary since the read/write handling has
+        to be *before* the client/server class in the MRO, but *after* the
+        base device type, for the cooperative ``super`` calls that underlie
+        the functionality to work properly. However, since the pattern is the
+        same in each case, it can be automated, and this has been done in the
+        ``async`` and ``blocking`` sub-package namespaces, so that instead of
+        doing the above class construction "by hand", you can just append a
+        suffix to your desired class name, thus::
+        
+            from plib.io.async import SerialClientWithTerminator
+        
+        The ``WithTerminator`` suffix (or, alternately, ``WithShutdown``
+        or ``WithReadWrite``) will cause the equivalent of the above class
+        definition to occur on the fly, so that the resulting class appears
+        in the ``plib.io.async`` namespace (of course the
+        ``plib.io.blocking`` namespace has the same capability).
+        Once this has happened the first time, however, the class definition
+        is stored in the appropriate namespace, so additional imports of the
+        same class name (in different modules of your application) will not
+        re-do the "on the fly" construction; they will just retrieve the
+        same class object that was previously constructed.
+        
+        The above machinery is also made available for use with your own custom
+        read/write handling classes; the ``async`` and ``blocking`` sub-packages
+        each export a ``get_readwrite_class`` function that does the same
+        on-the-fly class definition as above, but with your custom read/write
+        class instead of one of the built-in ones. All you have to do is pass
+        the function the name of your desired I/O class and your custom
+        read/write class object::
+        
+            from plib.io import async
+            
+            class CustomReadWrite(object):
+                # class definition
+            
+            MyAsyncSerialClient = async.get_readwrite_class('SerialClient',
+                CustomReadWrite)
+        
+        *API Notes*: One of the goals of this sub-package is to provide a
+        common, consistent API for all the different types of I/O, so that
+        switching one specific implementation of a certain functionality
+        for another can be done transparently to the rest of your application's
+        code. Thus, all of the usable classes follow the same basic pattern of
+        mixing in the various pieces of functionality: from left to right
+        in a class's MRO, one finds the type of endpoint (a client or
+        server mixin class, which may be specialized to the type of I/O),
+        the type of data formatting, if any (a mixin class from the
+        ``ReadWrite`` module), and the type of I/O, including device type
+        (socket, serial port, etc.), mode (non-blocking/asynchronous vs.
+        blocking), and basic data handling. Also, each endpoint type has
+        a common API independent of the specific type of I/O and mode; a
+        client can always use the ``client_communicate`` method to send
+        data to the server and receive a response; a server can always use
+        the ``serve_forever`` method to start itself; and all I/O objects
+        override the same methods to implement application-specific
+        functionality: ``process_data``, to deal with data as it comes in,
+        and ``query_done``, to determine when the I/O channel should be
+        closed. (To see examples of all this in action, look at the test
+        suite in ``test_io.py`` and the library module for it,
+        ``io_testlib.py``; the library module can use the same
+        mixin classes to implement test functionality for *all* of the
+        different mixes of I/O classes in the test suite.)
+        
+        Installation
+        ============
+        
+        To install PLIB.IO, you can simply run::
+        
+            $ python setup.py install
+        
+        at a shell prompt from the directory into which you
+        unzipped the source tarball (the same directory that this
+        README file is in). This will install PLIB and then
+        run each of the post-install scripts in the scripts
+        directory.
+        
+        Example Programs
+        ================
+        
+        PLIB.IO comes with example programs that illustrate key features
+        of the package. After installation, these can be found in the
+        ``$PREFIX/share/plib/examples`` directory. If you have a
+        POSIX system (Linux or Mac OSX), the ``plib-setup-examples``
+        post-install script will install symlinks to the example
+        programs in the ``$PREFIX/bin`` directory.
+        
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Environment :: MacOS X
+Classifier: Environment :: Win32 (MS Windows)
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU General Public License v2 (GPLv2)
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires: plib.stdlib (>=0.9)
+Provides: plib.io (0.9)

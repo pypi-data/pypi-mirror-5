@@ -1,0 +1,50 @@
+TODO items for PLIB.IO as of Version 0.9
+
+:Author:        Peter A. Donis
+:Last Updated:  04 Jun 2013
+
+Planned Features
+----------------
+
+PLIB.IO is feature complete at this time.
+
+Bugs/Workaround Fixes
+---------------------
+
+- The forking socket server in ``plib.io.blocking``
+  doesn't work on Windows. Forking in general on Windows
+  is a chancy business, but the basic forking functionality
+  in PLIB works OK there; it just coughs and dies whenever
+  the forking server tries to fork a request handler.
+  (Probably it's because the pickler that is used by the
+  multiprocessing module to set up the child process is
+  being streched too far, since it's trying to pickle the
+  entire server context and then unpickle it in the child
+  process for the request handler; the multiprocessing
+  module was not really designed for that.) Since I don't
+  recommend running servers in general on Windows, much
+  less forking ones (the threading server in the PLIB I/O
+  library works OK if you simply *must*), I'm not in a
+  hurry to fix all this, but it is a current bug. (All of
+  the tests involving the forking server are disabled on
+  Windows.)
+
+- Various async I/O tests are failing on Windows, for
+  reasons that aren't clear; the basic async I/O functionality
+  appears to work (at least when tested using the example
+  ``echo_server.py`` and ``chat_server.py`` programs).
+
+- All of the "large message" I/O tests fail on Windows
+  (i.e., any test where the message being transferred over
+  a socket is larger than the socket buffer size). I
+  suspect this is because of subtle differences in socket
+  semantics on Windows, but haven't been able to pin it
+  down. (Windows advocates may wonder why I'm singling out
+  Windows here, but the reason is simple: all of the above
+  tests and functionality that has problems or bugs on
+  Windows, *just works* on *every* other platform I've
+  tested on--various flavors of Linux, Mac OS X, and
+  FreeBSD, using various Python 2.x versions--2.4, 2.5, 2.6,
+  and 2.7. Windows is the *only* OS that requires all these
+  extra gymnastics for what is just basic programming
+  everywhere else, and then it *still* doesn't always work.)
