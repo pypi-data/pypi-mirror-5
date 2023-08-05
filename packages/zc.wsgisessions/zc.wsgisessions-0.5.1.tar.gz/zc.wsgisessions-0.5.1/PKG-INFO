@@ -1,0 +1,426 @@
+Metadata-Version: 1.1
+Name: zc.wsgisessions
+Version: 0.5.1
+Summary: ZC WSGI sessions
+Home-page: UNKNOWN
+Author: Zope Corporation
+Author-email: info@zope.com
+License: ZPL 2.1
+Description: ****************
+        ZC WSGI Sessions
+        ****************
+        
+        This is an implementation of persistent sessions as a WSGI middleware
+        using `zope.session` as an underlying mechanism.
+        
+        To use it:
+        
+        1. Add `zc.wsgisessions` to `install_requires` list in `setup.py` of
+           your application (e.g., `myapp`)
+        
+        2. Add the following to `myapp.ini`::
+        
+            [filter:sessions]
+            use = egg:zc.wsgisessions
+        
+           You can add to configuration::
+        
+            secure = true
+        
+           or::
+        
+            http-only = off
+        
+           Valid words are: `true`, `false`, `on`, `off`, `yes`, `no`, 1, and 0.
+        
+           You can also specify a database name for session storage::
+        
+            db-name = appdb
+        
+        3. Add `sessions` to the pipeline *after* database middleware, but
+           *before* the application.
+        
+        4. Add to a function that is listed as `initializer` for the database
+           middleware::
+        
+            zc.wsgisessions.sessions.initialize_database(database)
+        
+           You can also pass keyword arguments for: `db_name`, `namespace`,
+           `secret`, `timeout`, and `resolution`.
+        
+        5. Add to a function that is listed as `bobo.configure` (initializer of
+           your WSGI application)::
+        
+            zope.component.provideAdapter(zc.wsgisessions.sessions.get_session)
+        
+        6. You can use some helpers in your authentication code::
+        
+            PKG_KEY = __name__  # e.g., myapp.auth
+        
+            def get_user(request):
+                return zc.wsgisessions.sessions.get(request, PKG_KEY, 'user')
+        
+            def save_user(request, user):
+                zc.wsgisession.sessions.store(request, PKG_KEY, 'user', user)
+        
+            def forget_user(request):
+                return zc.wsgisessions.sessions.remove(request, PKG_KEY, 'user')
+        
+        7. When running `Selenium` tests, `HttpOnly` cookies cannot be used.
+           Set the option ``'http-only': False`` in the `global_conf` dictionary
+           of your testing application.
+        
+        
+        .. See ``src/zc/wsgisessions/sessions.txt`` for details.
+        
+        
+        Detailed Documentation
+        **********************
+        
+        ========
+        Sessions
+        ========
+        
+        There are two aspects to the sessions support: browser identification,
+        and session storage.  Browsers are identified using cookies; if the
+        cookie isn't set on an incoming request, the response sets it for future
+        requests.
+        
+        Session data are stored using a persistent session data container, as
+        defined by the ``zope.session`` package.  An instance is added to the
+        database at startup if not present.  We can control certain parameters
+        by passing keyword arguments to the database initializer.  One run of
+        this test uses the default settings, while a second run sets custom
+        parameters.
+        
+            >>> import re
+            >>> import zc.wsgisessions.testing
+            >>> import zc.wsgisessions.sessions
+            >>> db_name = 'sessions'
+            >>> if zc.wsgisessions.testing.TEST_DB_INIT:
+            ...     db_name = 'test'
+            ...     db = conn.get_connection(db_name).db()
+            ...     zc.wsgisessions.sessions.initialize_database(
+            ...         db,
+            ...         db_name=db_name,
+            ...         namespace='browserid_c0defeed',
+            ...         secret='0.10612221415937506119',
+            ...         timeout=(15 * 60),  # 15 minutes
+            ...         resolution=60,      #  1 minute
+            ...         )
+        
+            >>> dbroot = conn.get_connection(db_name).root()
+            >>> dbroot['sessions']
+            <zope.session.session.PersistentSessionDataContainer object at 0xc0defeed>
+        
+            >>> if zc.wsgisessions.testing.TEST_DB_INIT:
+            ...     expected_id = re.compile('browserid_c0defeed')
+            ...     expected_secret = re.compile('0.10612221415937506119')
+            ...     expected_timeout = 15 * 60
+            ...     expected_resolution = 60
+            ... else:
+            ...     expected_id = re.compile('browserid_[0-9a-f]{8}')
+            ...     expected_secret = re.compile('[0-9a-f]{20}')
+            ...     expected_timeout = 24 * 60 * 60
+            ...     expected_resolution = 60 * 60
+            >>> re.match(expected_id, dbroot['browserid_info'][0]) is not None
+            True
+            >>> re.match(expected_secret, dbroot['browserid_info'][1]) is not None
+            True
+            >>> dbroot['sessions'].timeout == expected_timeout
+            True
+            >>> dbroot['sessions'].resolution == expected_resolution
+            True
+        
+        If the configuration contains `secure` set to true or if the request is
+        https, `secure` is added to the Set-Cookie response.  Also `HttpOnly` is
+        added to the Set-Cookie response, unless the configuration sets
+        `http-only` to false.
+        
+            >>> global_conf = {}
+            >>> filter_conf = {'db-name': db_name}
+            >>> filter = zc.wsgisessions.sessions.BrowserIdFilter(
+            ...     global_conf, **filter_conf)(object())
+            >>> environ = {
+            ...     'zodb.connection': conn.get_connection('test'),
+            ...     'wsgi.url_scheme': 'https'
+            ... }
+            >>> h = dict(filter.prepare(environ, lambda *args: args)(200, [], None)[1])
+            >>> cookie_parts = h['Set-Cookie'].split('; ')
+            >>> 'secure' in cookie_parts
+            True
+            >>> 'HttpOnly' in cookie_parts
+            True
+        
+        When the settings are changed in the filter configuration (in `.ini`
+        file), the defaults are replaced.
+        
+            >>> filter_conf.update({'http-only': 'false', 'secure': 'true'})
+            >>> filter = zc.wsgisessions.sessions.BrowserIdFilter(
+            ...     global_conf, **filter_conf)(object())
+            >>> environ['wsgi.url_scheme'] = 'http'
+            >>> h = dict(filter.prepare(environ, lambda *args: args)(200, [], None)[1])
+            >>> cookie_parts = h['Set-Cookie'].split('; ')
+            >>> 'secure' in cookie_parts
+            True
+            >>> 'HttpOnly' in cookie_parts
+            False
+        
+        Notice that the URL scheme above was *not* https, but the secure was set
+        because it was requested in the filter configuration.
+        
+        For Selenium testing we need to reset `HttpOnly` and since we are using
+        http URL scheme in development, the default for `secure` (off) is
+        acceptable.  Notice that we are setting `http-only` in global
+        configuration this time to override the value from the settings in
+        `.ini` file.
+        
+            >>> global_conf = {'http-only': 'off'}
+            >>> filter_conf = {'db-name': db_name, 'http-only': 'on'}
+            >>> filter = zc.wsgisessions.sessions.BrowserIdFilter(
+            ...     global_conf, **filter_conf)(object())
+            >>> h = dict(filter.prepare(environ, lambda *args: args)(200, [], None)[1])
+            >>> cookie_parts = h['Set-Cookie'].split('; ')
+            >>> 'secure' in cookie_parts
+            False
+            >>> 'HttpOnly' in cookie_parts
+            False
+        
+        The database name for session storage is set in `initialize_database` to
+        `sessions` by default or to a supplied `db_name` (`test` for the second
+        run of these tests).  If we try to pass a wrong database name to the
+        filter from its configuration (in `.ini` file) we'll get an error.
+        
+            >>> if zc.wsgisessions.testing.TEST_DB_INIT:
+            ...     filter_conf['db-name'] = 'sessions'
+            ...     filter = zc.wsgisessions.sessions.BrowserIdFilter(
+            ...         global_conf, **filter_conf)(object())
+            ... else:
+            ...     filter_conf['db-name'] = 'test'
+            ...     filter = zc.wsgisessions.sessions.BrowserIdFilter(
+            ...         global_conf, **filter_conf)(object())
+            >>> h = dict(filter.prepare(environ, lambda *args: args)(200, [], None)[1])
+            Traceback (most recent call last):
+              ...
+            KeyError: 'browserid_info'
+        
+        
+        Browser identification
+        ======================
+        
+        Information needed to support the cookies is also stored in the
+        database:
+        
+            >>> dbroot['browserid_info']
+            ('browserid_...', '...')
+        
+            >>> cookie_name = dbroot['browserid_info'][0]
+        
+            >>> import webtest
+            >>> app = webtest.TestApp(app)
+            >>> response = app.get('http://localhost/')
+        
+            >>> cookie_value = app.cookies[cookie_name]
+            >>> len(cookie_value)
+            54
+        
+        If we change the secret in the database, we can cause the session
+        identifier to be re-set:
+        
+            >>> import random
+            >>> import transaction
+        
+            >>> secret = '%.20f' % random.random()
+            >>> dbroot['browserid_info'] = cookie_name, secret
+            >>> transaction.commit()
+        
+            >>> response = app.get('http://localhost/')
+        
+            >>> cookie_value == app.cookies[cookie_name]
+            False
+        
+            >>> cookie_value = app.cookies[cookie_name]
+            >>> app.cookies[cookie_name] = 'bad'
+            >>> response = app.get('http://localhost/')
+        
+            >>> cookie_value == app.cookies[cookie_name]
+            False
+        
+        
+        Session storage
+        ===============
+        
+        Once the cookie has been loaded from the request, or arranged to be sent
+        with the response, an ``ISession`` object is stored on the request.
+        Let's create one directly so we can see how that works:
+        
+            >>> sdc = dbroot['sessions']
+            >>> session = zc.wsgisessions.sessions.Session(cookie_value, sdc)
+        
+            >>> pkgdata = session['myapp.auth']
+            >>> pkgdata['mydata'] = 42
+        
+            >>> sdc[cookie_value]['myapp.auth']['mydata']
+            42
+        
+            >>> list(session)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError
+        
+        
+        Helpers
+        =======
+        
+            >>> import webob
+            >>> import zc.dbconnection
+            >>> import zope.session.interfaces
+            >>> zc.dbconnection.set_local(conn)
+            >>> environ = {'zc.wsgisessions.session': session}
+            >>> request = webob.Request(environ=environ)
+        
+        
+        get(request, pkg_id, key=None)
+        ------------------------------
+        
+        Retrieve a value from the session; if no key is specified, retrieves the
+        SessionPkgData container.
+        
+            >>> pkgdata = zc.wsgisessions.sessions.get(request, 'myapp.auth')
+            >>> zope.session.interfaces.ISessionPkgData.providedBy(pkgdata)
+            True
+        
+            >>> zc.wsgisessions.sessions.get(request, 'myapp.auth', 'blah') is None
+            True
+        
+            >>> pkgdata['blah'] = '!!!'
+            >>> zc.wsgisessions.sessions.get(request, 'myapp.auth', 'blah')
+            '!!!'
+        
+            >>> zc.wsgisessions.sessions.get(request, 'myapp.auth', 'mydata')
+            42
+        
+        When specifying a pkg identifier and a key name, the session data object
+        is not created if it doesn't already exist.
+        
+            >>> zc.wsgisessions.sessions.get(request, "dontcreateme", "blah") is None
+            True
+            >>> adapter = zope.session.interfaces.ISession(request)
+            >>> adapter.get("dontcreateme") is None
+            True
+        
+        
+        store(request, pkg_id, key, value)
+        ----------------------------------
+        
+        Store the key/value pair in the session.
+        
+            >>> obj = object()
+            >>> zc.wsgisessions.sessions.store(
+            ...     request, 'myapp.auth', 'someobject', obj)
+            >>> zc.wsgisessions.sessions.get(
+            ...     request, 'myapp.auth', 'someobject') is obj
+            True
+        
+            >>> obj = object()
+            >>> zc.wsgisessions.sessions.store(
+            ...     request, 'myapp.data', 'someobject', obj)
+            >>> zc.wsgisessions.sessions.get(
+            ...     request, 'myapp.auth', 'someobject') is obj
+            False
+        
+            >>> zc.wsgisessions.sessions.get(
+            ...     request, 'myapp.data', 'someobject') is obj
+            True
+        
+        
+        remove(request, pkg_id, key)
+        ----------------------------
+        
+        Remove a value from the session by key.  If pkg_id is not specified,
+        the default pkg_id of zc.wsgisessions.sessions.KEY is used.
+        
+            >>> _obj = zc.wsgisessions.sessions.remove(
+            ...     request, 'myapp.auth', 'someobject')
+            >>> zc.wsgisessions.sessions.get(
+            ...     request, 'myapp.auth', 'someobject') is None
+            True
+        
+            >>> zc.wsgisessions.sessions.get(
+            ...     request, 'myapp.data', 'someobject') is obj
+            True
+        
+            >>> zc.wsgisessions.sessions.remove(
+            ...     request, 'myapp.data', 'someobject') is obj
+            True
+            >>> zc.wsgisessions.sessions.get(
+            ...     request, 'myapp.data', 'someobject') is None
+            True
+        
+        The underlying session data mapping is not created if it does not
+        already exist.
+        
+            >>> zc.wsgisessions.sessions.remove(
+            ...     request, "dontcreateme", "somekey") is None
+            True
+            >>> adapter.get("dontcreateme") is None
+            True
+        
+        
+        =======
+        CHANGES
+        =======
+        
+        0.5.1 (2013-06-12)
+        ==================
+        
+        Open-source release.
+        
+        0.5 (2013-03-12)
+        ================
+        
+        - Use a cryptographically secure random number source (os.urandom) for
+          generating browser ids.
+        - Fix a bug in the get/remove helpers that caused SessionData objects
+          to be created unnecessarily.
+        
+        0.4 (2012-01-03)
+        ================
+        
+        - Accept a database name parameter for session storage.
+        
+        
+        0.3 (2011-11-11)
+        ================
+        
+        - Put arguments to helper functions in a more logical order.
+        - Require pkg_id to discourage bad use pattern.
+        
+        
+        0.2 (2011-11-10)
+        ================
+        
+        - Make http-only and secure configurable.
+        - Test configuration options.
+        - Test database initialization and options.
+        
+        
+        0.1 (2011-11-10)
+        ================
+        
+        Initial release
+        
+Keywords: Zope WSGI session
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Paste
+Classifier: Framework :: Zope3
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: WSGI
+Classifier: Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
