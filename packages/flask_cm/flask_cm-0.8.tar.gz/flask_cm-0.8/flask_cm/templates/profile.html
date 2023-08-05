@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+{% from "_helper.html" import image_button %}g
+{% block content %}
+
+<script type="text/javascript" charset="utf-8">
+
+$(function() {
+        
+  $('.edit').editable('/profile');
+
+});
+</script>
+
+<h2>Other Profile Data</h2>
+    <ul>
+      <li><a href="/images">Select Default Images</a></li>
+      <li><a href="/flavors">Select Default Flavors</a></li>
+    </ul>
+
+<h2>Profile</h2>
+
+<table>
+<tr><td colspan="3"><b> Contact </b></td> </tr>  
+<tr><td></td><td>Firstname</td><td>{{ person.firstname }}</td><td></td></tr>
+<tr><td></td><td>Lastname</td><td>{{ person.lastname }}</td><td></td></tr>
+<tr><td></td><td>Phone</td><td>{{ person.phone }}</td><td></td></tr>
+<tr><td></td><td>e-mail</td><td>{{ person['e-mail'] }}</td><td></td></tr>
+<tr><td></td><td>Address</td><td>{{ address|replace("\n", "<br />")|safe }} </td><td></td></tr>
+<tr><td>{{ image_button ("right", "030_pencil", "/prefix/") }}</td><td colspan="2"><b> Prefix </b></td> <td></td></tr>  
+
+<form name="editPrefix">
+<tr><td></td><td>Prefix</td><td>
+  <input type="text" name="prefix" value="{{ config.prefix }}">
+  </td><td></td></tr>
+</form>
+<form name="editIndex">  
+<tr><td></td><td>Index</td><td>
+  <input type="text" name="index" value="{{ config.index }}">
+  </td><td></td></tr>
+</form>
+
+<tr><td>{{ image_button ("right", "030_pencil", "/projects/") }}</td><td>
+
+<b> Projects </b></td>
+<td>
+<form name="projects" action="/projects/" method="POST">
+
+{% for projectname in projects %}
+ <input type="radio" name="selected_project" value="{{ projectname }}" id="{{ projectname }}" {{ selected[projectname] }} onclick="document.forms['projects'].submit()"/> {{ projectname }}
+{% endfor %}
+
+</form>
+</td>
+
+ <td></td></tr>  
+<tr><td></td><td>Completed</td><td>{{ ', '.join(config.projects.completed) }}</td><td></td></tr>    
+<tr><td>{{ image_button ("right", "030_pencil", "/clouds/") }}</td><td colspan="2"><b> Clouds </b></td> <td></td></tr>
+<tr><td></td><td>Default</td><td>{{ config.default }}</td><td>edit</td></tr>
+
+<tr><td></td><td>Active</td><td>{{ ', '.join(active_clouds) }}</td><td>edit</td></tr>
+
+<tr><td></td><td>Active (TBD) </td><td>
+  {% for cloudname in config.clouds.keys() %}
+ <input type="checkbox"
+        name="selected_clouds"
+        value="{{ cloudname }}"
+        id="{{ cloudname }}"
+        onclick="document.forms['cloudGroups'].submit()"
+        {{ selectedClouds[cloudname] }}/> {{ cloudname}}
+{% endfor %}
+</td><td></td></tr>
+
+<tr><td></td><td>Default (TBD) </td><td>
+  {% for cloudname in config.clouds.keys() %}
+ <input type="radio"
+        name="defaultClouds"
+        value="{{ cloudname }}"
+        id="{{ cloudname }}"
+        onclick="document.forms['defaultClouds'].submit()"
+        {{ defaultClouds[cloudname] }}/> {{ cloudname}}
+{% endfor %}
+</td><td></td></tr>
+
+
+<tr><td>{{ image_button ("right", "030_pencil", "/keys/") }}</td><td colspan="2"><b> Keys </b></td> <td> </td></tr>
+{% if config.has_key('keys') and config['keys']['keylist'].has_key(config['keys']['default']) %}
+<tr><td></td><td>Default</td><td> {{config['keys']['default']}} : {{ fun_print(config['keys']['keylist'][config['keys']['default']]) }}</td><td></td></tr>
+<tr><td></td><td>List</td><td>
+	{% for name, key in config['keys']['keylist'].iteritems() %}
+	{{name}} : {{fun_print(key)}} <br/>
+	{% endfor %}
+</td><td></td></tr>
+{% endif %}
+
+<tr><td>{{ image_button ("right", "030_pencil", "") }}</td><td>
+<b> SecurityGroups </b></td>
+
+<td>
+<form name="securityGroups" action="/security/" method="POST">
+
+{% for securityGroup in securityGroups %}
+ <input type="radio" name="selected_securityGroup" value="{{ securityGroup }}" id="{{ securityGroup }}" onclick="document.forms['securityGroups'].submit()" {{ selectedSecurity[securityGroup] }}/> {{ securityGroup }}
+{% endfor %}
+
+</form>
+</td>
+
+ <td> </td></tr>
+<tr><td></td><td>Default</td><td> {{config['security']['default']}}</td><td></td></tr>
+</table>
+
+
+{% endblock content %}
