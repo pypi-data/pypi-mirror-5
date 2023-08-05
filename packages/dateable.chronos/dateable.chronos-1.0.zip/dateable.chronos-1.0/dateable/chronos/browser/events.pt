@@ -1,0 +1,54 @@
+<html metal:use-macro="context/main_template/macros/master"  i18n:domain="chronos">
+<metal:block fill-slot="style_slot">
+    <style type="text/css"
+           media="all" 
+           tal:content="string:@import url(${context/absolute_url}/chronos.css);" />
+</metal:block>
+
+<body>
+
+<div metal:fill-slot="content-core" class="p4acalendar">
+  <div tal:replace="structure provider:plone.abovecontenttitle" />
+    
+  <div id="chronos-calendar">
+    <div metal:use-macro="here/@@chronos_macros/calendar_view_tabs" />
+    
+    <tal:block replace="structure view/render_filter"/>
+    
+    <div class="eventlist">
+        <div class="eventlist_month" tal:repeat="month options/months">
+            <h2>
+                <tal:block i18n:translate=""
+                           tal:content="string:calendar_month_${month/month}"
+                           tal:omit-tag="">monthname</tal:block>
+                <tal:block content="month/year"/>
+            </h2>
+            <div class="vevent event" tal:repeat="event month/events">
+                <div class="event_details">
+                    <abbr class="dtstart"
+                          title="2002-12-04"
+                          tal:attributes="title event/day/isoformat | default">
+                        <tal:block i18n:translate=""
+                                   tal:content="string:calendar_month_${month/month}"
+                                   tal:omit-tag="">monthname</tal:block>
+                        <tal:block content="event/day"/>
+                    </abbr>
+                    <abbr class="dtend" title="2002-12-04" tal:attributes="title event/end/isoformat | default">End Date</abbr>
+                </div>
+                <div class="event_body">
+                    <a class="summary event_title"
+                       tal:content="event/title"
+                       tal:attributes="href event/url" />
+                    <div class="location" tal:content="event/location">Location</div>
+                    <div class="description" tal:condition="event/description" tal:content="event/description"/>
+                </div>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+    </div>
+  </div>
+    
+</div> <!-- end main fill slot -->
+
+</body>
+</html>
