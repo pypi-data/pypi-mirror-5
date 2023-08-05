@@ -1,0 +1,40 @@
+{% load static %}
+{% load url from future %}
+
+<html>
+  <head>
+    <title>Mes Fichiers</title>
+    <link rel="stylesheet" href="{% static "mes_fichiers/css/mes-fichiers.all.min.css" %}"/>
+  </head>
+
+  <body ng-app="mesFichiers">
+    <header>&nbsp;</header>
+    <div class="container">
+      <div class="uploader-app">
+        {% csrf_token %}
+
+        <div class="row">
+          <div class="span3 sidebar" ng-include src="'nav.html'"></div>
+          <div class="span9 content" ng-view></div>
+        </div>
+      </div>
+    </div>
+    <footer></footer>
+
+    {% block scripts %}
+      <script type="text/javascript" src="{% static "mes_fichiers/js/mes-fichiers.all.min.js" %}"></script>
+      <script type="text/javascript">
+        (function() {
+          var token = $('input[name=csrfmiddlewaretoken]').val();
+          angular.module('mesFichiers').appConfig = {
+            csrf: { 'X-CSRFToken': token },
+            baseUrl: '{% url "mes_fichiers:index" %}',
+            albumsUrl: '{% url "mes_fichiers:monalbum-list" %}',
+            filesUrl: '{% url "mes_fichiers:monfichier-list" %}',
+            tinymce: true
+          };
+        })();
+      </script>
+    {% endblock %}
+  </body>
+</html>
