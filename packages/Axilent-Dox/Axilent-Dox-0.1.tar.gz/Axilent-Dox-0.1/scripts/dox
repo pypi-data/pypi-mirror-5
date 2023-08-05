@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+# =============
+# = Functions =
+# =============
+
+from dox import commands
+
+def usage(args):
+    """
+    Print usage.
+    """
+    print 'Usage: dox upload|init'
+
+
+# ============
+# = Mainline =
+# ============
+
+import argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('command')
+parser.add_argument('--library-key',dest='library_key',default=None)
+parser.add_argument('--api-key',dest='api_key',default=None)
+parser.add_argument('--project',dest='project',default=None)
+parser.add_argument('--content-type',dest='content_type',default=None)
+parser.add_argument('--body-field',dest='body_field',default=None)
+parser.add_argument('--key-field',dest='key_field',default=None)
+parser.add_argument('--endpoint',dest='endpoint',default='https://www.axilent.net')
+
+def main():
+    """
+    Mainline for the CL tool. 
+    """
+    args = parser.parse_args()
+    
+    # Check command
+    try:
+        command = getattr(commands,args.command)
+        command(args)
+    except AttributeError:
+        usage(args)
+
+if __name__ == '__main__':
+    main()
+
+
