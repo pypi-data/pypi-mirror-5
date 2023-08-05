@@ -1,0 +1,56 @@
+Plone requirements for Debian/Wheezy, Ubuntu/Quantal and Ubuntu/Raring
+
+sudo apt-get install build-essential libssl-dev zlib1g-dev libjpeg-dev libxml2-dev libxslt1-dev libreadline6-dev readline-common wv poppler-utils
+
+User creation
+
+sudo adduser --disabled-password --quiet  ploneoai
+
+Login
+
+sudo -H -u ploneoai -s
+cd
+
+Plone installation
+
+wget https://launchpad.net/plone/4.3/4.3/+download/Plone-4.3-UnifiedInstaller.tgz
+tar zxf Plone-4.3-UnifiedInstaller.tgz
+cd Plone-4.3-UnifiedInstaller/
+./install.sh --static-lxml --owner=ploneoai --user=ploneoai --group=ploneoai --instance=site --clients=8 --target=/home/ploneoai/Plone-OAI-ZEO --build-python zeo
+
+
+It gaves you the admin password:
+
+  Username: admin
+  Password: xxxxxxxxxxxx
+
+
+
+Post installation
+
+  Exist server yet take the 8080 port. We need to edit the buildout.cfg file to modify zeo client port with the new range from 8101 to 8108.
+
+
+
+OAI Installation
+
+
+in the buildout.cfg file add in the eggs variable:
+
+     enslyon.existda
+     Products.ZOpenArchives
+
+
+In the end of the buildout.cfg file in the versions parts:
+
+enslyon.existda = 1.6
+Products.ZOpenArchives = 1.6.2
+
+
+Run following commands:
+
+bin/buildout
+bin/plonectl
+
+
+You can create your site and add your OAI connectors
