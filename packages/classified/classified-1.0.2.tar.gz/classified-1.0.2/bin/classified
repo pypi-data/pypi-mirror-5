@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+# Python imports
+import logging
+import os
+import sys
+
+# Project imports
+from classified.config import Config
+from classified.scanner import Scanner
+
+
+def run():
+    import optparse
+
+    parser = optparse.OptionParser(usage='%prog <path[ .. <path>]>')
+    parser.add_option('-q', '--quiet', action='store_true', default=False,
+        help='Be quiet (default: no)')
+    parser.add_option('-v', '--verbose', action='store_true', default=False,
+        help='Be verbose (default: no)')
+    parser.add_option('-c', '--config', default='/etc/classified/classified.conf',
+        help='Configuration file')
+    parser.add_option('-i', '--incremental', action='store_true', default=False,
+        help='Be incremental (default: do full scan)')
+    parser.add_option('-r', '--report', action='store_true', default=False,
+        help='Generate a report')
+    parser.add_option('-R', '--report-format', default='syslog',
+        help='Report format (default: syslog, options: file,html,mail,syslog)')
+    parser.add_option('-o', '--output', default='',
+        help='Output file for report')
+
+    option, args = parser.parse_args()
+    if not args:
+        return parser.error('need at least one path to work with')
+
+    if option.verbose and option.quiet:
+        return parser.error('--quiet and --verbose are mutually exclusive')
+
+    if option.quiet:
+        logging.basicConfig(level=logging.CRITICAL)
+    elif option.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.ERROR)
+
+    config = Config(option.config)
+    if option.incremental:
+        config.set('scanner', 'incremental', True)
+
+    scanner = Scanner(config, option)
+
+    for path in args:
+        scanner.scan(os.path.expanduser(path))
+
+    if option.report:
+        scanner.report.render()
+
+if __name__ == '__main__':
+    sys.exit(run())
