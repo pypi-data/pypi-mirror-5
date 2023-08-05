@@ -1,0 +1,111 @@
+{% import 'macros.html' as lib %}
+
+<section id="session-results">
+<h2>Acquisition results</h2>
+{% if session.status == session.CONFIGURED %}
+	<div class="alert">
+		<strong>Not executed!</strong> This acquisition session was never executed. Results will be available once all collectors have been executed. Run it now by using the appropriate button in the table above.
+	</div>
+{% else %}
+	{% if session.status == session.RUNNING %}
+	<div class="alert alert-info">
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+		<strong>Still running!</strong> Some collectors are still running, not all graph files are accessible yet.
+	</div>
+	{% endif %}
+	<table class="table">
+		<thead>
+			<tr>
+				<th></th>
+				<th>Execution status</th>
+				<th>Started</th>
+				<th>Ended</th>
+				<th>Duration</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tr class="merged">
+			<th scope="row">Merged graph</th>
+			<td>
+				{%- if session.status == session.RUNNING -%}
+				<i class="icon-spinner muted icon-large icon-spin"></i> <span class="muted">&nbsp;Still running...</span>
+				{%- elif session.status == session.FAILED -%}
+				<i class="icon-warning-sign icon-warning icon-large"> &nbsp;Completed with errors</i>
+				{%- elif session.status == session.COMPLETED -%}
+				<i class="icon-ok icon-success icon-large"> &nbsp;Completed</i>
+				{%- endif -%}
+			</td>
+			<td>{{ session.started|date('Y-m-d, H:i:s') }}</td>
+			<td>{%- if session.status == session.RUNNING -%}
+				—
+				{%- else -%}
+				{{ session.completed|date('Y-m-d, H:i:s') }}
+				{%- endif -%}
+			</td>
+			<td>{%- if session.status == session.RUNNING -%}
+				—
+				{%- else -%}
+				{{ lib.fmtdelta(session.completed - session.started) }}
+				{%- endif -%}
+			</td>
+			<td>
+				<a href="{% url "csat:visualization:standalone-viewer" %}?url={{ session.get_graph_url() }}" class="btn"><i class="icon-sitemap"></i> View graph</a>
+				<a href="{{ session.get_graph_url(raw=False) }}" class="btn"><i class="icon-file"></i> View graph file</a>
+			</td>
+		</tr>
+		{% for collector in session.collectors.order_by('configurator').all() %}
+		<tr  data-uuid="{{ collector.running_instance_id }}" data-status="{{ collector.status }}">
+			<th scope="row">{{ collector.get_collector().name }}</th>
+			<td>
+				{%- if collector.status == collector.RUNNING -%}
+				<i class="icon-spinner muted icon-spin"></i> <span class="muted">&nbsp;Still running...</span>
+				{%- elif collector.status == collector.FAILED -%}
+				<i class="icon-warning-sign icon-danger"> &nbsp;Failed</i>
+				{%- elif collector.status == collector.COMPLETED -%}
+				<i class="icon-ok icon-success"> &nbsp;Completed</i>
+				{%- elif collector.status == collector.READY -%}
+				<i class="icon-time muted"></i> <span class="muted">&nbsp;Waiting for user</span>
+			{%- endif -%}
+			</td>
+			<td>
+				{%- if collector.status == collector.READY -%}
+				—
+				{% else %}
+				{{ collector.started|date('Y-m-d, H:i:s') }}
+				{%- endif -%}
+			</td>
+			<td>
+				{%- if collector.status in (collector.RUNNING, collector.READY) -%}
+				—
+				{%- else -%}
+				{{ collector.completed|date('Y-m-d, H:i:s') }}
+				{%- endif -%}
+			</td>
+			<td>
+				{%- if collector.status in (collector.RUNNING, collector.READY) -%}
+				—
+				{%- elif collector.status != collector.READY -%}
+				{{ lib.fmtdelta(collector.completed - collector.started) }}
+				{%- endif -%}
+			</td>
+			<td>
+				{%- if collector.status in (collector.RUNNING, collector.READY) -%}
+				<a href="{{ collector.get_postback_url() }}" class="btn btn-mini"><i class="icon-upload-alt"></i> Upload file</a>
+				{%- else -%}
+				<a href="{% url "csat:visualization:standalone-viewer" %}?url={{ collector.get_graph_url() }}" class="btn btn-mini"><i class="icon-sitemap"></i> View graph</a>
+				<a href="{{ collector.get_graph_url(raw=False) }}" class="btn btn-mini"><i class="icon-file"></i> View graph file</a>
+				<a href="{{ collector.get_log_url(raw=False) }}" class="btn btn-mini"><i class="icon-tasks"></i> View execution log</a>
+				{%- endif -%}
+			</td>
+
+			<!--td><code>{{ request.build_absolute_uri() }}</code></td-->
+			{% if collector.status == collector.RUNNING %}
+			{% elif collector.status == collector.FAILED %}
+			{% elif collector.status == collector.COMPLETED %}
+			{% endif %}
+		</tr>
+		{% endfor %}
+	</table>
+{% endif %}
+</section>
+

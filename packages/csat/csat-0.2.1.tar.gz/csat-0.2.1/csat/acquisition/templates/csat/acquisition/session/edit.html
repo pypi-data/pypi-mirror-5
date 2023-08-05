@@ -1,0 +1,50 @@
+{% extends "csat/acquisition/session/base.html" %}
+
+
+{% block page_title %}Edit "{{ session.name }}" acquisition session{% endblock %}
+
+
+{% block content %}
+<section class="acquisition-session-config">
+	{% if create %}
+	<h1><a href="{% url "csat:acquisition:session-index" %}">Acquisition sessions</a>
+		<span class="muted">/</span> Add new</h1></h1>
+	{% else %}
+	<h1><a href="{% url "csat:acquisition:session-index" %}">Acquisition sessions</a>
+		<span class="muted">/</span> <a href="{% url "csat:acquisition:session" pk=session.pk %}">{{ session.name }}</a>
+		<span class="muted">/</span> Edit</h1>
+	{% endif %}
+
+	{% crispy form %}
+
+	<div class="row-fluid">
+		<section class="configured-collectors span8">
+			<h1>Configured collectors</h1>
+			<ul>
+				{% if session %}
+				{% for collector in session.collectors.all() %}
+				<li class="collector-config loading" data-loadurl="{% url "csat:acquisition:collector-edit" collector_pk=collector.pk, session_pk=session.pk %}"></li>
+				{% endfor %}
+				{% endif %}
+				<li class="collector-config-placeholder"></li>
+			</ul>
+		</section>
+
+		{% include "csat/acquisition/session/_available-collectors.html" %}
+	</div>
+
+	<div class="row-fluid form-actions">
+		{% if create %}
+		<form method="post" action="{% url "csat:acquisition:session-delete" pk=session.pk %}?prev={{ request.path }}">
+			{% csrf_token %}
+			<button type="submit" class="btn btn-danger">Delete config</button>
+		</form>
+		<a class="btn" href="{% url "csat:acquisition:session-index" %}">Cancel</a>
+		{% else %}
+		<a class="btn btn-danger" href="{% url "csat:acquisition:session-delete" pk=session.pk %}?prev={{ request.path }}">Delete config</a>
+		<a class="btn" href="{% url "csat:acquisition:session" pk=session.pk %}">Cancel</a>
+		{% endif %}
+		<a class="btn btn-primary session-save-link" href="{% url "csat:acquisition:session" pk=session.pk %}">Save</a>
+	</div>
+</section>
+{% endblock %}

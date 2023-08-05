@@ -1,0 +1,65 @@
+@include keyframes(rotate)
+	0%
+		+transform(rotate(0deg))
+
+	100%
+		+transform(rotate(360deg))
+
+.spinner
+	$ticks: 15
+	$smallticks: 11
+	$miniticks: 10
+
+	display: block
+	width: 0
+	height: 0
+	position: absolute
+	top: 50%
+	left: 50%
+	margin: 0 auto
+	background: red
+
+	&:not(.small):not(.mini)
+		+animation(rotate .8s steps($ticks, start) infinite)
+
+	&.small
+		+animation(rotate 1s steps($smallticks, start) infinite)
+
+	&.mini
+		+animation(rotate .8s steps($miniticks, start) infinite)
+
+	span
+		display: none
+		width: 7px
+		height: 2px
+		position: absolute
+		top: 0
+		left: 0
+		+transform-origin(0, 0, 0)
+		+border-radius(2px)
+
+	&:not(.small):not(.mini)
+		@for $i from 1 through $ticks
+			span:nth-child(#{$i})
+				display: block
+				background: rgba(#666, 0.9 * $i/$ticks + 0.1)
+				+transform(rotate((360deg/$ticks*$i)) translate(8px, -1px))
+
+	&.small
+		@for $i from 1 through $smallticks
+			span:nth-child(#{$i})
+				display: block
+				background: rgba(#666, 0.9 * $i/$smallticks + 0.1)
+				+transform(rotate((360deg/$smallticks*$i)) translate(5px, -1px))
+
+	&.mini
+		span
+			width: 4px
+			height: 1px
+
+		@for $i from 1 through $miniticks
+			span:nth-child(#{$i})
+				display: block
+				background: rgba(#444, 0.9 * $i/$miniticks + 0.1)
+				+transform(rotate((360deg/$miniticks*$i)) translate(4px, -0.5px))
+
