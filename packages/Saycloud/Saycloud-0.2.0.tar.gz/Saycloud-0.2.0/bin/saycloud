@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+import datetime
+import os
+import subprocess
+from getpass import getpass
+from ConfigParser import RawConfigParser
+from ConfigParser import ConfigParser
+from tempfile import NamedTemporaryFile
+from argparse import ArgumentParser
+import soundcloud
+import requests
+
+'''
+Saycloud - text to Soundcloud
+
+Super hacky first version! The auth, in particular, is quite pokey.
+Whole bunch of error cases it won't cover, fixes welcome.
+'''
+
+def try_login(failed=False):
+
+    config = get_config()
+
+    if failed:
+        username = raw_input("username: ")
+        password = getpass()
+    else:
+        config = get_config()
+        username = config['username']
+        password = config['password']
+
+    try:
+        client = soundcloud.Client(
+            client_id='6e16fa6b0ccdad192e2586ee9b622138',
+            client_secret='3aab515ace275a80ac46985fb88df65f',
+            username=username,
+            password=password
+        )
+        if username != config['username'] or password != config['password']:
+            write_config(username, password)
+        return client
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            print "Incorrect username/password"
+            return try_login(failed=True)
+        else:
+            print e.message
+        exit(1)
+
+
+def get_config():
+    # Look for or write out config details
+    result = {'username':None, 'password': None}
+    config_file = os.path.expanduser('~/.saycloud')
+    if os.path.exists(config_file):
+        config = ConfigParser()
+        config.read(config_file)
+        result['username'] = config.get('Soundcloud', 'username')
+        result['password'] = config.get('Soundcloud', 'password')
+    return result
+
+def write_config(username, password):
+    config_file = os.path.expanduser('~/.saycloud')
+    store = False
+    question = "Do you want to store your Soundcloud username and password at\n" \
+            "~/.saycloud so you don't have to enter them in future?"
+    response = raw_input("%s (y/n) " % question)
+    if response.strip() in ['Y','y']:
+        store = True
+
+    if store:
+        config = RawConfigParser()
+        config.add_section('Soundcloud')
+        config.set('Soundcloud', 'username', username)
+        config.set('Soundcloud', 'password', password)
+        with open(os.path.expanduser(config_file), 'wb') as f:
+            config.write(f)
+
+def main():
+    # Get arguments
+    parser = ArgumentParser(description='Saycloud - text to Soundcloud.')
+    parser.add_argument('-e', '--engine', default='say', help='The language engine to use for text to speech (default is "say").')
+    parser.add_argument('-t', '--title', default="Track-%s" % datetime.datetime.now(), help='Track title (on Soundcloud)')
+    parser.add_argument('-s', '--say', required=True, help='Words to say.')
+    parser.add_argument('-v', '--voice', help="Voice to use. Get a list for say on OSX: say -v ? " \
+            "or for Google Tranlsate: https://developers.google.com/translate/v2/using_rest#language-params"
+            )
+    options = parser.parse_args()
+
+    # Check for availability of say before trying to use it
+    if subprocess.call(['command', '-v', 'say'], stdout=open(os.devnull, 'w')) == 1:
+        options.engine = 'google'
+
+    # Set correct default voice depending on engine
+    if options.voice == None:
+        if options.engine == 'say':
+            options.voice = 'Alex'
+        elif options.engine == 'google':
+            options.voice = 'en'
+
+    client = try_login()
+
+    processed_speech = False
+    tmp = NamedTemporaryFile(delete=False)
+    extension = 'mp3' if options.engine == 'google' else 'aiff'
+
+    if options.engine == 'google':
+        headers = {'user-agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)'}
+        r = requests.get('http://translate.google.com/translate_tts?q='+options.say+'&tl=en')
+        with open("%s.%s" % (tmp.name, extension), 'wb') as f:
+            f.write(r.content)
+            processed_speech = True
+    else:
+        if subprocess.call(['say', '-v', options.voice, '-o', tmp.name, "%s" % options.say]) == 0:
+            processed_speech = True
+
+    if processed_speech:
+        # Upload to soundcloud
+        resource = open("%s.%s" % (tmp.name, extension), 'rb')
+        track = client.post('/tracks', track={
+                'title':options.title,
+                'sharing': 'public',
+                'asset_data': resource
+            })
+        # Cleaning up...
+        os.unlink(tmp.name)
+        os.unlink("%s.%s" % (tmp.name, extension))
+        print track.permalink_url
+    else:
+        print "Something went wrong in text to speech conversion :("
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        exit(0)
+
