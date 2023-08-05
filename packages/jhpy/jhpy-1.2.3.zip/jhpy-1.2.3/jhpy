@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+import settings
+
+import argparse
+import subprocess
+
+# Commands
+def deploy():
+	print "Deploying application..."
+	run("appcfg.py update .")
+
+def new():
+	print "Creating project..."
+	run("mkdir templates")
+	run("mkdir handlers")
+	run("mkdir entities")
+	run("mkdir lib")
+	run("mkdir static")
+	run("mkdir static/css")
+	run("mkdir static/img")
+	run("mkdir static/js")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/jhpy.py -o lib/jhpy.py -s")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/index.py -o handlers/index.py -s")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/core.py -o handlers/core.py -s")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/index.html -o templates/index.html -s")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/base.html -o templates/base.html -s")
+	run("curl http://code.jquery.com/jquery-1.9.1.min.js -o static/js/jquery.js -s")
+	run("curl http://i.imgur.com/hOuM8P9.png -o static/img/github.png -s")
+	run("curl http://i.imgur.com/ePraFrU.png -o static/img/favicon.ico -s")
+	run("curl http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css -o static/css/bootstrap.css -s")
+	run("curl http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js -o static/js/bootstrap.js -s")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/style.css -o static/css/style.css -s")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/script.js -o static/js/script.js -s")
+	run("touch entities/__init__.py")
+	run("touch handlers/__init__.py")
+	run("touch lib/__init__.py")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/main.py -o main.py -s")
+	run("curl https://raw.github.com/djwatt5/jhpy/master/downloads/app.yaml -o app.yaml -s")
+	print "Finished!"
+
+def test(p):
+	print "Testing at port %s..." % p
+	run("clear")
+	run("dev_appserver.py . --port=%s" % p)
+
+def version():
+	print settings.version
+
+def default():
+	print "Type `jhpy -h` to see all the options available."
+
+# Command parser
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-d', '--deploy',
+					action="store_true",
+					help="deploy your application to google")
+parser.add_argument('-n', '--new',
+					action="store_true",
+					help="new project on the current folder")
+parser.add_argument('-t', '--test',
+					help="start localhost server on port TEST")
+parser.add_argument('-v', '--version',
+					action="store_true",
+					help="get the installed version of jhpy")
+
+# Methods
+def run(c):
+	command = c.split()
+	subprocess.call(command)
+
+# Wrap up
+args = parser.parse_args()
+
+if args.deploy:
+	deploy()
+
+elif args.new:
+	new()
+
+elif args.test:
+	test(args.test)
+
+elif args.version:
+	version()
+
+else:
+	default()
+
