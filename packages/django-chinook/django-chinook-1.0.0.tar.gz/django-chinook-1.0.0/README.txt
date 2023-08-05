@@ -1,0 +1,1 @@
+A django app with models for chinook sample database and fixtures.
