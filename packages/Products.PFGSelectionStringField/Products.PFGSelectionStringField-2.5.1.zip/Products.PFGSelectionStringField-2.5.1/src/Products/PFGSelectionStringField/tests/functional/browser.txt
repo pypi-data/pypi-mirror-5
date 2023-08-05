@@ -1,0 +1,283 @@
+Log in as Manager::
+
+    >>> browser.login(TEST_USER_NAME, TEST_USER_PASSWORD)
+
+Verify that we can create FormFolder under portal::
+
+    >>> browser.open('/')
+    >>> browser.getLink(id='formfolder').url.endswith("createObject?type_name=FormFolder")
+    True
+
+Verify that we can not add PFGSelectionStringField under portal::
+
+    >>> browser.getLink(id='pfgselectionstringfield').url.endswith("createObject?type_name=PFGSelectionStringField")
+    Traceback (most recent call last):
+    ...
+    LinkNotFoundError
+
+Verify that we can add PFGSelectionStringField under Form Folder::
+
+    >>> browser.open(form_url)
+    >>> browser.getLink(id='pfgselectionstringfield').url.endswith("createObject?type_name=PFGSelectionStringField")
+    True
+
+Add PFGSelectionStringField::
+
+    >>> browser.getLink(id='pfgselectionstringfield').click()
+
+Check that there is proper description for the option input::
+
+    >>> print browser.bycss('#fgVocabulary_help')
+    --- 1 ---
+    <span class="formHelp" id="fgVocabulary_help">Use one line per option. Format: 'value|label|description'.</span>
+
+    >>> browser.getControl(name='title').value = "Selection String Field"
+    >>> browser.getControl(name="fgVocabulary:lines").value = 'aaa\nbbb|BBB\nccc|CCC|\nddd|DDD|Description of DDD\näää\nooo|ÖÖÖ\naoa|ÅÅÅ|Descripion of ÅÅÅ'
+    >>> browser.getControl(name="fgFormat").value = ['radio']
+    >>> browser.getControl('Save').click()
+
+    >>> print browser.bycss('#selection-string-field')
+    --- 1 ---
+    <span id="selection-string-field">
+    <div class="formQuestion label">
+    Selection String Field
+    <span class="formHelp" id="selection-string-field_help"></span>
+    </div>
+    <input type="hidden" name="ssf_id" value="selection-string-field"><input class="noborder" type="radio" name="selection-string-field" value="aaa" id="selection-string-field_1"><label for="selection-string-field_1">aaa</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="bbb" id="selection-string-field_2"><label for="selection-string-field_2">BBB</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="ccc" id="selection-string-field_3"><label for="selection-string-field_3">CCC</label>
+    <br><div>
+    <input type="text" value="" name="selection-string-field_ccc"></div>
+    <input class="noborder" type="radio" name="selection-string-field" value="ddd" id="selection-string-field_4"><label for="selection-string-field_4">DDD</label>
+    <br><div>
+    Description of DDD
+    <input type="text" value="" name="selection-string-field_ddd"></div>
+    <input class="noborder" type="radio" name="selection-string-field" value="&#228;&#228;&#228;" id="selection-string-field_5"><label for="selection-string-field_5">&#228;&#228;&#228;</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="ooo" id="selection-string-field_6"><label for="selection-string-field_6">&#214;&#214;&#214;</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="aoa" id="selection-string-field_7"><label for="selection-string-field_7">&#197;&#197;&#197;</label>
+    <br><div>
+    Descripion of &#197;&#197;&#197;
+    <input type="text" value="" name="selection-string-field_aoa"></div>
+    </span>
+    >>> field = form['selection-string-field']
+    >>> field_url = field.absolute_url()
+
+Hide Field::
+
+    >>> browser.open(field_url)
+    >>> browser.getLink('Edit').click()
+    >>> browser.getControl(name="hidden:boolean").value = 'on'
+    >>> browser.getControl("Save").click()
+    >>> browser.url
+    'http://nohost/plone/form/selection-string-field/view'
+    >>> print browser.bycss('#selection-string-field')
+
+Uncheck Hidden and change field type to select::
+
+    >>> browser.open(field_url)
+    >>> browser.getLink('Edit').click()
+    >>> browser.getControl(name="hidden:boolean").value = ''
+    >>> browser.getControl(name="fgFormat").value = ['select']
+    >>> browser.getControl("Save").click()
+    >>> browser.url
+    'http://nohost/plone/form/selection-string-field/view'
+    >>> print browser.bycss('#selection-string-field')
+    --- 1 ---
+    <select id="selection-string-field" name="selection-string-field"><option value="aaa">aaa</option><option value="bbb">BBB</option><option value="ccc">CCC</option><option value="ddd">DDD</option><option value="&#228;&#228;&#228;">&#228;&#228;&#228;</option><option value="ooo">&#214;&#214;&#214;</option><option value="aoa">&#197;&#197;&#197;</option></select>
+
+    >>> 'name="selection-string-field_SELECT"' in browser.contents
+    True
+
+Change field type to flex::
+
+    >>> browser.getLink('Edit').click()
+    >>> browser.getControl(name="fgFormat").value = ['flex']
+    >>> browser.getControl("Save").click()
+    >>> browser.url
+    'http://nohost/plone/form/selection-string-field/view'
+    >>> print browser.bycss('#selection-string-field')
+    --- 1 ---
+    <select id="selection-string-field" name="selection-string-field"><option value="aaa">aaa</option><option value="bbb">BBB</option><option value="ccc">CCC</option><option value="ddd">DDD</option><option value="&#228;&#228;&#228;">&#228;&#228;&#228;</option><option value="ooo">&#214;&#214;&#214;</option><option value="aoa">&#197;&#197;&#197;</option></select>
+
+    >>> 'name="selection-string-field_SELECT"' in browser.contents
+    True
+
+    >>> browser.getLink('Edit').click()
+    >>> browser.getControl(name="fgFormat").value = ['radio']
+    >>> browser.getControl("Save").click()
+    >>> browser.url
+    'http://nohost/plone/form/selection-string-field/view'
+    >>> print browser.bycss('#selection-string-field')
+    --- 1 ---
+    <span id="selection-string-field">
+    <div class="formQuestion label">
+    Selection String Field
+    <span class="formHelp" id="selection-string-field_help"></span>
+    </div>
+    <input type="hidden" name="ssf_id" value="selection-string-field"><input class="noborder" type="radio" name="selection-string-field" value="aaa" id="selection-string-field_1"><label for="selection-string-field_1">aaa</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="bbb" id="selection-string-field_2"><label for="selection-string-field_2">BBB</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="ccc" id="selection-string-field_3"><label for="selection-string-field_3">CCC</label>
+    <br><div>
+    <input type="text" value="" name="selection-string-field_ccc"></div>
+    <input class="noborder" type="radio" name="selection-string-field" value="ddd" id="selection-string-field_4"><label for="selection-string-field_4">DDD</label>
+    <br><div>
+    Description of DDD
+    <input type="text" value="" name="selection-string-field_ddd"></div>
+    <input class="noborder" type="radio" name="selection-string-field" value="&#228;&#228;&#228;" id="selection-string-field_5"><label for="selection-string-field_5">&#228;&#228;&#228;</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="ooo" id="selection-string-field_6"><label for="selection-string-field_6">&#214;&#214;&#214;</label>
+    <br><input class="noborder" type="radio" name="selection-string-field" value="aoa" id="selection-string-field_7"><label for="selection-string-field_7">&#197;&#197;&#197;</label>
+    <br><div>
+    Descripion of &#197;&#197;&#197;
+    <input type="text" value="" name="selection-string-field_aoa"></div>
+    </span>
+
+Log out and submit::
+
+    >>> browser.getLink('Log out').click()
+    >>> browser.open(field_url)
+
+Submit without selecting anything::
+
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'No Input' in browser.contents
+    True
+
+Submit with selection::
+
+    >>> browser.open(field_url)
+    >>> browser.getControl(name="selection-string-field").value = ['aaa']
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'aaa' in browser.contents
+    True
+    >>> browser.open(field_url)
+    >>> browser.getControl(name="selection-string-field").value = ['bbb']
+    >>> browser.getControl(name="selection-string-field_ccc").value = 'Some Description'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'BBB' in browser.contents
+    False
+    >>> 'Some Description' not in browser.contents
+    True
+    >>> browser.open(field_url)
+    >>> browser.getControl(name="selection-string-field").value = ['ccc']
+    >>> browser.getControl(name="selection-string-field_ccc").value = 'Some Description'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'CCC' in browser.contents
+    False
+    >>> 'Some Description' not in browser.contents
+    True
+
+Go to Form::
+
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['aaa']
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'aaa' in browser.contents
+    True
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['bbb']
+    >>> browser.getControl(name="selection-string-field_ccc").value = 'Some Description'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'BBB' in browser.contents
+    False
+    >>> 'Some Description' in browser.contents
+    False
+
+Log in and add thank you page to Form Folder::
+
+    >>> browser.login(TEST_USER_NAME, TEST_USER_PASSWORD)
+
+    >>> browser.open(form_url)
+    >>> browser.getLink(id="formthankspage").click()
+    >>> browser.getControl(name="title").value = 'thank-you'
+    >>> browser.getControl('Save').click()
+    >>> browser.open(form_url)
+    >>> browser.getLink('Edit').click()
+    >>> browser.getControl(name="thanksPage").value = ['thank-you']
+    >>> browser.getControl('Save').click()
+
+Log out and go to Form Folder::
+
+    >>> browser.open('/')
+    >>> browser.getLink('Log out').click()
+    >>> browser.open(form_url)
+
+    >>> print browser.bycss('.formQuestion')
+    --- 1 ---
+    <div class="formQuestion label">
+    Selection String Field
+    <span class="formHelp" id="selection-string-field_help"></span>
+    </div>
+
+    >>> browser.getControl(name="selection-string-field").value = ['bbb']
+    >>> browser.getControl(name="selection-string-field_ccc").value = 'Some Description'
+    >>> browser.getControl(name="form_submit").click()
+
+    >>> 'BBB' in browser.contents
+    True
+    >>> 'Some Description' in browser.contents
+    False
+
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['ccc']
+    >>> browser.getControl(name="selection-string-field_ccc").value = 'Some Description'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'CCC' in browser.contents
+    True
+    >>> 'Some Description' in browser.contents
+    True
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['ccc']
+    >>> browser.getControl(name="selection-string-field_ccc").value = 'Some Description ÄÖÅ'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'CCC' in browser.contents
+    True
+    >>> 'Some Description ÄÖÅ' in browser.contents
+    True
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['äää']
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'äää' in browser.contents
+    True
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['ooo']
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'ÖÖÖ' in browser.contents
+    True
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['aoa']
+    >>> browser.getControl(name="selection-string-field_aoa").value = 'Some Description ÄÖÅ'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'ÅÅÅ' in browser.contents
+    True
+    >>> 'Some Description ÄÖÅ' in browser.contents
+    True
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['aoa']
+    >>> browser.getControl(name="selection-string-field_ddd").value = 'Some Description'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'ÅÅÅ' in browser.contents
+    True
+    >>> 'Some Description' in browser.contents
+    False
+
+Log in and select select instead of radio::
+
+    >>> browser.login(TEST_USER_NAME, TEST_USER_PASSWORD)
+
+    >>> browser.open(field_url)
+    >>> browser.getLink('Edit').click()
+    >>> browser.getControl(name="fgFormat").value = ['select']
+    >>> browser.getControl("Save").click()
+
+Log out and go to Form Folder::
+
+    >>> browser.open('/')
+    >>> browser.getLink('Log out').click()
+    >>> browser.open(form_url)
+    >>> browser.getControl(name="selection-string-field").value = ['bbb']
+    >>> browser.getControl(name="selection-string-field_SELECT").value = 'Some Description'
+    >>> browser.getControl(name="form_submit").click()
+    >>> 'BBB' in browser.contents
+    True
+    >>> 'Some Description' in browser.contents
+    True

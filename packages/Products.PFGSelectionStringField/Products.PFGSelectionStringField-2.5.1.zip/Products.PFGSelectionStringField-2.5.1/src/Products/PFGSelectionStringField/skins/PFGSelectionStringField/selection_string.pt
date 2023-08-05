@@ -1,0 +1,145 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="plone">
+<head>
+    <title></title>
+</head>
+<body>
+
+    <!-- Selection String Widgets -->
+
+    <metal:view_macro define-macro="view"
+                      tal:define="vocab python:field.Vocabulary(here);
+                                  value python:accessor();
+                                  display python:here.displayValue(vocab, value)"
+                      tal:replace="structure display" />
+
+    <metal:define define-macro="edit">
+
+      <metal:use use-macro="field_macro|context/widgets/field/macros/edit">
+
+        <metal:fill
+          fill-slot="widget_body"
+          tal:define="
+            vocab python:field.Vocabulary(here);
+            vlen python:len(vocab);
+            format python:widget.format">
+
+          <!-- Radio when the vocab is short < 4 -->
+          <span
+            tal:attributes="id fieldName;"
+            tal:condition="python:(vlen < 4 and format == 'flex') or (format == 'radio')">
+
+            <div class="formQuestion label">
+                <span tal:replace="python:widget.Label(here)"
+                      i18n:translate="" />
+                <span class="required"
+                      tal:condition="field/required"
+                      title="Required"
+                      i18n:attributes="title title_required;">&nbsp;</span>
+                <span class="formHelp"
+                     tal:define="description python:widget.Description(here)"
+                     tal:content="structure description"
+                     tal:attributes="id string:${fieldName}_help"
+                     i18n:translate="">
+                  Help
+                </span>
+            </div>
+
+            <input
+              tal:attributes="
+                name string:ssf_id;
+                value string:${fieldName}"
+              type="hidden" />
+
+            <tal:radios repeat="item vocab">
+
+              <input
+                class="noborder"
+                type="radio"
+                tal:attributes="
+                  name fieldName;
+                  id string:${fieldName}_${repeat/item/number};
+                  checked python:here.checkSelected(item, value);
+                  value python:item[0];" />
+
+              <label
+                i18n:translate=""
+                tal:attributes="for string:${fieldName}_${repeat/item/number}"
+                tal:content="python:item[1][0]"
+                />
+
+              <br />
+
+              <div tal:condition="python: field.has_string(item)">
+                <span tal:replace="python:item[1][1]" />
+                <input
+                  tal:attributes="name string:${fieldName}_${item_zero}"
+                  tal:define="item_zero python:item[0]"
+                  type="text"
+                  value=""
+                  />
+              </div>
+
+            </tal:radios>
+
+          </span>
+
+          <tal:longVocab condition="python:(vlen >= 4 and format == 'flex') or (format in ('select', 'pulldown'))">
+
+            <label class="formQuestion"
+                   tal:attributes="for python:fieldName">
+                <span tal:replace="python:widget.Label(here)"
+                      i18n:translate="" />
+                <span class="required"
+                      tal:condition="field/required"
+                      title="Required"
+                      i18n:attributes="title title_required;">&nbsp;</span>
+                <span class="formHelp"
+                     tal:define="description python:widget.Description(here)"
+                     tal:content="structure description"
+                     tal:attributes="id string:${fieldName}_help"
+                     i18n:translate="">
+                  Help
+                </span>
+            </label>
+
+            <select tal:attributes="
+              id fieldName;
+              name fieldName;">
+
+              <option
+                tal:repeat="item vocab"
+                tal:attributes="
+                  value python:item[0];
+                  selected python:here.checkSelected(item, value) and 'selected' or None"
+                tal:content="python:item[1][0]"
+                i18n:translate="" />
+
+            </select>
+
+            <br />
+
+            <input
+              type="text"
+              tal:attributes="name string:${fieldName}_SELECT"
+              value=""
+              />
+
+          </tal:longVocab>
+
+        </metal:fill>
+
+      </metal:use>
+
+    </metal:define>
+
+    <div metal:define-macro="search">
+      <div metal:use-macro="context/widgets/selection/macros/edit" />
+    </div>
+
+  </body>
+
+</html>
