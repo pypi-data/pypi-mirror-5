@@ -1,0 +1,7 @@
+CHANGES
+=======
+
+0.1.0 (first public release)
+----------------------------
+- completely repackaged
+
