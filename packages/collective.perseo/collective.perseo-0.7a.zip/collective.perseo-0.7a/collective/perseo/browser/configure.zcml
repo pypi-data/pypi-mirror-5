@@ -1,0 +1,99 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="collective.perseo">
+
+    <include package="Products.CMFCore" file="permissions.zcml"
+        xmlns:zcml="http://namespaces.zope.org/zcml"
+        zcml:condition="have plone-41" />
+
+    <include file="settings.zcml" />
+
+    <browser:resourceDirectory
+        name="collective.perseo"
+        directory="./resources"
+        />
+
+    <browser:page
+        name="perseo-settings"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".controlpanel.PerSEOControlPanel"
+        layer=".interfaces.IPerSEOLayer"
+        permission="collective.perseo.ManageSEO"
+        />
+
+    <browser:page
+        name="perseo-rss"
+        for="*"
+        class=".controlpanel.PerSEORSS"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.Public"
+        />
+
+    <browser:page
+        name="perseo-tab-available"
+        for="*"
+        class=".settings.PerseoTabAvailable"
+        attribute="checkPerseoTabAvailable"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.Public"
+        />
+
+    <browser:page
+        name="perseo-context-settings"
+        for="Products.Archetypes.interfaces.base.IBaseObject"
+        class=".settings.manageSEOContext"
+        layer=".interfaces.IPerSEOLayer"
+        permission="cmf.ModifyPortalContent"
+        />
+
+    <browser:page
+        name="sitemap.xml.gz"
+        for="plone.app.layout.navigation.interfaces.INavigationRoot"
+        class=".sitemap.PerSEOSiteMapView"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.Public"
+        />
+
+    <browser:viewlet
+        name="collective.perseo.metatags"
+        manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+        class=".viewlets.PerSEOMetaTagsViewlet"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.View"
+        />
+
+    <!-- Render the browser title -->
+    <browser:viewlet
+        name="plone.htmlhead.title"
+        manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+        class=".viewlets.PerSEOTitleTagViewlet"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.View"
+        />
+
+    <browser:viewlet
+        name="collective.perseo.canonicalurl"
+        manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+        class=".viewlets.PerSEOCanonicalUrlViewlet"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.View"
+        />
+
+    <browser:viewlet
+        name="collective.perseo.trackingcodeheader"
+        manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+        class=".viewlets.TrackingCodeHeaderViewlet"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.View"
+        />
+
+    <browser:viewlet
+        name="collective.perseo.trackingcodefooter"
+        manager="plone.app.layout.viewlets.interfaces.IPortalFooter"
+        class=".viewlets.TrackingCodeFooterViewlet"
+        layer=".interfaces.IPerSEOLayer"
+        permission="zope2.View"
+        />
+
+</configure>
