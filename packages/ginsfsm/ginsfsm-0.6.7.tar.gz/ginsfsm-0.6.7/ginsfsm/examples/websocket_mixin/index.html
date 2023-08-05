@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width">
+  <script src="modernizr.custom.49889.js"></script>
+  <script src="jquery-1.9.1.min.js"></script>
+  <!-- Use pure websocket
+  <script src="sockjs-0.3.4.min.js"></script>
+  -->
+  <script src="jsfsm-0.6.0.js"></script>
+  <script src="cliente.js"></script>
+  <script>
+
+    if (Modernizr.websockets){
+        // OK
+    } else {
+        alert("Eiiiii you need a modern browser that supports websocket");
+    }
+    SMachine.set_machine_trace(false);  // global trace
+    console.log("STARTING cliente GAPLIC");
+    gaplic = new GAplic('', 'cliente');
+    gaplic.send_event(
+        gaplic.router,
+        'EV_ADD_STATIC_ROUTE',
+        {
+            name: '',
+            roles: ['domotica'],
+            urls: [
+                'ws://localhost:8002',
+                ],
+        }
+    );
+
+    $(function(){
+        // Wait to dom is loaded.
+        var cliente_options = {
+        };
+        cliente = gaplic.create_gobj(
+            '',
+            Cliente,
+            gaplic,
+            cliente_options
+        );
+        cliente.set_machine_trace(true);
+    });
+
+  </script>
+
+</head>
+<body>
+  <input id="button" value="Envia evento!" type="button" />
+  <p>Mensajes recibidos:</p>
+  <div id="mensajes"></div>
+</body>
+</html>
