@@ -1,0 +1,132 @@
+#!/usr/bin/env python2
+import os
+import sys
+import getpass
+
+from twcli import (send, match_command, build_arguments_dict,
+                   get_arg_names_from_help, INTERNAL_LOOP_COMMANDS_DICT)
+from twcli.constants import HELP, HELP_USAGE
+from twcli.config import store_item, get_item
+from twcli.output import pretty_print
+
+
+def get_arguments_from_manual_input(needed_args_names):
+    """Simple function that takes list of names needed for given command and
+    asks user for each value. Hides input if passwords are needed.
+    """
+    arguments = []
+
+    for name in needed_args_names:
+        if name in ('password', 'pass', 'secret'):
+            arguments.append(getpass.getpass('{0}: '.format(name)))
+        else:
+            arguments.append(raw_input('{0}: '.format(name)))
+    return arguments
+
+
+def main(program_name, user_input):
+    """Main program logic, should and will be refactored.
+    This function takes user input and parses it to match with avaliable API
+    command and arguments needed for this command. Everything is done "online"
+    and this client has almost no data (about commands) hardcoded inside.
+    As long as API v1 is avaliable, everything should work without updates
+    needed in client.
+    """
+
+    command = ''
+    arguments = []
+    project = ''
+    token = ''
+
+    # Matching "overriding" arguments that can be used with every command
+    # TODO: This is as explicit as possible, but probably should be optimized
+    interactive = '-i' in user_input or '--interactive' in user_input
+
+    if '-h' in user_input or '--help' in user_input:
+        command = 'help'
+
+    if '-p' in user_input:
+        project = user_input[user_input.index('-p') + 1]
+        user_input.remove('-p')
+        user_input.remove(project)
+    elif '--project_id' in user_input:
+        project = user_input[user_input.index('--project_id') + 1]
+        user_input.remove('--project_id')
+        user_input.remove(project)
+    else:
+        # If project wasn't specified - we'll take it from settings
+        project = get_item('project_id')
+
+    if '-t' in user_input:
+        token = user_input[user_input.index('-t') + 1]
+        user_input.remove('-t')
+        user_input.remove(token)
+    elif '--token' in user_input:
+        token = user_input[user_input.index('--token') + 1]
+        user_input.remove('--token')
+        user_input.remove(token)
+    else:
+        # If token wasn't specified - we'll take it from settings
+        token = get_item('token')
+
+    # We ask API for dict with all commands and 
+    helpdict = send('help', token, project).get('message')
+
+    if not helpdict:
+        print('Sorry, no connection to server.')
+        sys.exit(1)
+
+    # We have local dict with "looped" commands to have easy way to extend
+    # our internal commands (for example set project)
+    helpdict += INTERNAL_LOOP_COMMANDS_DICT
+    helpdict_sorted = sorted(helpdict, key=lambda x: x['command'])
+    help = []
+    commands = []
+
+    # Formating help message basing on sorted help dict from api
+    for cmd_dict in helpdict_sorted:
+        help.append(
+            HELP_USAGE.format(
+                program_name,
+                cmd_dict['command'],
+                cmd_dict['help']
+            )
+        )
+        commands.append(cmd_dict['command'])
+
+    # Matching user input to available commands
+    if not command:
+        command, arguments = match_command(user_input, commands)
+
+    if command and command != 'help':
+        needed_args_names = get_arg_names_from_help(command, helpdict)
+        if len(needed_args_names) != len(arguments) or interactive:
+            if interactive:
+                print('Please type all needed values:')
+            else:
+                print('Wrong number of arguments given, please retry:')
+            try:
+                arguments = get_arguments_from_manual_input(needed_args_names)
+            except KeyboardInterrupt:
+                print('\n')
+                sys.exit(1)
+
+        params = build_arguments_dict(arguments, needed_args_names)
+
+        result = send(command.replace(' ', '/'), token, project, params)
+
+        if isinstance(result, dict):
+            if result.get('project_id'):
+                store_item(result['project_id'], 'project_id')
+            if result.get('token'):
+                store_item(result['token'], 'token')
+
+        pretty_print(result)
+    else:
+        print(HELP.format('\n'.join(help)))
+
+
+if __name__ == '__main__':
+    user_input = sys.argv[1:]
+    program_name = os.path.basename(sys.argv[0])
+    main(program_name, user_input)
