@@ -1,0 +1,35 @@
+if (typeof jQuery == 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js';
+    var head = document.getElementsByTagName('head')[0],
+    done = false;
+    script.onload = script.onreadystatechange = function() {
+	if (!done && (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')) {
+	    done = true;
+	    add_iframe();
+	    script.onload = script.onreadystatechange = null;
+	    head.removeChild(script);
+	};
+    };
+    head.appendChild(script);
+} else {
+    add_iframe();
+};
+
+function add_iframe()
+{
+    jQuery(document).ready(function(jquery){
+	jquery("head").append('<link rel="stylesheet" type="text/css" tal:attributes="href string:${view/url_css}" />');
+	jquery("body").append('<div id="popup_readitlater"><p><a href="#" i18n:domain="collective.readitlater" i18n:translate="">Close</a></p><iframe id="iframe_readitlater" src=""></iframe></div>');
+	url = encodeURIComponent(window.location.href)
+	title = encodeURIComponent(window.document.title)
+	description = encodeURIComponent(jquery('meta[name="description"]').attr('content'));
+
+	jquery("#iframe_readitlater").attr("src", "<tal:block tal:replace="view/url_iframe"></tal:block>?url="+ url +"&amp;title="+ title +"&amp;description="+ description);
+
+	jquery("#popup_readitlater a").click(function(e){
+	    jquery("#popup_readitlater").remove();
+	    e.preventDefault();
+	});
+    });
+}

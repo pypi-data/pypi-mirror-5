@@ -1,0 +1,41 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      i18n:domain="collective.readitlater">
+  <head>
+    <title i18n:translate="">Read it later's iframe</title>
+    <style type="text/css">
+      .field
+      {
+        display: inline;
+      }
+      .fieldErrorBox
+      {
+        display: inline;
+      }
+    </style>
+  </head>
+  <body>
+    <form action="." method="post"
+	  tal:attributes="action view/form_instance/action; enctype view/form_instance/enctype">
+
+      <tal:status define="errors view/form_instance/widgets/errors" condition="python:errors and not errors[0].widget">
+	<ul>
+	  <li tal:repeat="error errors">
+	    <tal:block tal:replace="structure error/render" />
+	  </li>
+	</ul>
+      </tal:status>
+
+      <tal:field tal:replace="structure view/form_instance/widgets/url/@@ploneform-render-widget" />
+      <tal:field tal:replace="structure view/form_instance/widgets/title/@@ploneform-render-widget" />
+      <tal:field tal:replace="structure view/form_instance/widgets/description/@@ploneform-render-widget" />
+      <tal:field tal:replace="structure view/form_instance/widgets/folder/@@ploneform-render-widget" />
+      <tal:button tal:replace="structure python:view.form_instance.actions['submit'].render()" />
+      <tal:block tal:condition="view/form_instance/enableCSRFProtection|nothing" tal:replace="structure context/@@authenticator/authenticator" />
+    </form>
+  </body>
+</html>
+
