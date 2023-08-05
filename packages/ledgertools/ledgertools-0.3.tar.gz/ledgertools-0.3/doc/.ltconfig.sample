@@ -1,0 +1,50 @@
+{
+	"rootdir": "~/doc/fin",
+	"outpat": "{date.year}_{date.month:02}.dat",
+	"rulesdir": "rules",
+
+	"rules": [ "common_rules" ],
+
+    "transact-default-account": "Expenses:Cash",
+
+	"accounts": {
+		"Assets:Bank:SomeBank:ProductA": {
+			"reader": "CSV",
+			"rules": [ "ProductA_rules" ],
+			"outdir": "ledger/SomeBank_ProductA"
+		},
+		"Assets:Bank:SomeBank:ProductB": {
+			"reader": "CSV",
+			"rules": [ "ProductB_rules" ],
+			"outdir": "ledger/SomeBank_ProductB"
+		},
+		"Assets:Bank:OtherBank:Product": {
+			"reader": "CSV",
+			"readerargs": {
+				"fieldnames": ["Date", "Amount", "Description", "Balance"]
+			},
+			"rules": [ "OtherBank_rules" ],
+			"outdir": "ledger/OtherBank_Product"
+		},
+		"Liabilities:SomeBank:CreditCardType": {
+			"reader": "CSV",
+			"rules": [ "SomeBankCredit_rules" ],
+			"outdir": "ledger/SomeBank_CC"
+		},
+		"Expenses:Cash": {
+			"outdir": "ledger/Cash",
+            "transact-default-src": "Expenses:Cash"
+		},
+        "Special": {
+			"outdir": "ledger/Special",
+            "outpat": "special.dat",
+            "transact-default-dst": "SpecialExpenses"
+		}
+	},
+
+	"graph": {
+		"accounts": [
+			"Assets:Bank:SomeBank:ProductA"
+		]
+	}
+}

@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+# lt-stmtproc - process transactions into Ledger files
+# Copyright (C) 2011 Fraser Tweedale
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+
+import ltlib.config
+import ltlib.parse
+import ltlib.readers
+import ltlib.ui
+import ltlib.util
+
+
+parser = argparse.ArgumentParser(
+    description="Convert transactions to Ledger format"
+);
+parser.add_argument(
+    '--in',
+    dest='infile',
+    type=argparse.FileType('r'),
+    required=True,
+    help="the transaction input file"
+)
+parser.add_argument(
+    '--out',
+    dest='outfile',
+    type=argparse.FileType('a'),
+    help="the Ledger transaction output file (transactions are appended)"
+)
+parser.add_argument(
+    '--reader',
+    help='specify or override the reader to use'
+)
+parser.add_argument(
+    '--account',
+    required=True,  # for now
+    help="the account to which the given transactions pertain"
+)
+parser.add_argument(
+    '--rules',
+    type=argparse.FileType('r'),
+    action='append',
+    default=[],
+    help='specify additional rules files to read'
+)
+args = parser.parse_args()
+
+# create user interface object
+uio = ltlib.ui.UI()
+
+# create a config object
+config = ltlib.config.Config()
+
+# make sure we have an outfile or outpat
+if not args.outfile:
+    outpat = config.outpat(args.account)
+    if not outpat:
+        uio.bail('No outfile or output pattern provied')
+
+# read rules files
+#
+# first get rulefiles from config
+rules = ltlib.util.flatten(map(
+    ltlib.parse.file2rules,
+    args.rules + map(open, config.rulefiles(args.account))
+))
+rules = list(rules)
+
+# read transactions
+readerclass = args.reader or config.get('reader', acc=args.account)
+readerargs = config.get('readerargs', acc=args.account, default={})
+xns = getattr(ltlib.readers, readerclass).Reader(
+    file=args.infile,
+    account=args.account,
+    **readerargs
+)
+# TODO catch AttributeError for unknown reader
+xns = list(xns)
+
+# process transactions
+for xn in xns:
+    xn.process(rules, uio)
+    xn.complete(uio)
+    if not xn.dropped:
+        xn.balance()
+
+# print transactions
+for xn in filter(lambda x: not x.dropped, xns):
+    if args.outfile:
+        print >> args.outfile, xn.ledger()
+    else:
+        with open(ltlib.config.format_outpat(outpat, xn), 'a') as f:
+            print >> f, xn.ledger()

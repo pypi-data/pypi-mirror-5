@@ -1,0 +1,121 @@
+#!/usr/bin/env python
+
+# lt-transact - enter new transactions into Ledger files
+# Copyright (C) 2011 Fraser Tweedale
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import datetime
+import sys
+
+import ltlib.config
+import ltlib.parse
+import ltlib.ui
+import ltlib.util
+import ltlib.xn
+
+
+# create a config object
+config = ltlib.config.Config()
+
+# parse args
+parser = argparse.ArgumentParser(
+    description='Manually enter transactions and write them to Ledger.'
+)
+parser.add_argument(
+    '--account',
+    default=config.get('transact-default-account'),
+    help='The account to which transactions to be entered pertain.'
+)
+parser.add_argument(
+    '--out',
+    dest='outfile',
+    type=argparse.FileType('a'),
+    help='The Ledger file to which to appended transactions.'
+)
+parser.add_argument(
+    '--rules',
+    type=argparse.FileType('r'),
+    action='append',
+    default=[],
+    metavar='RULEFILE',
+    help='An additional rule file to read (may be used multiple times).'
+)
+args = parser.parse_args()
+
+# get a user interface
+uio = ltlib.ui.UI()
+uio.show('Entering transactions for account {}'.format(args.account))
+
+# we must have an outfile or an outpat
+if not args.outfile:
+    outpat = config.outpat(args.account)
+    if not outpat:
+        uio.show('BAIL OUT: No outfile or outpat provided')
+        sys.exit(1)
+
+# read rules files
+rule_generator = ltlib.util.flatten(map(
+    ltlib.parse.file2rules,
+    args.rules + map(open, config.rulefiles(args.account))
+))
+rules = list(rule_generator)
+
+
+def enter_transaction():
+    """Enter a transaction, using rules to determine values when possible."""
+    # ask the date, description, source account and amount
+    default_src = config.get('transact-default-src', args.account)
+    xn_dict = {
+        'date': uio.pastdate("Enter date", datetime.date.today()),
+        'desc': uio.text("Enter description"),
+        'src': [ltlib.xn.Endpoint(
+            uio.account("Enter source account", default=default_src),
+            -uio.decimal("Enter transaction amount")
+        )],
+        'dst': []
+    }
+    xn_dict['amount'] = -xn_dict['src'][0].amount
+
+    # create a Xn instance
+    xn = ltlib.xn.Xn(**xn_dict)
+
+    # process the transaction against rules
+    xn.process(rules, uio)
+
+    # complete the transaction
+    xn.complete(uio)
+    xn.balance()
+
+    # write transaction to ledger
+    uio.show('')
+    uio.show(xn.summary())
+    if args.outfile:
+        print >> args.outfile, xn.ledger()
+    else:
+        with open(ltlib.config.format_outpat(outpat, xn), 'a') as f:
+            print >> f, xn.ledger()
+    uio.show('Wrote ledger.')
+
+try:
+    keep_going = True
+    while keep_going:
+        enter_transaction()
+        keep_going = uio.yn('Enter another transaction?')
+except ltlib.ui.RejectWarning:
+    # bail out
+    uio.show('')
+    uio.show('BAIL OUT')
+    sys.exit(1)
