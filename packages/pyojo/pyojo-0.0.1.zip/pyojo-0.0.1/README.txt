@@ -1,0 +1,57 @@
+About 'pyojo' app development
+----------------------------- 
+
+This is yet another framework to help develop web applicattions 
+with python. The difference is that it is oriented to create 
+applications with The Dojo Toolkit, trying to facilitate a set
+of wrappers to generate the javascript sent to the client and 
+providing help to work with the AMD loader. 
+
+Pyojo provides decorators to set up the route map and assign
+some functions or classes to certain URLs, but it also can be 
+used creating python modules in a folder structure, where the
+name of the module defines the content type, and the returned
+value of a function named GET, POST, PUT or DELETE is the
+response.
+
+The minimal "Hello World":
+
+    import pyojo
+    from pyojo import server
+
+    @pyojo.route("/")
+    def Home():
+        return "Hello World!"
+
+    server.main()
+
+
+A basic example with javascript:
+
+    import pyojo
+
+    #Redirect to index.html
+    @pyojo.route("/")
+    def Home(request):
+       return request.static("index.html")
+
+And then a couple of modules at ./srv (the default folder) will
+handle this request:
+
+srv/index_html.py:
+
+    def GET(request):
+	   return '''<html>
+                   <body><script src='main.js'></body>
+                  </html>'''
+        
+srv/main_js.py:
+
+    def GET(request):
+	   return "alert('Hello World!');"
+
+But the real power is in the pyojo.js modules, offering a set 
+of code generation utilities for your Dojo application.
+
+
+
