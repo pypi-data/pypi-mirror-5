@@ -1,0 +1,535 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.db &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.db</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+<span class="sd">&quot;&quot;&quot;Database module of Stalker.</span>
+
+<span class="sd">Whenever stalker.db or something under it imported, the</span>
+<span class="sd">:func:`stalker.db.setup` becomes available to let one setup the database.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy.exc</span> <span class="kn">import</span> <span class="n">IntegrityError</span>
+
+<span class="kn">import</span> <span class="nn">transaction</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">engine_from_config</span>
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">defaults</span>
+
+<span class="kn">from</span> <span class="nn">stalker.db.declarative</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.db.session</span> <span class="kn">import</span> <span class="n">DBSession</span>
+
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="setup"><a class="viewcode-back" href="../../generated/stalker.db.setup.html#stalker.db.setup">[docs]</a><span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="n">settings</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Utility function that helps to connect the system to the given database.</span>
+<span class="sd">    </span>
+<span class="sd">    if the database is None then the it setups using the default database in</span>
+<span class="sd">    the settings file.</span>
+<span class="sd">    </span>
+<span class="sd">    :param settings: This is a dictionary which has keys prefixed with</span>
+<span class="sd">        &quot;sqlalchemy&quot; and shows the settings. The most important one is the</span>
+<span class="sd">        engine. The default is None, and in this case it uses the settings from</span>
+<span class="sd">        stalker.config.Config.database_engine_settings</span>
+<span class="sd">    </span>
+<span class="sd">    :param callback: A callback function which is called after database is</span>
+<span class="sd">        initialized. It is a good place to register your own classes.</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">settings</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">database_engine_settings</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;no settings given, using the default: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">settings</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;settings: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">settings</span><span class="p">)</span>
+    <span class="c"># create engine</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">engine_from_config</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s">&#39;sqlalchemy.&#39;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;engine: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">engine</span><span class="p">)</span>
+
+    <span class="c"># create the Session class</span>
+    <span class="n">DBSession</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+    <span class="n">DBSession</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+
+    <span class="c"># create the database</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;creating the tables&quot;</span><span class="p">)</span>
+    <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+    <span class="c">#Base.metadata.bind = engine</span>
+
+    <span class="c"># init database</span>
+    <span class="n">__init_db__</span><span class="p">()</span>
+
+    <span class="c"># call callback function</span>
+    <span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
+        <span class="n">callback</span><span class="p">()</span>
+
+</div>
+<span class="k">def</span> <span class="nf">__init_db__</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;fills the database with default values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;initializing database&quot;</span><span class="p">)</span>
+
+    <span class="c"># register all Actions available for all SOM classes</span>
+    <span class="n">class_names</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s">&#39;Asset&#39;</span><span class="p">,</span> <span class="s">&#39;TimeLog&#39;</span><span class="p">,</span> <span class="s">&#39;Department&#39;</span><span class="p">,</span> <span class="s">&#39;Entity&#39;</span><span class="p">,</span> <span class="s">&#39;FilenameTemplate&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Group&#39;</span><span class="p">,</span> <span class="s">&#39;ImageFormat&#39;</span><span class="p">,</span> <span class="s">&#39;Link&#39;</span><span class="p">,</span> <span class="s">&#39;Message&#39;</span><span class="p">,</span> <span class="s">&#39;Note&#39;</span><span class="p">,</span> <span class="s">&#39;Permission&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Project&#39;</span><span class="p">,</span> <span class="s">&#39;Repository&#39;</span><span class="p">,</span> <span class="s">&#39;Scene&#39;</span><span class="p">,</span> <span class="s">&#39;Sequence&#39;</span><span class="p">,</span> <span class="s">&#39;Shot&#39;</span><span class="p">,</span> <span class="s">&#39;SimpleEntity&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Status&#39;</span><span class="p">,</span> <span class="s">&#39;StatusList&#39;</span><span class="p">,</span> <span class="s">&#39;Structure&#39;</span><span class="p">,</span> <span class="s">&#39;Studio&#39;</span><span class="p">,</span> <span class="s">&#39;Tag&#39;</span><span class="p">,</span> <span class="s">&#39;Task&#39;</span><span class="p">,</span> <span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+        <span class="s">&#39;TicketLog&#39;</span><span class="p">,</span> <span class="s">&#39;Type&#39;</span><span class="p">,</span> <span class="s">&#39;User&#39;</span><span class="p">,</span> <span class="s">&#39;Version&#39;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="n">class_names</span><span class="p">:</span>
+        <span class="n">_temp</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span>
+            <span class="s">&#39;stalker&#39;</span><span class="p">,</span>
+            <span class="nb">globals</span><span class="p">(),</span>
+            <span class="nb">locals</span><span class="p">(),</span>
+            <span class="p">[</span><span class="n">class_name</span><span class="p">],</span>
+            <span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">class_</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s">&quot;_temp.&quot;</span> <span class="o">+</span> <span class="n">class_name</span><span class="p">)</span>
+        <span class="n">register</span><span class="p">(</span><span class="n">class_</span><span class="p">)</span>
+
+    <span class="c"># create the admin if needed</span>
+    <span class="k">if</span> <span class="n">defaults</span><span class="o">.</span><span class="n">auto_create_admin</span><span class="p">:</span>
+        <span class="n">__create_admin__</span><span class="p">()</span>
+
+    <span class="c"># create Ticket statuses</span>
+    <span class="n">__create_ticket_statuses</span><span class="p">()</span>
+
+    <span class="c"># create FilenameTemplate Types</span>
+    <span class="c"># __create_filename_template_types()</span>
+
+    <span class="c">## create TimeLog Types</span>
+    <span class="c">#__create_time_log_types()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;finished initializing the database&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">__create_admin__</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;creates the admin</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">stalker.models.auth</span> <span class="kn">import</span> <span class="n">User</span>
+    <span class="kn">from</span> <span class="nn">stalker.models.department</span> <span class="kn">import</span> <span class="n">Department</span>
+
+    <span class="c"># check if there is already an admin in the database</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span>
+    <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_name</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">all</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c">#there should be an admin user do nothing</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;there is an admin already&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;creating the default administrator user&quot;</span><span class="p">)</span>
+
+    <span class="c"># create the admin department</span>
+    <span class="n">admin_department</span> <span class="o">=</span> <span class="n">Department</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_department_name</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">admin_department</span><span class="p">:</span>
+        <span class="n">admin_department</span> <span class="o">=</span> <span class="n">Department</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_department_name</span><span class="p">)</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin_department</span><span class="p">)</span>
+        <span class="c"># create the admins group</span>
+
+    <span class="kn">from</span> <span class="nn">stalker.models.auth</span> <span class="kn">import</span> <span class="n">Group</span>
+
+    <span class="n">admins_group</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">query</span> \
+        <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_group_name</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">admins_group</span><span class="p">:</span>
+        <span class="n">admins_group</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_group_name</span><span class="p">)</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admins_group</span><span class="p">)</span>
+
+    <span class="c"># create the admin user</span>
+    <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span> \
+        <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_name</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">admin</span><span class="p">:</span>
+        <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_name</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_code</span><span class="p">,</span>
+            <span class="n">login</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_login</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_password</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_email</span><span class="p">,</span>
+            <span class="n">departments</span><span class="o">=</span><span class="p">[</span><span class="n">admin_department</span><span class="p">],</span>
+            <span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="n">admins_group</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">admin</span><span class="o">.</span><span class="n">created_by</span> <span class="o">=</span> <span class="n">admin</span>
+        <span class="n">admin</span><span class="o">.</span><span class="n">updated_by</span> <span class="o">=</span> <span class="n">admin</span>
+
+    <span class="c"># update the department as created and updated by admin user</span>
+    <span class="n">admin_department</span><span class="o">.</span><span class="n">created_by</span> <span class="o">=</span> <span class="n">admin</span>
+    <span class="n">admin_department</span><span class="o">.</span><span class="n">updated_by</span> <span class="o">=</span> <span class="n">admin</span>
+
+    <span class="n">admins_group</span><span class="o">.</span><span class="n">created_by</span> <span class="o">=</span> <span class="n">admin</span>
+    <span class="n">admins_group</span><span class="o">.</span><span class="n">updated_by</span> <span class="o">=</span> <span class="n">admin</span>
+
+    <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
+    <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">__create_ticket_statuses</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;creates the default ticket statuses</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">User</span>
+
+    <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">login</span> <span class="o">==</span> <span class="n">defaults</span><span class="o">.</span><span class="n">admin_name</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="c"># create statuses for Tickets</span>
+    <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Status</span><span class="p">,</span> <span class="n">StatusList</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Creating Ticket Statuses&quot;</span><span class="p">)</span>
+
+    <span class="n">ticket_statuses</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Status</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">status_name</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
+            <span class="n">code</span><span class="o">=</span><span class="n">status_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="n">admin</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="n">admin</span>
+        <span class="p">)</span> <span class="k">for</span> <span class="n">status_name</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">ticket_status_order</span><span class="p">]</span>
+
+    <span class="n">ticket_status_list</span> <span class="o">=</span> <span class="n">StatusList</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">&#39;Ticket Statuses&#39;</span><span class="p">,</span>
+        <span class="n">target_entity_type</span><span class="o">=</span><span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+        <span class="n">statuses</span><span class="o">=</span><span class="n">ticket_statuses</span><span class="p">,</span>
+        <span class="n">created_by</span><span class="o">=</span><span class="n">admin</span><span class="p">,</span>
+        <span class="n">updated_by</span><span class="o">=</span><span class="n">admin</span>
+    <span class="p">)</span>
+
+    <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ticket_status_list</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">IntegrityError</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Created Ticket Statuses successfully&quot;</span><span class="p">)</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="c"># Again I hate doing this in this way</span>
+    <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Type</span>
+
+    <span class="n">types</span> <span class="o">=</span> <span class="n">Type</span><span class="o">.</span><span class="n">query</span> \
+        <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">target_entity_type</span><span class="o">=</span><span class="s">&quot;Ticket&quot;</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    <span class="n">t_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">types</span><span class="p">]</span>
+
+    <span class="c"># create Ticket Types</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Creating Ticket Types&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;Defect&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t_names</span><span class="p">:</span>
+        <span class="n">ticket_type_1</span> <span class="o">=</span> <span class="n">Type</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">&#39;Defect&#39;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s">&#39;Defect&#39;</span><span class="p">,</span>
+            <span class="n">target_entity_type</span><span class="o">=</span><span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="n">admin</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="n">admin</span>
+        <span class="p">)</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ticket_type_1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;Enhancement&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t_names</span><span class="p">:</span>
+        <span class="n">ticket_type_2</span> <span class="o">=</span> <span class="n">Type</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">&#39;Enhancement&#39;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s">&#39;Enhancement&#39;</span><span class="p">,</span>
+            <span class="n">target_entity_type</span><span class="o">=</span><span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="n">admin</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="n">admin</span>
+        <span class="p">)</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ticket_type_2</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">IntegrityError</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Ticket Types are already in the database!&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Ticket Types are created successfully&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">__create_time_log_types</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Creates two default :class:`~stalker.models.type.Type`\ s for</span>
+<span class="sd">    :class:`~stalker.models.task.TimeLog` objects.</span>
+<span class="sd">    </span>
+<span class="sd">    TODO: still evaluating if this is needed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">TimeLog</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">User</span>
+
+    <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">admin_name</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="c"># Normal</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Creating TimeLog.type &quot;Normal&quot;&#39;</span><span class="p">)</span>
+    <span class="n">normal_type</span> <span class="o">=</span> <span class="n">Type</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">&#39;Normal&#39;</span><span class="p">,</span>
+        <span class="n">code</span><span class="o">=</span><span class="s">&#39;Normal&#39;</span><span class="p">,</span>
+        <span class="n">target_entity_type</span><span class="o">=</span><span class="n">TimeLog</span><span class="p">,</span>
+        <span class="n">created_by</span><span class="o">=</span><span class="n">admin</span>
+    <span class="p">)</span>
+    <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">normal_type</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Creating TimeLog.type &quot;Extra&quot;&#39;</span><span class="p">)</span>
+    <span class="n">extra_type</span> <span class="o">=</span> <span class="n">Type</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">&#39;Extra&#39;</span><span class="p">,</span>
+        <span class="n">code</span><span class="o">=</span><span class="s">&#39;Extra&#39;</span><span class="p">,</span>
+        <span class="n">target_entity_type</span><span class="o">=</span><span class="n">TimeLog</span><span class="p">,</span>
+        <span class="n">created_by</span><span class="o">=</span><span class="n">admin</span>
+    <span class="p">)</span>
+    <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">extra_type</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">IntegrityError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;TimeLog Types are already in database&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;TimeLog Types are created successfully&#39;</span><span class="p">)</span>
+
+<span class="c"># def __create_filename_template_types():</span>
+<span class="c">#     &quot;&quot;&quot;Creates two default :class:`~stalker.models.type.Type`\ s for</span>
+<span class="c">#     :class:`~stalker.models.template.FilenameTemplate` objects. The first</span>
+<span class="c">#     Type instance is for &quot;Version&quot;s and the other is for &quot;References&quot;.</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     from stalker import User, Type</span>
+<span class="c">#     </span>
+<span class="c">#     # I hate doing it in this way but I cannot create UniqueConstraint</span>
+<span class="c">#     # between derived and mixed-in attributes (&quot;name&quot; and &quot;target_entity_type&quot;)</span>
+<span class="c">#     # So I need to be sure that there are no &quot;Version&quot; and &quot;Reference&quot;</span>
+<span class="c">#     # FilenameTemplate Types before creating them, cause I literally can.</span>
+<span class="c">#     types = Type.query\</span>
+<span class="c">#         .filter_by(target_entity_type=&quot;FilenameTemplate&quot;)\</span>
+<span class="c">#         .all()</span>
+<span class="c">#     type_names = [t.name for t in types]</span>
+<span class="c">#     </span>
+<span class="c">#     logger.debug(&quot;creating default Types for FilenameTemplates&quot;)</span>
+<span class="c">#     </span>
+<span class="c">#     admin = User.query.filter_by(login=defaults.admin_name).first()</span>
+<span class="c">#     </span>
+<span class="c">#     if &quot;Version&quot; not in type_names:</span>
+<span class="c">#         # mark them as created by admin</span>
+<span class="c">#         vers_type = Type(</span>
+<span class="c">#             name=&#39;Version&#39;,</span>
+<span class="c">#             code=&#39;Vers&#39;,</span>
+<span class="c">#             target_entity_type=&#39;FilenameTemplate&#39;,</span>
+<span class="c">#             created_by=admin</span>
+<span class="c">#         )</span>
+<span class="c">#         DBSession.add(vers_type)</span>
+<span class="c">#     </span>
+<span class="c">#     if &#39;Reference&#39; not in type_names:</span>
+<span class="c">#         ref_type = Type(</span>
+<span class="c">#             name=&#39;Reference&#39;,</span>
+<span class="c">#             code=&#39;Ref&#39;,</span>
+<span class="c">#             target_entity_type=&#39;FilenameTemplate&#39;,</span>
+<span class="c">#             created_by=admin</span>
+<span class="c">#         )</span>
+<span class="c">#         DBSession.add(ref_type)</span>
+<span class="c">#     </span>
+<span class="c">#     try:</span>
+<span class="c">#         transaction.commit()</span>
+<span class="c">#     except IntegrityError as e:</span>
+<span class="c">#         logger.debug(e)</span>
+<span class="c">#         transaction.abort()</span>
+<span class="c">#         logger.debug(&#39;FilenameTemplate Types are already in database&#39;)</span>
+<span class="c">#     else:</span>
+<span class="c">#         DBSession.flush()</span>
+<span class="c">#         logger.debug(&#39;FilenameTemplate Types are created successfully&#39;)</span>
+
+<span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="n">class_</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Registers the given class to the database.</span>
+<span class="sd">    </span>
+<span class="sd">    It is mainly used to create the :class:`~stalker.models.auth.Action`\ s</span>
+<span class="sd">    needed for the :class:`~stalker.models.auth.User`\ s and</span>
+<span class="sd">    :class:`~stalker.models.auth.Group`\ s to be able to interact with the</span>
+<span class="sd">    given class. Whatever class you have created needs to be registered.</span>
+<span class="sd">    </span>
+<span class="sd">    Example, lets say that you have a data class which is specific to your</span>
+<span class="sd">    studio and it is not present in Stalker Object Model (SOM), so you need to</span>
+<span class="sd">    extend SOM with a new data type. Here is a simple Data class inherited from</span>
+<span class="sd">    the :class:`~stalker.models.entity.SimpleEntity` class (which is the</span>
+<span class="sd">    simplest class you should inherit your classes from or use more complex</span>
+<span class="sd">    classes down to the hierarchy)::</span>
+<span class="sd">    </span>
+<span class="sd">      from sqlalchemy import Column, Integer, ForeignKey</span>
+<span class="sd">      from stalker.models.entity import SimpleEntity</span>
+<span class="sd">      </span>
+<span class="sd">      class MyDataClass(SimpleEntity):</span>
+<span class="sd">        &#39;&#39;&#39;This is an example class holding a studio specific data which is not</span>
+<span class="sd">        present in SOM.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        </span>
+<span class="sd">        __tablename__ = &#39;MyData&#39;</span>
+<span class="sd">        __mapper_arguments__ = {&#39;polymorphic_identity&#39;: &#39;MyData&#39;}</span>
+<span class="sd">        </span>
+<span class="sd">        my_data_id = Column(&#39;id&#39;, Integer, ForeignKey(&#39;SimpleEntities.c.id&#39;),</span>
+<span class="sd">                            primary_key=True)</span>
+<span class="sd">    </span>
+<span class="sd">    Now because Stalker is using Pyramid authorization mechanism it needs to be</span>
+<span class="sd">    able to have an :class:`~stalker.models.auth.Permission` about your new</span>
+<span class="sd">    class, so you can assign this :class;`~stalker.models.auth.Permission` to</span>
+<span class="sd">    your :class:`~stalker.models.auth.User`\ s or</span>
+<span class="sd">    :class:`~stalker.models.auth.Group`\ s. So you ned to register your new</span>
+<span class="sd">    class with stalker.db.register like shown below::</span>
+<span class="sd">    </span>
+<span class="sd">      from stalker import db</span>
+<span class="sd">      db.register(MyDataClass)</span>
+<span class="sd">    </span>
+<span class="sd">    This will create the necessary Actions in the &#39;Actions&#39; table on your</span>
+<span class="sd">    database, then you can create :class:`~stalker.models.auth.Permission`\ s</span>
+<span class="sd">    and assign these to your :class:`~stalker.models.auth.User`\ s and</span>
+<span class="sd">    :class:`~stalker.models.auth.Group`\ s so they are Allowed or Denied to do</span>
+<span class="sd">    the specified Action.</span>
+<span class="sd">    </span>
+<span class="sd">    :param class_: The class itself that needs to be registered.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pyramid.security</span> <span class="kn">import</span> <span class="n">Allow</span><span class="p">,</span> <span class="n">Deny</span>
+    <span class="kn">from</span> <span class="nn">stalker.models.auth</span> <span class="kn">import</span> <span class="n">Permission</span>
+
+    <span class="c"># create the Permissions</span>
+    <span class="n">permissions_db</span> <span class="o">=</span> <span class="n">Permission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;To register a class please supply the class itself &#39;</span><span class="p">)</span>
+
+    <span class="c"># register the class name to entity_types table</span>
+    <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">EntityType</span><span class="p">,</span> <span class="n">StatusMixin</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">,</span> <span class="n">ReferenceMixin</span>
+
+    <span class="n">class_name</span> <span class="o">=</span> <span class="n">class_</span><span class="o">.</span><span class="n">__name__</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">EntityType</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">class_name</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">():</span>
+        <span class="n">new_entity_type</span> <span class="o">=</span> <span class="n">EntityType</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+        <span class="c"># update attributes</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">StatusMixin</span><span class="p">):</span>
+            <span class="n">new_entity_type</span><span class="o">.</span><span class="n">statusable</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">):</span>
+            <span class="n">new_entity_type</span><span class="o">.</span><span class="n">schedulable</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">ReferenceMixin</span><span class="p">):</span>
+            <span class="n">new_entity_type</span><span class="o">.</span><span class="n">accepts_references</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">new_entity_type</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">access</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Allow</span><span class="p">,</span> <span class="n">Deny</span><span class="p">]:</span>
+            <span class="n">permission_obj</span> <span class="o">=</span> <span class="n">Permission</span><span class="p">(</span><span class="n">access</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">class_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">permission_obj</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">permissions_db</span><span class="p">:</span>
+                <span class="n">DBSession</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">permission_obj</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">IntegrityError</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">DBSession</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

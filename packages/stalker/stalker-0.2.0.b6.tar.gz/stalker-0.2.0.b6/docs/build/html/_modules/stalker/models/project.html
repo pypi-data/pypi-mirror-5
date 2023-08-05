@@ -1,0 +1,499 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.project &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.project</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Float</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">Table</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">validates</span>
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">defaults</span>
+<span class="kn">from</span> <span class="nn">stalker.db.session</span> <span class="kn">import</span> <span class="n">DBSession</span>
+<span class="kn">from</span> <span class="nn">stalker.db.declarative</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.models.entity</span> <span class="kn">import</span> <span class="n">Entity</span>
+<span class="kn">from</span> <span class="nn">stalker.models.mixins</span> <span class="kn">import</span> <span class="p">(</span><span class="n">StatusMixin</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">,</span> <span class="n">ReferenceMixin</span><span class="p">,</span>
+                                   <span class="n">CodeMixin</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Project"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project">[docs]</a><span class="k">class</span> <span class="nc">Project</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">ReferenceMixin</span><span class="p">,</span> <span class="n">StatusMixin</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">,</span> <span class="n">CodeMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;All the information about a Project in Stalker is hold in this class.</span>
+<span class="sd">    </span>
+<span class="sd">    Project is one of the main classes that will direct the others. A project</span>
+<span class="sd">    in Stalker is a gathering point.</span>
+<span class="sd">    </span>
+<span class="sd">    It is mixed with :class:`~stalker.models.mixins.ReferenceMixin`,</span>
+<span class="sd">    :class:`~stalker.models.mixins.StatusMixin`,</span>
+<span class="sd">    :class:`~stalker.models.mixins.ScheduleMixin` and</span>
+<span class="sd">    :class:`~stalker.models.mixins.CodeMixin` to give reference, status,</span>
+<span class="sd">    schedule and code attribute. Please read the individual documentation of</span>
+<span class="sd">    each of the mixins.</span>
+<span class="sd">    </span>
+<span class="sd">    **Project Users**</span>
+<span class="sd">    </span>
+<span class="sd">    The :attr:`~stalker.models.project.Project.users` attribute lists the users</span>
+<span class="sd">    in this project. UIs like task creation for example will only list these</span>
+<span class="sd">    users as available resources for this project.</span>
+<span class="sd">    </span>
+<span class="sd">    **TaskJuggler Integration**</span>
+<span class="sd">    </span>
+<span class="sd">    Stalker uses TaskJuggler for scheduling the project tasks. The</span>
+<span class="sd">    :attr:`~stalker.models.project.Project.to_tjp` attribute generates a tjp</span>
+<span class="sd">    compliant string which includes the project definition, the tasks of the</span>
+<span class="sd">    project, the resources in the project including the vacation definitions</span>
+<span class="sd">    and all the time logs recorded for the project.</span>
+<span class="sd">    </span>
+<span class="sd">    For custom attributes or directives that needs to be passed to TaskJuggler</span>
+<span class="sd">    you can use the :attr:`~stalker.models.project.Project.custom_tjp`</span>
+<span class="sd">    attribute which will be attached to the generated tjp file (inside the</span>
+<span class="sd">    &quot;project&quot; directive).</span>
+<span class="sd">    </span>
+<span class="sd">    To manage all the studio projects at once (schedule them at once please use</span>
+<span class="sd">    :class:`~stalker.models.studio.Studio`).</span>
+<span class="sd">    </span>
+<span class="sd">    :param lead: The lead of the project. Default value is None.</span>
+<span class="sd">    </span>
+<span class="sd">    :type lead: :class:`~stalker.User`</span>
+<span class="sd">    </span>
+<span class="sd">    :param image_format: The output image format of the project. Default</span>
+<span class="sd">      value is None.</span>
+<span class="sd">    </span>
+<span class="sd">    :type image_format: :class:`~stalker.models.format.ImageFormat`</span>
+<span class="sd">    </span>
+<span class="sd">    :param float fps: The FPS of the project, it should be a integer or float</span>
+<span class="sd">      number, or a string literal which can be correctly converted to a float.</span>
+<span class="sd">      Default value is 25.0.</span>
+<span class="sd">    </span>
+<span class="sd">    :param type: The type of the project. Default value is None.</span>
+<span class="sd">    </span>
+<span class="sd">    :type type: :class:`~stalker.models.type.Type`</span>
+<span class="sd">    </span>
+<span class="sd">    :param structure: The structure of the project. Default value is None</span>
+<span class="sd">    </span>
+<span class="sd">    :type structure: :class:`~stalker.models.structure.Structure`</span>
+<span class="sd">    </span>
+<span class="sd">    :param repository: The repository that the project files are going to be</span>
+<span class="sd">      stored in. You can not create a project without specifying the</span>
+<span class="sd">      repository argument and passing a</span>
+<span class="sd">      :class:`~stalker.models.repository.Repository` to it. Default value is</span>
+<span class="sd">      None which raises a TypeError.</span>
+<span class="sd">    </span>
+<span class="sd">    :type repository: :class:`~stalker.models.repository.Repository`.</span>
+<span class="sd">    </span>
+<span class="sd">    :param bool is_stereoscopic: a bool value, showing if the project is going</span>
+<span class="sd">      to be a stereo 3D project, anything given as the argument will be</span>
+<span class="sd">      converted to True or False. Default value is False.</span>
+<span class="sd">    </span>
+<span class="sd">    :param users: A list of :class:`~stalker.models.auth.User`\ s holding the</span>
+<span class="sd">      users in this project. This will create a reduced or grouped list of</span>
+<span class="sd">      studio workers and will make it easier to define the resources for a Task</span>
+<span class="sd">      related to this project. The default value is an empty list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="c">#__strictly_typed__ = True</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;Projects&quot;</span>
+    <span class="n">project_id_local</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Entities.id&quot;</span><span class="p">),</span>
+                              <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;Project&quot;</span><span class="p">,</span>
+        <span class="s">&quot;inherit_condition&quot;</span><span class="p">:</span>
+            <span class="n">project_id_local</span><span class="o">==</span><span class="n">Entity</span><span class="o">.</span><span class="n">entity_id</span>
+    <span class="p">}</span>
+    
+    <span class="n">active</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="n">tasks</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Task&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tasks.c.project_id==Projects.c.id&#39;</span><span class="p">,</span>
+        <span class="n">uselist</span><span class="o">=</span><span class="bp">True</span>
+    <span class="p">)</span>
+    
+    <span class="n">users</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;User&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Project_Users&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;projects&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="n">lead_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Users.id&quot;</span><span class="p">))</span>
+    <span class="n">lead</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;User&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Projects.c.lead_id==Users.c.id&quot;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;projects_lead&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The lead of the project.</span>
+<span class="s">        </span>
+<span class="s">        Should be an instance of :class:`~stalker.models.auth.User`,</span>
+<span class="s">        also can set to None.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">repository_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Repositories.id&quot;</span><span class="p">))</span>
+    <span class="n">repository</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Repository&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Project.repository_id==Repository.repository_id&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The :class:`~stalker.models.repository.Repository` that this</span>
+<span class="s">        project should reside.</span>
+<span class="s">        </span>
+<span class="s">        Should be an instance of</span>
+<span class="s">        :class:`~stalker.models.repository.Repository`\ . It</span>
+<span class="s">        is a read-only attribute. So it is not possible to change the</span>
+<span class="s">        repository of one project.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">structure_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Structures.id&quot;</span><span class="p">))</span>
+    <span class="n">structure</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Structure&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Project.structure_id==Structure.structure_id&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The structure of the project. Should be an instance of</span>
+<span class="s">        :class:`~stalker.models.structure.Structure` class&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">image_format_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;ImageFormats.id&quot;</span><span class="p">))</span>
+    <span class="n">image_format</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;ImageFormat&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Projects.c.image_format_id==ImageFormats.c.id&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The :class:`~stalker.models.format.ImageFormat` of this</span>
+<span class="s">        project.</span>
+<span class="s">        </span>
+<span class="s">        This value defines the output image format of the project, should be an</span>
+<span class="s">        instance of :class:`~stalker.models.format.ImageFormat`.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">fps</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Float</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The fps of the project.</span>
+<span class="s">        </span>
+<span class="s">        It is a float value, any other types will be converted to float. The</span>
+<span class="s">        default value is 25.0.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">is_stereoscopic</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Boolean</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;True if the project is a stereoscopic project&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">tickets</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tickets.c.project_id==Projects.c.id&#39;</span><span class="p">,</span>
+        <span class="n">uselist</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        
+    <span class="p">)</span>
+    
+<div class="viewcode-block" id="Project.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">code</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">lead</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">repository</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">structure</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">image_format</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">fps</span><span class="o">=</span><span class="mf">25.0</span><span class="p">,</span>
+                 <span class="n">is_stereoscopic</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">users</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># a projects project should be self</span>
+        <span class="c"># initialize the project argument to self</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;project&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        
+        <span class="nb">super</span><span class="p">(</span><span class="n">Project</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c"># call the mixin __init__ methods</span>
+        <span class="n">ReferenceMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">StatusMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ScheduleMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c">#CodeMixin.__init__(self, **kwargs)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">lead</span> <span class="o">=</span> <span class="n">lead</span>
+        <span class="k">if</span> <span class="n">users</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">users</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">users</span> <span class="o">=</span> <span class="n">users</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repository</span> <span class="o">=</span> <span class="n">repository</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">=</span> <span class="n">structure</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sequences</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_assets</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_format</span> <span class="o">=</span> <span class="n">image_format</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fps</span> <span class="o">=</span> <span class="n">fps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_stereoscopic</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_stereoscopic</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="bp">True</span>
+    </div>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the equality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Project</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Project</span><span class="p">)</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;fps&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_fps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">fps</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given fps_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">fps</span><span class="p">)</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;image_format&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_image_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">image_format</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given image format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.format</span> <span class="kn">import</span> <span class="n">ImageFormat</span>
+
+        <span class="k">if</span> <span class="n">image_format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span>\
+           <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_format</span><span class="p">,</span> <span class="n">ImageFormat</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.image_format should be an instance of &quot;</span>
+                            <span class="s">&quot;stalker.models.format.ImageFormat, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">image_format</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">image_format</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;lead&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_lead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">lead</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given lead_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">lead</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lead</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.lead should be an instance of &quot;</span>
+                                <span class="s">&quot;stalker.models.auth.User, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                <span class="n">lead</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">lead</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;repository&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_repository</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">repository</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given repository_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.repository</span> <span class="kn">import</span> <span class="n">Repository</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">repository</span><span class="p">,</span> <span class="n">Repository</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.repository should be an instance of &quot;</span>
+                            <span class="s">&quot;stalker.models.repository.Repository, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">repository</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">repository</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;structure&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">structure_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given structure_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.structure</span> <span class="kn">import</span> <span class="n">Structure</span>
+        
+        <span class="k">if</span> <span class="n">structure_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_in</span><span class="p">,</span> <span class="n">Structure</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.structure should be an instance of &quot;</span>
+                                <span class="s">&quot;stalker.models.structure.Structure, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                 <span class="n">structure_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">structure_in</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;is_stereoscopic&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_is_stereoscopic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">is_stereoscopic_in</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_stereoscopic_in</span><span class="p">)</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;users&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_users</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">user_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given users_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_in</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.users should be all stalker.models.auth.User &#39;</span>
+                            <span class="s">&#39;instances, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">user_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">user_in</span>
+    
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Project.root_tasks"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project.root_tasks">[docs]</a>    <span class="k">def</span> <span class="nf">root_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns a list of Tasks which have no parent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.task</span> <span class="kn">import</span> <span class="n">Task</span>
+        <span class="k">return</span> <span class="n">Task</span><span class="o">.</span><span class="n">query</span>\
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">_project</span><span class="o">==</span><span class="bp">self</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">parent</span><span class="o">==</span><span class="bp">None</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Project.assets"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project.assets">[docs]</a>    <span class="k">def</span> <span class="nf">assets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the assets related to this project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># use joins over the session.query</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.asset</span> <span class="kn">import</span> <span class="n">Asset</span>
+        
+        <span class="k">if</span> <span class="n">DBSession</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Asset</span><span class="o">.</span><span class="n">query</span>\
+                <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Asset</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>\
+                <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Project</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>\
+                <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;There is no database setup, the users can not &quot;</span>
+                           <span class="s">&quot;be queried from this state, please use &quot;</span>
+                           <span class="s">&quot;stalker.db.setup() to setup a database&quot;</span><span class="p">,</span>
+                          <span class="ne">RuntimeWarning</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Project.sequences"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project.sequences">[docs]</a>    <span class="k">def</span> <span class="nf">sequences</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the sequences related to this project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># sequences are tasks, use self.tasks</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.sequence</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+        <span class="n">sequences</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tasks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+                <span class="n">sequences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequences</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Project.shots"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project.shots">[docs]</a>    <span class="k">def</span> <span class="nf">shots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the shots related to this project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># shots are tasks, use self.tasks</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.shot</span> <span class="kn">import</span> <span class="n">Shot</span>
+        
+        <span class="n">shots</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tasks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">Shot</span><span class="p">):</span>
+                <span class="n">shots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">shots</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Project.to_tjp"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project.to_tjp">[docs]</a>    <span class="k">def</span> <span class="nf">to_tjp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns a TaskJuggler compatible string representing this project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Template</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">tjp_project_template</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">temp</span><span class="o">.</span><span class="n">render</span><span class="p">({</span>
+            <span class="s">&#39;project&#39;</span><span class="p">:</span> <span class="bp">self</span>
+        <span class="p">})</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Project.is_active"><a class="viewcode-back" href="../../../generated/stalker.models.project.Project.html#stalker.models.project.Project.is_active">[docs]</a>    <span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;predicate for Project.active attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span>
+
+<span class="c"># PROJECT_USERS</span></div></div>
+<span class="n">Project_Users</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&#39;Project_Users&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Users.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;project_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Projects.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

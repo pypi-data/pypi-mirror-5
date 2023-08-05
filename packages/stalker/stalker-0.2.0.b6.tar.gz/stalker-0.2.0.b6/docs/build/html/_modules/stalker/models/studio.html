@@ -1,0 +1,570 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.studio &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.studio</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">validates</span><span class="p">,</span> <span class="n">reconstructor</span>
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="p">(</span><span class="n">defaults</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">Entity</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">,</span> <span class="n">WorkingHoursMixin</span><span class="p">,</span>
+                     <span class="n">SchedulerBase</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">logging_level</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Studio"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio">[docs]</a><span class="k">class</span> <span class="nc">Studio</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">,</span> <span class="n">WorkingHoursMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manage all the studio information at once.</span>
+<span class="sd">    </span>
+<span class="sd">    With Stalker you can manage all you Studio data by using this class. Studio</span>
+<span class="sd">    knows all the projects, all the departments, all the users and every thing</span>
+<span class="sd">    about the studio. But the most important part of the Studio is that it can</span>
+<span class="sd">    schedule all the Projects by using TaskJuggler.</span>
+<span class="sd">    </span>
+<span class="sd">    Studio class is kind of the database itself::</span>
+<span class="sd">      </span>
+<span class="sd">      studio = Studio()</span>
+<span class="sd">      </span>
+<span class="sd">      # simple data</span>
+<span class="sd">      studio.projects</span>
+<span class="sd">      studio.active_projects</span>
+<span class="sd">      studio.inactive_projects</span>
+<span class="sd">      studio.departments</span>
+<span class="sd">      studio.users</span>
+<span class="sd">      </span>
+<span class="sd">      # project management</span>
+<span class="sd">      studio.to_tjp          # a tjp representation of the studio with all</span>
+<span class="sd">                             # its projects, departments and resources etc.</span>
+<span class="sd">      </span>
+<span class="sd">      studio.schedule() # schedules all the active projects at once</span>
+<span class="sd">    </span>
+<span class="sd">    **Working Hours**</span>
+<span class="sd">    </span>
+<span class="sd">    In Stalker, Studio class also manages the working hours of the studio.</span>
+<span class="sd">    Allowing project tasks to be scheduled to be scheduled in those hours.</span>
+<span class="sd">    </span>
+<span class="sd">    :param int daily_working_hours: An integer specifying the daily working</span>
+<span class="sd">      hours for the studio. It is another critical value attribute which</span>
+<span class="sd">      TaskJuggler uses mainly converting working day values to working hours</span>
+<span class="sd">      (1d = 10h kind of thing).</span>
+<span class="sd">    </span>
+<span class="sd">    :param now: The now attribute overrides the TaskJugglers ``now`` attribute</span>
+<span class="sd">      allowing the user to schedule the projects as if the scheduling is done</span>
+<span class="sd">      on that date. The default value is the rounded value of</span>
+<span class="sd">      datetime.datetime.now().</span>
+<span class="sd">    </span>
+<span class="sd">    :type now: datetime.datetime</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&#39;Studios&#39;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;polymorphic_identity&#39;</span><span class="p">:</span> <span class="s">&#39;Studio&#39;</span><span class="p">}</span>
+    
+    <span class="n">studio_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="s">&#39;id&#39;</span><span class="p">,</span>
+        <span class="n">Integer</span><span class="p">,</span>
+        <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Entities.id&#39;</span><span class="p">),</span>
+        <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">daily_working_hours</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+       
+<div class="viewcode-block" id="Studio.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">daily_working_hours</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">now</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Studio</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ScheduleMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">WorkingHoursMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c"># TODO: daily_working_hours should be in WorkingHours not in Studio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">daily_working_hours</span> <span class="o">=</span> <span class="n">daily_working_hours</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_now</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_now</span><span class="p">(</span><span class="n">now</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+    <span class="nd">@reconstructor</span>
+    <span class="k">def</span> <span class="nf">__init_on_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_now</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Studio</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init_on_load__</span><span class="p">()</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;daily_working_hours&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_daily_working_hours</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dwh</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given daily working hours value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dwh</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">dwh</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">daily_working_hours</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dwh</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.daily_working_hours should be an integer, &#39;</span>
+                                <span class="s">&#39;not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                 <span class="n">dwh</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">dwh</span>
+    
+    <span class="k">def</span> <span class="nf">_validate_now</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">now_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given now_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">now_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">now_in</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">now_in</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.now attribute should be an instance of &#39;</span>
+                            <span class="s">&#39;datetime.datetime, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">now_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="n">now_in</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">now</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;now getter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_now</span>
+    
+    <span class="nd">@now.setter</span>
+<div class="viewcode-block" id="Studio.now"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.now">[docs]</a>    <span class="k">def</span> <span class="nf">now</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">now_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;now setter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_now</span><span class="p">(</span><span class="n">now_in</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">_validate_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given scheduler_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">scheduler_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scheduler_in</span><span class="p">,</span> <span class="n">SchedulerBase</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.scheduler should be an instance of &#39;</span>
+                                <span class="s">&#39;stalker.models.scheduler.SchedulerBase, not &#39;</span>
+                                <span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                        <span class="n">scheduler_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">scheduler_in</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;scheduler getter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span>
+    
+    <span class="nd">@scheduler.setter</span>
+<div class="viewcode-block" id="Studio.scheduler"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.scheduler">[docs]</a>    <span class="k">def</span> <span class="nf">scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the scheduler setter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_scheduler</span><span class="p">(</span><span class="n">scheduler_in</span><span class="p">)</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.to_tjp"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.to_tjp">[docs]</a>    <span class="k">def</span> <span class="nf">to_tjp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;converts the studio to a tjp representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Template</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">tjp_studio_template</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">temp</span><span class="o">.</span><span class="n">render</span><span class="p">({</span>
+            <span class="s">&#39;studio&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+            <span class="s">&#39;datetime&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+            <span class="s">&#39;now&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">-%H:%M&#39;</span><span class="p">)</span>
+        <span class="p">})</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.projects"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.projects">[docs]</a>    <span class="k">def</span> <span class="nf">projects</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns all the projects in the studio</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Project</span>
+        <span class="k">return</span> <span class="n">Project</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.active_projects"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.active_projects">[docs]</a>    <span class="k">def</span> <span class="nf">active_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns all the active projects in the studio</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Project</span>
+        <span class="k">return</span> <span class="n">Project</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Project</span><span class="o">.</span><span class="n">active</span><span class="o">==</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.inactive_projects"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.inactive_projects">[docs]</a>    <span class="k">def</span> <span class="nf">inactive_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return all the inactive projects in the studio</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Project</span>
+        <span class="k">return</span> <span class="n">Project</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Project</span><span class="o">.</span><span class="n">active</span><span class="o">==</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.departments"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.departments">[docs]</a>    <span class="k">def</span> <span class="nf">departments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns all the departments in the studio</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Department</span>
+        <span class="k">return</span> <span class="n">Department</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.users"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.users">[docs]</a>    <span class="k">def</span> <span class="nf">users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns all the users in the studio</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">User</span>
+        <span class="k">return</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="Studio.schedule"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.schedule">[docs]</a>    <span class="k">def</span> <span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedules all the active projects in the studio. Needs a Scheduler,</span>
+<span class="sd">        so before calling it set a scheduler by using the :attr:`.scheduler`</span>
+<span class="sd">        attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check the scheduler first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> \
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="p">,</span> <span class="n">SchedulerBase</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span> <span class="p">(</span><span class="s">&#39;There is no scheduler for this </span><span class="si">%s</span><span class="s">, please &#39;</span>
+                                <span class="s">&#39;assign a scheduler to the </span><span class="si">%s</span><span class="s">.scheduler &#39;</span>
+                                <span class="s">&#39;attribute, before calling </span><span class="si">%s</span><span class="s">.schedule()&#39;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="c"># run the scheduler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">studio</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">schedule</span><span class="p">()</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.weekly_working_hours"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.weekly_working_hours">[docs]</a>    <span class="k">def</span> <span class="nf">weekly_working_hours</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the WorkingHours.weekly_working_hours</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_hours</span><span class="o">.</span><span class="n">weekly_working_hours</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.weekly_working_days"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.weekly_working_days">[docs]</a>    <span class="k">def</span> <span class="nf">weekly_working_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the WorkingHours.weekly_working_hours</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_hours</span><span class="o">.</span><span class="n">weekly_working_days</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Studio.yearly_working_days"><a class="viewcode-back" href="../../../generated/stalker.models.studio.Studio.html#stalker.models.studio.Studio.yearly_working_days">[docs]</a>    <span class="k">def</span> <span class="nf">yearly_working_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the yearly working days</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_hours</span><span class="o">.</span><span class="n">yearly_working_days</span>
+
+</div></div>
+<div class="viewcode-block" id="WorkingHours"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours">[docs]</a><span class="k">class</span> <span class="nc">WorkingHours</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A helper class to manage Studio working hours.</span>
+<span class="sd">    </span>
+<span class="sd">    Working hours is a data class to store the weekly working hours pattern of</span>
+<span class="sd">    the studio. </span>
+<span class="sd">    </span>
+<span class="sd">    The data stored as a dictionary with the short day names are used as the</span>
+<span class="sd">    key and the value is a list of two integers showing the working hours</span>
+<span class="sd">    interval as the minutes after midnight. This is done in that way to ease</span>
+<span class="sd">    the data transfer to TaskJuggler. The default value is defined in</span>
+<span class="sd">    :class:`stalker.config.Config` ::</span>
+<span class="sd">      </span>
+<span class="sd">      wh = WorkingHours()</span>
+<span class="sd">      wh.working_hours = {</span>
+<span class="sd">          &#39;mon&#39;: [[540, 720], [820, 1080]], # 9:00 - 12:00, 13:00 - 18:00</span>
+<span class="sd">          &#39;tue&#39;: [[540, 720], [820, 1080]], # 9:00 - 12:00, 13:00 - 18:00</span>
+<span class="sd">          &#39;wed&#39;: [[540, 720], [820, 1080]], # 9:00 - 12:00, 13:00 - 18:00</span>
+<span class="sd">          &#39;thu&#39;: [[540, 720], [820, 1080]], # 9:00 - 12:00, 13:00 - 18:00</span>
+<span class="sd">          &#39;fri&#39;: [[540, 720], [820, 1080]], # 9:00 - 12:00, 13:00 - 18:00</span>
+<span class="sd">          &#39;sat&#39;: [], # saturday off</span>
+<span class="sd">          &#39;sun&#39;: [], # sunday off</span>
+<span class="sd">      }</span>
+<span class="sd">    </span>
+<span class="sd">    The default value is 9:00 - 18:00 from Monday to Friday and Saturday and</span>
+<span class="sd">    Sunday are off.</span>
+<span class="sd">    </span>
+<span class="sd">    The working hours can be updated by the user supplied dictionary. If the</span>
+<span class="sd">    user supplied dictionary doesn&#39;t have all the days then the default values</span>
+<span class="sd">    will be used for those days.</span>
+<span class="sd">    </span>
+<span class="sd">    It is possible to use day index and day short names as a key value to reach</span>
+<span class="sd">    the data::</span>
+<span class="sd">      </span>
+<span class="sd">      from stalker import config</span>
+<span class="sd">      defaults = config.Config()</span>
+<span class="sd">      </span>
+<span class="sd">      wh = WorkingHours()</span>
+<span class="sd">      </span>
+<span class="sd">      # this is same by doing wh.working_hours[&#39;sun&#39;]</span>
+<span class="sd">      assert wh[&#39;sun&#39;] == defaults.working_hours[&#39;sun&#39;]</span>
+<span class="sd">      </span>
+<span class="sd">      # you can reach the data using the weekday number as index</span>
+<span class="sd">      assert wh[0] == defaults.working_hours[&#39;mon&#39;]</span>
+<span class="sd">      </span>
+<span class="sd">      # working hours of sunday if defaults are used or any other day defined</span>
+<span class="sd">      # by the stalker.config.Config.day_order</span>
+<span class="sd">      assert wh[0] == defaults.working_hours[defaults.day_order[0]]</span>
+<span class="sd">    </span>
+<span class="sd">    :param working_hours: The dictionary that shows the working hours. The keys</span>
+<span class="sd">      of the dictionary should be one of [&#39;mon&#39;, &#39;tue&#39;, &#39;wed&#39;, &#39;thu&#39;, &#39;fri&#39;,</span>
+<span class="sd">      &#39;sat&#39;, &#39;sun&#39;]. And the values should be a list of two integers like</span>
+<span class="sd">      [[int, int], [int, int], ...] format, showing the minutes after midnight.</span>
+<span class="sd">      For missing days the default value will be used. If skipped the default</span>
+<span class="sd">      value is going to be used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="WorkingHours.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_hours</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">working_hours</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">working_hours</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">working_hours</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wh</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">working_hours</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_working_hours</span><span class="p">(</span><span class="n">working_hours</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;equality test</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">WorkingHours</span><span class="p">)</span> <span class="ow">and</span> \
+               <span class="n">other</span><span class="o">.</span><span class="n">working_hours</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_hours</span>
+    
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wh</span><span class="p">[</span><span class="n">defaults</span><span class="o">.</span><span class="n">day_order</span><span class="p">[</span><span class="n">item</span><span class="p">]]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wh</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+    
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_wh_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wh</span><span class="p">[</span><span class="n">defaults</span><span class="o">.</span><span class="n">day_order</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="c"># check if key is in</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">day_order</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> accepts only </span><span class="si">%s</span><span class="s"> as key, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">day_order</span><span class="p">,</span>
+                                <span class="n">key</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wh</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    
+    <span class="k">def</span> <span class="nf">_validate_working_hours</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wh_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given working hours</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wh_in</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.working_hours should be a dictionary, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">wh_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wh_in</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wh_in</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.working_hours should be a dictionary with &#39;</span>
+                                <span class="s">&#39;keys &quot;mon, tue, wed, thu, fri, sat, sun&quot; &#39;</span>
+                                <span class="s">&#39;and the values should a list of lists of &#39;</span>
+                                <span class="s">&#39;two integers like [[540, 720], [800, 1080]], &#39;</span>
+                                <span class="s">&#39;not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                            <span class="n">wh_in</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+            
+            <span class="c"># validate item values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_wh_value</span><span class="p">(</span><span class="n">wh_in</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        
+        <span class="c"># update the default values with the supplied working_hour dictionary</span>
+        <span class="c"># copy the defaults</span>
+        <span class="n">wh_def</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">working_hours</span><span class="p">)</span>
+        <span class="c"># update them</span>
+        <span class="n">wh_def</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">wh_in</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">wh_def</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">working_hours</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the getter of _wh</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wh</span>
+    
+    <span class="nd">@working_hours.setter</span>
+<div class="viewcode-block" id="WorkingHours.working_hours"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours.working_hours">[docs]</a>    <span class="k">def</span> <span class="nf">working_hours</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wh_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the setter of _wh</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_working_hours</span><span class="p">(</span><span class="n">wh_in</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="WorkingHours.is_working_hour"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours.is_working_hour">[docs]</a>    <span class="k">def</span> <span class="nf">is_working_hour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_for_date</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;checks if the given datetime is in working hours</span>
+<span class="sd">        </span>
+<span class="sd">        :param datetime.datetime check_for_date: The time to check if it is a</span>
+<span class="sd">          working hour</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">weekday_nr</span> <span class="o">=</span> <span class="n">check_for_date</span><span class="o">.</span><span class="n">weekday</span><span class="p">()</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">check_for_date</span><span class="o">.</span><span class="n">hour</span>
+        <span class="n">minute</span> <span class="o">=</span> <span class="n">check_for_date</span><span class="o">.</span><span class="n">minute</span>
+        
+        <span class="n">time_from_midnight</span> <span class="o">=</span> <span class="n">hour</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">+</span> <span class="n">minute</span>
+        
+        <span class="c"># check if the hour is inside the working hour ranges</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;checking for: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">time_from_midnight</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;self[weekday_nr]: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">[</span><span class="n">weekday_nr</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">working_hour_groups</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="n">weekday_nr</span><span class="p">]:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">working_hour_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">working_hour_groups</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;start       : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">start</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;end         : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">end</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;=</span> <span class="n">time_from_midnight</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        
+        <span class="k">return</span> <span class="bp">False</span>
+    </div>
+    <span class="k">def</span> <span class="nf">_validate_wh_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the working hour value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">.working_hours value should be a list of lists of two &#39;</span> \
+              <span class="s">&#39;integers between and the range of integers should be 0-1440, &#39;</span> \
+              <span class="s">&#39;not </span><span class="si">%s</span><span class="s">&#39;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">err</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                   <span class="n">value</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span> <span class="n">err</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                        <span class="n">i</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+            
+            <span class="c"># check list length</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span> <span class="n">err</span> <span class="o">%</span>  <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+            
+            <span class="c"># check type</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">err</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+            
+            <span class="c"># check range</span>
+            <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1440</span> <span class="ow">or</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1440</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">value</span>
+    
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="WorkingHours.to_tjp"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours.to_tjp">[docs]</a>    <span class="k">def</span> <span class="nf">to_tjp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns TaskJuggler representation of this object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># render the template</span>
+        <span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Template</span>
+        
+        <span class="n">template</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">tjp_working_hours_template</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">({</span><span class="s">&#39;workinghours&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">})</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="WorkingHours.weekly_working_hours"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours.weekly_working_hours">[docs]</a>    <span class="k">def</span> <span class="nf">weekly_working_hours</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the total working hours in a week</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">weekly_working_hours</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">weekly_working_hours</span> <span class="o">+=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">weekly_working_hours</span> <span class="o">/</span> <span class="mf">60.0</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="WorkingHours.weekly_working_days"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours.weekly_working_days">[docs]</a>    <span class="k">def</span> <span class="nf">weekly_working_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the weekly working days by looking at the working hours</span>
+<span class="sd">        settings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wwd</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                <span class="n">wwd</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">wwd</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="WorkingHours.yearly_working_days"><a class="viewcode-back" href="../../../generated/stalker.models.studio.WorkingHours.html#stalker.models.studio.WorkingHours.yearly_working_days">[docs]</a>    <span class="k">def</span> <span class="nf">yearly_working_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the total working days in a year</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">weekly_working_days</span> <span class="o">*</span> <span class="mf">52.1428</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

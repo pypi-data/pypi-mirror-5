@@ -1,0 +1,1041 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.auth &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.auth</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">,</span>
+                        <span class="n">Enum</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">synonym</span><span class="p">,</span> <span class="n">reconstructor</span><span class="p">,</span> <span class="n">validates</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.schema</span> <span class="kn">import</span> <span class="n">UniqueConstraint</span>
+
+
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">defaults</span>
+
+<span class="kn">from</span> <span class="nn">stalker.db.declarative</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.models.mixins</span> <span class="kn">import</span> <span class="n">ACLMixin</span>
+<span class="kn">from</span> <span class="nn">stalker.models.entity</span> <span class="kn">import</span> <span class="n">Entity</span>
+
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">group_finder</span><span class="p">(</span><span class="n">login</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the group of the given login. The login name will be in</span>
+<span class="sd">    &#39;User:{login}&#39; format.</span>
+<span class="sd">    </span>
+<span class="sd">    :param login: The login of the user, both &#39;{login}&#39; and</span>
+<span class="sd">      &#39;User:{login}&#39; format is accepted.</span>
+<span class="sd">    </span>
+<span class="sd">    :param request: The Request object</span>
+<span class="sd">    </span>
+<span class="sd">    :return: Will return the groups of the user in [&#39;Group:{group_name}&#39;]</span>
+<span class="sd">      format.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">login</span><span class="p">:</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="n">login</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c"># return the group of the given User object</span>
+    <span class="n">user_obj</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="n">login</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">user_obj</span><span class="p">:</span>
+        <span class="c"># just return the groups names if there is any group</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">user_obj</span><span class="o">.</span><span class="n">groups</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="s">&#39;Group:&#39;</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">groups</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="RootFactory"><a class="viewcode-back" href="../../../generated/stalker.models.auth.RootFactory.html#stalker.models.auth.RootFactory">[docs]</a><span class="k">class</span> <span class="nc">RootFactory</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The main purpose of having a root factory is to generate the objects</span>
+<span class="sd">    used as the context by the request. But in our case it just used to</span>
+<span class="sd">    determine the default ACLs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__acl__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># create the default acl and give admins all the permissions</span>
+        <span class="n">all_permissions</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">action</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">class_name</span><span class="p">,</span>
+            <span class="n">Permission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="c"># start with default ACLs</span>
+        <span class="kn">from</span> <span class="nn">pyramid.security</span> <span class="kn">import</span> <span class="n">Allow</span>
+        
+        <span class="n">ACLs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">Allow</span><span class="p">,</span> <span class="s">&#39;Group:&#39;</span> <span class="o">+</span> <span class="n">defaults</span><span class="o">.</span><span class="n">admin_department_name</span><span class="p">,</span> <span class="n">all_permissions</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">Allow</span><span class="p">,</span> <span class="s">&#39;User:&#39;</span> <span class="o">+</span> <span class="n">defaults</span><span class="o">.</span><span class="n">admin_name</span><span class="p">,</span> <span class="n">all_permissions</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c"># get all users and their ACLs</span>
+        <span class="n">all_users</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">all_users</span><span class="p">:</span>
+            <span class="n">ACLs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">__acl__</span><span class="p">)</span>
+
+        <span class="c"># get all groups and their ACLs</span>
+        <span class="n">all_groups</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">all_groups</span><span class="p">:</span>
+            <span class="n">ACLs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">__acl__</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ACLs</span>
+    
+<div class="viewcode-block" id="RootFactory.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.auth.RootFactory.html#stalker.models.auth.RootFactory.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">pass</span>
+</div></div>
+<div class="viewcode-block" id="Permission"><a class="viewcode-back" href="../../../generated/stalker.models.auth.Permission.html#stalker.models.auth.Permission">[docs]</a><span class="k">class</span> <span class="nc">Permission</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class to hold permissions.</span>
+
+<span class="sd">    Permissions in Stalker defines what one can do or do not. A Permission</span>
+<span class="sd">    instance is composed by three attributes; access, action and class_name.</span>
+
+<span class="sd">    Permissions for all the classes in SOM are generally created by Stalker</span>
+<span class="sd">    when initializing the database.</span>
+
+<span class="sd">    If you created any custom classes to extend SOM you are also responsible to</span>
+<span class="sd">    create the Permissions for it by calling :meth:`stalker.db.register` and</span>
+<span class="sd">    passing your class to it. See the :mod:`stalker.db` documentation for</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    :param str access: An Enum value which can have the one of the values of</span>
+<span class="sd">      ``Allow`` or ``Deny``.</span>
+
+<span class="sd">    :param str action: An Enum value from the list [&#39;Create&#39;, &#39;Read&#39;, &#39;Update&#39;,</span>
+<span class="sd">      &#39;Delete&#39;, &#39;List&#39;]. Can not be None. The list can be changed from</span>
+<span class="sd">      stalker.config.Config.default_actions.</span>
+
+<span class="sd">    :param str class_name: The name of the class that this action is applied</span>
+<span class="sd">      to. Can not be None or an empty string.</span>
+
+<span class="sd">    Example: Let say that you want to create a Permission specifying a Group of</span>
+<span class="sd">    Users are allowed to create Projects::</span>
+
+<span class="sd">      import transaction</span>
+<span class="sd">      from stalker import db</span>
+<span class="sd">      from stalker.db.session import DBSession, transaction</span>
+<span class="sd">      from stalker.models.auth import User, Group, Permission</span>
+
+<span class="sd">      # first setup the db with the default database</span>
+<span class="sd">      #</span>
+<span class="sd">      # stalker.db.__init_db__ will create all the Actions possible with the</span>
+<span class="sd">      # SOM classes automatically</span>
+<span class="sd">      # </span>
+<span class="sd">      # What is left to you is to create the permissions</span>
+<span class="sd">      setup.db()</span>
+
+<span class="sd">      user1 = User(login=&#39;test_user1&#39;, password=&#39;1234&#39;)</span>
+<span class="sd">      user2 = User(login=&#39;test_user2&#39;, password=&#39;1234&#39;)</span>
+
+<span class="sd">      group1 = Group(name=&#39;users&#39;)</span>
+<span class="sd">      group1.users = [user1, user2]</span>
+
+<span class="sd">      # get the permissions for the Project class</span>
+<span class="sd">      project_permissions = Permission.query\</span>
+<span class="sd">          .filter(Actions.access=&#39;Allow&#39;)\</span>
+<span class="sd">          .filter(Actions.action=&#39;Create&#39;)\</span>
+<span class="sd">          .filter(Actions.class_name=&#39;Project&#39;)\</span>
+<span class="sd">          .first()</span>
+
+<span class="sd">      # now we have the permission specifying the allowance of creating a</span>
+<span class="sd">      # Project</span>
+
+<span class="sd">      # to make group1 users able to create a Project we simply add this</span>
+<span class="sd">      # Permission to the groups permission attribute</span>
+<span class="sd">      group1.permissions.append(permission)</span>
+
+<span class="sd">      # and persist this information in the database</span>
+<span class="sd">      DBSession.add(group)</span>
+<span class="sd">      transaction.commit()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&#39;Permissions&#39;</span>
+    <span class="n">__table_args__</span>  <span class="o">=</span> <span class="p">(</span>
+        <span class="n">UniqueConstraint</span><span class="p">(</span><span class="s">&#39;access&#39;</span><span class="p">,</span> <span class="s">&#39;action&#39;</span><span class="p">,</span> <span class="s">&#39;class_name&#39;</span><span class="p">),</span>
+        <span class="p">{</span><span class="s">&quot;extend_existing&quot;</span><span class="p">:</span><span class="bp">True</span><span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">_access</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;access&#39;</span><span class="p">,</span> <span class="n">Enum</span><span class="p">(</span><span class="s">&#39;Allow&#39;</span><span class="p">,</span> <span class="s">&#39;Deny&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;AccessNames&#39;</span><span class="p">))</span>
+    <span class="n">_action</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;action&#39;</span><span class="p">,</span>
+                     <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">defaults</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;ActionNames&#39;</span><span class="p">))</span>
+    <span class="n">_class_name</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;class_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Permission.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.auth.Permission.html#stalker.models.auth.Permission.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">access</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">class_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_access</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_access</span><span class="p">(</span><span class="n">access</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_action</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_class_name</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_validate_access</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">access</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given access value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">access</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Permission.access should be an instance of str &#39;</span>
+                            <span class="s">&#39;or unicode not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">access</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">access</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;Allow&#39;</span><span class="p">,</span> <span class="s">&#39;Deny&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Permission.access should be &quot;Allow&quot; or &quot;Deny&quot;&#39;</span> 
+                             <span class="s">&#39;not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">access</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">access</span>
+    
+    <span class="k">def</span> <span class="nf">_access_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the _access value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access</span>
+
+    <span class="n">access</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span><span class="s">&#39;_access&#39;</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_access_getter</span><span class="p">))</span>
+    
+    <span class="k">def</span> <span class="nf">_validate_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given class_name value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Permission.class_name should be an instance of &#39;</span>
+                            <span class="s">&#39;str or unicode not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                            <span class="n">class_name</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">class_name</span>
+    
+    <span class="k">def</span> <span class="nf">_class_name_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the _class_name attribute value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_class_name</span>
+
+    <span class="n">class_name</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span><span class="s">&#39;_class_name&#39;</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_class_name_getter</span><span class="p">))</span>
+    
+    <span class="k">def</span> <span class="nf">_validate_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given action value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Permission.action should be an instance of str &#39;</span>
+                            <span class="s">&#39;or unicode not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">action</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">action</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Permission.action should be one of the values &#39;</span>
+                             <span class="s">&#39;of </span><span class="si">%s</span><span class="s"> not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                             <span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">action</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">action</span>
+    
+    <span class="k">def</span> <span class="nf">_action_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the _action value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action</span>
+
+    <span class="n">action</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span><span class="s">&#39;_action&#39;</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_action_getter</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the equality of two Permissions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Permission</span><span class="p">)</span> \
+            <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">access</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">access</span> \
+            <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span> \
+            <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">class_name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_name</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the inequality of two Permissions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Group"><a class="viewcode-back" href="../../../generated/stalker.models.auth.Group.html#stalker.models.auth.Group">[docs]</a><span class="k">class</span> <span class="nc">Group</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">ACLMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates groups for users to be used in authorization system.</span>
+
+<span class="sd">    A Group instance is nothing more than a list of</span>
+<span class="sd">    :class:`~stalker.models.auth.User`\ s created to be able to assign</span>
+<span class="sd">    permissions in a group level.</span>
+
+<span class="sd">    The Group class, as with the :class:`~stalker.models.auth.User` class, is</span>
+<span class="sd">    mixed with the :class:`~stalker.models.mixins.ACLMixin` which adds ability</span>
+<span class="sd">    to hold :class:`~stalker.models.mixin.Permission` instances and serve ACLs</span>
+<span class="sd">    to Pyramid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># TODO: Update Group class documentation</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;Groups&quot;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;Group&quot;</span><span class="p">}</span>
+
+    <span class="n">gid</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Entities.id&quot;</span><span class="p">),</span>
+                 <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">users</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;User&quot;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&quot;User_Groups&quot;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;groups&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;Users in this group.</span>
+
+<span class="s">        Accepts:class:`~stalker.models.auth.User` instance.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Group.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.auth.Group.html#stalker.models.auth.Group.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">users</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">users</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">users</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">})</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">users</span> <span class="o">=</span> <span class="n">users</span>
+</div>
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;users&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_users</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given user instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&#39;Group.users attribute must all be stalker.models.auth.User &#39;</span>
+                <span class="s">&#39;instances not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">user</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">user</span>
+</div>
+<div class="viewcode-block" id="User"><a class="viewcode-back" href="../../../generated/stalker.models.auth.User.html#stalker.models.auth.User">[docs]</a><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">ACLMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The user class is designed to hold data about a User in the system.</span>
+
+<span class="sd">    There are a couple of points to take your attention to:</span>
+
+<span class="sd">    * The :attr:`~stalker.models.auth.User.code` attribute is derived from</span>
+<span class="sd">      the :attr:`~stalker.models.auth.User.nice_name` as it is in a</span>
+<span class="sd">      :class:`~stalker.models.entity.SimpleEntity`, but the</span>
+<span class="sd">      :attr:`~stalker.models.auth.User.nice_name` is derived from the</span>
+<span class="sd">      :attr:`~stalker.models.auth.User.login` instead of the</span>
+<span class="sd">      :attr:`~stalker.models.auth.User.name` attribute, so the</span>
+<span class="sd">      :attr:`~stalker.models.auth.User.code` of a</span>
+<span class="sd">      :class:`~stalker.models.auth.User` and a</span>
+<span class="sd">      :class:`~stalker.models.entity.SimpleEntity` will be different then each</span>
+<span class="sd">      other. The formatting of the :attr:`~stalker.models.auth.User.code`</span>
+<span class="sd">      attribute is as follows:</span>
+
+<span class="sd">      * no underscore character is allowed, so while in the</span>
+<span class="sd">        :class:`~stalker.models.entity.SimpleEntity` class the code could have</span>
+<span class="sd">        underscores, in :class:`~stalker.models.auth.User` class it is not</span>
+<span class="sd">        allowed.</span>
+<span class="sd">      * all the letters in the code will be converted to lower case.</span>
+
+<span class="sd">      Other than these two new rules all the previous formatting rules from the</span>
+<span class="sd">      :class:`~stalker.models.entity.SimpleEntity` are valid.</span>
+
+<span class="sd">    .. versionadded 0.2.0: Task Watchers</span>
+
+<span class="sd">       New to version 0.2.0 users can be assigned to a</span>
+<span class="sd">       :class:`~stalker.models.task.Task` as a **Watcher**. Which can be used</span>
+<span class="sd">       to inform the users in watchers list about the updates of certain Tasks.</span>
+
+<span class="sd">    :param email: holds the e-mail of the user, should be in [part1]@[part2]</span>
+<span class="sd">      format</span>
+
+<span class="sd">    :type email: str, unicode</span>
+
+<span class="sd">    :param login: This is the login name of the user, it should be all lower</span>
+<span class="sd">      case. Giving a string or unicode that has uppercase letters, it will be</span>
+<span class="sd">      converted to lower case. It can not be an empty string or None and it can</span>
+<span class="sd">      not contain any white space inside.</span>
+
+<span class="sd">    :type login: str, unicode</span>
+
+<span class="sd">    :param departments: It is the departments that the user is a part of. It</span>
+<span class="sd">      should be a list of Department objects. One user can be listed in</span>
+<span class="sd">      multiple departments.</span>
+
+<span class="sd">    :type departments: list of :class:`~stalker.models.department.Department`\ s</span>
+
+<span class="sd">    :param password: it is the password of the user, can contain any character.</span>
+<span class="sd">      Stalker doesn&#39;t store the raw passwords of the users. To check a stored</span>
+<span class="sd">      password with a raw password use</span>
+<span class="sd">      :meth:`~stalker.models.auth.User.check_password` and to set the password</span>
+<span class="sd">      you can use the :attr:`~stalker.models.auth.User.password` property</span>
+<span class="sd">      directly.</span>
+
+<span class="sd">    :type password: str, unicode</span>
+
+<span class="sd">    :param groups: It is a list of :class:`~stalker.models.auth.Group`</span>
+<span class="sd">      instances that this user belongs to.</span>
+
+<span class="sd">    :type groups: list of :class:`~stalker.models.auth.Group`</span>
+
+<span class="sd">    :param tasks: it is a list of Task objects which holds the tasks that this</span>
+<span class="sd">      user has been assigned to</span>
+
+<span class="sd">    :type tasks: list of :class:`~stalker.models.task.Task`\ s</span>
+
+<span class="sd">    :param projects_lead: it is a list of Project objects that this user</span>
+<span class="sd">      is the leader of, it is for back referencing purposes.</span>
+
+<span class="sd">    :type projects_lead: list of :class:`~stalker.models.project.Project`\ s</span>
+
+<span class="sd">    :param sequences_lead: it is a list of Sequence objects that this</span>
+<span class="sd">      user is the leader of, it is for back referencing purposes</span>
+
+<span class="sd">    :type sequences_lead: list of :class:`~stalker.models.sequence.Sequence`</span>
+
+<span class="sd">    :param last_login: it is a datetime.datetime object holds the last login</span>
+<span class="sd">      date of the user (not implemented yet)</span>
+
+<span class="sd">    :type last_login: datetime.datetime</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;Users&quot;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;User&quot;</span><span class="p">}</span>
+
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Entities.id&quot;</span><span class="p">),</span>
+                     <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">departments</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Department&quot;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;User_Departments&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;members&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A list of :class:`~stalker.models.department.Department`\ s that</span>
+<span class="s">        this user is a part of&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">email</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span>
+        <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;email of the user, accepts strings or unicode&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">password</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The password of the user.</span>
+
+<span class="s">        It is scrambled before it is stored.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">last_login</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">DateTime</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The last login time of this user.</span>
+
+<span class="s">        It is an instance of datetime.datetime class.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">login</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The login name of the user.</span>
+
+<span class="s">        Can not be empty.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Group&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;User_Groups&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;users&#39;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;Permission groups that this users is a member of.</span>
+
+<span class="s">        Accepts :class:`~stalker.models.auth.Group` object.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">projects</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Project&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Project_Users&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;users&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">projects_lead</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Project&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Projects.c.lead_id==Users.c.id&quot;</span><span class="p">,</span>
+        <span class="c">#uselist=True,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;lead&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;:class:`~stalker.models.project.Project`\ s lead by this user.</span>
+
+<span class="s">        It is a list of :class:`~stalker.models.project.Project` instances.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">sequences_lead</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Sequence&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Sequences.c.lead_id==Users.c.id&quot;</span><span class="p">,</span>
+        <span class="n">uselist</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;lead&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;:class:`~stalker.models.sequence.Sequence`\ s lead by this user.</span>
+
+<span class="s">        It is a list of :class:`~stalker.models.sequence.Sequence` instances.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">tasks</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Task&quot;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&quot;Task_Resources&quot;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;resources&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;:class:`~stalker.models.task.Task`\ s assigned to this user.</span>
+
+<span class="s">        It is a list of :class:`~stalker.models.task.Task` instances.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">watching</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Task&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Task_Watchers&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;watchers&#39;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&#39;&#39;&#39;:class:`~stalker.models.task.Tasks`\ s that this user is</span>
+<span class="s">        assigned as a watcher.</span>
+
+<span class="s">        It is a list of :class:`~stalker.models.task.Task` instances.</span>
+<span class="s">        &#39;&#39;&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">time_logs</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;TimeLog&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;TimeLogs.c.resource_id==Users.c.id&quot;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;resource&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A list of :class:`~stalker.models.task.TimeLog` instances which</span>
+<span class="s">        holds the time logs created for this :class:`~stalker.models.auth.User`.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="User.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.auth.User.html#stalker.models.auth.User.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">login</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">email</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">password</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">departments</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">groups</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">projects_lead</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">sequences_lead</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">tasks</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">watching</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">last_login</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">login</span> <span class="o">=</span> <span class="n">login</span>
+
+        <span class="k">if</span> <span class="n">departments</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">departments</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">departments</span> <span class="o">=</span> <span class="n">departments</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
+
+        <span class="c"># to be able to mangle the password do it like this</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+
+        <span class="k">if</span> <span class="n">groups</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="n">groups</span>
+
+        <span class="k">if</span> <span class="n">projects_lead</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">projects_lead</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">projects_lead</span> <span class="o">=</span> <span class="n">projects_lead</span>
+
+        <span class="k">if</span> <span class="n">sequences_lead</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">sequences_lead</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequences_lead</span> <span class="o">=</span> <span class="n">sequences_lead</span>
+
+        <span class="k">if</span> <span class="n">tasks</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span>
+
+        <span class="k">if</span> <span class="n">watching</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">watching</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_login</span> <span class="o">=</span> <span class="n">last_login</span>
+</div>
+    <span class="nd">@reconstructor</span>
+    <span class="k">def</span> <span class="nf">__init_on_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initialized the instance variables when the instance created with</span>
+<span class="sd">        SQLAlchemy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># call the Entity __init_on_load__</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init_on_load__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return the representation of the current User</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;User (</span><span class="si">%s</span><span class="s"> (&#39;</span><span class="si">%s</span><span class="s">&#39;))&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">login</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the equality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">User</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">email</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">login</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">login</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the inequality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;login&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">login</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given login value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">login</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.login can not be None&#39;</span> <span class="o">%</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="n">login</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_login</span><span class="p">(</span><span class="n">login</span><span class="p">)</span>
+
+        <span class="c"># raise a ValueError if the login is an empty string after formatting</span>
+        <span class="k">if</span> <span class="n">login</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.login can not be an empty string&#39;</span> <span class="o">%</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;name out: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">login</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">login</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;departments&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_department</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">department</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given department value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.department</span> <span class="kn">import</span> <span class="n">Department</span>
+
+        <span class="c"># check if it is instance of Department object</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">department</span><span class="p">,</span> <span class="n">Department</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.department should be instance of &quot;</span>
+                            <span class="s">&quot;stalker.models.department.Department not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">department</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">department</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_email</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">email_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given email value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check if email_in is an instance of string or unicode</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">email_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.email should be an instance of string or &quot;</span>
+                            <span class="s">&quot;unicode not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">email_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_email_format</span><span class="p">(</span><span class="n">email_in</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_email_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">email_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;formats the email</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># split the mail from @ sign</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="n">email_in</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;@&quot;</span><span class="p">)</span>
+        <span class="n">len_splits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">splits</span><span class="p">)</span>
+
+        <span class="c"># there should be one and only one @ sign</span>
+        <span class="k">if</span> <span class="n">len_splits</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;check the </span><span class="si">%s</span><span class="s">.email formatting, there are more &quot;</span>
+                             <span class="s">&quot;than one @ sign&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">len_splits</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;check the </span><span class="si">%s</span><span class="s">.email formatting, there are no @ &quot;</span>
+                             <span class="s">&quot;sign&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">splits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;check the </span><span class="si">%s</span><span class="s">.email formatting, the name part &quot;</span>
+                             <span class="s">&quot;is missing&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">splits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;check the </span><span class="si">%s</span><span class="s">.email formatting, the domain part &quot;</span>
+                             <span class="s">&quot;is missing&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">email_in</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;last_login&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_last_login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">last_login_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given last_login argument</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last_login_in</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span> <span class="ow">and</span>\
+           <span class="n">last_login_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.last_login should be an instance of &quot;</span>
+                            <span class="s">&quot;datetime.datetime or None not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">last_login_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">last_login_in</span>
+
+    <span class="k">def</span> <span class="nf">_format_login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">login</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;formats the given login value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># be sure it is a string</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">login</span><span class="p">)</span>
+
+        <span class="c"># strip white spaces from start and end</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="n">login</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c"># remove all the spaces</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="n">login</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c"># make it lowercase</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="n">login</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="c"># remove any illegal characters</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&quot;[^</span><span class="se">\\</span><span class="s">(a-zA-Z0-9)]+&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">login</span><span class="p">)</span>
+
+        <span class="c"># remove any number at the beginning</span>
+        <span class="n">login</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&quot;^[0-9]+&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">login</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">login</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;password&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">password_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given password</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">password_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.password cannot be None&quot;</span> <span class="o">%</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">password_in</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;raw_password can not be empty string&quot;</span><span class="p">)</span>
+
+        <span class="c"># mangle the password</span>
+        <span class="k">return</span> <span class="n">base64</span><span class="o">.</span><span class="n">encodestring</span><span class="p">(</span><span class="n">password_in</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="User.check_password"><a class="viewcode-back" href="../../../generated/stalker.models.auth.User.html#stalker.models.auth.User.check_password">[docs]</a>    <span class="k">def</span> <span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks the given raw_password.</span>
+
+<span class="sd">        Checks the given raw_password with the current Users objects encrypted</span>
+<span class="sd">        password.</span>
+
+<span class="sd">        Checks the given raw password with the given encrypted password. Handles</span>
+<span class="sd">        the encryption process behind the scene.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">==</span> <span class="n">base64</span><span class="o">.</span><span class="n">encodestring</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">raw_password</span><span class="p">))</span>
+    </div>
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;groups&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;check the given group</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;any group in </span><span class="si">%s</span><span class="s">.groups should be an instance of&quot;</span>
+                <span class="s">&quot;stalker.models.auth.Group not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">group</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">group</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;projects_lead&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_projects_lead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given projects_lead attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.project</span> <span class="kn">import</span> <span class="n">Project</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">Project</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;any element in </span><span class="si">%s</span><span class="s">.projects_lead should be a&quot;</span>
+                <span class="s">&quot;stalker.models.project.Project instance not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">project</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">project</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;sequences_lead&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_sequences_lead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given sequences_lead attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.sequence</span> <span class="kn">import</span> <span class="n">Sequence</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;any element in </span><span class="si">%s</span><span class="s">.sequences_lead should be an instance of &quot;</span>
+                <span class="s">&quot;stalker.models.sequence.Sequence not </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">sequence</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;tasks&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given tasks attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.task</span> <span class="kn">import</span> <span class="n">Task</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">Task</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;any element in </span><span class="si">%s</span><span class="s">.tasks should be an instance of &quot;</span>
+                <span class="s">&quot;stalker.models.task.Task not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">task</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;watching&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_watching</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given watching attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.task</span> <span class="kn">import</span> <span class="n">Task</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">Task</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;any element in </span><span class="si">%s</span><span class="s">.watching should be an instance of &quot;</span>
+                <span class="s">&quot;stalker.models.task.Task not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">task</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;projects&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given project instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Project</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">Project</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.projects should a list of &#39;</span>
+                            <span class="s">&#39;stalker.models.project.Project instances, not &#39;</span>
+                            <span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                    <span class="n">project</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">project</span>
+    
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="User.tickets"><a class="viewcode-back" href="../../../generated/stalker.models.auth.User.html#stalker.models.auth.User.tickets">[docs]</a>    <span class="k">def</span> <span class="nf">tickets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The list of :class:`~stalker.models.ticket.Ticket`\ s that this user has.</span>
+
+<span class="sd">        returns a list of :class:`~stalker.models.ticket.Ticket` instances</span>
+<span class="sd">        which are derived from the :class:`~stalker.models.task.Task`\ s that</span>
+<span class="sd">        this user is assigned to</span>
+<span class="sd">        (Stalker checks the related :class:`~stalker.models.version.Version`</span>
+<span class="sd">        instances and then the `~stalker.models.ticket.Ticket` instances</span>
+<span class="sd">        assigned to the Versions.).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># do it with sqlalchemy</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Ticket</span>
+        <span class="k">return</span> <span class="n">Ticket</span><span class="o">.</span><span class="n">query</span>\
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Ticket</span><span class="o">.</span><span class="n">owner</span><span class="o">==</span><span class="bp">self</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="User.open_tickets"><a class="viewcode-back" href="../../../generated/stalker.models.auth.User.html#stalker.models.auth.User.open_tickets">[docs]</a>    <span class="k">def</span> <span class="nf">open_tickets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The list of open :class:`~stalker.models.ticket.Ticket`\ s that this user has.</span>
+
+<span class="sd">        returns a list of :class:`~stalker.models.ticket.Ticket` instances</span>
+<span class="sd">        which has a status of `Open` and are derived from the</span>
+<span class="sd">        :class:`~stalker.models.task.Task`\ s that this user is assigned to</span>
+<span class="sd">        (Stalker checks the related :class:`~stalker.models.version.Version`</span>
+<span class="sd">        instances and then the `~stalker.models.ticket.Ticket` instances</span>
+<span class="sd">        assigned to the Version and has a status of `Open`.).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># do it with sqlalchemy</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Ticket</span><span class="p">,</span> <span class="n">Status</span>
+
+        <span class="k">return</span> <span class="n">Ticket</span><span class="o">.</span><span class="n">query</span>\
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Ticket</span><span class="o">.</span><span class="n">owner</span><span class="o">==</span><span class="bp">self</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Ticket</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Status</span><span class="o">.</span><span class="n">code</span> <span class="o">!=</span> <span class="s">&#39;CLOSED&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="User.to_tjp"><a class="viewcode-back" href="../../../generated/stalker.models.auth.User.html#stalker.models.auth.User.to_tjp">[docs]</a>    <span class="k">def</span> <span class="nf">to_tjp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;outputs a TaskJuggler formatted string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Template</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">tjp_user_template</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">temp</span><span class="o">.</span><span class="n">render</span><span class="p">({</span><span class="s">&#39;user&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">})</span>
+</div></div>
+<div class="viewcode-block" id="LocalSession"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession">[docs]</a><span class="k">class</span> <span class="nc">LocalSession</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A simple temporary session object which simple stores session data.</span>
+
+<span class="sd">    This class will later be removed, it is here because we need a login window</span>
+<span class="sd">    for the Qt user interfaces.</span>
+
+<span class="sd">    On initialize it will load the SessionData from the users .strc folder</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LocalSession.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user_id</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_data</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="LocalSession.load"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;loads the data from the saved local session</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">LocalSession</span><span class="o">.</span><span class="n">session_file_full_path</span><span class="p">(),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+                <span class="c"># try:</span>
+                <span class="n">unpickled_object</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">unpickled_object</span><span class="o">.</span><span class="n">valid_to</span> <span class="o">&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">():</span>
+                    <span class="c"># fill __dict__ with the loaded one</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span> <span class="o">=</span> <span class="n">unpickled_object</span><span class="o">.</span><span class="n">__dict__</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">pass</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="LocalSession.logged_in_user"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession.logged_in_user">[docs]</a>    <span class="k">def</span> <span class="nf">logged_in_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the logged in user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user_id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="LocalSession.store_user"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession.store_user">[docs]</a>    <span class="k">def</span> <span class="nf">store_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;stores the given user instance</span>
+
+<span class="sd">        :param user: The user instance. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">user</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user_id</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span>
+</div>
+<div class="viewcode-block" id="LocalSession.save"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;remembers the data in user local file system</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="c"># serialize self</span>
+        <span class="n">dumped_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;dumped session data : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">dumped_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_data</span><span class="p">(</span><span class="n">dumped_data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="LocalSession.delete"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;removes the cache file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session_file_full_path</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="LocalSession.session_file_full_path"><a class="viewcode-back" href="../../../generated/stalker.models.auth.LocalSession.html#stalker.models.auth.LocalSession.session_file_full_path">[docs]</a>    <span class="k">def</span> <span class="nf">session_file_full_path</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :return str: the session file full path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">local_storage_path</span><span class="p">,</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">local_session_data_file_name</span>
+        <span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes the given data to the local session file</span>
+
+<span class="sd">        :param data: the data to be written (generally serialized LocalSession</span>
+<span class="sd">          class itself)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_full_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_file_full_path</span><span class="p">()</span>
+
+        <span class="c"># create the path first</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">file_full_path</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="c"># dir exists</span>
+            <span class="k">pass</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_full_path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data_file</span><span class="p">:</span>
+                <span class="n">data_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+
+<span class="c"># USER_PERMISSIONGROUPS</span></div>
+<span class="n">User_Groups</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&quot;User_Groups&quot;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;uid&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Users.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;gid&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Groups.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c"># USER_DEPARTMENTS</span>
+<span class="n">User_Departments</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&#39;User_Departments&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;uid&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Users.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;did&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Departments.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

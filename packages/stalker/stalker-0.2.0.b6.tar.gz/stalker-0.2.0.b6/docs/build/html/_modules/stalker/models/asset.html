@@ -1,0 +1,185 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.asset &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.asset</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">reconstructor</span>
+<span class="kn">from</span> <span class="nn">stalker.models.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">stalker.models.mixins</span> <span class="kn">import</span> <span class="n">ReferenceMixin</span><span class="p">,</span> <span class="n">CodeMixin</span>
+
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Asset"><a class="viewcode-back" href="../../../generated/stalker.models.asset.Asset.html#stalker.models.asset.Asset">[docs]</a><span class="k">class</span> <span class="nc">Asset</span><span class="p">(</span><span class="n">Task</span><span class="p">,</span> <span class="n">CodeMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Asset class is the whole idea behind Stalker.</span>
+<span class="sd">    </span>
+<span class="sd">    *Assets* are containers of :class:`~stalker.models.task.Task`\ s. And</span>
+<span class="sd">    :class:`~stalker.models.task.Task`\ s are the smallest meaningful part that</span>
+<span class="sd">    should be accomplished to complete the</span>
+<span class="sd">    :class:`~stalker.models.project.Project`.</span>
+<span class="sd">    </span>
+<span class="sd">    An example could be given as follows; you can create an asset for one of</span>
+<span class="sd">    the characters in your project. Than you can divide this character asset in</span>
+<span class="sd">    to :class:`~stalker.models.task.Task`\ s. These</span>
+<span class="sd">    :class:`~stalker.models.task.Task`\ s can be defined by the type of the</span>
+<span class="sd">    :class:`~stalker.models.asset.Asset`, which is a</span>
+<span class="sd">    :class:`~stalker.models.type.Type` object created specifically for</span>
+<span class="sd">    :class:`~stalker.models.asset.Asset` (ie. has its</span>
+<span class="sd">    :attr:`~stalker.models.type.Type.target_entity_type` set to &quot;Asset&quot;),</span>
+<span class="sd">    </span>
+<span class="sd">    An :class:`~stalker.models.asset.Asset` instance should be initialized with</span>
+<span class="sd">    a :class:`~stalker.models.project.Project` instance (as the other classes</span>
+<span class="sd">    which are mixed with the :class:`~stalker.models.mixins.TaskMixin`). And</span>
+<span class="sd">    when a :class:`~stalker.models.project.Project` instance is given then the</span>
+<span class="sd">    asset will append itself to the</span>
+<span class="sd">    :attr:`~stalker.models.project.Project.assets` list.</span>
+<span class="sd">    </span>
+<span class="sd">    ..versionadded: 0.2.0:</span>
+<span class="sd">        No more Asset to Shot connection:</span>
+<span class="sd">        </span>
+<span class="sd">        Assets now are not directly related to Shots. Instead a</span>
+<span class="sd">        :class:`~stalker.models.Version` will reference the Asset and then it</span>
+<span class="sd">        is easy to track which shots are referencing this Asset by querying</span>
+<span class="sd">        with a join of Shot Versions referencing this Asset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__strictly_typed__</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;Assets&quot;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;Asset&quot;</span><span class="p">}</span>
+
+    <span class="n">asset_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Tasks.id&quot;</span><span class="p">),</span>
+                      <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Asset.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.asset.Asset.html#stalker.models.asset.Asset.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">code</span>
+        
+        <span class="nb">super</span><span class="p">(</span><span class="n">Asset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ReferenceMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">CodeMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    </div>
+    <span class="nd">@reconstructor</span>
+    <span class="k">def</span> <span class="nf">__init_on_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initialized the instance variables when the instance created with</span>
+<span class="sd">        SQLAlchemy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># call supers __init_on_load__</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Asset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init_on_load__</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the equality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Asset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Asset</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">type</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

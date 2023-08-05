@@ -1,0 +1,1347 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.task &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.task</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy.exc</span> <span class="kn">import</span> <span class="n">UnboundExecutionError</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declared_attr</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span>
+                        <span class="n">DateTime</span><span class="p">,</span> <span class="n">Float</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">validates</span><span class="p">,</span> <span class="n">synonym</span><span class="p">,</span> <span class="n">reconstructor</span>
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">defaults</span>
+<span class="kn">from</span> <span class="nn">stalker.models</span> <span class="kn">import</span> <span class="n">check_circular_dependency</span>
+<span class="kn">from</span> <span class="nn">stalker.models.entity</span> <span class="kn">import</span> <span class="n">Entity</span>
+<span class="kn">from</span> <span class="nn">stalker.models.auth</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">stalker.models.mixins</span> <span class="kn">import</span> <span class="n">ScheduleMixin</span><span class="p">,</span> <span class="n">StatusMixin</span><span class="p">,</span> <span class="n">ReferenceMixin</span>
+<span class="kn">from</span> <span class="nn">stalker.db</span> <span class="kn">import</span> <span class="n">DBSession</span>
+<span class="kn">from</span> <span class="nn">stalker.db.declarative</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.exceptions</span> <span class="kn">import</span> <span class="n">OverBookedError</span><span class="p">,</span> <span class="n">CircularDependencyError</span>
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+
+<span class="c"># schedule constraints</span>
+<span class="n">CONSTRAINT_NONE</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">CONSTRAINT_START</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">CONSTRAINT_END</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">CONSTRAINT_BOTH</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<div class="viewcode-block" id="TimeLog"><a class="viewcode-back" href="../../../generated/stalker.models.task.TimeLog.html#stalker.models.task.TimeLog">[docs]</a><span class="k">class</span> <span class="nc">TimeLog</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Holds information about the uninterrupted time spend on a specific</span>
+<span class="sd">    :class:`~stalker.models.task.Task` by a specific</span>
+<span class="sd">    :class:`~stalker.models.auth.User`.</span>
+<span class="sd">    </span>
+<span class="sd">    It is so important to note that the TimeLog reports the uninterrupted time</span>
+<span class="sd">    that is spent for a Task. Thus it doesn&#39;t care about the working time</span>
+<span class="sd">    attributes like daily working hours, weekly working days or anything else.</span>
+<span class="sd">    Again it is the uninterrupted time which is spent for a task.</span>
+<span class="sd">    </span>
+<span class="sd">    Entering a time log for 2 days will book the resource for 48 hours not,</span>
+<span class="sd">    2 * daily working hours.</span>
+<span class="sd">    </span>
+<span class="sd">    TimeLogs are created per resource. It means, you need to record all the </span>
+<span class="sd">    works separately for each resource. So there is only one resource in a </span>
+<span class="sd">    TimeLog instance.</span>
+<span class="sd">    </span>
+<span class="sd">    A :class:`~stalker.models.task.TimeLog` instance needs to be initialized</span>
+<span class="sd">    with a :class:`~stalker.models.task.Task` and a</span>
+<span class="sd">    :class:`~stalker.models.auth.User` instances.</span>
+<span class="sd">    </span>
+<span class="sd">    Adding overlapping time log for a :class:`~stalker.models.auth.User` will</span>
+<span class="sd">    raise a :class:`~stalker.errors.OverBookedError`.</span>
+<span class="sd">    </span>
+<span class="sd">    TimeLog instances automatically extends the</span>
+<span class="sd">    :attr:`~stalker.models.task.Task.schedule_timing` of the assigned Task if</span>
+<span class="sd">    the :attr:`~stalker.models.task.Task.total_logged_seconds` is getting</span>
+<span class="sd">    bigger than the :attr:`~stalker.models.task.Task.schedule_timing` after</span>
+<span class="sd">    this TimeLog.</span>
+<span class="sd">    </span>
+<span class="sd">    :param task: The :class:`~stalker.models.task.Task` instance that this</span>
+<span class="sd">      time log belongs to.</span>
+<span class="sd">    </span>
+<span class="sd">    :param resource: The :class:`~stalker.models.auth.User` instance that this</span>
+<span class="sd">      time log is created for.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;TimeLogs&quot;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;TimeLog&quot;</span><span class="p">}</span>
+    <span class="n">time_log_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Entities.id&quot;</span><span class="p">),</span>
+                         <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">task_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Tasks.id&quot;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">task</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Task&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;TimeLogs.c.task_id==Tasks.c.id&quot;</span><span class="p">,</span>
+        <span class="n">uselist</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;time_logs&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The :class:`~stalker.models.task.Task` instance that this </span>
+<span class="s">        time log is created for&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">resource_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Users.id&quot;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">resource</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;User&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;TimeLogs.c.resource_id==Users.c.id&quot;</span><span class="p">,</span>
+        <span class="n">uselist</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;time_logs&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The :class:`~stalker.models.auth.User` instance that this </span>
+<span class="s">        time_log is created for&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="TimeLog.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.task.TimeLog.html#stalker.models.task.TimeLog.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">task</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">resource</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">duration</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TimeLog</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;duration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">duration</span>
+        <span class="n">ScheduleMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="o">=</span> <span class="n">resource</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">task</span>
+</div>
+    <span class="k">def</span> <span class="nf">_expand_task_schedule_timing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Expands the task schedule timing if necessary</span>
+<span class="sd">        </span>
+<span class="sd">        :param task: The task that is going to be adjusted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># do the schedule_timing expansion here</span>
+        <span class="n">total_seconds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="mi">86400</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">seconds</span>
+        <span class="n">remaining_seconds</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">remaining_seconds</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Studio</span>
+
+        <span class="n">studio</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+                <span class="n">studio</span> <span class="o">=</span> <span class="n">Studio</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">UnboundExecutionError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        
+        <span class="n">data_source</span> <span class="o">=</span> <span class="n">studio</span> <span class="k">if</span> <span class="n">studio</span> <span class="k">else</span> <span class="n">defaults</span>
+        <span class="n">conversion_ratio</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;min&#39;</span><span class="p">:</span>
+            <span class="n">conversion_ratio</span> <span class="o">=</span> <span class="mi">60</span>
+        <span class="k">elif</span> <span class="n">task</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;h&#39;</span><span class="p">:</span>
+            <span class="n">conversion_ratio</span> <span class="o">=</span> <span class="mi">3600</span>
+        <span class="k">elif</span> <span class="n">task</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;d&#39;</span><span class="p">:</span>
+            <span class="n">conversion_ratio</span> <span class="o">=</span> <span class="n">data_source</span><span class="o">.</span><span class="n">daily_working_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="k">elif</span> <span class="n">task</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;w&#39;</span><span class="p">:</span>
+            <span class="n">conversion_ratio</span> <span class="o">=</span> <span class="n">data_source</span><span class="o">.</span><span class="n">weekly_working_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="k">elif</span> <span class="n">task</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;m&#39;</span><span class="p">:</span>
+            <span class="n">conversion_ratio</span> <span class="o">=</span> <span class="n">data_source</span><span class="o">.</span><span class="n">weekly_working_hours</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="k">elif</span> <span class="n">task</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;y&#39;</span><span class="p">:</span>
+            <span class="n">conversion_ratio</span> <span class="o">=</span> <span class="n">data_source</span><span class="o">.</span><span class="n">yearly_working_days</span> <span class="o">*</span> \
+                               <span class="n">data_source</span><span class="o">.</span><span class="n">daily_working_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;remaining_seconds : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">remaining_seconds</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;total_seconds     : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">total_seconds</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;conversion_ratio  : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">conversion_ratio</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">remaining_seconds</span> <span class="o">&lt;</span> <span class="n">total_seconds</span><span class="p">:</span>
+            <span class="c"># expand it</span>
+            <span class="c"># first convert the task.schedule_timing to hours (by using studio</span>
+            <span class="c"># or defaults)</span>
+            <span class="c"># then add the needed seconds as hours</span>
+
+            <span class="c"># do it normally</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">schedule_timing</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">schedule_timing</span><span class="p">)</span> <span class="o">+</span> \
+                                   <span class="nb">float</span><span class="p">(</span>
+                                       <span class="n">total_seconds</span> <span class="o">-</span> <span class="n">remaining_seconds</span><span class="p">)</span> <span class="o">/</span> <span class="n">conversion_ratio</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;task&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given task value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">Task</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.task should be an instance of &quot;</span>
+                            <span class="s">&quot;stalker.models.task.Task not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">task</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="c"># adjust task schedule</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expand_task_schedule_timing</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">task</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;resource&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given resource value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.resource can not be None&quot;</span> <span class="o">%</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.resource should be a &quot;</span>
+                            <span class="s">&quot;stalker.models.auth.User instance not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">resource</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="c"># check for overbooking</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;resource.time_logs: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">resource</span><span class="o">.</span><span class="n">time_logs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">time_log</span> <span class="ow">in</span> <span class="n">resource</span><span class="o">.</span><span class="n">time_logs</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;time_log       : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">time_log</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;time_log.start : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">time_log</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;time_log.end   : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">time_log</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;self.start     : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;self.end       : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">time_log</span> <span class="o">!=</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">time_log</span><span class="o">.</span><span class="n">start</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="ow">or</span> \
+                                <span class="n">time_log</span><span class="o">.</span><span class="n">end</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="ow">or</span> \
+                                        <span class="n">time_log</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">&lt;</span> <span class="n">time_log</span><span class="o">.</span><span class="n">end</span> <span class="ow">or</span> \
+                                        <span class="n">time_log</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">time_log</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">OverBookedError</span><span class="p">(</span>
+                        <span class="s">&quot;The resource </span><span class="si">%s</span><span class="s"> is overly booked with </span><span class="si">%s</span><span class="s"> and </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">time_log</span><span class="p">),</span>
+                    <span class="p">)</span>
+        <span class="k">return</span> <span class="n">resource</span>
+
+<span class="c"># TODO: Consider contracting a Task with TimeLogs, what will happen when the task has logged in time</span>
+<span class="c"># TODO: Check, what happens when a task has TimeLogs and will have child task later on, will it be ok with TJ</span>
+<span class="c"># TODO: Create a TimeLog/Resource view where each resource is in one row and we have the days and hours in columns, you can temporarily store the resource report of TJ in db</span>
+<span class="c"># TODO: Task with no resource can not have booking (I think this is automatically done already!)</span>
+
+
+</div>
+<span class="k">def</span> <span class="nf">update_task_dates</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;decorator that updates the date after the function finishes its job</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># call the function as usual</span>
+        <span class="n">rvalue</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c"># update the dates</span>
+        <span class="n">task_class</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="n">task_class</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">task_class</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rvalue</span>
+
+        <span class="c"># return decorated function</span>
+
+    <span class="k">return</span> <span class="n">wrap</span>
+
+
+<div class="viewcode-block" id="Task"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task">[docs]</a><span class="k">class</span> <span class="nc">Task</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">StatusMixin</span><span class="p">,</span> <span class="n">ScheduleMixin</span><span class="p">,</span> <span class="n">ReferenceMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manages Task related data.</span>
+<span class="sd">    </span>
+<span class="sd">    **Introduction**</span>
+<span class="sd">    </span>
+<span class="sd">    Tasks are the unit of work that should be accomplished to complete a</span>
+<span class="sd">    :class:`~stalker.models.project.Project`.</span>
+<span class="sd">    </span>
+<span class="sd">    Stalker tries to follow the concepts stated in TaskJuggler_.</span>
+<span class="sd">    </span>
+<span class="sd">    .. _TaskJuggler : http://www.taskjuggler.org/</span>
+<span class="sd">    </span>
+<span class="sd">    .. note::</span>
+<span class="sd">       .. versionadded:: 0.2.0:</span>
+<span class="sd">       Parent-child relation in Tasks</span>
+
+<span class="sd">       Tasks can now have child Tasks. So you can create complex relations of</span>
+<span class="sd">       Tasks to comply with your project needs.</span>
+<span class="sd">    </span>
+<span class="sd">    .. note::</span>
+<span class="sd">       .. versionadded:: 0.2.0:</span>
+<span class="sd">          References in Tasks</span>
+<span class="sd">       </span>
+<span class="sd">       Tasks can now have References.</span>
+<span class="sd">    </span>
+<span class="sd">    **Initialization**</span>
+<span class="sd">    </span>
+<span class="sd">    A Task needs to be created with a Project instance. It is also valid if no</span>
+<span class="sd">    project is supplied but there should be a parent Task passed to the parent</span>
+<span class="sd">    argument. And it is also possible to pass both project and the parent task.</span>
+<span class="sd">    </span>
+<span class="sd">    Because it will create an ambiguity, Stalker will raise a RuntimeWarning,</span>
+<span class="sd">    if both project and task are given and the owner project of the given</span>
+<span class="sd">    parent task is different then the supplied project instance. But again</span>
+<span class="sd">    Stalker will warn the user but will continue to use the task as the parent</span>
+<span class="sd">    and will correctly use the project of the given task as the project of the</span>
+<span class="sd">    newly created task.</span>
+<span class="sd">    </span>
+<span class="sd">    The following codes are a couple of examples for creating Task instances::</span>
+<span class="sd">      </span>
+<span class="sd">      # with a project instance</span>
+<span class="sd">      task1 = Task(name=&#39;Schedule&#39;, project=proj1)</span>
+<span class="sd">      </span>
+<span class="sd">      # with a parent task</span>
+<span class="sd">      task2 = Task(name=&#39;Documentation&#39;, parent=task1)</span>
+<span class="sd">      </span>
+<span class="sd">      # or both</span>
+<span class="sd">      task3 = Task(name=&#39;Test&#39;, project=proj1, parent=task1)</span>
+<span class="sd">      </span>
+<span class="sd">      # this will create a RuntimeWarning</span>
+<span class="sd">      task4 = Task(name=&#39;Test&#39;, project=proj2, parent=task1) # task1 is not a</span>
+<span class="sd">                                                             # task of proj2</span>
+<span class="sd">      assert task4.project == proj1 # Stalker uses the task1.project for task4</span>
+<span class="sd">      </span>
+<span class="sd">      # this will also create a RuntimeError</span>
+<span class="sd">      task3 = Task(name=&#39;Failure 2&#39;) # no project no parent, this is an orphan</span>
+<span class="sd">                                     # task.</span>
+<span class="sd">    </span>
+<span class="sd">    Also initially Stalker will pin point the :attr:`.start` value and then</span>
+<span class="sd">    will calculate proper :attr:`.end` and :attr:`.duration` values by using</span>
+<span class="sd">    the :attr:`.schedule_timing` and :attr:`.schedule_unit` attributes. But</span>
+<span class="sd">    these values (start, end and duration) are temporary values for an</span>
+<span class="sd">    unscheduled task. The final date values will be calculated by TaskJuggler</span>
+<span class="sd">    in the `auto scheduling` phase.</span>
+<span class="sd">    </span>
+<span class="sd">    **Auto Scheduling**</span>
+<span class="sd">    </span>
+<span class="sd">    Stalker uses TaskJuggler for task scheduling. After defining all the tasks,</span>
+<span class="sd">    Stalker will convert them to a single tjp file along with the recorded</span>
+<span class="sd">    :class:`~stalker.models.task.TimeLog`\ s and let TaskJuggler to solve the</span>
+<span class="sd">    scheduling problem.</span>
+<span class="sd">    </span>
+<span class="sd">    During the auto scheduling (with TaskJuggler), the calculation of task</span>
+<span class="sd">    duration, start and end dates are effected by the working hours setting of</span>
+<span class="sd">    the :class:`~stalker.models.studio.Studio`, the effort that needs to spend</span>
+<span class="sd">    for that task and the availability of the resources assigned to the task.</span>
+<span class="sd">    </span>
+<span class="sd">    A good practice for creating a project plan is to supply the parent/child</span>
+<span class="sd">    and dependency relation between tasks and the effort and resource</span>
+<span class="sd">    information per task and leave the start and end date calculation to</span>
+<span class="sd">    TaskJuggler. It is also possible to use the ``length`` or ``duration``</span>
+<span class="sd">    values (set :attr:`.schedule_model` to &#39;effort&#39;, &#39;length&#39; or &#39;duration&#39; to</span>
+<span class="sd">    get the desired scheduling model).</span>
+<span class="sd">    </span>
+<span class="sd">    The default :attr:`.schedule_model` for Stalker tasks is &#39;effort`, the</span>
+<span class="sd">    default :attr:`.schedule_unit` is ``hour`` and the default value of</span>
+<span class="sd">    :attr:`.schedule_timing` is defined by the</span>
+<span class="sd">    :attr:`stalker.config.Config.timing_resolution`. So for a</span>
+<span class="sd">    config where the ``timing_resolution`` is set to 1 hour the schedule_timing</span>
+<span class="sd">    is 1.</span>
+<span class="sd">    </span>
+<span class="sd">    To convert a Task instance to a TaskJuggler compatible string use the</span>
+<span class="sd">    :attr:`.to_tjp`` attribute. It will try to create a good representation of</span>
+<span class="sd">    the Task by using the resources, schedule_model, schedule_timing and</span>
+<span class="sd">    schedule_constraint attributes.</span>
+<span class="sd">    </span>
+<span class="sd">    **Task/Task Relation**</span>
+<span class="sd">    </span>
+<span class="sd">    A Task is called a ``container task`` if it has at least one child Task.</span>
+<span class="sd">    And it is called a ``leaf task`` if it doesn&#39;t have any children Tasks.</span>
+<span class="sd">    Task which doesn&#39;t have a parent called ``root_task``.</span>
+<span class="sd">    </span>
+<span class="sd">    The resources in a container task is meaningless, cause the resources are</span>
+<span class="sd">    defined by the child tasks (Dev Note: this can still be used to populate</span>
+<span class="sd">    the resource information to the children tasks as in TaskJuggler).</span>
+<span class="sd">    </span>
+<span class="sd">    Although the values are not very important after TaskJuggler schedules a</span>
+<span class="sd">    task, the :attr:`~.start` and :attr:`~.end` values for a container</span>
+<span class="sd">    task is gathered from the child tasks. The start is equal to the earliest</span>
+<span class="sd">    start value of the children tasks, and the end is equal to the latest end</span>
+<span class="sd">    value of the children tasks. Of course, these values are going to be</span>
+<span class="sd">    ignored by the TaskJuggler, but for interactive gantt charts these are good</span>
+<span class="sd">    toy attributes to play with.</span>
+<span class="sd">    </span>
+<span class="sd">    Stalker will check if there will be a cycle if one wants to parent a Task</span>
+<span class="sd">    to a child Task of its own or the dependency relation creates a cycle.</span>
+<span class="sd">    </span>
+<span class="sd">    In Gantt Charts the ``computed_start`` and ``computed_end`` attributes will</span>
+<span class="sd">    be used if the task :attr:`.is_scheduled`.</span>
+<span class="sd">    </span>
+<span class="sd">    :param parent: The parent Task or Project of this Task. Every Task in</span>
+<span class="sd">      Stalker should be related with a :class:`~stalker.models.project.Project`</span>
+<span class="sd">      instance. So if no parent task is desired, at least a Project instance</span>
+<span class="sd">      should be passed as the parent of the created Task or the Task will be an</span>
+<span class="sd">      orphan task and Stalker will raise a RuntimeError.</span>
+<span class="sd">    </span>
+<span class="sd">    :param int priority: It is a number between 0 to 1000 which defines the</span>
+<span class="sd">      priority of the :class:`~stalker.models.task.Task`. The higher the value</span>
+<span class="sd">      the higher its priority. The default value is 500.</span>
+<span class="sd">    </span>
+<span class="sd">    :param resources: The :class:`~stalker.models.auth.User`\ s assigned to</span>
+<span class="sd">      this :class:`~stalker.models.task.Task`. A</span>
+<span class="sd">      :class:`~stalker.models.task.Task` without any resource can not be</span>
+<span class="sd">      scheduled.</span>
+<span class="sd">    </span>
+<span class="sd">    :type resources: list of :class:`~stalker.User`</span>
+<span class="sd">    </span>
+<span class="sd">    :param int bid_timing: The initial bid for this Task. It can be used in</span>
+<span class="sd">      measuring how accurate the initial guess was. It will be compared against</span>
+<span class="sd">      the total amount of effort spend doing this task. Can be set to None,</span>
+<span class="sd">      which will be set to the schedule_timing_day argument value if there is</span>
+<span class="sd">      one or 0.</span>
+<span class="sd">    </span>
+<span class="sd">    :param str bid_unit: The unit of the bid value for this Task. Should be one</span>
+<span class="sd">      of the &#39;min&#39;, &#39;h&#39;, &#39;d&#39;, &#39;w&#39;, &#39;m&#39;, &#39;y&#39;.</span>
+<span class="sd">        </span>
+<span class="sd">    :param depends: A list of :class:`~stalker.models.task.Task`\ s that this</span>
+<span class="sd">      :class:`~stalker.models.task.Task` is depending on. A Task can not depend</span>
+<span class="sd">      to itself or any other Task which are already depending to this one in</span>
+<span class="sd">      anyway or a CircularDependency error will be raised.</span>
+<span class="sd">    </span>
+<span class="sd">    :type depends: list of :class:`~stalker.models.task.Task`</span>
+<span class="sd">    </span>
+<span class="sd">    :param int schedule_timing: The value of the schedule timing.</span>
+<span class="sd">    </span>
+<span class="sd">    :param str schedule_unit: The unit value of the schedule timing. Should be</span>
+<span class="sd">      one of &#39;min&#39;, &#39;h&#39;, &#39;d&#39;, &#39;w&#39;, &#39;m&#39;, &#39;y&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    :param int schedule_constraint: The schedule constraint. It is the index</span>
+<span class="sd">      of the schedule constraints value in</span>
+<span class="sd">      :class:`stalker.config.Config.task_schedule_constraints`.</span>
+<span class="sd">    </span>
+<span class="sd">    :param bool milestone: A bool (True or False) value showing if this task is</span>
+<span class="sd">      a milestone which doesn&#39;t need any resource and effort.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;Tasks&quot;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;polymorphic_identity&#39;</span><span class="p">:</span> <span class="s">&quot;Task&quot;</span><span class="p">}</span>
+    <span class="n">task_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Entities.id&#39;</span><span class="p">),</span>
+                     <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">project_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;project_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Projects.id&#39;</span><span class="p">),</span>
+                        <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">_project</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Project&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tasks.c.project_id==Projects.c.id&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;tasks&#39;</span><span class="p">,</span>
+        <span class="n">uselist</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">post_update</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parent_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;parent_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Tasks.id&#39;</span><span class="p">))</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Task&#39;</span><span class="p">,</span>
+        <span class="n">remote_side</span><span class="o">=</span><span class="p">[</span><span class="n">task_id</span><span class="p">],</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tasks.c.parent_id==Tasks.c.id&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;children&#39;</span><span class="p">,</span>
+        <span class="n">post_update</span><span class="o">=</span><span class="bp">True</span>
+    <span class="p">)</span>
+
+    <span class="n">children</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Task&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tasks.c.parent_id==Tasks.c.id&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;parent&#39;</span><span class="p">,</span>
+        <span class="n">post_update</span><span class="o">=</span><span class="bp">True</span>
+    <span class="p">)</span>
+
+    <span class="n">tasks</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span><span class="s">&#39;children&#39;</span><span class="p">)</span>
+
+    <span class="n">is_milestone</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Boolean</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;Specifies if this Task is a milestone.</span>
+<span class="s">        </span>
+<span class="s">        Milestones doesn&#39;t need any duration, any effort and any resources. It</span>
+<span class="s">        is used to create meaningful dependencies between the critical stages</span>
+<span class="s">        of the project.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c"># UPDATE THIS: is_complete should look to Task.status, but it is may be</span>
+    <span class="c"># faster to query in this way, judge later</span>
+    <span class="n">is_complete</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Boolean</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A bool value showing if this task is completed or not.</span>
+<span class="s">        </span>
+<span class="s">        There is a good article_ about why not to use an attribute called</span>
+<span class="s">        ``percent_complete`` to measure how much the task is completed.</span>
+<span class="s">        </span>
+<span class="s">        .. _article: http://www.pmhut.com/how-percent-complete-is-that-task-again</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">depends</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Task&quot;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&quot;Task_Dependencies&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Tasks.c.id==Task_Dependencies.c.task_id&quot;</span><span class="p">,</span>
+        <span class="n">secondaryjoin</span><span class="o">=</span><span class="s">&quot;Task_Dependencies.c.depends_to_task_id==Tasks.c.id&quot;</span><span class="p">,</span>
+        <span class="n">backref</span><span class="o">=</span><span class="s">&quot;dependent_of&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A list of :class:`~stalker.models.task.Task`\ s that this one is depending on.</span>
+<span class="s">        </span>
+<span class="s">        A CircularDependencyError will be raised when the task dependency</span>
+<span class="s">        creates a circular dependency which means it is not allowed to create</span>
+<span class="s">        a dependency for this Task which is depending on another one which in</span>
+<span class="s">        some way depends to this one again.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">resources</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;User&quot;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&quot;Task_Resources&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Tasks.c.id==Task_Resources.c.task_id&quot;</span><span class="p">,</span>
+        <span class="n">secondaryjoin</span><span class="o">=</span><span class="s">&quot;Task_Resources.c.resource_id==Users.c.id&quot;</span><span class="p">,</span>
+        <span class="c">#backref=&quot;tasks&quot;,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;tasks&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The list of :class:`~stalker.models.auth.User`\ s assigned to this Task.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">watchers</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;User&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Task_Watchers&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tasks.c.id==Task_Watchers.c.task_id&#39;</span><span class="p">,</span>
+        <span class="n">secondaryjoin</span><span class="o">=</span><span class="s">&#39;Task_Watchers.c.watcher_id==Users.c.id&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;watching&#39;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&#39;&#39;&#39;The list of :class:`~stalker.models.auth.User`\ s watching this Task.</span>
+<span class="s">        &#39;&#39;&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">priority</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+
+    <span class="n">time_logs</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;TimeLog&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;TimeLogs.c.task_id==Tasks.c.id&quot;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;task&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A list of :class:`~stalker.models.task.TimeLog` instances showing who and when spent how much effort on this task.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">versions</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;Version&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Versions.c.version_of_id==Tasks.c.id&quot;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&quot;version_of&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A list of :class:`~stalker.models.version.Version` instances showing the files created for this task.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c">#_start = Column(&#39;start&#39;, DateTime)</span>
+    <span class="c">#_end = Column(&#39;end&#39;, DateTime)</span>
+
+    <span class="n">computed_start</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">computed_end</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">)</span>
+
+    <span class="n">bid_timing</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The value of the initial bid of this Task. It is an integer or</span>
+<span class="s">        a float.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">bid_unit</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;TaskBidUnit&#39;</span><span class="p">),</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The unit of the initial bid of this Task. It is a string value.</span>
+<span class="s">        And should be one of &#39;min&#39;, &#39;h&#39;, &#39;d&#39;, &#39;w&#39;, &#39;m&#39;, &#39;y&#39;.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">schedule_timing</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;It is the value of the schedule timing. It is a float value.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">schedule_unit</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;TaskScheduleUnit&#39;</span><span class="p">),</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&#39;h&#39;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;It is the unit of the schedule timing. It is a string value. And</span>
+<span class="s">        should be one of &#39;min&#39;, &#39;h&#39;, &#39;d&#39;, &#39;w&#39;, &#39;m&#39;, &#39;y&#39;.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">schedule_model</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">defaults</span><span class="o">.</span><span class="n">task_schedule_models</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;TaskScheduleModels&#39;</span><span class="p">),</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">task_schedule_models</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span>
+    <span class="p">)</span>
+
+    <span class="n">schedule_constraint</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Task.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">project</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">depends</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">resources</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">watchers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">duration</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">schedule_timing</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">schedule_unit</span><span class="o">=</span><span class="s">&#39;h&#39;</span><span class="p">,</span>
+                 <span class="n">schedule_model</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">schedule_constraint</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">bid_timing</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">bid_unit</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">is_milestone</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">priority</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">task_priority</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c"># update kwargs with extras</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;duration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">duration</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Task</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c"># call the mixin __init__ methods</span>
+        <span class="n">StatusMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ScheduleMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_project</span> <span class="o">=</span> <span class="n">project</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_logs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">versions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_milestone</span> <span class="o">=</span> <span class="n">is_milestone</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_complete</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="n">depends</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">depends</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">depends</span> <span class="o">=</span> <span class="n">depends</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_milestone</span><span class="p">:</span>
+            <span class="n">resources</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="n">resources</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">resources</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="n">resources</span>
+        
+        <span class="k">if</span> <span class="n">watchers</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">watchers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">watchers</span> <span class="o">=</span> <span class="n">watchers</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_constraint</span> <span class="o">=</span> <span class="n">schedule_constraint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">=</span> <span class="n">schedule_unit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_timing</span> <span class="o">=</span> <span class="n">schedule_timing</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_model</span> <span class="o">=</span> <span class="n">schedule_model</span>
+
+        <span class="k">if</span> <span class="n">bid_timing</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">bid_timing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_timing</span>
+
+        <span class="k">if</span> <span class="n">bid_unit</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">bid_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_unit</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid_timing</span> <span class="o">=</span> <span class="n">bid_timing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid_unit</span> <span class="o">=</span> <span class="n">bid_unit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+</div>
+    <span class="nd">@reconstructor</span>
+    <span class="k">def</span> <span class="nf">__init_on_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initialized the instance variables when the instance created with</span>
+<span class="sd">        SQLAlchemy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># TODO : fix this</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="c"># just read the start to update them</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reschedule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_timing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_unit</span><span class="p">)</span>
+        <span class="c"># call supers __init_on_load__</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Task</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init_on_load__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the equality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Task</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Task</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;time_logs&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_time_logs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">time_log</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given time_logs value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_log</span><span class="p">,</span> <span class="n">TimeLog</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;all the elements in the </span><span class="si">%s</span><span class="s">.time_logs should be an instances &quot;</span>
+                <span class="s">&quot;of stalker.models.task.TimeLog not </span><span class="si">%s</span><span class="s"> instance&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">time_log</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">time_log</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;is_complete&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_is_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">complete_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given complete value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">complete_in</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;depends&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_depends</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">depends</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given depends value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depends</span><span class="p">,</span> <span class="n">Task</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;all the elements in the depends should be an &quot;</span>
+                            <span class="s">&quot;instance of stalker.models.task.Task&quot;</span><span class="p">)</span>
+
+        <span class="c"># check for the circular dependency</span>
+        <span class="n">check_circular_dependency</span><span class="p">(</span><span class="n">depends</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="s">&#39;depends&#39;</span><span class="p">)</span>
+        <span class="n">check_circular_dependency</span><span class="p">(</span><span class="n">depends</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="s">&#39;children&#39;</span><span class="p">)</span>
+
+        <span class="c"># check for circular dependency toward the parent, non of the parents</span>
+        <span class="c"># should be depending to the given depends_to_task</span>
+        <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span>
+            <span class="k">while</span> <span class="n">parent</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">depends</span><span class="o">.</span><span class="n">depends</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">CircularDependencyError</span><span class="p">(</span>
+                        <span class="s">&#39;One of the parents of </span><span class="si">%s</span><span class="s"> is &#39;</span>
+                        <span class="s">&#39;depending to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">depends</span><span class="p">))</span>
+                <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+        <span class="k">return</span> <span class="n">depends</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;schedule_timing&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_schedule_timing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">schedule_timing</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given schedule_timing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">schedule_timing</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">schedule_timing</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">timing_resolution</span><span class="o">.</span><span class="n">seconds</span> <span class="o">/</span> <span class="mi">3600</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schedule_unit</span> <span class="o">=</span> <span class="s">&#39;h&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_timing</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&#39;</span><span class="si">%s</span><span class="s">.schedule_timing should be an integer or float number&#39;</span>
+                <span class="s">&#39;showing the value of the timing of this </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                    <span class="n">schedule_timing</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c"># reschedule</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reschedule</span><span class="p">(</span><span class="n">schedule_timing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_unit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">schedule_timing</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;schedule_unit&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_schedule_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">schedule_unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given schedule_unit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">schedule_unit</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">schedule_unit</span> <span class="o">=</span> <span class="s">&#39;h&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_unit</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&#39;</span><span class="si">%s</span><span class="s">.schedule_unit should be a string value one of </span><span class="si">%s</span><span class="s"> showing &#39;</span>
+                <span class="s">&#39;the unit of the schedule timing of this </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">schedule_unit</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">schedule_unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&#39;</span><span class="si">%s</span><span class="s">.schedule_unit should be a string value one of </span><span class="si">%s</span><span class="s"> showing &#39;</span>
+                <span class="s">&#39;the unit of the schedule timing of this </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">schedule_unit</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_timing</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reschedule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_timing</span><span class="p">,</span> <span class="n">schedule_unit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">schedule_unit</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;schedule_model&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_schedule_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">schedule_model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given schedule_model value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">schedule_model</span><span class="p">:</span>
+            <span class="n">schedule_model</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">task_schedule_models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        
+        <span class="n">error_message</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">.schedule_model should be one of </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">task_schedule_models</span><span class="p">,</span>
+            <span class="n">schedule_model</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_model</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">schedule_model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">task_schedule_models</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">schedule_model</span>
+
+    <span class="k">def</span> <span class="nf">_reschedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schedule_timing</span><span class="p">,</span> <span class="n">schedule_unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the start and end date values by using the schedule_timing</span>
+<span class="sd">        and schedule_unit values.</span>
+<span class="sd">        </span>
+<span class="sd">        :param schedule_timing: An integer or float value showing the value of</span>
+<span class="sd">          the schedule timing.</span>
+<span class="sd">        :type schedule_timing: int, float</span>
+<span class="sd">        :param str schedule_unit: one of &#39;min&#39;, &#39;h&#39;, &#39;d&#39;, &#39;w&#39;, &#39;m&#39;, &#39;y&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># update end date value by using the start and calculated duration</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units_to_timedelta_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">schedule_unit</span><span class="p">,</span>
+                <span class="bp">None</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">unit</span><span class="p">:</span> <span class="c"># we are in a pre flushing state do not do anything</span>
+                <span class="k">return</span>
+
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">unit</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]:</span> <span class="n">schedule_timing</span> <span class="o">*</span> <span class="n">unit</span><span class="p">[</span><span class="s">&#39;multiplier&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+            <span class="n">calculated_duration</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_constraint</span> <span class="o">==</span> <span class="n">CONSTRAINT_NONE</span> <span class="ow">or</span> \
+                            <span class="bp">self</span><span class="o">.</span><span class="n">schedule_constraint</span> <span class="o">==</span> <span class="n">CONSTRAINT_START</span><span class="p">:</span>
+                <span class="c"># get end</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">calculated_duration</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_constraint</span> <span class="o">==</span> <span class="n">CONSTRAINT_END</span><span class="p">:</span>
+                <span class="c"># get start</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">calculated_duration</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_constraint</span> <span class="o">==</span> <span class="n">CONSTRAINT_BOTH</span><span class="p">:</span>
+                <span class="c"># restore duration</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;is_milestone&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_is_milestone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">is_milestone</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given milestone value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">is_milestone</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_milestone</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;parent&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given parent value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># if it is not a Task instance, go mad (cildir!!)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">Task</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.parent should be an instance of &#39;</span>
+                                <span class="s">&#39;stalker.models.task.Task, not &#39;</span>
+                                <span class="s">&#39;a </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                          <span class="n">parent</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+            <span class="c"># check for cycle</span>
+            <span class="n">check_circular_dependency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="s">&#39;children&#39;</span><span class="p">)</span>
+            <span class="n">check_circular_dependency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="s">&#39;depends&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">parent</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;_project&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validates_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given project instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">project</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># check if there is a parent defined</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+                <span class="c"># use its project as the project</span>
+
+                <span class="c"># to prevent prematurely flush the parent</span>
+                <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+                    <span class="n">project</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">project</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># no project, no task, go mad again!!!</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.project should be an instance of &#39;</span>
+                                <span class="s">&#39;stalker.models.project.Project, not </span><span class="si">%s</span><span class="s">. Or &#39;</span>
+                                <span class="s">&#39;please supply a stalker.models.task.Task &#39;</span>
+                                <span class="s">&#39;with the parent argument, so Stalker can use &#39;</span>
+                                <span class="s">&#39;the project of the supplied parent task&#39;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                 <span class="n">project</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Project</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">Project</span><span class="p">):</span>
+            <span class="c"># go mad again it is not a project instance</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.project should be an instance of &#39;</span>
+                            <span class="s">&#39;stalker.models.project.Project, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">project</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># check if there is a parent</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+                <span class="c"># check if given project is matching the parent.project</span>
+                <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">_project</span> <span class="o">!=</span> <span class="n">project</span><span class="p">:</span>
+                        <span class="c"># don&#39;t go mad again, but warn the user that there is an</span>
+                        <span class="c"># ambiguity!!!</span>
+                        <span class="kn">import</span> <span class="nn">warnings</span>
+
+                        <span class="n">message</span> <span class="o">=</span> <span class="s">&#39;The supplied parent and the project is not &#39;</span> \
+                                  <span class="s">&#39;matching in </span><span class="si">%s</span><span class="s">, Stalker will use the parent &#39;</span> \
+                                  <span class="s">&#39;project (</span><span class="si">%s</span><span class="s">) as the parent of this </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> \
+                                  <span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">_project</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">)</span>
+
+                        <span class="c"># use the parent.project</span>
+                        <span class="n">project</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">_project</span>
+        <span class="k">return</span> <span class="n">project</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;priority&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_priority</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">priority</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given priority value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">priority</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priority</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">task_priority</span>
+
+        <span class="k">if</span> <span class="n">priority</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">priority</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="mi">1000</span>
+
+        <span class="k">return</span> <span class="n">priority</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;children&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given child</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># just empty the resources list</span>
+        <span class="c"># do it without a flush</span>
+        <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;resources&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_resources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given resources value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.auth</span> <span class="kn">import</span> <span class="n">User</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Task.resources should be a list of &quot;</span>
+                            <span class="s">&quot;stalker.models.auth.User instances not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="n">resource</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+            <span class="c">## milestones do not need resources</span>
+            <span class="c">#if self.is_milestone:</span>
+            <span class="c">#resource = None</span>
+
+        <span class="k">return</span> <span class="n">resource</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;watchers&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_watchers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">watcher</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given watcher value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.auth</span> <span class="kn">import</span> <span class="n">User</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">watcher</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.watchers should be a list of &quot;</span>
+                            <span class="s">&quot;stalker.models.auth.User instances not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">watcher</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">watcher</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;versions&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given version value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.version</span> <span class="kn">import</span> <span class="n">Version</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">Version</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Task.versions should only have &quot;</span>
+                            <span class="s">&quot;stalker.models.version.Version instances&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">version</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;bid_timing&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_bid_timing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">bid_timing</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given bid_timing value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">bid_timing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bid_timing</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s">&#39;</span><span class="si">%s</span><span class="s">.bid_timing should be an integer or float showing the &#39;</span>
+                    <span class="s">&#39;value of the initial bid for this </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                     <span class="n">bid_timing</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bid_timing</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;bid_unit&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_bid_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">bid_unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given bid_unit value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">bid_unit</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">bid_unit</span> <span class="o">=</span> <span class="s">&#39;h&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bid_unit</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&#39;</span><span class="si">%s</span><span class="s">.bid_unit should be a string value one of </span><span class="si">%s</span><span class="s"> showing &#39;</span>
+                <span class="s">&#39;the unit of the bid timing of this </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">bid_unit</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">bid_unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&#39;</span><span class="si">%s</span><span class="s">.bid_unit should be a string value one of </span><span class="si">%s</span><span class="s"> showing &#39;</span>
+                <span class="s">&#39;the unit of the bid timing of this </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">datetime_units</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">bid_unit</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">bid_unit</span>
+
+    <span class="k">def</span> <span class="nf">_validate_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given start value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">start_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">start_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_in</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.start should be an instance of &#39;</span>
+                            <span class="s">&#39;datetime.datetime, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">start_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">start_in</span>
+
+    <span class="k">def</span> <span class="nf">_start_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;overridden start getter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># use children start</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_container</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">max</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">start</span><span class="p">:</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">start</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_duration</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
+
+    <span class="k">def</span> <span class="nf">_start_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;overridden start setter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># logger.debug(&#39;Task.start_setter       : %s&#39; % start_in)</span>
+        <span class="c"># update the start only if this is not a container task</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="n">start_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_duration</span><span class="p">)</span>
+
+            <span class="c"># logger.debug(&#39;Task.start_setter afterV: %s&#39; % self.start)</span>
+
+    <span class="nd">@declared_attr</span>
+<div class="viewcode-block" id="Task.start"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">synonym</span><span class="p">(</span>
+            <span class="s">&#39;_start&#39;</span><span class="p">,</span>
+            <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_start_getter</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_start_setter</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The overridden start property.</span>
+<span class="s">                </span>
+<span class="s">                The start of the Task can not be changed if it is a container task.</span>
+<span class="s">                Works normally in other case.</span>
+<span class="s">                &quot;&quot;&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_end_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;overridden end getter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># TODO: do it only once not all the time they ask for it</span>
+        <span class="c"># use children end</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_container</span><span class="p">:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">min</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">end</span> <span class="o">&gt;</span> <span class="n">end</span><span class="p">:</span>
+                    <span class="n">end</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">end</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_duration</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end</span>
+
+    <span class="k">def</span> <span class="nf">_end_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;overridden end setter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># update the end only if this is not a container task</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">end_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+<div class="viewcode-block" id="Task.end"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.end">[docs]</a>    <span class="k">def</span> <span class="nf">end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">synonym</span><span class="p">(</span>
+            <span class="s">&#39;_end&#39;</span><span class="p">,</span>
+            <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_end_getter</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_end_setter</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The overridden end property.</span>
+<span class="s">                </span>
+<span class="s">                The end of the Task can not be changed if it is a container task.</span>
+<span class="s">                Works normally in other cases.</span>
+<span class="s">                &quot;&quot;&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_project_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_project</span>
+
+    <span class="n">project</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span>
+        <span class="s">&#39;_project&#39;</span><span class="p">,</span>
+        <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+            <span class="n">_project_getter</span>
+        <span class="p">),</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The owner Project of this task.</span>
+<span class="s">        </span>
+<span class="s">        It is a read-only attribute. It is not possible to change the owner</span>
+<span class="s">        Project of a Task it is defined when the Task is created.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.is_root"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.is_root">[docs]</a>    <span class="k">def</span> <span class="nf">is_root</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True if the Task has no parent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.is_container"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.is_container">[docs]</a>    <span class="k">def</span> <span class="nf">is_container</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True if the Task has children Tasks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.is_leaf"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.is_leaf">[docs]</a>    <span class="k">def</span> <span class="nf">is_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True if the Task has no children Tasks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.parents"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.parents">[docs]</a>    <span class="k">def</span> <span class="nf">parents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns all of the parents of this Task starting from the root</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span>
+        <span class="k">while</span> <span class="n">task</span><span class="p">:</span>
+            <span class="n">parents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+            <span class="n">task</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">parent</span>
+        <span class="n">parents</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parents</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.tjp_abs_id"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.tjp_abs_id">[docs]</a>    <span class="k">def</span> <span class="nf">tjp_abs_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the calculated absolute id of this task</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+            <span class="n">abs_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">tjp_abs_id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">abs_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">tjp_id</span>
+
+        <span class="k">return</span> <span class="n">abs_id</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tjp_id</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.to_tjp"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.to_tjp">[docs]</a>    <span class="k">def</span> <span class="nf">to_tjp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;TaskJuggler representation of this task</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Template</span>
+
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">tjp_task_template</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">temp</span><span class="o">.</span><span class="n">render</span><span class="p">({</span><span class="s">&#39;task&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">})</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.level"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.level">[docs]</a>    <span class="k">def</span> <span class="nf">level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the level of this task. It is a temporary property and will</span>
+<span class="sd">        be useless when Stalker has its own implementation of a proper Gantt</span>
+<span class="sd">        Chart. Write now it is used by the jQueryGantt.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">while</span> <span class="n">current</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">parent</span>
+        <span class="k">return</span> <span class="n">i</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.is_scheduled"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.is_scheduled">[docs]</a>    <span class="k">def</span> <span class="nf">is_scheduled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A predicate which returns True if this task has both a</span>
+<span class="sd">        computed_start and computed_end values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">computed_end</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.total_logged_seconds"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.total_logged_seconds">[docs]</a>    <span class="k">def</span> <span class="nf">total_logged_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The total effort spent for this Task. It is the sum of all the</span>
+<span class="sd">        TimeLogs recorded for this task as seconds.</span>
+
+<span class="sd">        :returns int: An integer showing the total seconds spent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">seconds</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">time_log</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_logs</span><span class="p">:</span>
+                <span class="n">seconds</span> <span class="o">+=</span> <span class="n">time_log</span><span class="o">.</span><span class="n">total_seconds</span>
+        <span class="k">return</span> <span class="n">seconds</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.schedule_seconds"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.schedule_seconds">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the total effort, length or duration in seconds, for</span>
+<span class="sd">        completeness calculation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">schedule_timing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_timing</span>
+        <span class="n">schedule_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_model</span>
+        <span class="n">schedule_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_unit</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Studio</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+                <span class="n">studio</span> <span class="o">=</span> <span class="n">Studio</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">UnboundExecutionError</span><span class="p">:</span>
+            <span class="n">studio</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">data_source</span> <span class="o">=</span> <span class="n">studio</span> <span class="k">if</span> <span class="n">studio</span> <span class="k">else</span> <span class="n">defaults</span>
+
+        <span class="k">if</span> <span class="n">schedule_model</span> <span class="o">==</span> <span class="s">&#39;effort&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;min&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">schedule_timing</span> <span class="o">*</span> <span class="mi">60</span>
+
+            <span class="k">elif</span> <span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;h&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">schedule_timing</span> <span class="o">*</span> <span class="mi">3600</span>
+
+            <span class="k">elif</span> <span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;d&#39;</span><span class="p">:</span>
+                <span class="c"># we need to have a studio or defaults</span>
+                <span class="k">return</span> <span class="n">schedule_timing</span> <span class="o">*</span> <span class="n">data_source</span><span class="o">.</span><span class="n">daily_working_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+
+            <span class="k">elif</span> <span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;w&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">schedule_timing</span> <span class="o">*</span> <span class="n">data_source</span><span class="o">.</span><span class="n">weekly_working_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+
+            <span class="k">elif</span> <span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;m&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">schedule_timing</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">data_source</span><span class="o">.</span><span class="n">weekly_working_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+
+            <span class="k">elif</span> <span class="n">schedule_unit</span> <span class="o">==</span> <span class="s">&#39;y&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">schedule_timing</span> <span class="o">*</span> \
+                       <span class="n">data_source</span><span class="o">.</span><span class="n">yearly_working_days</span> <span class="o">*</span> \
+                       <span class="n">data_source</span><span class="o">.</span><span class="n">daily_working_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.remaining_seconds"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.remaining_seconds">[docs]</a>    <span class="k">def</span> <span class="nf">remaining_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the remaining amount of efforts, length or duration left</span>
+<span class="sd">        in this Task as seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># for effort based tasks use the time_logs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_seconds</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_logged_seconds</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Task.computed_duration"><a class="viewcode-back" href="../../../generated/stalker.models.task.Task.html#stalker.models.task.Task.computed_duration">[docs]</a>    <span class="k">def</span> <span class="nf">computed_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;it is the direct difference of computed_start and computed_end</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_end</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_start</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_end</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_start</span> <span class="k">else</span> <span class="bp">None</span>
+
+
+<span class="c"># TASK_DEPENDENCIES</span></div></div>
+<span class="n">Task_Dependencies</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&quot;Task_Dependencies&quot;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;task_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Tasks.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;depends_to_task_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Tasks.id&quot;</span><span class="p">),</span>
+           <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c"># TASK_RESOURCES</span>
+<span class="n">Task_Resources</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&quot;Task_Resources&quot;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;task_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Tasks.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;resource_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Users.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c"># TASK_WATCHERS</span>
+<span class="n">Task_Watchers</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&quot;Task_Watchers&quot;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;task_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Tasks.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;watcher_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Users.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+
+
+<span class="c"># TODO: subscribe to task: Users should be able to subscribe to any task they</span>
+<span class="c">#       want so they can be informed about the tickets as if they are a</span>
+<span class="c">#       resource for that task.</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

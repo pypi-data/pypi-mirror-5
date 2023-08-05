@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.template &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.template</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">String</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">validates</span>
+<span class="kn">from</span> <span class="nn">stalker.models.entity</span> <span class="kn">import</span> <span class="n">Entity</span>
+<span class="kn">from</span> <span class="nn">stalker.models.mixins</span> <span class="kn">import</span> <span class="n">TargetEntityTypeMixin</span>
+
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FilenameTemplate"><a class="viewcode-back" href="../../../generated/stalker.models.template.FilenameTemplate.html#stalker.models.template.FilenameTemplate">[docs]</a><span class="k">class</span> <span class="nc">FilenameTemplate</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">TargetEntityTypeMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Holds templates for filename and path conventions.</span>
+<span class="sd">    </span>
+<span class="sd">    FilenameTemplate objects help to specify where to place a </span>
+<span class="sd">    :class:`~stalker.models.version.Version` related file.</span>
+<span class="sd">    </span>
+<span class="sd">    Although, it is mainly used by Stalker to define</span>
+<span class="sd">    :class:`~stalker.models.version.Version` related file paths and file names</span>
+<span class="sd">    to place them in to proper places inside a</span>
+<span class="sd">    :class:`~stalker.models.project.Project`&#39;s</span>
+<span class="sd">    :attr:`~stalker.models.project.Project.structure`, the idea behind is open</span>
+<span class="sd">    to endless possibilities.</span>
+<span class="sd">    </span>
+<span class="sd">    Here is an example::</span>
+<span class="sd">        </span>
+<span class="sd">        p1 = Project(name=&quot;Test Project&quot;) # shortened for this example</span>
+<span class="sd">        s1 = Structure(name=&quot;Commercial Project Structure&quot;) # shortened for this example</span>
+<span class="sd">        </span>
+<span class="sd">        # this is going to be used by Stalker to decide the</span>
+<span class="sd">        # :stalker:`~stalker.models.link.Link`</span>
+<span class="sd">        # :stalker:`~stalker.models.link.Link.filename` and</span>
+<span class="sd">        # :stalker:`~stalker.models.link.Link.path` (which is the way Stalker</span>
+<span class="sd">        # links external files to Version instances)</span>
+<span class="sd">        f1 = FilenameTemplate(</span>
+<span class="sd">            name=&quot;Asset Version Template&quot;,</span>
+<span class="sd">            target_entity_type=&quot;Asset&quot;,</span>
+<span class="sd">            target_entity_type=&quot;Asset&quot;,</span>
+<span class="sd">            path=&quot;{{project.code}}/Assets/{{asset.type.code}}/{{asset.code}}/{{task.type.code}}&quot;,</span>
+<span class="sd">            filename=&quot;{{asset.code}}_{{version.take_name}}_{{task.type.code}}_v{{&#39;%03d&#39;|version.version_number}}{{link.extension}}&quot;</span>
+<span class="sd">        )</span>
+<span class="sd">        </span>
+<span class="sd">        s1.templates.append(f1)</span>
+<span class="sd">        p1.structure = s1</span>
+<span class="sd">        </span>
+<span class="sd">        # now because we have defined a FilenameTemplate for Assets,</span>
+<span class="sd">        # Stalker is now able to produce a path and a filename for any Version</span>
+<span class="sd">        # related to this asset.</span>
+<span class="sd">    </span>
+<span class="sd">    :param str target_entity_type: The class name that this FilenameTemplate</span>
+<span class="sd">      is designed for. You can also pass the class itself. So both of the</span>
+<span class="sd">      examples below can work::</span>
+<span class="sd">        </span>
+<span class="sd">        new_filename_template1 = FilenameTemplate(target_entity_type=&quot;Asset&quot;)</span>
+<span class="sd">        new_filename_template2 = FilenameTemplate(target_entity_type=Asset)</span>
+<span class="sd">    </span>
+<span class="sd">      A TypeError will be raised when it is skipped or it is None and a</span>
+<span class="sd">      ValueError will be raised when it is given as and empty string.</span>
+<span class="sd">    </span>
+<span class="sd">    :param str path: A `Jinja2`_ template code which specifies the path of the</span>
+<span class="sd">      given item. It is relative to the repository root. A typical example</span>
+<span class="sd">      could be::</span>
+<span class="sd">      </span>
+<span class="sd">        asset_path = &quot;{{project.code}}/ASSETS/{{asset.code}}/{{task.code}}/&quot;</span>
+<span class="sd">    </span>
+<span class="sd">    :param str filename: A `Jinja2`_ template code which specifies the file</span>
+<span class="sd">      name of the given item. It is relative to the</span>
+<span class="sd">      :attr:`~stalker.models.template.FilenameTemplate.path`. A typical</span>
+<span class="sd">      example could be::</span>
+<span class="sd">        </span>
+<span class="sd">        asset_filename = &quot;{{asset.code}}_{{version.take}}_{{task.code}}_v&quot;{{&#39;%03d&#39;|format(version.version)}}{{version.extension}}&quot;</span>
+<span class="sd">      </span>
+<span class="sd">      Could be set to an empty string or None, the default value is None.</span>
+<span class="sd">      </span>
+<span class="sd">      It can be None, or an empty string, or it can be skipped.</span>
+<span class="sd">    </span>
+<span class="sd">    .. _Jinja2: http://jinja.pocoo.org/docs/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__strictly_typed__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;FilenameTemplates&quot;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;FilenameTemplate&quot;</span><span class="p">}</span>
+    <span class="n">filenameTemplate_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Entities.id&quot;</span><span class="p">),</span>
+                                 <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="c">#    _target_entity_type = Column(&quot;target_entity_type&quot;, String)</span>
+    
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The template code for the path of this FilenameTemplate.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The template code for the file part of the FilenameTemplate.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+<div class="viewcode-block" id="FilenameTemplate.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.template.FilenameTemplate.html#stalker.models.template.FilenameTemplate.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">target_entity_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FilenameTemplate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">TargetEntityTypeMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_entity_type</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+    </div>
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;path&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">path_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given path attribute for several conditions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check if it is None</span>
+        <span class="k">if</span> <span class="n">path_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">path_in</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.path attribute should be string or unicode &quot;</span>
+                            <span class="s">&quot;not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                        <span class="n">path_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">path_in</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;filename&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">filename_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given filename attribute for several conditions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check if it is None</span>
+        <span class="k">if</span> <span class="n">filename_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">filename_in</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filename_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.filename attribute should be string or &quot;</span>
+                            <span class="s">&quot;unicode not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                                <span class="n">filename_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">filename_in</span>
+    
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;checks the equality of the given object to this one</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FilenameTemplate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FilenameTemplate</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">target_entity_type</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">target_entity_type</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">path</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">filename</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

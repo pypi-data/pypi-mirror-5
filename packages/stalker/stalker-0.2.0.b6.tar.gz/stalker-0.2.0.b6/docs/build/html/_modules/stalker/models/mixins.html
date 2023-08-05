@@ -1,0 +1,1088 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.mixins &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.mixins</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Interval</span><span class="p">,</span>
+                        <span class="n">DateTime</span><span class="p">,</span> <span class="n">PickleType</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.exc</span> <span class="kn">import</span> <span class="n">UnboundExecutionError</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declared_attr</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">synonym</span><span class="p">,</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">validates</span>
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">defaults</span>
+<span class="kn">from</span> <span class="nn">stalker.db</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.db.session</span> <span class="kn">import</span> <span class="n">DBSession</span>
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">from</span> <span class="nn">stalker.models</span> <span class="kn">import</span> <span class="n">make_plural</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">create_secondary_table</span><span class="p">(</span>
+        <span class="n">primary_cls_name</span><span class="p">,</span>
+        <span class="n">secondary_cls_name</span><span class="p">,</span>
+        <span class="n">primary_cls_table_name</span><span class="p">,</span>
+        <span class="n">secondary_cls_table_name</span><span class="p">,</span>
+        <span class="n">secondary_table_name</span><span class="o">=</span><span class="bp">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;creates any secondary table</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">plural_secondary_cls_name</span> <span class="o">=</span> <span class="n">make_plural</span><span class="p">(</span><span class="n">secondary_cls_name</span><span class="p">)</span>
+
+    <span class="c"># use the given class_name and the class_table</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">secondary_table_name</span><span class="p">:</span>
+        <span class="n">secondary_table_name</span> <span class="o">=</span> \
+            <span class="n">primary_cls_name</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="n">plural_secondary_cls_name</span>
+
+    <span class="c"># check if the table is already defined</span>
+    <span class="k">if</span> <span class="n">secondary_table_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+        <span class="n">secondary_table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+            <span class="n">secondary_table_name</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+            <span class="n">Column</span><span class="p">(</span>
+                <span class="n">primary_cls_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s">&quot;_id&quot;</span><span class="p">,</span>
+                <span class="n">Integer</span><span class="p">,</span>
+                <span class="n">ForeignKey</span><span class="p">(</span><span class="n">primary_cls_table_name</span> <span class="o">+</span> <span class="s">&quot;.id&quot;</span><span class="p">),</span>
+                <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="p">),</span>
+
+            <span class="n">Column</span><span class="p">(</span>
+                <span class="n">secondary_cls_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s">&quot;_id&quot;</span><span class="p">,</span>
+                <span class="n">Integer</span><span class="p">,</span>
+                <span class="n">ForeignKey</span><span class="p">(</span><span class="n">secondary_cls_table_name</span> <span class="o">+</span> <span class="s">&quot;.id&quot;</span><span class="p">),</span>
+                <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">secondary_table</span> <span class="o">=</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">tables</span><span class="p">[</span><span class="n">secondary_table_name</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">secondary_table</span>
+
+
+<div class="viewcode-block" id="TargetEntityTypeMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.TargetEntityTypeMixin.html#stalker.models.mixins.TargetEntityTypeMixin">[docs]</a><span class="k">class</span> <span class="nc">TargetEntityTypeMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds target_entity_type attribute to mixed in class.</span>
+<span class="sd">    </span>
+<span class="sd">    :param target_entity_type: The target entity type which this class is </span>
+<span class="sd">      designed for. Should be a class or a class name.</span>
+<span class="sd">      </span>
+<span class="sd">      For example::</span>
+<span class="sd">        </span>
+<span class="sd">        from stalker import SimpleEntity, TargetEntityTypeMixin, Project</span>
+<span class="sd">        </span>
+<span class="sd">        class A(SimpleEntity, TargetEntityTypeMixin):</span>
+<span class="sd">            __tablename__ = &quot;As&quot;</span>
+<span class="sd">            __mapper_args__ = {&quot;polymorphic_identity&quot;: &quot;A&quot;}</span>
+<span class="sd">            </span>
+<span class="sd">            def __init__(self, **kwargs):</span>
+<span class="sd">                super(A, self).__init__(**kwargs)</span>
+<span class="sd">                TargetEntityTypeMixin.__init__(self, **kwargs)</span>
+<span class="sd">        </span>
+<span class="sd">        a_obj = A(target_entity_type=Project)</span>
+<span class="sd">      </span>
+<span class="sd">      The ``a_obj`` will only be accepted by</span>
+<span class="sd">      :class:`~stalker.models.project.Project` instances. You can not assign it</span>
+<span class="sd">      to any other class which accepts a :class:`~stalker.models.type.Type`</span>
+<span class="sd">      instance.</span>
+<span class="sd">    </span>
+<span class="sd">    To control the mixed-in class behaviour add these class variables to the </span>
+<span class="sd">    mixed in class:</span>
+<span class="sd">      </span>
+<span class="sd">      __nullable_target__ : controls if the target_entity_type can be </span>
+<span class="sd">                            nullable or not. Default is False.</span>
+<span class="sd">      </span>
+<span class="sd">      __unique_target__ : controls if the target_entity_type should be </span>
+<span class="sd">                          unique, so there is only one object for one type.</span>
+<span class="sd">                          Default is False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__nullable_target__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__unique_target__</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">_target_entity_type</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span>
+            <span class="s">&quot;target_entity_type&quot;</span><span class="p">,</span>
+            <span class="n">String</span><span class="p">(</span><span class="mi">128</span><span class="p">),</span>
+            <span class="n">nullable</span><span class="o">=</span><span class="n">cls</span><span class="o">.</span><span class="n">__nullable_target__</span><span class="p">,</span>
+            <span class="n">unique</span><span class="o">=</span><span class="n">cls</span><span class="o">.</span><span class="n">__unique_target__</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="TargetEntityTypeMixin.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.TargetEntityTypeMixin.html#stalker.models.mixins.TargetEntityTypeMixin.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_entity_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_entity_type</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_target_entity_type</span><span class="p">(</span><span class="n">target_entity_type</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_validate_target_entity_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_entity_type_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given target_entity_type value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># it can not be None</span>
+        <span class="k">if</span> <span class="n">target_entity_type_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.target_entity_type can not be None&quot;</span> <span class="o">%</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_entity_type_in</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.target_entity_type can not be empty&quot;</span> <span class="o">%</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="c"># check if it is a class</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_entity_type_in</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="n">target_entity_type_in</span> <span class="o">=</span> <span class="n">target_entity_type_in</span><span class="o">.</span><span class="n">__name__</span>
+
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_entity_type_in</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_target_entity_type_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_entity_type</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">target_entity_type</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">synonym</span><span class="p">(</span>
+            <span class="s">&quot;_target_entity_type&quot;</span><span class="p">,</span>
+            <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+                <span class="n">fget</span><span class="o">=</span><span class="n">cls</span><span class="o">.</span><span class="n">_target_entity_type_getter</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The entity type which this object is valid for.</span>
+<span class="s">                </span>
+<span class="s">                Usually it is set to the TargetClass directly.</span>
+<span class="s">                &quot;&quot;&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="StatusMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.StatusMixin.html#stalker.models.mixins.StatusMixin">[docs]</a><span class="k">class</span> <span class="nc">StatusMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes the mixed in object statusable.</span>
+<span class="sd">    </span>
+<span class="sd">    This mixin adds status and status_list attributes to the mixed in class.</span>
+<span class="sd">    Any object that needs a status and a corresponding status list can include</span>
+<span class="sd">    this mixin.</span>
+<span class="sd">    </span>
+<span class="sd">    When mixed with a class which don&#39;t have an __init__ method, the mixin</span>
+<span class="sd">    supplies one, and in this case the parameters below must be defined.</span>
+<span class="sd">    </span>
+<span class="sd">    :param status_list: this attribute holds a status list object, which shows</span>
+<span class="sd">      the possible statuses that this entity could be in. This attribute can</span>
+<span class="sd">      not be empty or None. Giving a StatusList object, the</span>
+<span class="sd">      StatusList.target_entity_type should match the current class.</span>
+<span class="sd">      </span>
+<span class="sd">      .. versionadded:: 0.1.2.a4</span>
+<span class="sd">      </span>
+<span class="sd">        The status_list argument now can be skipped or can be None if there</span>
+<span class="sd">        is an active database connection (stalker.models.DBSession is not</span>
+<span class="sd">        None) and there is a suitable</span>
+<span class="sd">        :class:`~stalker.models.status.StatusList` instance in the database</span>
+<span class="sd">        whom :attr:`~stalker.models.status.StatusList.target_entity_type`</span>
+<span class="sd">        attribute is set to the current mixed-in class name.</span>
+<span class="sd">    </span>
+<span class="sd">    :param status: It is a :class:`~stalker.models.status.Status` instance</span>
+<span class="sd">      which shows the current status of the statusable object. Integer values</span>
+<span class="sd">      are also accepted, which shows the index of the desired status in the</span>
+<span class="sd">      ``status_list`` attribute of the current statusable object. If a</span>
+<span class="sd">      :class:`~stalker.models.status.Status` instance is supplied, it should</span>
+<span class="sd">      also be present in the ``status_list`` attribute. If set to None then the</span>
+<span class="sd">      first :class:`~stalker.models.status.Status` instance in the</span>
+<span class="sd">      ``status_list`` will be used.</span>
+<span class="sd">      </span>
+<span class="sd">      .. versionadded:: 0.2.0</span>
+<span class="sd">        </span>
+<span class="sd">        Status attribute as Status instance:</span>
+<span class="sd">        </span>
+<span class="sd">        It is now possible to set the status of the instance by a</span>
+<span class="sd">        :class:`~stalker.models.status.Status` instance directly. And the</span>
+<span class="sd">        :attr:`~stalker.models.mixins.StatusMixin.status` will return a proper</span>
+<span class="sd">        :class:`~stalker.models.status.Status` instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StatusMixin.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.StatusMixin.html#stalker.models.mixins.StatusMixin.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">status_list</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_list</span> <span class="o">=</span> <span class="n">status_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="c"># logger.debug(&#39;%s.status: %s&#39; % (self.__class__.__name__, status))</span>
+</div>
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">status_id</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span>
+            <span class="s">&#39;status_id&#39;</span><span class="p">,</span>
+            <span class="n">Integer</span><span class="p">,</span>
+            <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Statuses.id&#39;</span><span class="p">),</span>
+            <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span>
+            <span class="c"># This is set to nullable=True but it is impossible to set the</span>
+            <span class="c"># status to None by using this Declarative approach.</span>
+            <span class="c"># </span>
+            <span class="c"># This is done in that way cause SQLAlchemy was flushing the data</span>
+            <span class="c"># (AutoFlush) preliminarily while checking if the given Status was</span>
+            <span class="c"># in the related StatusList, and it was complaining about the</span>
+            <span class="c"># status can not be null</span>
+        <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">relationship</span><span class="p">(</span>
+            <span class="s">&#39;Status&#39;</span><span class="p">,</span>
+            <span class="n">primaryjoin</span><span class="o">=</span> \
+                <span class="s">&quot;</span><span class="si">%s</span><span class="s">.status_id==Status.status_id&quot;</span> <span class="o">%</span> <span class="n">cls</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+            <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The current status of the object.</span>
+<span class="s">            </span>
+<span class="s">            It is a :class:`~stalker.models.status.Status` instance which</span>
+<span class="s">            is one of the Statuses stored in the ``status_list`` attribute</span>
+<span class="s">            of this object.</span>
+<span class="s">            &quot;&quot;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">status_list_id</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span>
+            <span class="s">&#39;status_list_id&#39;</span><span class="p">,</span>
+            <span class="n">Integer</span><span class="p">,</span>
+            <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;StatusLists.id&#39;</span><span class="p">),</span> <span class="c">#, use_alter=True, name=&quot;x&quot;),</span>
+            <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span>
+        <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">status_list</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">relationship</span><span class="p">(</span>
+            <span class="s">&quot;StatusList&quot;</span><span class="p">,</span>
+            <span class="n">primaryjoin</span><span class="o">=</span> \
+                <span class="s">&quot;</span><span class="si">%s</span><span class="s">.status_list_id==StatusList.status_list_id&quot;</span> <span class="o">%</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;status_list&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_status_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">status_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given status_list_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.status</span> <span class="kn">import</span> <span class="n">StatusList</span>
+
+        <span class="k">if</span> <span class="n">status_list</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># check if there is a db setup and try to get the appropriate </span>
+            <span class="c"># StatusList from the database</span>
+
+            <span class="c"># disable autoflush to prevent premature class initialization</span>
+            <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c"># try to get a StatusList with the target_entity_type is </span>
+                    <span class="c"># matching the class name</span>
+                    <span class="n">status_list</span> <span class="o">=</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">StatusList</span><span class="p">)</span> \
+                        <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">target_entity_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span> \
+                        <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                <span class="k">except</span> <span class="n">UnboundExecutionError</span><span class="p">:</span>
+                    <span class="c"># it is not mapped just skip it</span>
+                    <span class="k">pass</span>
+
+        <span class="c"># if it is still None</span>
+        <span class="k">if</span> <span class="n">status_list</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># there is no db so raise an error because there is no way </span>
+            <span class="c"># to get an appropriate StatusList</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;</span><span class="si">%s</span><span class="s"> instances can not be initialized without a &quot;</span>
+                <span class="s">&quot;stalker.models.status.StatusList instance, please pass a &quot;</span>
+                <span class="s">&quot;suitable StatusList (StatusList.target_entity_type=</span><span class="si">%s</span><span class="s">) &quot;</span>
+                <span class="s">&quot;with the &#39;status_list&#39; argument&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># it is not an instance of status_list</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">status_list</span><span class="p">,</span> <span class="n">StatusList</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s">&quot;</span><span class="si">%s</span><span class="s">.status_list should be an instance of &quot;</span>
+                    <span class="s">&quot;stalker.models.status.StatusList not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                     <span class="n">status_list</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c"># check if the entity_type matches to the StatusList.target_entity_type</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">!=</span> <span class="n">status_list</span><span class="o">.</span><span class="n">target_entity_type</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s">&quot;the given StatusLists&#39; target_entity_type is </span><span class="si">%s</span><span class="s">, &quot;</span>
+                    <span class="s">&quot;whereas the entity_type of this object is </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                    <span class="p">(</span><span class="n">status_list</span><span class="o">.</span><span class="n">target_entity_type</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">status_list</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;status&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given status value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.status</span> <span class="kn">import</span> <span class="n">Status</span><span class="p">,</span> <span class="n">StatusList</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_list</span><span class="p">,</span> <span class="n">StatusList</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;please set the </span><span class="si">%s</span><span class="s">.status_list attribute first&quot;</span> <span class="o">%</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="c"># it is set to None</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">DBSession</span><span class="o">.</span><span class="n">no_autoflush</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_list</span><span class="o">.</span><span class="n">statuses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c"># it is not an instance of status or int</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="p">(</span><span class="n">Status</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.status must be an instance of &quot;</span>
+                            <span class="s">&quot;stalker.models.status.Status or an integer &quot;</span>
+                            <span class="s">&quot;showing the index of the Status object in the &quot;</span>
+                            <span class="s">&quot;</span><span class="si">%s</span><span class="s">.status_list, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">status</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="c"># if it is not in the correct range:</span>
+            <span class="k">if</span> <span class="n">status</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.status must be a non-negative integer&quot;</span> <span class="o">%</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">status</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_list</span><span class="o">.</span><span class="n">statuses</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.status can not be bigger than the length &quot;</span>
+                                 <span class="s">&quot;of the status_list&quot;</span> <span class="o">%</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+                <span class="c"># get the tatus instance out of the status_list instance</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_list</span><span class="p">[</span><span class="n">status</span><span class="p">]</span>
+
+        <span class="c"># check if the given status is in the status_list</span>
+        <span class="c"># logger.debug(&#39;self.status_list: %s&#39; % self.status_list)</span>
+        <span class="c"># logger.debug(&#39;given status: %s&#39; % status)</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;The given Status instance for </span><span class="si">%s</span><span class="s">.status is not &quot;</span>
+                             <span class="s">&quot;in the </span><span class="si">%s</span><span class="s">.status_list, please supply a status &quot;</span>
+                             <span class="s">&quot;from that list.&quot;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">status</span>
+
+</div>
+<div class="viewcode-block" id="ScheduleMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ScheduleMixin.html#stalker.models.mixins.ScheduleMixin">[docs]</a><span class="k">class</span> <span class="nc">ScheduleMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds schedule info to the mixed in class.</span>
+<span class="sd">    </span>
+<span class="sd">    Adds schedule information like ``start``, ``end`` and ``duration``. These</span>
+<span class="sd">    attributes will be used in TaskJuggler. Because ``effort`` is only</span>
+<span class="sd">    meaningful if there are some ``resources`` this attribute has been left</span>
+<span class="sd">    special for :class:`~stalker.models.task.Task` class. The ``length`` has</span>
+<span class="sd">    not been implemented because of its rare use.</span>
+<span class="sd">    </span>
+<span class="sd">    The preceding order for the attributes is as follows::</span>
+<span class="sd">    </span>
+<span class="sd">      start &gt; end &gt; duration</span>
+<span class="sd">    </span>
+<span class="sd">    So if all of the parameters are given only the ``start`` and the ``end``</span>
+<span class="sd">    will be used and the ``duration`` will be calculated accordingly. In any</span>
+<span class="sd">    other conditions the missing parameter will be calculated from the</span>
+<span class="sd">    following table:</span>
+<span class="sd">    </span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    | start | end | duration | DEFAULTS                               |</span>
+<span class="sd">    +=======+=====+==========+========================================+</span>
+<span class="sd">    |       |     |          | start = datetime.datetime.now()        |</span>
+<span class="sd">    |       |     |          |                                        |</span>
+<span class="sd">    |       |     |          | duration = datetime.timedelta(days=10) |</span>
+<span class="sd">    |       |     |          |                                        |</span>
+<span class="sd">    |       |     |          | end = start + duration                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    |   X   |     |          | duration = datetime.timedelta(days=10) |</span>
+<span class="sd">    |       |     |          |                                        |</span>
+<span class="sd">    |       |     |          | end = start + duration                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    |   X   |  X  |          | duration = end - start                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    |   X   |     |    X     | end = start + duration                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    |   X   |  X  |    X     | duration = end - start                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    |       |  X  |    X     | start = end - duration                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    |       |  X  |          | duration = datetime.timedelta(days=10) |</span>
+<span class="sd">    |       |     |          |                                        |</span>
+<span class="sd">    |       |     |          | start = end - duration                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+</span>
+<span class="sd">    |       |     |    X     | start = datetime.datetime.now()        |</span>
+<span class="sd">    |       |     |          |                                        |</span>
+<span class="sd">    |       |     |          | end = start + duration                 |</span>
+<span class="sd">    +-------+-----+----------+----------------------------------------+    </span>
+<span class="sd">    </span>
+<span class="sd">    Only the ``start``, ``end`` will be stored. The ``duration`` attribute is</span>
+<span class="sd">    the direct difference of the the ``start`` and ``end`` attributes, so there</span>
+<span class="sd">    is no need to store it. But if will be used in calculation of the start and</span>
+<span class="sd">    end values.</span>
+<span class="sd">    </span>
+<span class="sd">    The start and end attributes have a ``computed`` companion. Which are the</span>
+<span class="sd">    return values from TaskJuggler. so for start there is the</span>
+<span class="sd">    ``computed_start`` and for end there is the ``computed_end`` attributes.</span>
+<span class="sd">    These values are going to be used in Gantt Charts.</span>
+<span class="sd">    </span>
+<span class="sd">    The date attributes can be managed with timezones. Follow the Python idioms</span>
+<span class="sd">    shown in the `documentation of datetime`_</span>
+<span class="sd">    </span>
+<span class="sd">    .. _documentation of datetime: http://docs.python.org/library/datetime.html</span>
+<span class="sd">    </span>
+<span class="sd">    :param start: the start date of the entity, should be a datetime.datetime</span>
+<span class="sd">      instance, the start is the pin point for the date calculation. In</span>
+<span class="sd">      any condition if the start is available then the value will be</span>
+<span class="sd">      preserved. If start passes the end the end is also changed</span>
+<span class="sd">      to a date to keep the timedelta between dates. The default value is</span>
+<span class="sd">      datetime.datetime.now()</span>
+<span class="sd">    </span>
+<span class="sd">    :type start: :class:`datetime.datetime`</span>
+<span class="sd">    </span>
+<span class="sd">    :param end: the end of the entity, should be a datetime.datetime instance,</span>
+<span class="sd">      when the start is changed to a date passing the end, then the end is also</span>
+<span class="sd">      changed to a later date so the timedelta between the dates is kept.</span>
+<span class="sd">    </span>
+<span class="sd">    :type end: :class:`datetime.datetime` or :class:`datetime.timedelta`</span>
+<span class="sd">    </span>
+<span class="sd">    :param duration: The duration of the entity. It is a</span>
+<span class="sd">      :class:`datetime.timedelta` instance. The default value is read from</span>
+<span class="sd">      the :class:`~stalker.config.Config` class. See the table above for the</span>
+<span class="sd">      initialization rules.</span>
+<span class="sd">    </span>
+<span class="sd">    :type duration: :class:`datetime.timedelta`</span>
+<span class="sd">    </span>
+<span class="sd">    :param timing_resolution: The timing_resolution of the datetime.datetime</span>
+<span class="sd">      object in datetime.timedelta. Uses ``timing_resolution`` settings in the</span>
+<span class="sd">      :class:`stalker.config.Config` class which defaults to 1 hour. Setting</span>
+<span class="sd">      the timing_resolution to less then 5 minutes is not suggested because it</span>
+<span class="sd">      is a limit for TaskJuggler.</span>
+<span class="sd">    </span>
+<span class="sd">    :type timing_resolution: datetime.timedelta</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c">#    # add this lines for Sphinx</span>
+    <span class="c">#    __tablename__ = &quot;ScheduleMixins&quot;</span>
+
+<div class="viewcode-block" id="ScheduleMixin.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ScheduleMixin.html#stalker.models.mixins.ScheduleMixin.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">duration</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">timing_resolution</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timing_resolution</span> <span class="o">=</span> <span class="n">timing_resolution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+</div>
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">_end</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;end&quot;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_end_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The date that the entity should be delivered.</span>
+<span class="sd">        </span>
+<span class="sd">        The end can be set to a datetime.timedelta and in this case it will be</span>
+<span class="sd">        calculated as an offset from the start and converted to</span>
+<span class="sd">        datetime.datetime again. Setting the start to a date passing the end</span>
+<span class="sd">        will also set the end, so the timedelta between them is preserved,</span>
+<span class="sd">        default value is 10 days</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end</span>
+
+    <span class="k">def</span> <span class="nf">_end_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_in</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">end_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">end</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">synonym</span><span class="p">(</span>
+            <span class="s">&quot;_end&quot;</span><span class="p">,</span>
+            <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">_end_getter</span><span class="p">,</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">_end_setter</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">_start</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;start&quot;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_start_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The date that this entity should start.</span>
+<span class="sd">        </span>
+<span class="sd">        Also effects the</span>
+<span class="sd">        :attr:`~stalker.models.mixins.ScheduleMixin.end` attribute value in</span>
+<span class="sd">        certain conditions, if the</span>
+<span class="sd">        :attr:`~stalker.models.mixins.ScheduleMixin.start` is set to a time</span>
+<span class="sd">        passing the :attr:`~stalker.models.mixins.ScheduleMixin.end` it will</span>
+<span class="sd">        also offset the :attr:`~stalker.models.mixins.ScheduleMixin.end` to</span>
+<span class="sd">        keep the :attr:`~stalker.models.mixins.ScheduleMixin.duration` value</span>
+<span class="sd">        fixed. :attr:`~stalker.models.mixins.ScheduleMixin.start` should be an</span>
+<span class="sd">        instance of class:`datetime.datetime` and the default value is</span>
+<span class="sd">        :func:`datetime.datetime.now()`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
+
+    <span class="k">def</span> <span class="nf">_start_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_in</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="n">start_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">synonym</span><span class="p">(</span>
+            <span class="s">&quot;_start&quot;</span><span class="p">,</span>
+            <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">_start_getter</span><span class="p">,</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">_start_setter</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">_duration</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;duration&#39;</span><span class="p">,</span> <span class="n">Interval</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_duration_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_duration</span>
+
+    <span class="k">def</span> <span class="nf">_duration_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration_in</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">duration_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">duration_in</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">):</span>
+                <span class="c"># set the end to None</span>
+                <span class="c"># to make it recalculated</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">duration_in</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">duration_in</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">duration_in</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">synonym</span><span class="p">(</span>
+            <span class="s">&#39;_duration&#39;</span><span class="p">,</span>
+            <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_duration_getter</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_duration_setter</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;Duration of the entity.</span>
+<span class="s">                </span>
+<span class="s">It is a datetime.timedelta instance. Showing the difference of the</span>
+<span class="s">:attr:`.start` and the :attr:`.end`. If edited it changes the :attr:`.end`</span>
+<span class="s">attribute value.&quot;&quot;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_dates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;updates the date values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">):</span>
+            <span class="n">duration</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># check start</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># try to calculate the start from end and duration</span>
+            <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># set the defaults</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="c"># set the defaults</span>
+                    <span class="n">duration</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">task_duration</span>
+
+                <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">duration</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">duration</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">task_duration</span>
+
+                <span class="n">start</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">duration</span>
+
+        <span class="c"># check end</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">duration</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">task_duration</span>
+
+            <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">duration</span>
+
+        <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="n">start</span><span class="p">:</span>
+            <span class="c"># check duration</span>
+            <span class="k">if</span> <span class="n">duration</span> <span class="o">&lt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">duration</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">duration</span>
+
+        <span class="c"># round the dates to the timing_resolution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_duration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">_timing_resolution</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;timing_resolution&quot;</span><span class="p">,</span> <span class="n">Interval</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_timing_resolution_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the timing_resolution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_resolution</span>
+
+    <span class="k">def</span> <span class="nf">_timing_resolution_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;sets the timing_resolution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timing_resolution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_timing_resolution</span><span class="p">(</span><span class="n">res_in</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;self._timing_resolution: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_resolution</span><span class="p">)</span>
+        <span class="c"># update date values</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_dates</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">round_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">),</span>
+                <span class="bp">None</span>
+            <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">timing_resolution</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">synonym</span><span class="p">(</span>
+            <span class="s">&#39;_timing_resolution&#39;</span><span class="p">,</span>
+            <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">_timing_resolution_getter</span><span class="p">,</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">_timing_resolution_setter</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The timing_resolution of this object.</span>
+<span class="s">                </span>
+<span class="s">                Can be set to any value that is representable with</span>
+<span class="s">                datetime.timedelta. The default value is 1 hour. Whenever it is</span>
+<span class="s">                changed the start, end and duration values will be updated.</span>
+<span class="s">                &quot;&quot;&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_timing_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timing_resolution</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given timing_resolution value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">timing_resolution</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">timing_resolution</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">timing_resolution</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timing_resolution</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.timing_resolution should be an instance of &#39;</span>
+                            <span class="s">&#39;datetime.timedelta not, </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">timing_resolution</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">timing_resolution</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">computed_start</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;computed_start&#39;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">computed_end</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;computed_end&#39;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="ScheduleMixin.computed_duration"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ScheduleMixin.html#stalker.models.mixins.ScheduleMixin.computed_duration">[docs]</a>    <span class="k">def</span> <span class="nf">computed_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the computed_duration as the difference of computed_start</span>
+<span class="sd">        and computed_end if there are computed_start and computed_end otherwise</span>
+<span class="sd">        returns None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_end</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_start</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_end</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_start</span> <span class="k">else</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="ScheduleMixin.round_time"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ScheduleMixin.html#stalker.models.mixins.ScheduleMixin.round_time">[docs]</a>    <span class="k">def</span> <span class="nf">round_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Round a datetime object to any time laps in seconds.</span>
+<span class="sd">        </span>
+<span class="sd">        Uses class property timing_resolution as the closest number of seconds</span>
+<span class="sd">        to round to, defaults 1 hour.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dt: datetime.datetime object, defaults now.</span>
+<span class="sd">        </span>
+<span class="sd">        Based on Thierry Husson&#39;s answer in `Stackoverflow`_</span>
+<span class="sd">        </span>
+<span class="sd">        _`Stackoverflow` : http://stackoverflow.com/a/10854034/1431079</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># to be compatible with python 2.6 use the following instead of</span>
+        <span class="c"># total_seconds()</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timing_resolution</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="mi">86400</span> <span class="o">+</span> \
+             <span class="bp">self</span><span class="o">.</span><span class="n">timing_resolution</span><span class="o">.</span><span class="n">seconds</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span>
+            <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="n">ts</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">//</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">ts</span>
+        <span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="ScheduleMixin.total_seconds"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ScheduleMixin.html#stalker.models.mixins.ScheduleMixin.total_seconds">[docs]</a>    <span class="k">def</span> <span class="nf">total_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the duration as seconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="mi">86400</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">seconds</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="ScheduleMixin.computed_total_seconds"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ScheduleMixin.html#stalker.models.mixins.ScheduleMixin.computed_total_seconds">[docs]</a>    <span class="k">def</span> <span class="nf">computed_total_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the duration as seconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_duration</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="mi">86400</span> <span class="o">+</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">computed_duration</span><span class="o">.</span><span class="n">seconds</span>
+
+
+
+</div></div>
+<div class="viewcode-block" id="ProjectMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ProjectMixin.html#stalker.models.mixins.ProjectMixin">[docs]</a><span class="k">class</span> <span class="nc">ProjectMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gives the ability to connect to a :class:`~stalker.models.project.Project` to the mixed in object.</span>
+<span class="sd">    </span>
+<span class="sd">    :param project: A :class:`~stalker.models.project.Project` instance holding</span>
+<span class="sd">      the project which this object is related to. It can not be None, or</span>
+<span class="sd">      anything other than a :class:`~stalker.models.project.Project` instance.</span>
+<span class="sd">    </span>
+<span class="sd">    :type project: :class:`~stalker.models.project.Project`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c">#    # add this lines for Sphinx</span>
+    <span class="c">#    __tablename__ = &quot;ProjectMixins&quot;</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">project_id</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span>
+            <span class="s">&quot;project_id&quot;</span><span class="p">,</span>
+            <span class="n">Integer</span><span class="p">,</span>
+            <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Projects.id&quot;</span><span class="p">,</span> <span class="n">use_alter</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;project_x_id&quot;</span><span class="p">),</span>
+            <span class="c">#ForeignKey(&quot;Projects.id&quot;),</span>
+            <span class="c"># cannot use nullable cause a Project object needs</span>
+            <span class="c"># insert itself as the project and it needs post_update</span>
+            <span class="c"># thus nullable should be True</span>
+            <span class="c">#nullable=False,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="n">backref</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__tablename__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;The :class:`~stalker.models.project.Project` instance that</span>
+<span class="s">        this object belongs to.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">relationship</span><span class="p">(</span>
+            <span class="s">&quot;Project&quot;</span><span class="p">,</span>
+            <span class="n">primaryjoin</span><span class="o">=</span> \
+                <span class="n">cls</span><span class="o">.</span><span class="n">__tablename__</span> <span class="o">+</span> <span class="s">&quot;.c.project_id==Projects.c.id&quot;</span><span class="p">,</span>
+            <span class="n">post_update</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="c"># for project itself</span>
+            <span class="n">uselist</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">backref</span><span class="o">=</span><span class="n">backref</span><span class="p">,</span>
+            <span class="n">doc</span><span class="o">=</span><span class="n">doc</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ProjectMixin.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ProjectMixin.html#stalker.models.mixins.ProjectMixin.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">project</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">project</span>
+</div>
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;project&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given project value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">from</span> <span class="nn">stalker.models.project</span> <span class="kn">import</span> <span class="n">Project</span>
+
+        <span class="k">if</span> <span class="n">project</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.project can not be None it must be an &quot;</span>
+                            <span class="s">&quot;instance of stalker.models.project.Project&quot;</span> <span class="o">%</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">Project</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.project should be an instance of &quot;</span>
+                            <span class="s">&quot;stalker.models.project.Project instance not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">project</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">project</span>
+
+</div>
+<div class="viewcode-block" id="ReferenceMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ReferenceMixin.html#stalker.models.mixins.ReferenceMixin">[docs]</a><span class="k">class</span> <span class="nc">ReferenceMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds reference capabilities to the mixed in class.</span>
+<span class="sd">    </span>
+<span class="sd">    References are :class:`stalker.models.entity.Entity` instances or anything</span>
+<span class="sd">    derived from it, which adds information to the attached objects. The aim of</span>
+<span class="sd">    the References are generally to give more info to direct the evolution of</span>
+<span class="sd">    the object.</span>
+<span class="sd">    </span>
+<span class="sd">    :param references: A list of :class:`~stalker.models.entity.Entity`</span>
+<span class="sd">      objects.</span>
+<span class="sd">    </span>
+<span class="sd">    :type references: list of :class:`~stalker.models.entity.Entity` objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># add this lines for Sphinx</span>
+    <span class="c">#    __tablename__ = &quot;ReferenceMixins&quot;</span>
+
+<div class="viewcode-block" id="ReferenceMixin.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ReferenceMixin.html#stalker.models.mixins.ReferenceMixin.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">references</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">references</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">references</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">references</span> <span class="o">=</span> <span class="n">references</span>
+</div>
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">references</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="c"># TODO: there is something wrong here, the documentation and the implementation is not telling the same story</span>
+        <span class="c"># get secondary table</span>
+        <span class="n">secondary_table</span> <span class="o">=</span> <span class="n">create_secondary_table</span><span class="p">(</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+            <span class="s">&#39;Link&#39;</span><span class="p">,</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">__tablename__</span><span class="p">,</span>
+            <span class="s">&#39;Links&#39;</span><span class="p">,</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">__name__</span> <span class="o">+</span> <span class="s">&quot;_References&quot;</span>
+        <span class="p">)</span>
+        <span class="c"># return the relationship</span>
+        <span class="k">return</span> <span class="n">relationship</span><span class="p">(</span><span class="s">&quot;Link&quot;</span><span class="p">,</span> <span class="n">secondary</span><span class="o">=</span><span class="n">secondary_table</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;references&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">reference</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given reference</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">from</span> <span class="nn">stalker.models.entity</span> <span class="kn">import</span> <span class="n">SimpleEntity</span>
+
+        <span class="c"># all the elements should be instance of stalker.models.entity.Entity</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">SimpleEntity</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.references should be all instances of &quot;</span>
+                            <span class="s">&quot;stalker.models.entity.SimpleEntity not </span><span class="si">%s</span><span class="s">&quot;</span>
+                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                               <span class="n">reference</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">reference</span>
+
+</div>
+<div class="viewcode-block" id="ACLMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.ACLMixin.html#stalker.models.mixins.ACLMixin">[docs]</a><span class="k">class</span> <span class="nc">ACLMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Mixin for adding ACLs to mixed in class.</span>
+<span class="sd">    </span>
+<span class="sd">    Access control lists or ACLs are used to determine if the given resource</span>
+<span class="sd">    has the permission to access the given data. It is based on Pyramids</span>
+<span class="sd">    Authorization system but organized to fit in Stalker style.</span>
+<span class="sd">    </span>
+<span class="sd">    The ACLMixin adds an attribute called ``permissions`` and a</span>
+<span class="sd">    property called ``__acl__`` to be able to pass the permission data to</span>
+<span class="sd">    Pyramid framework.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">permissions</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="c"># get the secondary table</span>
+        <span class="n">secondary_table</span> <span class="o">=</span> <span class="n">create_secondary_table</span><span class="p">(</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="s">&#39;Permission&#39;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__tablename__</span><span class="p">,</span> <span class="s">&#39;Permissions&#39;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">relationship</span><span class="p">(</span><span class="s">&#39;Permission&#39;</span><span class="p">,</span> <span class="n">secondary</span><span class="o">=</span><span class="n">secondary_table</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;permissions&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_permissions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">permission</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given permission value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.auth</span> <span class="kn">import</span> <span class="n">Permission</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">permission</span><span class="p">,</span> <span class="n">Permission</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.permissions should be all instances of &quot;</span>
+                            <span class="s">&quot;stalker.models.auth.Permission not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">permission</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">permission</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__acl__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Pyramid friendly ACL list composed by the:</span>
+<span class="sd">        </span>
+<span class="sd">          * Permission.access (Ex: &#39;Allow&#39; or &#39;Deny&#39;)</span>
+<span class="sd">          * The Mixed in class name and the object name (Ex: &#39;User:eoyilmaz&#39;)</span>
+<span class="sd">          * The Action and the target class name (Ex: &#39;Create_Asset&#39;)</span>
+<span class="sd">          </span>
+<span class="sd">        Thus a list of tuple is returned as follows::</span>
+
+<span class="sd">          __acl__ = [</span>
+<span class="sd">              (&#39;Allow&#39;, &#39;User:eoyilmaz&#39;, &#39;Create_Asset&#39;),</span>
+<span class="sd">          ]</span>
+<span class="sd">        </span>
+<span class="sd">        For the last example user eoyilmaz can grant access to views requiring</span>
+<span class="sd">        &#39;Add_Project&#39; permission.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">perm</span><span class="o">.</span><span class="n">access</span><span class="p">,</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">+</span> <span class="s">&#39;:&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                 <span class="n">perm</span><span class="o">.</span><span class="n">action</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">perm</span><span class="o">.</span><span class="n">class_name</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">perm</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">permissions</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="CodeMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.CodeMixin.html#stalker.models.mixins.CodeMixin">[docs]</a><span class="k">class</span> <span class="nc">CodeMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds code info to the mixed in class.</span>
+<span class="sd">    </span>
+<span class="sd">    .. versionadded:: 0.2.0</span>
+<span class="sd">      </span>
+<span class="sd">      The code attribute of the SimpleEntity is now introduced as a separate</span>
+<span class="sd">      mixin. To let it be used by the classes it is really needed. </span>
+<span class="sd">    </span>
+<span class="sd">    The CodeMixin just adds a new field called ``code``. It is a very simple</span>
+<span class="sd">    attribute and is used for simplifying long names (like Project.name etc.).</span>
+<span class="sd">    </span>
+<span class="sd">    Contrary to previous implementations the code attribute is not formatted in</span>
+<span class="sd">    anyway, so care needs to be taken if the code attribute is going to be used</span>
+<span class="sd">    in filesystem as file and directory names.</span>
+<span class="sd">    </span>
+<span class="sd">    :param str code: The code attribute is a string, can not be empty or can</span>
+<span class="sd">      not be None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CodeMixin.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.CodeMixin.html#stalker.models.mixins.CodeMixin.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;code: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">code</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+</div>
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span>
+            <span class="s">&#39;code&#39;</span><span class="p">,</span>
+            <span class="n">String</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span>
+            <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The code name of this object.</span>
+<span class="s">                </span>
+<span class="s">                It accepts strings. Can not be None.&quot;&quot;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;code&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given code attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;validating code value of: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">code</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.code cannot be None&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.code should be an instance of string or &#39;</span>
+                            <span class="s">&#39;unicode not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">code</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.code can not be an empty string&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">code</span>
+
+</div>
+<div class="viewcode-block" id="WorkingHoursMixin"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.WorkingHoursMixin.html#stalker.models.mixins.WorkingHoursMixin">[docs]</a><span class="k">class</span> <span class="nc">WorkingHoursMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sets working hours for the mixed in class.</span>
+<span class="sd">    </span>
+<span class="sd">    Generally is meaningful for users, departments and studio.</span>
+<span class="sd">    </span>
+<span class="sd">    :param working_hours: A :class:`~stalker.models.project.WorkingHours`</span>
+<span class="sd">      instance showing the working hours settings for that project. This data</span>
+<span class="sd">      is stored as a PickleType in the database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WorkingHoursMixin.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.mixins.WorkingHoursMixin.html#stalker.models.mixins.WorkingHoursMixin.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">working_hours</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">working_hours</span> <span class="o">=</span> <span class="n">working_hours</span>
+</div>
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">working_hours</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="n">PickleType</span><span class="p">)</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;working_hours&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_working_hours</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">wh</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given working hours value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wh</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># use the default one</span>
+            <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">WorkingHours</span>
+
+            <span class="n">wh</span> <span class="o">=</span> <span class="n">WorkingHours</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">wh</span>
+
+    </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

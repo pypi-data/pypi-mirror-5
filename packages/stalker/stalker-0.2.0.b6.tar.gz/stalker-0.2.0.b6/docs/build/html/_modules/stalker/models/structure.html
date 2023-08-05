@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.structure &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.structure</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">String</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">validates</span>
+<span class="kn">from</span> <span class="nn">stalker.db.declarative</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.models.entity</span> <span class="kn">import</span> <span class="n">Entity</span>
+
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Structure"><a class="viewcode-back" href="../../../generated/stalker.models.structure.Structure.html#stalker.models.structure.Structure">[docs]</a><span class="k">class</span> <span class="nc">Structure</span><span class="p">(</span><span class="n">Entity</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Holds data about how the physical files are arranged in the :class:`~stalker.models.repository.Repository`.</span>
+<span class="sd">    </span>
+<span class="sd">    Structures are generally owned by :class:`~stalker.models.project.Project`</span>
+<span class="sd">    objects. Whenever a :class:`~stalker.models.project.Project` is physically</span>
+<span class="sd">    created, project folders are created by looking at</span>
+<span class="sd">    :attr:`~stalker.models.structure.Structure.custom_template` of the</span>
+<span class="sd">    :class:`~stalker.models.structure.Structure`, the</span>
+<span class="sd">    :class:`~stalker.models.project.Project` object is generally given to the</span>
+<span class="sd">    :class:`~stalker.models.structure.Structure`. So it is possible to use a</span>
+<span class="sd">    variable like &quot;{{project}}&quot; or derived variables like::</span>
+<span class="sd">      </span>
+<span class="sd">      {% for seq in project.sequences %}</span>
+<span class="sd">          {{do something here}}</span>
+<span class="sd">    </span>
+<span class="sd">    Every line of this rendered template will represent a folder and Stalker</span>
+<span class="sd">    will create these folders on the attached</span>
+<span class="sd">    :class:`~stalker.models.repository.Repository`.</span>
+<span class="sd">    </span>
+<span class="sd">    :param templates: A list of</span>
+<span class="sd">      :class:`~stalker.models.template.FilenameTemplate`\ s which</span>
+<span class="sd">      defines a specific template for the given</span>
+<span class="sd">      :attr:`~stalker.models.template.FilenameTemplate.target_entity_type`\ s.</span>
+<span class="sd">    </span>
+<span class="sd">    :type templates: list of :class:`~stalker.models.template.FilenameTemplate`\ s</span>
+<span class="sd">    </span>
+<span class="sd">    :param str custom_template: A string containing several lines of folder</span>
+<span class="sd">      names. The folders are relative to the</span>
+<span class="sd">      :class:`~stalker.models.project.Project` root. It can also contain a</span>
+<span class="sd">      Jinja2 Template code. Which will be rendered to show the list of folders</span>
+<span class="sd">      to be created with the project. The Jinja2 Template is going to have the</span>
+<span class="sd">      {{project}} variable. The important point to be careful about is to list</span>
+<span class="sd">      all the custom folders of the project in a new line in this string. For</span>
+<span class="sd">      example a :class:`~stalker.models.structure.Structure` for a</span>
+<span class="sd">      :class:`~stalker.models.project.Project` can have the following</span>
+<span class="sd">      :attr:`~stalker.models.structure.Structure.custom_template`::</span>
+<span class="sd">        </span>
+<span class="sd">        ASSETS</span>
+<span class="sd">        {% for asset in project.assets %}</span>
+<span class="sd">            {% set asset_root = &#39;ASSETS/&#39; + asset.code %}</span>
+<span class="sd">            {{asset_root}}</span>
+<span class="sd">            </span>
+<span class="sd">            {% for task in asset.tasks %}</span>
+<span class="sd">                {% set task_root = asset_root + &#39;/&#39; + task.code %}</span>
+<span class="sd">                {{task_root}}</span>
+<span class="sd">        </span>
+<span class="sd">        SEQUENCES</span>
+<span class="sd">        {% for seq in project.sequences %}}</span>
+<span class="sd">            {% set seq_root = &#39;SEQUENCES/&#39; + {{seq.code}} %}</span>
+<span class="sd">            {{seq_root}}/Edit</span>
+<span class="sd">            {{seq_root}}/Edit/Export</span>
+<span class="sd">            {{seq_root}}/Storyboard</span>
+<span class="sd">            </span>
+<span class="sd">            {% for shot in seq.shots %}</span>
+<span class="sd">                {% set shot_root = seq_root + &#39;/SHOTS/&#39; + shot.code %}</span>
+<span class="sd">                {{shot_root}}</span>
+<span class="sd">                </span>
+<span class="sd">                {% for task in shot.tasks %}</span>
+<span class="sd">                    {% set task_root = shot_root + &#39;/&#39; + task.code %}</span>
+<span class="sd">                    {{task_root}}</span>
+<span class="sd">      </span>
+<span class="sd">      The above example has gone far beyond deep than it is needed, where it</span>
+<span class="sd">      started to define paths for :class:`~stalker.models.asset.Asset`\ s. Even</span>
+<span class="sd">      it is possible to create a :class:`~stalker.models.project.Project`</span>
+<span class="sd">      structure like that, in general it is unnecessary. Because the above</span>
+<span class="sd">      folders are going to be created but they are probably going to be empty</span>
+<span class="sd">      for a while, because the :class:`~stalker.models.asset.Asset`\ s are not</span>
+<span class="sd">      created yet (or in fact no :class:`~stalker.models.version.Version`\ s</span>
+<span class="sd">      are created for the :class:`~stalker.models.task.Task`\ s). Anyway, it is</span>
+<span class="sd">      much suitable and desired to create this details by using</span>
+<span class="sd">      :class:`~stalker.models.template.FilenameTemplate` objects. Which are</span>
+<span class="sd">      specific to certain</span>
+<span class="sd">      :attr:`~stalker.models.template.FilenameTemplate.target_entity_type`\ s.</span>
+<span class="sd">      And by using the</span>
+<span class="sd">      :attr:`~stalker.models.structure.Structure.custom_template`</span>
+<span class="sd">      attribute, Stalker can not place any source or output file of a</span>
+<span class="sd">      :class:`~stalker.models.version.Version` in the</span>
+<span class="sd">      :class:`~stalker.models.repository.Repository` where as it can by using</span>
+<span class="sd">      :class:`~stalker.models.template.FilenameTemplate`\ s.</span>
+<span class="sd">      </span>
+<span class="sd">      But for certain types of :class:`~stalker.models.task.Task`\ s it is may</span>
+<span class="sd">      be good to previously create the folder structure just because in certain</span>
+<span class="sd">      environments (programs) it is not possible to run a Python code that will</span>
+<span class="sd">      place the file in to the Repository like in Photoshop.</span>
+<span class="sd">      </span>
+<span class="sd">      The ``custom_template`` parameter can be None or an empty string if it is</span>
+<span class="sd">      not needed.</span>
+<span class="sd">    </span>
+<span class="sd">    A :class:`~stalker.models.structure.Structure` can not be created without a</span>
+<span class="sd">    ``type`` (__strictly_typed__ = True). By giving a ``type`` to the</span>
+<span class="sd">    :class:`~stalker.models.structure.Structure`, you can create one structure</span>
+<span class="sd">    for **Commercials** and another project structure for **Movies** and</span>
+<span class="sd">    another one for **Print** projects etc. and can reuse them with new</span>
+<span class="sd">    :class:`~stalker.models.project.Project`\ s.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c">#__strictly_typed__ = True</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;Structures&quot;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;Structure&quot;</span><span class="p">}</span>
+
+    <span class="n">structure_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="s">&quot;id&quot;</span><span class="p">,</span>
+        <span class="n">Integer</span><span class="p">,</span>
+        <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Entities.id&quot;</span><span class="p">),</span>
+        <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">templates</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;FilenameTemplate&quot;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&quot;Structure_FilenameTemplates&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">custom_template</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&quot;custom_template&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Structure.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.structure.Structure.html#stalker.models.structure.Structure.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">templates</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">custom_template</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Structure</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">templates</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">templates</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">templates</span> <span class="o">=</span> <span class="n">templates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_template</span> <span class="o">=</span> <span class="n">custom_template</span>
+</div>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the equality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Structure</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Structure</span><span class="p">)</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">templates</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">templates</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">custom_template</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">custom_template</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;custom_template&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_custom_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">custom_template_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given custom_template value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">custom_template_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">custom_template_in</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">custom_template_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.custom_template should be a string not </span><span class="si">%s</span><span class="s">&quot;</span> 
+                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                               <span class="n">custom_template_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">custom_template_in</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&quot;templates&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_templates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">template_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given template value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="kn">from</span> <span class="nn">stalker.models.template</span> <span class="kn">import</span> <span class="n">FilenameTemplate</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">template_in</span><span class="p">,</span> <span class="n">FilenameTemplate</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;all the elements in the </span><span class="si">%s</span><span class="s">.templates should be a &quot;</span>
+                            <span class="s">&quot;list of &quot;</span>
+                            <span class="s">&quot;stalker.models.template.FilenameTemplate &quot;</span>
+                            <span class="s">&quot;instances not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">template_in</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">template_in</span>
+
+<span class="c"># STRUCTURE_FILENAMETEMPLATES</span></div>
+<span class="n">Structure_FilenameTemplates</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&quot;Structure_FilenameTemplates&quot;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;structure_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Structures.id&quot;</span><span class="p">),</span>
+           <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;filenametemplate_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;FilenameTemplates.id&quot;</span><span class="p">),</span>
+           <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,590 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.ticket &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.ticket</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.exc</span> <span class="kn">import</span> <span class="n">UnboundExecutionError</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">synonym</span><span class="p">,</span> <span class="n">relationship</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm.mapper</span> <span class="kn">import</span> <span class="n">validates</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">String</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.schema</span> <span class="kn">import</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Table</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.types</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">stalker.db.declarative</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.models.entity</span> <span class="kn">import</span> <span class="n">Entity</span><span class="p">,</span> <span class="n">SimpleEntity</span>
+<span class="kn">from</span> <span class="nn">stalker.models.mixins</span> <span class="kn">import</span> <span class="n">StatusMixin</span>
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">defaults</span>
+
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+<span class="c"># RESOLUTIONS</span>
+<span class="n">FIXED</span> <span class="o">=</span> <span class="s">&#39;fixed&#39;</span>
+<span class="n">INVALID</span> <span class="o">=</span> <span class="s">&#39;invalid&#39;</span>
+<span class="n">WONTFIX</span> <span class="o">=</span> <span class="s">&#39;wontfix&#39;</span>
+<span class="n">DUPLICATE</span> <span class="o">=</span> <span class="s">&#39;duplicate&#39;</span>
+<span class="n">WORKSFORME</span> <span class="o">=</span> <span class="s">&#39;worksforme&#39;</span>
+<span class="n">CANTFIX</span> <span class="o">=</span> <span class="s">&#39;cantfix&#39;</span>
+
+
+<div class="viewcode-block" id="Ticket"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket">[docs]</a><span class="k">class</span> <span class="nc">Ticket</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="n">StatusMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tickets are the way of reporting errors or asking for changes in Stalker.</span>
+<span class="sd">    </span>
+<span class="sd">    The Stalker Ticketing system is based on Trac Basic Workflow. For more</span>
+<span class="sd">    information please visit `Trac Workflow`_</span>
+<span class="sd">    </span>
+<span class="sd">    _`Trac Workflow`:: http://trac.edgewall.org/wiki/TracWorkflow</span>
+<span class="sd">    </span>
+<span class="sd">    Stalker Ticket system is very flexible, to customize the workflow please</span>
+<span class="sd">    update the :class:`~stalker.config.Config.ticket_workflow` dictionary.</span>
+<span class="sd">    </span>
+<span class="sd">    In the default setup, there are four actions available; ``accept``,</span>
+<span class="sd">    ``resolve``, ``reopen``, ``reassign``, and five statuses available ``New``,</span>
+<span class="sd">    ``Assigned``, ``Accepted``, ``Reopened``, ``Closed``.</span>
+<span class="sd">    </span>
+<span class="sd">    :param project: The Project that this Ticket is assigned to. A Ticket in</span>
+<span class="sd">        Stalker must be assigned to a Project. ``project`` argument can not be</span>
+<span class="sd">        skipped or can not be None.</span>
+<span class="sd">    </span>
+<span class="sd">    :type project: :class:`~stalker.models.project.Project`</span>
+<span class="sd">    </span>
+<span class="sd">    :param str summary: A string which contains the title or a short</span>
+<span class="sd">        description of this Ticket.</span>
+<span class="sd">    </span>
+<span class="sd">    :param enum priority: The priority of the Ticket which is an enum value.</span>
+<span class="sd">        Possible values are:</span>
+<span class="sd">            </span>
+<span class="sd">          +--------------+-------------------------------------------------+</span>
+<span class="sd">          | 0 / TRIVIAL  | defect with little or no impact / cosmetic      |</span>
+<span class="sd">          |              | enhancement                                     |</span>
+<span class="sd">          +--------------+-------------------------------------------------+</span>
+<span class="sd">          | 1 / MINOR    | defect with minor impact / small enhancement    |</span>
+<span class="sd">          +--------------+-------------------------------------------------+  </span>
+<span class="sd">          | 2 / MAJOR    | defect with major impact / big enhancement      |</span>
+<span class="sd">          +--------------+-------------------------------------------------+ </span>
+<span class="sd">          | 3 / CRITICAL | severe loss of data due to the defect or highly |</span>
+<span class="sd">          |              | needed enhancement                              |</span>
+<span class="sd">          +--------------+-------------------------------------------------+</span>
+<span class="sd">          | 4 / BLOCKER  | basic functionality is not available until this |</span>
+<span class="sd">          |              | is fixed                                        |</span>
+<span class="sd">          +--------------+-------------------------------------------------+</span>
+<span class="sd">    </span>
+<span class="sd">    :param reported_by: An instance of :class:`~stalker.models.user.User` who</span>
+<span class="sd">        created this Ticket. It is basically a synonym for the</span>
+<span class="sd">        :attr:`~stalker.models.entity.SimpleEntity.created_by` attribute.</span>
+<span class="sd">    </span>
+<span class="sd">    Changing the :class:`~stalker.models.ticket.Ticket`\ .\ </span>
+<span class="sd">    :attr`~stalker.models.ticket.Ticket.status` will create a new</span>
+<span class="sd">    :class:`~stalker.models.Ticket.TicketLog` instance showing the previous</span>
+<span class="sd">    operation.</span>
+<span class="sd">    </span>
+<span class="sd">    Even though Tickets needs statuses they don&#39;t need to be supplied a</span>
+<span class="sd">    :class:`~stalker.models.status.StatusList` nor</span>
+<span class="sd">    :class:`~stalker.models.status.Status` for the Tickets. It will be</span>
+<span class="sd">    automatically filled accordingly. For newly created Tickets the status of</span>
+<span class="sd">    the ticket is ``NEW`` and can be changed to other statuses as follows:</span>
+<span class="sd">        </span>
+<span class="sd">        Status -&gt; Action -&gt; New Status</span>
+<span class="sd">        </span>
+<span class="sd">        NEW      -&gt; resolve  -&gt; CLOSED</span>
+<span class="sd">        NEW      -&gt; accept   -&gt; ACCEPTED</span>
+<span class="sd">        NEW      -&gt; reassign -&gt; ASSIGNED</span>
+<span class="sd">        </span>
+<span class="sd">        ASSIGNED -&gt; resolve  -&gt; CLOSED</span>
+<span class="sd">        ASSIGNED -&gt; accept   -&gt; ACCEPTED</span>
+<span class="sd">        ASSIGNED -&gt; reassign -&gt; ASSIGNED</span>
+<span class="sd">        </span>
+<span class="sd">        ACCEPTED -&gt; resolve  -&gt; CLOSED</span>
+<span class="sd">        ACCEPTED -&gt; accept   -&gt; ACCEPTED</span>
+<span class="sd">        ACCEPTED -&gt; reassign -&gt; ASSIGNED</span>
+<span class="sd">        </span>
+<span class="sd">        REOPENED -&gt; resolve  -&gt; CLOSED</span>
+<span class="sd">        REOPENED -&gt; accept   -&gt; ACCEPTED</span>
+<span class="sd">        REOPENED -&gt; reassign -&gt; ASSIGNED</span>
+<span class="sd">        </span>
+<span class="sd">        CLOSED   -&gt; reopen   -&gt; REOPENED</span>
+<span class="sd">        </span>
+<span class="sd">        actions available:</span>
+<span class="sd">        resolve</span>
+<span class="sd">        reassign</span>
+<span class="sd">        accept</span>
+<span class="sd">        reopen</span>
+<span class="sd">    </span>
+<span class="sd">    The :attr:`~stalker.models.ticket.Ticket.name` is automatically generated</span>
+<span class="sd">    by using the ``stalker.config.Config.ticket_label`` attribute and</span>
+<span class="sd">    :attr:`~stalker.models.ticket.Ticket.ticket_number`\ . So if defaults are</span>
+<span class="sd">    used the first ticket name will be &quot;Ticket#1&quot; and the second &quot;Ticket#2&quot; and</span>
+<span class="sd">    so on. For every project the number will restart from 1.</span>
+<span class="sd">    </span>
+<span class="sd">    Use the :meth:`~stalker.models.ticket.Ticket.resolve`,</span>
+<span class="sd">    :meth:`~stalker.models.ticket.Ticket.reassign`,</span>
+<span class="sd">    :meth:`~stalker.models.ticket.Ticket.accept`,</span>
+<span class="sd">    :meth:`~stalker.models.ticket.Ticket.reopen` methods to change the status</span>
+<span class="sd">    of the current Ticket.</span>
+<span class="sd">    </span>
+<span class="sd">    Changing the status of the Ticket will create</span>
+<span class="sd">    :class:`~stalker.models.ticket.TicketLog` entries reflecting the change</span>
+<span class="sd">    made.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c"># logs attribute</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&quot;Tickets&quot;</span>
+    <span class="c">#__table_args__ = (</span>
+    <span class="c">#    UniqueConstraint(&quot;project_id&quot;, &#39;number&#39;), {}</span>
+    <span class="c">#)</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;polymorphic_identity&quot;</span><span class="p">:</span> <span class="s">&quot;Ticket&quot;</span><span class="p">}</span>
+    
+    <span class="n">ticket_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Entities.id&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span>
+    <span class="p">)</span>
+    
+    <span class="n">project_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;project_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Projects.id&#39;</span><span class="p">),</span>
+                        <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    
+    <span class="n">_project</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Project&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tickets.c.project_id==Projects.c.id&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;tickets&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="n">_number</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="s">&#39;number&#39;</span><span class="p">,</span>
+        <span class="n">Integer</span><span class="p">,</span>
+        <span class="n">autoincrement</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    
+    <span class="n">related_tickets</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Ticket_Related_Tickets&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tickets.c.id==Ticket_Related_Tickets.c.ticket_id&#39;</span><span class="p">,</span>
+        <span class="n">secondaryjoin</span><span class="o">=</span><span class="s">&#39;Ticket_Related_Tickets.c.related_ticket_id==Tickets.c.id&#39;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A list of other Ticket instances which are related</span>
+<span class="s">        to this one. Can be used to related Tickets to point to a common</span>
+<span class="s">        problem. The Ticket itself can not be assigned to this list</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">links</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;SimpleEntity&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Ticket_SimpleEntities&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="n">comments</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span><span class="s">&#39;notes&#39;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;A list of :class:`~stalker.models.note.Note` instances showing</span>
+<span class="s">        the comments made for this Ticket instance. It is a synonym for the</span>
+<span class="s">        :attr:`~stalker.models.ticket.Ticket.notes` attribute.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">reported_by</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span><span class="s">&#39;created_by&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s">&quot;Shows who created this Ticket&quot;</span><span class="p">)</span>
+    
+    <span class="n">owner_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;owner_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Users.id&#39;</span><span class="p">))</span>
+    <span class="n">owner</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;User&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Tickets.c.owner_id==Users.c.id&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="n">resolution</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">128</span><span class="p">))</span>
+    
+    <span class="n">priority</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Enum</span><span class="p">(</span><span class="s">&#39;TRIVIAL&#39;</span><span class="p">,</span> <span class="s">&#39;MINOR&#39;</span><span class="p">,</span> <span class="s">&#39;MAJOR&#39;</span><span class="p">,</span> <span class="s">&#39;CRITICAL&#39;</span><span class="p">,</span> <span class="s">&#39;BLOCKER&#39;</span><span class="p">,</span>
+             <span class="n">name</span><span class="o">=</span><span class="s">&#39;PriorityType&#39;</span><span class="p">),</span>
+        <span class="n">default</span><span class="o">=</span><span class="s">&#39;TRIVIAL&#39;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The priority of the Ticket which is an enum value.</span>
+<span class="s">        Possible values are:</span>
+<span class="s">          </span>
+<span class="s">          +--------------+-------------------------------------------------+</span>
+<span class="s">          | 0 / TRIVIAL  | defect with little or no impact / cosmetic      |</span>
+<span class="s">          |              | enhancement                                     |</span>
+<span class="s">          +--------------+-------------------------------------------------+</span>
+<span class="s">          | 1 / MINOR    | defect with minor impact / small enhancement    |</span>
+<span class="s">          +--------------+-------------------------------------------------+  </span>
+<span class="s">          | 2 / MAJOR    | defect with major impact / big enhancement      |</span>
+<span class="s">          +--------------+-------------------------------------------------+ </span>
+<span class="s">          | 3 / CRITICAL | severe loss of data due to the defect or highly |</span>
+<span class="s">          |              | needed enhancement                              |</span>
+<span class="s">          +--------------+-------------------------------------------------+</span>
+<span class="s">          | 4 / BLOCKER  | basic functionality is not available until this |</span>
+<span class="s">          |              | is fixed                                        |</span>
+<span class="s">          +--------------+-------------------------------------------------+</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+<div class="viewcode-block" id="Ticket.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="s">&#39;TRIVIAL&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># just force auto name generation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_ticket_number</span><span class="p">()</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">ticket_label</span> <span class="o">+</span> <span class="s">&#39; #</span><span class="si">%i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">number</span>
+        
+        <span class="nb">super</span><span class="p">(</span><span class="n">Ticket</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">StatusMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_project</span> <span class="o">=</span> <span class="n">project</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+        <span class="k">if</span> <span class="n">links</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">links</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span>
+    </div>
+    <span class="k">def</span> <span class="nf">_number_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the number attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number</span>
+    
+    <span class="n">number</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span>
+        <span class="s">&#39;_number&#39;</span><span class="p">,</span>
+        <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_number_getter</span><span class="p">),</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The automatically generated number for the tickets.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_project_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the project attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_project</span>
+    
+    <span class="n">project</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span>
+        <span class="s">&#39;_project&#39;</span><span class="p">,</span>
+        <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_project_getter</span><span class="p">)</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_maximum_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the maximum available number from the database</span>
+<span class="sd">        </span>
+<span class="sd">        :return: integer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># do your query</span>
+            <span class="n">max_ticket</span> <span class="o">=</span> <span class="n">Ticket</span><span class="o">.</span><span class="n">query</span>\
+                <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Ticket</span><span class="o">.</span><span class="n">number</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>\
+                <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">UnboundExecutionError</span><span class="p">:</span>
+            <span class="n">max_ticket</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="k">return</span> <span class="n">max_ticket</span><span class="o">.</span><span class="n">number</span> <span class="k">if</span> <span class="n">max_ticket</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="mi">0</span>
+    
+    <span class="k">def</span> <span class="nf">_generate_ticket_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;auto generates a number for the ticket</span>
+<span class="sd">        </span>
+<span class="sd">        :return: integer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># TODO: try to make it atomic</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;related_tickets&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_related_tickets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">related_ticket</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given related_ticket attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">related_ticket</span><span class="p">,</span> <span class="n">Ticket</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.related_ticket attribute should be a list &#39;</span>
+                <span class="s">&#39;of other stalker.models.ticket.Ticket instances not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">related_ticket</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">related_ticket</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.related_ticket attribute can not have &#39;</span>
+            <span class="s">&#39;itself in the list&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">related_ticket</span>
+    
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;_project&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given project instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">Project</span>
+        <span class="k">if</span> <span class="n">project</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">Project</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.project should be an instance of &#39;</span>
+                            <span class="s">&#39;stalker.models.project.Project, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                             <span class="n">project</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">project</span>
+    
+    <span class="c">#Ticket.resolve(User1, &#39;fixed&#39;)</span>
+    <span class="c">#Ticket.__action__(&#39;resolve&#39;, User1, &#39;fixed&#39;)</span>
+    
+    
+    <span class="k">def</span> <span class="nf">__action__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">created_by</span><span class="p">,</span> <span class="n">action_arg</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;updates the ticket status and creates a ticket log according to the</span>
+<span class="sd">        Ticket.__available_actions__ dictionary</span>
+<span class="sd">        </span>
+<span class="sd">        :param str action: The name of the action</span>
+<span class="sd">        :param stalker.models.auth.User created_by: The User creating this</span>
+<span class="sd">            action</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">statuses</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">ticket_workflow</span><span class="p">[</span><span class="n">action</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="ow">in</span> <span class="n">statuses</span><span class="p">:</span>
+            <span class="n">action_data</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">ticket_workflow</span><span class="p">[</span><span class="n">action</span><span class="p">][</span><span class="n">status</span><span class="p">]</span>
+            <span class="n">new_status_code</span> <span class="o">=</span> <span class="n">action_data</span><span class="p">[</span><span class="s">&#39;new_status&#39;</span><span class="p">]</span>
+            <span class="n">action_name</span> <span class="o">=</span> <span class="n">action_data</span><span class="p">[</span><span class="s">&#39;action&#39;</span><span class="p">]</span>
+            
+            <span class="c"># there is an action defined for this status</span>
+            <span class="c"># get the to_status</span>
+            <span class="n">from_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span>
+            <span class="n">to_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_list</span><span class="p">[</span><span class="n">new_status_code</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">to_status</span>
+            
+            <span class="c"># call the action with action_arg</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action_name</span><span class="p">)</span>
+            <span class="n">func</span><span class="p">(</span><span class="n">action_arg</span><span class="p">)</span>
+            
+            <span class="c"># create log entry</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">TicketLog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_status</span><span class="p">,</span> <span class="n">to_status</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span>
+                          <span class="n">created_by</span><span class="o">=</span><span class="n">created_by</span><span class="p">)</span>
+            <span class="p">)</span>
+    
+<div class="viewcode-block" id="Ticket.resolve"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.resolve">[docs]</a>    <span class="k">def</span> <span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;resolves the ticket</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__action__</span><span class="p">(</span><span class="s">&#39;resolve&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="p">,</span> <span class="n">resolution</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Ticket.accept"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.accept">[docs]</a>    <span class="k">def</span> <span class="nf">accept</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;accepts the ticket</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__action__</span><span class="p">(</span><span class="s">&#39;accept&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="p">,</span> <span class="n">created_by</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Ticket.reassign"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.reassign">[docs]</a>    <span class="k">def</span> <span class="nf">reassign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">assign_to</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;reassigns the ticket</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__action__</span><span class="p">(</span><span class="s">&#39;reassign&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="p">,</span> <span class="n">assign_to</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Ticket.reopen"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.reopen">[docs]</a>    <span class="k">def</span> <span class="nf">reopen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;reopens the ticket</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__action__</span><span class="p">(</span><span class="s">&#39;reopen&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="p">)</span>
+    
+    <span class="c"># actions</span></div>
+<div class="viewcode-block" id="Ticket.set_owner"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.set_owner">[docs]</a>    <span class="k">def</span> <span class="nf">set_owner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;sets owner to the given owner</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owner</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="Ticket.set_resolution"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.set_resolution">[docs]</a>    <span class="k">def</span> <span class="nf">set_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;sets the timing_resolution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="Ticket.del_resolution"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.Ticket.html#stalker.models.ticket.Ticket.del_resolution">[docs]</a>    <span class="k">def</span> <span class="nf">del_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;deletes the timing_resolution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        
+    </div>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the equality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Ticket</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> \
+               <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Ticket</span><span class="p">)</span> <span class="ow">and</span> \
+               <span class="n">other</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> \
+               <span class="n">other</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">number</span> <span class="ow">and</span> \
+               <span class="n">other</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="ow">and</span> \
+               <span class="n">other</span><span class="o">.</span><span class="n">logs</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs</span> <span class="ow">and</span> \
+               <span class="n">other</span><span class="o">.</span><span class="n">priority</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="ow">and</span> \
+               <span class="n">other</span><span class="o">.</span><span class="n">ticket_for</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ticket_for</span>
+</div>
+<div class="viewcode-block" id="TicketLog"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.TicketLog.html#stalker.models.ticket.TicketLog">[docs]</a><span class="k">class</span> <span class="nc">TicketLog</span><span class="p">(</span><span class="n">SimpleEntity</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class to hold :class:`~stalker.models.ticket.Ticket`\ .\ :attr:`~stalker.models.ticket.Ticket.status` change operations.</span>
+<span class="sd">    </span>
+<span class="sd">    :param ticket: An instance of :class:`~stalker.models.ticket.Ticket` which</span>
+<span class="sd">        the subject to the operation.</span>
+<span class="sd">    </span>
+<span class="sd">    :type ticket: :class:`~stalker.models.ticket.Ticket`</span>
+<span class="sd">    </span>
+<span class="sd">    :param from_status: Holds a reference to a</span>
+<span class="sd">        :class:`~stalker.models.status.Status` instance which is the previous</span>
+<span class="sd">        status of the :class:`~stalker.models.ticket.Ticket`\ .</span>
+<span class="sd">    </span>
+<span class="sd">    :param to_status: Holds a reference to a</span>
+<span class="sd">        :class:`~stalker.models.status.Status` instance which is the new status</span>
+<span class="sd">        of the :class;`~stalker.models.ticket.Ticket`\ .</span>
+<span class="sd">    </span>
+<span class="sd">    :param operation: An Enumerator holding the type of the operation. Possible</span>
+<span class="sd">        values are: RESOLVE or REOPEN</span>
+<span class="sd">    </span>
+<span class="sd">        Operations follow the `Track Workflow`_\ , </span>
+<span class="sd">        </span>
+<span class="sd">        .. image:: http://trac.edgewall.org/chrome/common/guide/original-workflow.png</span>
+<span class="sd">            :width: 787 px</span>
+<span class="sd">            :height: 509 px</span>
+<span class="sd">            :align: left</span>
+<span class="sd">        </span>
+<span class="sd">    .. _Track Workflow: http://trac.edgewall.org/wiki/TracWorkflow </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c"># TODO: there are no tests for the TicketLog class</span>
+
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&#39;TicketLogs&#39;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;polymorphic_identity&#39;</span><span class="p">:</span> <span class="s">&#39;TicketLog&#39;</span><span class="p">}</span>
+    
+    <span class="n">ticket_log_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;SimpleEntities.id&#39;</span><span class="p">),</span>
+                           <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="n">from_status_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Statuses.id&#39;</span><span class="p">))</span>
+    <span class="n">to_status_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Statuses.id&#39;</span><span class="p">))</span>
+    
+    <span class="n">from_status</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Status&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;TicketLogs.c.from_status_id==Statuses.c.id&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="n">to_status</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Status&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;TicketLogs.c.to_status_id==Statuses.c.id&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="n">action</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">defaults</span><span class="o">.</span><span class="n">ticket_workflow</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;TicketActions&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+    
+    <span class="n">ticket_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Tickets.id&#39;</span><span class="p">))</span>
+    <span class="n">ticket</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;TicketLogs.c.ticket_id==Tickets.c.id&#39;</span><span class="p">,</span>
+        <span class="n">backref</span><span class="o">=</span><span class="s">&#39;logs&#39;</span>
+    <span class="p">)</span>
+    
+<div class="viewcode-block" id="TicketLog.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.ticket.TicketLog.html#stalker.models.ticket.TicketLog.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">ticket</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">from_status</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">to_status</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">action</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;TicketLog_&#39;</span> <span class="o">+</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TicketLog</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ticket</span> <span class="o">=</span> <span class="n">ticket</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">from_status</span> <span class="o">=</span> <span class="n">from_status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_status</span> <span class="o">=</span> <span class="n">to_status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action</span> <span class="o">=</span> <span class="n">action</span>
+
+
+
+<span class="c"># A secondary Table for Ticket to Ticket relations</span></div></div>
+<span class="n">Ticket_Related_Tickets</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&#39;Ticket_Related_Tickets&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;ticket_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Tickets.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;related_ticket_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Tickets.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">extend_existing</span><span class="o">=</span><span class="bp">True</span>
+<span class="p">)</span>
+
+<span class="c"># Ticket SimpleEntity Relation, link anything to a ticket</span>
+<span class="n">Ticket_SimpleEntities</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&#39;Ticket_SimpleEntities&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;ticket_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Tickets.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;simple_entity_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;SimpleEntities.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

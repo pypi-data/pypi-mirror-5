@@ -1,0 +1,526 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stalker.models.shot &mdash; Stalker 0.2.0.b6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0.b6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="Stalker 0.2.0.b6 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stalker.models.shot</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Stalker a Production Asset Management System</span>
+<span class="c"># Copyright (C) 2009-2013 Erkan Ozgur Yilmaz</span>
+<span class="c"># </span>
+<span class="c"># This file is part of Stalker.</span>
+<span class="c"># </span>
+<span class="c"># This library is free software; you can redistribute it and/or</span>
+<span class="c"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c"># License as published by the Free Software Foundation;</span>
+<span class="c"># version 2.1 of the License.</span>
+<span class="c"># </span>
+<span class="c"># This library is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c"># Lesser General Public License for more details.</span>
+<span class="c"># </span>
+<span class="c"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c"># License along with this library; if not, write to the Free Software</span>
+<span class="c"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Table</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">synonym</span><span class="p">,</span> <span class="n">reconstructor</span><span class="p">,</span> <span class="n">validates</span>
+
+<span class="kn">from</span> <span class="nn">stalker</span> <span class="kn">import</span> <span class="n">ImageFormat</span>
+<span class="kn">from</span> <span class="nn">stalker.db</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">stalker.models.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">stalker.models.mixins</span> <span class="kn">import</span> <span class="p">(</span><span class="n">StatusMixin</span><span class="p">,</span> <span class="n">ReferenceMixin</span><span class="p">,</span> <span class="n">CodeMixin</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">stalker.log</span> <span class="kn">import</span> <span class="n">logging_level</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging_level</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Shot"><a class="viewcode-back" href="../../../generated/stalker.models.shot.Shot.html#stalker.models.shot.Shot">[docs]</a><span class="k">class</span> <span class="nc">Shot</span><span class="p">(</span><span class="n">Task</span><span class="p">,</span> <span class="n">CodeMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manages Shot related data.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">       .. deprecated:: 0.1.2</span>
+
+<span class="sd">       Because most of the shots in different projects are going to have</span>
+<span class="sd">       the same name, which is a kind of a code like SH001, SH012A etc., and</span>
+<span class="sd">       in Stalker you can not have two entities with the same name if their</span>
+<span class="sd">       types are also matching, to guarantee all the shots are going to have</span>
+<span class="sd">       different names the :attr:`~stalker.models.shot.Shot.name` attribute</span>
+<span class="sd">       of the Shot instances are automatically set to a randomly generated</span>
+<span class="sd">       **uuid4** sequence.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">       .. versionadded:: 0.1.2</span>
+
+<span class="sd">       The name of the shot can be freely set without worrying about</span>
+<span class="sd">       clashing names.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">       .. versionadded:: 0.2.0</span>
+
+<span class="sd">       Shot instances now can have their own image format. So you can set up</span>
+<span class="sd">       different resolutions per shot.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">       .. versionadded:: 0.2.0</span>
+
+<span class="sd">       Shot instances can now be created with a Project instance only, without</span>
+<span class="sd">       needing a Sequence instance. Sequences are now a kind of a grouping</span>
+<span class="sd">       attribute for the Shots. And Shots can have more than one Sequence.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">       .. versionadded:: 0.2.0</span>
+
+<span class="sd">       Shots now have a new attribute called ``scenes``, holding</span>
+<span class="sd">       :class:`~stalker.models.scene.Scene` instances which is another grouping</span>
+<span class="sd">       attribute like ``sequences``. Where Sequences are grouping the Shots</span>
+<span class="sd">       according to their temporal position to each other, Scenes are grouping</span>
+<span class="sd">       the Shots according to their view to the world, that is shots taking</span>
+<span class="sd">       place in the same set configuration can be grouped together by using</span>
+<span class="sd">       Scenes.</span>
+
+<span class="sd">    Two shots with the same :attr:`~stalker.models.shot.Shot.code` can not be</span>
+<span class="sd">    assigned to the same :class:`~stalker.models.sequence.Sequence`.</span>
+<span class="sd">    </span>
+<span class="sd">    The :attr:`~stalker.models.shot.Shot.cut_out` and</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_duration` attributes effects each</span>
+<span class="sd">    other. Setting the :attr:`~stalker.models.shot.Shot.cut_out` will change</span>
+<span class="sd">    the :attr:`~stalker.models.shot.Shot.cut_duration` and setting the</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_duration` will change the</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_out` value. The default value of the</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_out` attribute is calculated from the</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_in` and</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_duration` attributes. If both</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_out` and</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_duration` arguments are set to None,</span>
+<span class="sd">    the :attr:`~stalker.models.shot.Shot.cut_duration` defaults to 100 and</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_out` will be set to</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_in` +</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_duration`. So the priority of the</span>
+<span class="sd">    attributes are as follows:</span>
+<span class="sd">    </span>
+<span class="sd">      :attr:`~stalker.models.shot.Shot.cut_in` &gt;</span>
+<span class="sd">      :attr:`~stalker.models.shot.Shot.cut_duration` &gt;</span>
+<span class="sd">      :attr:`~stalker.models.shot.Shot.cut_out`</span>
+<span class="sd">    </span>
+<span class="sd">    For still images (which can be also managed by shots) the</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_in` and</span>
+<span class="sd">    :attr:`~stalker.models.shot.Shot.cut_out` can be set to the same value</span>
+<span class="sd">    so the :attr:`~stalker.models.shot.Shot.cut_duration` can be set to zero.</span>
+<span class="sd">    </span>
+<span class="sd">    Because Shot is getting its relation to a</span>
+<span class="sd">    :class:`~stalker.models.project.Project` from the</span>
+<span class="sd">    passed :class:`~stalker.models.sequence.Sequence`, you can skip the</span>
+<span class="sd">    ``project`` argument, and if you not the value of the ``project`` argument</span>
+<span class="sd">    is not going to be used.</span>
+<span class="sd">    </span>
+<span class="sd">    :param project: This is the :class:`~stalker.models.project.Project`</span>
+<span class="sd">      instance that this shot belongs to. A Shot can not be created without a</span>
+<span class="sd">      Project instance.</span>
+<span class="sd">    </span>
+<span class="sd">    :type project: :class:`~stalker.models.project.Project`</span>
+<span class="sd">    </span>
+<span class="sd">    :param sequences: This is a list of</span>
+<span class="sd">      :class:`~stalker.models.sequence.Sequence`\ s that this shot is assigned</span>
+<span class="sd">      to. A Shot can be created without having a Sequence instance.</span>
+<span class="sd">    </span>
+<span class="sd">    :type sequences: list of :class:`~stalker.models.sequence.Sequence`</span>
+<span class="sd">    </span>
+<span class="sd">    :param integer cut_in: The in frame number that this shot starts. The</span>
+<span class="sd">      default value is 1. When the ``cut_in`` is bigger then</span>
+<span class="sd">      ``cut_out``, the :attr:`~stalker.models.shot.Shot.cut_out` attribute is</span>
+<span class="sd">      set to :attr:`~stalker.models.shot.Shot.cut_in` + 1.</span>
+<span class="sd">    </span>
+<span class="sd">    :param integer cut_duration: The duration of this shot in frames. It should</span>
+<span class="sd">      be zero or a positive integer value (natural number?) or . The default</span>
+<span class="sd">      value is None.</span>
+<span class="sd">    </span>
+<span class="sd">    :param integer cut_out: The out frame number that this shot ends. If it is</span>
+<span class="sd">      given as a value lower then the ``cut_in`` parameter, then the</span>
+<span class="sd">      :attr:`~stalker.models.shot.Shot.cut_out` will be set to the same value</span>
+<span class="sd">      with :attr:`~stalker.models.shot.Shot.cut_in` and the</span>
+<span class="sd">      :attr:`~stalker.models.shot.Shot.cut_duration` attribute will be set to</span>
+<span class="sd">      1. Can be skipped. The default value is None.</span>
+<span class="sd">    </span>
+<span class="sd">    :param image_format: The image format of this shot. This is an optional</span>
+<span class="sd">      variable to differentiate the image format per shot. The default value is</span>
+<span class="sd">      the same with the Project that this Shot belongs to.</span>
+<span class="sd">    </span>
+<span class="sd">    :type image_format: :class:`~stalker.models.format.ImageFormat`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__auto_name__</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&#39;Shots&#39;</span>
+    <span class="n">__mapper_args__</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;polymorphic_identity&#39;</span><span class="p">:</span> <span class="s">&#39;Shot&#39;</span><span class="p">}</span>
+
+    <span class="n">shot_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Tasks.id&#39;</span><span class="p">),</span>
+                     <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">sequences</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Sequence&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Shot_Sequences&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Shots.c.id==Shot_Sequences.c.shot_id&#39;</span><span class="p">,</span>
+        <span class="n">secondaryjoin</span><span class="o">=</span><span class="s">&#39;Shot_Sequences.c.sequence_id==Sequences.c.id&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;shots&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">scenes</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&#39;Scene&#39;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s">&#39;Shot_Scenes&#39;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&#39;Shots.c.id==Shot_Scenes.c.shot_id&#39;</span><span class="p">,</span>
+        <span class="n">secondaryjoin</span><span class="o">=</span><span class="s">&#39;Shot_Scenes.c.scene_id==Scenes.c.id&#39;</span><span class="p">,</span>
+        <span class="n">back_populates</span><span class="o">=</span><span class="s">&#39;shots&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">image_format_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;ImageFormats.id&quot;</span><span class="p">))</span>
+    <span class="n">image_format</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s">&quot;ImageFormat&quot;</span><span class="p">,</span>
+        <span class="n">primaryjoin</span><span class="o">=</span><span class="s">&quot;Shots.c.image_format_id==ImageFormats.c.id&quot;</span><span class="p">,</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The :class:`~stalker.models.format.ImageFormat` of this shot.</span>
+<span class="s">        </span>
+<span class="s">        This value defines the output image format of this shot, should be an</span>
+<span class="s">        instance of :class:`~stalker.models.format.ImageFormat`.</span>
+<span class="s">        &quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c"># the cut_duration attribute is not going to be stored in the database,</span>
+    <span class="c"># only the cut_in and cut_out will be enough to calculate the cut_duration</span>
+    <span class="n">_cut_in</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">_cut_out</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Shot.__init__"><a class="viewcode-back" href="../../../generated/stalker.models.shot.Shot.html#stalker.models.shot.Shot.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">code</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">project</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">sequences</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">scenes</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">cut_in</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">cut_out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">cut_duration</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">image_format</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c"># initialize TaskableMixin</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;project&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">project</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">code</span>
+
+        <span class="c"># check for the code and project before ProjectMixin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_code_availability</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">project</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Shot</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ReferenceMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">StatusMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">CodeMixin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sequences</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">sequences</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequences</span> <span class="o">=</span> <span class="n">sequences</span>
+
+        <span class="k">if</span> <span class="n">scenes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">scenes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span> <span class="o">=</span> <span class="n">scenes</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_format</span> <span class="o">=</span> <span class="n">image_format</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span> <span class="o">=</span> <span class="n">cut_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="o">=</span> <span class="n">cut_duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span> <span class="o">=</span> <span class="n">cut_out</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_cut_info</span><span class="p">(</span><span class="n">cut_in</span><span class="p">,</span> <span class="n">cut_duration</span><span class="p">,</span> <span class="n">cut_out</span><span class="p">)</span>
+</div>
+    <span class="nd">@reconstructor</span>
+    <span class="k">def</span> <span class="nf">__init_on_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initialized the instance variables when the instance created with</span>
+<span class="sd">        SQLAlchemy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_cut_info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span><span class="p">)</span>
+
+        <span class="c"># call supers __init_on_load__</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Shot</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init_on_load__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the representation of the Shot</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;equality operator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Shot</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span> <span class="ow">and</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">project</span>
+
+    <span class="k">def</span> <span class="nf">_check_code_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;checks if the given code is available in the given project</span>
+<span class="sd">        </span>
+<span class="sd">        :param code: the code string</span>
+<span class="sd">        :param project: the stalker.models.project.Project instance that this</span>
+<span class="sd">          shot is a part of</span>
+<span class="sd">        :return: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">project</span> <span class="ow">and</span> <span class="n">code</span><span class="p">:</span>
+            <span class="c"># the shots are task instances, use project.tasks</span>
+            <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">tasks</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">Shot</span><span class="p">):</span>
+                    <span class="n">shot</span> <span class="o">=</span> <span class="n">task</span>
+                    <span class="k">if</span> <span class="n">shot</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">code</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;The given project already has a &quot;</span>
+                                         <span class="s">&quot;Shot with a code of </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">_update_cut_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_in</span><span class="p">,</span> <span class="n">cut_duration</span><span class="p">,</span> <span class="n">cut_out</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;updates the cut_in, cut_duration and cut_out attributes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># validate all the values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_cut_in</span><span class="p">(</span><span class="n">cut_in</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_cut_duration</span><span class="p">(</span><span class="n">cut_duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_cut_out</span><span class="p">(</span><span class="n">cut_out</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span><span class="p">:</span>
+                <span class="c"># just update cut_duration</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="c">#else:</span>
+                <span class="c">#self._cut_o</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_validate_cut_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_duration_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given cut_duration value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cut_duration_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> \
+                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cut_duration_in</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;cut_duration should be an instance of int&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cut_duration_in</span>
+
+    <span class="k">def</span> <span class="nf">_validate_cut_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_in_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given cut_in_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cut_in_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cut_in_in</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;cut_in should be an instance of int&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cut_in_in</span>
+
+    <span class="k">def</span> <span class="nf">_validate_cut_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_out_in</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given cut_out_in value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cut_out_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cut_out_in</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;cut_out should be an instance of int&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cut_out_in</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;sequences&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given sequence value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.sequence</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.sequences should all be &quot;</span>
+                            <span class="s">&quot;stalker.models.sequence.Sequence instances, not &quot;</span>
+                            <span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                    <span class="n">sequence</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">sequence</span>
+
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;scenes&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_scenes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">scene</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given scene value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">stalker.models.scene</span> <span class="kn">import</span> <span class="n">Scene</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scene</span><span class="p">,</span> <span class="n">Scene</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">.scenes should all be &quot;</span>
+                            <span class="s">&quot;stalker.models.scene.Scene instances, not &quot;</span>
+                            <span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                    <span class="n">scene</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">scene</span>
+
+    <span class="nd">@validates</span><span class="p">(</span><span class="s">&#39;image_format&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_validate_image_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">imf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;validates the given imf value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">imf</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># use the projects image format</span>
+            <span class="n">imf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">image_format</span>
+
+        <span class="k">if</span> <span class="n">imf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">imf</span><span class="p">,</span> <span class="n">ImageFormat</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.image_format should be an instance of &#39;</span>
+                                <span class="s">&#39;stalker.models.format.ImageFormat, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">imf</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">imf</span>
+
+    <span class="k">def</span> <span class="nf">_cut_duration_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span>
+
+    <span class="k">def</span> <span class="nf">_cut_duration_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_duration_in</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_cut_info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span><span class="p">,</span> <span class="n">cut_duration_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span><span class="p">)</span>
+
+    <span class="n">cut_duration</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span>
+        <span class="s">&quot;_cut_duration&quot;</span><span class="p">,</span>
+        <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_cut_duration_getter</span><span class="p">,</span> <span class="n">_cut_duration_setter</span><span class="p">),</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The duration of this shot in frames.</span>
+
+<span class="s">        It should be a positive integer value. If updated also updates the</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_duration` attribute. The default</span>
+<span class="s">        value is 100.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_cut_in_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span>
+
+    <span class="k">def</span> <span class="nf">_cut_in_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_in_in</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_cut_info</span><span class="p">(</span><span class="n">cut_in_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span><span class="p">)</span>
+
+    <span class="n">cut_in</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span>
+        <span class="s">&quot;_cut_in&quot;</span><span class="p">,</span>
+        <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_cut_in_getter</span><span class="p">,</span> <span class="n">_cut_in_setter</span><span class="p">),</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The in frame number that this shot starts.</span>
+
+<span class="s">        The default value is 1. When the cut_in is bigger then</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_out`, the</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_out` value is update to</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_in` + 1.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_cut_out_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_cut_info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_out</span>
+
+    <span class="k">def</span> <span class="nf">_cut_out_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_out_in</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_cut_info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cut_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_duration</span><span class="p">,</span> <span class="n">cut_out_in</span><span class="p">)</span>
+
+    <span class="n">cut_out</span> <span class="o">=</span> <span class="n">synonym</span><span class="p">(</span>
+        <span class="s">&quot;_cut_out&quot;</span><span class="p">,</span>
+        <span class="n">descriptor</span><span class="o">=</span><span class="nb">property</span><span class="p">(</span><span class="n">_cut_out_getter</span><span class="p">,</span> <span class="n">_cut_out_setter</span><span class="p">),</span>
+        <span class="n">doc</span><span class="o">=</span><span class="s">&quot;&quot;&quot;The out frame number that this shot ends.</span>
+
+<span class="s">        When the :attr:`~stalker.models.shot.Shot.cut_out` is set to a value</span>
+<span class="s">        lower than :attr:`~stalker.models.shot.Shot.cut_in`,</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_out` will be updated to</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_in` + 1. The default value is</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_in` +</span>
+<span class="s">        :attr:`~stalker.models.shot.Shot.cut_duration`.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+</div>
+<span class="n">Shot_Sequences</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&#39;Shot_Sequences&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;shot_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Shots.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;sequence_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Sequences.id&#39;</span><span class="p">),</span>
+           <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">Shot_Scenes</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span>
+    <span class="s">&#39;Shot_Scenes&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;shot_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Shots.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;scene_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;Scenes.id&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Stalker 0.2.0.b6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, the Stalker authors and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
