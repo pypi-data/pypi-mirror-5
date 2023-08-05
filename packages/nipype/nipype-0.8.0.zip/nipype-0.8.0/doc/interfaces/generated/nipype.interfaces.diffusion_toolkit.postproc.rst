@@ -1,0 +1,44 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+interfaces.diffusion_toolkit.postproc
+=====================================
+
+
+.. _nipype.interfaces.diffusion_toolkit.postproc.SplineFilter:
+
+
+.. index:: SplineFilter
+
+SplineFilter
+------------
+
+`Link to code <http://github.com/nipy/nipype/tree/9595f272aa4086ea28f7534a8bd05690f60bf6b8/nipype/interfaces/diffusion_toolkit/postproc.py#L26>`__
+
+Wraps command **spline_filter**
+
+
+Inputs::
+
+        [Mandatory]
+        step_length: (a float)
+                in the unit of minimum voxel size
+        terminal_output: ('stream' or 'allatonce' or 'file' or 'none')
+                Control terminal output
+        track_file: (an existing file name)
+                file containing tracks to be filtered
+
+        [Optional]
+        args: (a string)
+                Additional parameters to the command
+        environ: (a dictionary with keys which are a value of type 'str' and with values which
+                 are a value of type 'str', nipype default value: {})
+                Environment variables
+        ignore_exception: (a boolean, nipype default value: False)
+                Print an error message instead of throwing an exception in case the interface fails to
+                run
+        output_file: (a file name, nipype default value: spline_tracks.trk)
+                target file for smoothed tracks
+
+Outputs::
+
+        smoothed_track_file: (an existing file name)
