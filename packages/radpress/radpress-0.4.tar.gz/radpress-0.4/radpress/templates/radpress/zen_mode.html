@@ -1,0 +1,61 @@
+{% extends "radpress/base_no_body.html" %}
+
+{% load trans from i18n %}
+{% load url from future %}
+{% load radpress_static_url from radpress_tags %}
+
+{% block heads %}
+  <link rel="stylesheet" href="{% radpress_static_url 'css/zen_mode.css' %}" />
+  <link rel="stylesheet" href="{% radpress_static_url 'css/pygmentize.css' %}" />
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ STATIC_URL }}radpress/js/taboverride.min.js"></script>
+  <script src="{{ STATIC_URL }}radpress/js/zen_mode.js"></script>
+{% endblock %}
+
+{% block body %}
+  <form action="" method="POST" data-preview-url="{% url 'radpress-preview' %}" id="zen-mode">
+    {% csrf_token %}
+
+    <div id="zen-header">
+      <ul class="zen-menu pull-right">
+        <li class="zen-button-markup">{{ form.markup }}</li>
+        <li class="zen-button-preview"><a href="#">{% trans "preview" %}</a></li>
+      </ul>
+
+      <ul class="zen-menu">
+        <li><a class="zen-button-save" href="#">{% trans "Save" %}</a></li>
+        {% if object.pk %}
+          <li><a href="{% url 'admin:radpress_article_change' object.pk %}">{% trans "Edit from admin panel" %}</a></li>
+          <li><a href="{{ object.get_absolute_url }}" target="_blank">{% trans "View on site" %}</a></li>
+        {% else %}
+          <li><a href="{% url 'admin:radpress_article_add' %}">{% trans "Create from admin panel" %}</a></li>
+        {% endif %}
+        <li><a href="{% url 'admin:radpress_entryimage_changelist' %}" target="_blank">{% trans "Image gallery" %}</a></li>
+      </ul>
+    </div>
+    <div id="zen-container">
+      {% if form.content.errors %}
+        <div class="alert alert-error">
+          <span>{{ form.content.errors|striptags }}</span>
+        </div>
+      {% endif %}
+
+      <div class="row-fluid">
+        <div class="span7">
+          {{ form.content }}
+        </div>
+        <div class="span5">
+          <div id="zen-preview">
+            <div class="cover-image"></div>
+            <div class="content-space">
+              <h1 class="title space"></h1>
+              <div class="content space"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}
