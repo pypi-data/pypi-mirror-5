@@ -1,0 +1,61 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="collective.contentrules.subscription">
+<body>
+
+<div metal:fill-slot="main">
+    <tal:main-macro metal:define-macro="main" 
+         tal:define="templateId string:contentrules-subscription-controlpanel">
+    
+        <h1 class="documentFirstHeading" i18n:translate="controlpanel_title">
+            Contentrules subscription control panel
+        </h1>
+        <p i18n:translate="controlpanel_description">
+            With this control panel you can manage all contentrules subscriptions.
+        </p>
+        <div tal:define="subscriptions view/getSubscriptions">
+            <p tal:condition="not:subscriptions"
+               i18n:translate="no_subscriptions">No one subscription present for any Content rule.</p>
+            <div tal:condition="subscriptions">
+                <form method="POST" action="contentrules-subscription-controlpanel">
+                    <tal:subscriptions repeat="subscription python:subscriptions.keys()">
+                        <div class="field"
+                             tal:define="rule_title python:view.getRuleTitle(subscription)">
+                            <label tal:attributes="for subscription"
+                                   tal:content="rule_title">
+                                Title
+                            </label>
+                            <br />
+                            <tal:values repeat="email python:subscriptions[subscription]">
+                                  <input type="checkbox" 
+                                         checked="checked"
+                                         tal:attributes="name string:${subscription}:list;
+                                                         value email"
+                                         />
+                                  <span tal:content="email" />
+                                  <br />
+                            </tal:values>
+                        </div>
+                    </tal:subscriptions>
+                    <input class="context"
+                                     type="submit"
+                                     value="Update"
+                                     name="form.button.Update"
+                                     i18n:attributes="value label_update"
+                                     />
+                </form>
+            </div>
+        </div>
+    
+        <span class="visualClear"><!-- --></span>
+
+        
+    </tal:main-macro>
+</div>
+
+</body>
+</html>
