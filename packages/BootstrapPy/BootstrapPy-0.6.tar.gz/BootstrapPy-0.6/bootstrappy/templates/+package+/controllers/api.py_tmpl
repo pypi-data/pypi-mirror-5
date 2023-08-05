@@ -1,0 +1,151 @@
+import os
+import time
+import logging
+import transaction
+
+import bootstrappy
+from bootstrappy import tmpl_context as c, session
+from bootstrappy.decorators import (xml, xml_render, html, html_render,
+    jsonify, authorize, credential, authenticated, redirect)
+
+from ${package}.model import db, User, EmailAddress, Group, Telephone
+from ..lib.forms import UserForm, UserEditForm, validators
+from base import ControllerBase
+from simplejson import loads, dumps
+
+log = logging.getLogger(__name__)
+
+
+class API(ControllerBase):
+    '''JSON API
+
+    '''
+    @authorize(credential('admin'))
+    @jsonify
+    def users(self, *args, **kwargs):
+        items = []
+
+        try:
+            for user in User.query.all():
+                user_dict = user.todict()
+                user_dict.update({'email': ', '
+                    .join([ema.email for ema in user.email_addresses]),
+                                  'telephone': ', '
+                    .join([t.telephone for t in user.telephone_numbers]),
+                                  'permissions': user.permissions,
+                                  'name': user.full_name})
+
+                items.append(user_dict)
+            return items
+        except:
+            return []
+
+    @authorize(credential('admin'))
+    @jsonify
+    def user_by_id(self, *args, **kwargs):
+        user_id = self.request.params.get('id', None)
+
+        try:
+            user = User.query.filter_by(id=user_id).first()
+
+            if user:
+                user_dict = user.todict()
+                user_dict.update({'email': ', '
+                    .join([ema.email for ema in user.email_addresses]),
+                                  'telephone': ', '
+                    .join([t.telephone for t in user.telephone_numbers]),
+                                  'permissions': user.permissions})
+
+                return user_dict
+            else:
+                return {}
+
+        except Exception, e:
+            return {'error': "{0}".format(e)}
+
+    @authorize(credential('admin'))
+    @jsonify
+    def add_user(self, *args, **kwargs):
+        schema = UserForm()
+        try:
+            res = schema.to_python(self.request.params)
+            user = User(first_name=res.get('first_name'),
+                        last_name=res.get('last_name'),
+                        username=res.get('username'))
+
+            user.set_password(res.get('password'))
+
+            # XXX: add more logic for groups
+            if res.get('user_group') == 'admin':
+                user.groups.append(Group.query.filter_by(id=2).first())
+            else:
+                user.groups.append(Group.query.filter_by(id=1).first())
+
+            user.email_addresses.append(EmailAddress(
+                email=res.get('email'), name=res.get('email_type')))
+            user.telephone_numbers.append(Telephone(
+                telephone=res.get('telephone'), telephone_type='Office'))
+
+            db.add(user)
+            transaction.commit()
+        except validators.Invalid, e:
+            transaction.abort()
+            return {'result': 'FAILURE', 'heading': 'Add User Failed',
+                    'content': 'Validation Error: %s' % e,
+                    'timeout': 4000, 'sticky': True}
+
+        return {'result': 'SUCCESS', 'heading': 'Success',
+                'content': 'Successfully added '+str(res.get('username'))+'.',
+                'timeout': 4000, 'sticky': False}
+
+    @authorize(credential('admin'))
+    @jsonify
+    def edit_user(self, *args, **kwargs):
+        schema = UserEditForm()
+
+        try:
+            res = schema.to_python(self.request.params)
+            user = User.by_id(res.get('id', 0))
+
+            if user:
+                for k, v in res.items():
+                    if hasattr(user, k):
+                        setattr(user, k, v)
+
+                    if k == 'password' and v:
+                        user.set_password(v)
+
+                user.active = res.get('active', False) != False
+
+                transaction.commit()
+        except validators.Invalid, error:
+            transaction.abort()
+            return {'result': 'FAILURE', 'heading': 'Edit User Failed',
+                    'content': 'Validation Error: %s' % error,
+                    'timeout': 4000, 'sticky': True}
+
+        return {'result': 'SUCCESS', 'heading': 'Success',
+                'content': 'Successfully edited '+str(res.get('username'))+'.',
+                'timeout': 4000, 'sticky': False}
+
+    @authorize(credential('admin'))
+    @jsonify
+    def user_active(self, *args, **kwargs):
+
+        try:
+            user = User.by_id(self.request.params.get('id', 0))
+
+            if user:
+                user.active = self.request.params.get('active', 'false') != 'false'
+
+                transaction.commit()
+        except validators.Invalid, e:
+            transaction.abort()
+            return {'result': 'FAILURE', 'heading': 'Edit User Failed',
+                    'content': 'Validation Error: %s' % e,
+                    'timeout': 4000, 'sticky': True}
+
+        return {'result': 'SUCCESS', 'heading': 'Success',
+                'content': 'Successfully set ' +
+                           str(self.request.params.get('username'))+'.',
+                'timeout': 4000, 'sticky': False}
