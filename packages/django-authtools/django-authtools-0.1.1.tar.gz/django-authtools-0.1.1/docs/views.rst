@@ -1,0 +1,128 @@
+Views
+=====
+
+.. currentmodule:: authtools.views
+
+django-authtools provides the following class-based views, intended to be
+*mostly* drop-in replacements for their :ref:`built-in
+<django:built-in-auth-views>` counterparts.
+
+In addition to the built-in views, there is a new
+:class:`PasswordResetConfirmAndLoginView` that logs in the user and redirects
+them after they reset their password.
+
+.. note::
+
+    The view functions in Django were wrapped in decorators.  The classed-based
+    views provided by django-authtools have the same decorators applied to their
+    view functions. Any subclasses of these views will also have the same
+    decorators applied.
+
+.. class:: LoginView
+    
+    The view function :func:`authtools.views.login` replaces
+    :func:`django:django.contrib.auth.views.login`.
+
+    .. attribute:: disallow_authenticated
+
+        When ``True``, authenticated users will be automatically redirected to
+        the ``success_url`` when visiting this view.  Defaults to ``True``.
+
+.. class:: LogoutView
+
+    The view functions :func:`authtools.views.logout` and
+    :func:`authtools.views.logout_then_login` replace
+    :func:`django:django.contrib.auth.views.logout`
+    :func:`django:django.contrib.auth.views.logout_then_login` respectively.
+
+    .. attribute:: url
+
+        The URL to redirect to after logging in.  This replaces the ``login_url``
+        parameter present in the built-in function.
+
+        For the :func:`logout_then_login` this is default to
+        :django:setting:`LOGIN_REDIRECT_URL`.
+
+    .. attribute:: template_name
+
+        If :attr:`url` is ``None`` and there is no ``next`` parameter,
+        :class:`LoginView` will act like a TemplateView and display a template.
+
+.. class:: PasswordChangeView
+
+    The view function :func:`authtools.views.password_change` replaces
+    :func:`django:django.contrib.auth.views.password_change`.
+
+    .. attribute:: success_url
+
+        This replaces the ``post_change_redirect`` parameter present in the
+        built-in function.  Defaults to the 'password_change_done' view.
+
+.. class:: PasswordChangeDoneView
+
+    The view function :func:`authtools.views.password_change_done` replaces
+    :func:`django:django.contrib.auth.views.password_change_done`.
+
+.. class:: PasswordResetView
+
+    The view function :func:`authtools.views.password_reset` replaces
+    :func:`django:django.contrib.auth.views.password_reset`.
+
+    .. attribute:: success_url
+
+        The pages which the user should be redirected to after requesting a
+        password reset.  This replaces the  ``next_page`` parameter present in
+        the built-in function. Defaults to the 'password_reset_done' view.
+
+    .. attribute:: form_class
+
+        The form class to present the user.  This replaces the
+        ``password_reset_form`` parameter present in the built-in function.
+
+
+.. class:: PasswordResetDoneView
+
+    The view function :func:`authtools.views.password_reset_done` replaces
+    :func:`django:django.contrib.auth.views.password_reset_done`.
+
+.. class:: PasswordResetConfirmView
+
+    The view function :func:`authtools.views.password_reset_confirm` replaces
+    :func:`django:django.contrib.auth.views.password_reset_confirm`.
+
+    .. attribute:: success_url
+
+        Where to redirect the user after resetting their password.  This
+        replaces the ``post_reset_redirect`` parameter present in the built-in
+        function.
+
+    .. attribute:: form_class
+
+        The form class to present the user when resetting their password.  The
+        form class must provide a ``save`` method like in the
+        :class:`django:django.contrib.auth.forms.SetPasswordForm`  This
+        replaces the ``set_password_form`` parameter present in the built-in
+        function. Default is
+        :class:`django:django.contrib.auth.forms.SetPasswordForm`.
+
+.. class:: PasswordResetConfirmAndLoginView
+
+    Available as the view function
+    :func:`authtools.views.password_reset_confirm_and_login`.
+    
+    This is like :class:`PasswordResetConfirmView`, but also logs the user in
+    after resetting their password.  By default, it will redirect the user to
+    the :django:setting:`LOGIN_REDIRECT_URL`.
+
+    If you wanted to use this view, you could have a urls config that looks like::
+
+        urlpatterns = patterns('',
+            url('^reset/(?P<uidb36>[0-9A-Za-z]{1,13})-(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+                'authtools.views.password_reset_confirm_and_login', name='password_reset_confirm'),
+            url('^', include('authtools.urls')),
+        )
+
+.. class:: PasswordResetCompleteView
+
+    The view function :func:`authtools.views.password_reset_complete` replaces
+    :func:`django:django.contrib.auth.views.password_reset_complete`.
