@@ -1,0 +1,72 @@
+#!/bin/sh
+# updiancmd - script for launching updian commands
+#
+#  Copyright (c) 2007-2013 RobHost GmbH <support@robhost.de>
+#
+#  Author: Dirk Dankhoff <dd@robhost.de>
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+#  USA
+
+PYTHON=python
+
+usage () {
+    echo "Usage: $0 <command>"
+    echo
+    cat <<EOF
+Usable commands:
+
+    collect     Collect updates from configured servers
+    update      Execute updates on configured servers
+    convert_sl  Convert old text-based server list to new JSON format
+    init_cfg    Initialize new configuration file (config.ini)
+    setpw       Set password for a user
+    runserver   Start the builtin HTTP server
+EOF
+}
+
+if [ $# -lt 1 ]; then
+    echo "Error: No command specified." >&2
+    usage
+    exit 1
+fi
+
+command=$1
+shift
+
+case "$command" in
+    collect)
+        exec $PYTHON -m updian.cron.collect
+        ;;
+    update)
+        exec $PYTHON -m updian.cron.update
+        ;;
+    convert_sl)
+        exec $PYTHON -m updian.cmd.convert_serverlist
+        ;;
+    setpw)
+        exec $PYTHON -m updian.passwd
+        ;;
+    runserver)
+        exec $PYTHON -m updian.cmd.runserver $@
+        ;;
+    init_cfg)
+        exec $PYTHON -c 'import updian.config as c; c.write_example_config()'
+        ;;
+    *)
+        echo "Error: Unknown command \`$command\` specified." >&2
+        usage
+        exit 1
+esac
