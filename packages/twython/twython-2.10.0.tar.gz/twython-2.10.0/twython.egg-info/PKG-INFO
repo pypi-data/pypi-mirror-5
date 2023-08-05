@@ -1,0 +1,349 @@
+Metadata-Version: 1.0
+Name: twython
+Version: 2.10.0
+Summary: Actively maintained, pure Python wrapper for the Twitter API. Supports both normal and streaming Twitter APIs
+Home-page: http://github.com/ryanmcgrath/twython/tree/master
+Author: Ryan McGrath
+Author-email: ryan@venodesigns.net
+License: MIT License
+Description: Twython
+        =======
+        
+        .. image:: https://travis-ci.org/ryanmcgrath/twython.png?branch=master
+                :target: https://travis-ci.org/ryanmcgrath/twython
+        .. image:: https://pypip.in/d/twython/badge.png
+                :target: https://crate.io/packages/twython/
+        
+        ``Twython`` is a library providing an easy (and up-to-date) way to access Twitter data in Python. Actively maintained and featuring support for both Python 2.6+ and Python 3, it's been battle tested by companies, educational institutions and individuals alike. Try it today!
+        
+        Features
+        --------
+        
+        * Query data for:
+           - User information
+           - Twitter lists
+           - Timelines
+           - Direct Messages
+           - and anything found in `the docs <https://dev.twitter.com/docs/api/1.1>`_
+        * Image Uploading!
+           - **Update user status with an image**
+           - Change user avatar
+           - Change user background image
+           - Change user banner image
+        * Support for Twitter's Streaming API
+        * Seamless Python 3 support!
+        
+        Installation
+        ------------
+        ::
+        
+            pip install twython
+        
+        ... or, you can clone the repo and install it the old fashioned way
+        
+        ::
+        
+            git clone git://github.com/ryanmcgrath/twython.git
+            cd twython
+            sudo python setup.py install
+        
+        
+        Usage
+        -----
+        
+        Authorization URL
+        ~~~~~~~~~~~~~~~~~
+        ::
+        
+            from twython import Twython
+        
+            t = Twython(app_key, app_secret)
+        
+            auth_props = t.get_authentication_tokens(callback_url='http://google.com')
+        
+            oauth_token = auth_props['oauth_token']
+            oauth_token_secret = auth_props['oauth_token_secret']
+        
+            print 'Connect to Twitter via: %s' % auth_props['auth_url']
+        
+        Be sure you have a URL set up to handle the callback after the user has allowed your app to access their data, the callback can be used for storing their final OAuth Token and OAuth Token Secret in a database for use at a later date.
+        
+        Handling the callback
+        ~~~~~~~~~~~~~~~~~~~~~
+        ::
+        
+            from twython import Twython
+        
+            # oauth_token_secret comes from the previous step
+            # if needed, store that in a session variable or something.
+            # oauth_verifier and oauth_token from the previous call is now REQUIRED # to pass to get_authorized_tokens
+        
+            # In Django, to get the oauth_verifier and oauth_token from the callback
+            # url querystring, you might do something like this:
+            # oauth_token = request.GET.get('oauth_token')
+            # oauth_verifier = request.GET.get('oauth_verifier')
+        
+            t = Twython(app_key, app_secret,
+                        oauth_token, oauth_token_secret)
+        
+            auth_tokens = t.get_authorized_tokens(oauth_verifier)
+            print auth_tokens
+        
+        *Function definitions (i.e. get_home_timeline()) can be found by reading over twython/endpoints.py*
+        
+        Getting a user home timeline
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ::
+        
+            from twython import Twython
+        
+            # oauth_token and oauth_token_secret are the final tokens produced
+            # from the 'Handling the callback' step
+        
+            t = Twython(app_key, app_secret,
+                        oauth_token, oauth_token_secret)
+            
+            # Returns an dict of the user home timeline
+            print t.get_home_timeline()
+        
+        
+        Catching exceptions
+        ~~~~~~~~~~~~~~~~~~~
+        
+            Twython offers three Exceptions currently: ``TwythonError``, ``TwythonAuthError`` and ``TwythonRateLimitError``
+        
+        ::
+        
+            from twython import Twython, TwythonAuthError
+        
+            t = Twython(MY_WRONG_APP_KEY, MY_WRONG_APP_SECRET,
+                        BAD_OAUTH_TOKEN, BAD_OAUTH_TOKEN_SECRET)
+        
+            try:
+                t.verify_credentials()
+            except TwythonAuthError as e:
+                print e
+        
+        Dynamic function arguments
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+            Keyword arguments to functions are mapped to the functions available for each endpoint in the Twitter API docs. Doing this allows us to be incredibly flexible in querying the Twitter API, so changes to the API aren't held up from you using them by this library.
+        
+            https://dev.twitter.com/docs/api/1.1/post/statuses/update says it takes "status" amongst other arguments
+        
+        ::
+        
+            from twython import Twython, TwythonAuthError
+        
+            t = Twython(app_key, app_secret,
+                        oauth_token, oauth_token_secret)
+        
+            try:
+                t.update_status(status='Hey guys!')
+            except TwythonError as e:
+                print e
+        
+        and
+            https://dev.twitter.com/docs/api/1.1/get/search/tweets says it takes "q" and "result_type" amongst other arguments
+        
+        ::
+        
+            from twython import Twython, TwythonAuthError
+        
+            t = Twython(app_key, app_secret,
+                        oauth_token, oauth_token_secret)
+        
+            try:
+                t.search(q='Hey guys!')
+                t.search(q='Hey guys!', result_type='popular')
+            except TwythonError as e:
+                print e
+        
+        Posting a Status with an Image
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ::
+        
+            from twython import Twython
+        
+            t = Twython(app_key, app_secret,
+                        oauth_token, oauth_token_secret)
+        
+            # The file key that Twitter expects for updating a status with an image
+            # is 'media', so 'media' will be apart of the params dict.
+        
+            # You can pass any object that has a read() function (like a StringIO object)
+            # In case you wanted to resize it first or something!
+        
+            photo = open('/path/to/file/image.jpg', 'rb')
+            t.update_status_with_media(media=photo, status='Check out my image!')
+        
+        Posting a Status with an Editing Image  *(This example resizes an image)*
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ::
+        
+            from twython import Twython
+        
+            t = Twython(app_key, app_secret,
+                        oauth_token, oauth_token_secret)
+        
+            # Like I said in the previous section, you can pass any object that has a
+            # read() method
+        
+            # Assume you are working with a JPEG
+        
+            from PIL import Image
+            from StringIO import StringIO
+        
+            photo = Image.open('/path/to/file/image.jpg')
+        
+            basewidth = 320
+            wpercent = (basewidth / float(photo.size[0]))
+            height = int((float(photo.size[1]) * float(wpercent)))
+            photo = photo.resize((basewidth, height), Image.ANTIALIAS)
+        
+            image_io = StringIO.StringIO()
+            photo.save(image_io, format='JPEG')
+        
+            # If you do not seek(0), the image will be at the end of the file and
+            # unable to be read
+            image_io.seek(0)
+        
+            t.update_status_with_media(media=photo, status='Check out my edited image!')
+        
+        Streaming API
+        ~~~~~~~~~~~~~
+        
+        ::
+        
+            from twython import TwythonStreamer
+        
+        
+            class MyStreamer(TwythonStreamer):
+                def on_success(self, data):
+                    print data
+        
+                def on_error(self, status_code, data):
+                    print status_code, data
+        
+            # Requires Authentication as of Twitter API v1.1
+            stream = MyStreamer(APP_KEY, APP_SECRET,
+                                OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
+        
+            stream.statuses.filter(track='twitter')
+        
+        
+        Notes
+        -----
+        * Twython (as of 2.7.0) now supports ONLY Twitter v1.1 endpoints! Please see the **[Twitter v1.1 API Documentation](https://dev.twitter.com/docs/api/1.1)** to help migrate your API calls!
+        * As of Twython 2.9.1, all method names conform to PEP8 standards. For backwards compatibility, we internally check and catch any calls made using the old (pre 2.9.1) camelCase method syntax. We will continue to support this for the foreseeable future for all old methods (raising a DeprecationWarning where appropriate), but you should update your code if you have the time.
+        
+        Questions, Comments, etc?
+        -------------------------
+        My hope is that Twython is so simple that you'd never *have* to ask any questions, but if you feel the need to contact me for this (or other) reasons, you can hit me up at ryan@venodesigns.net.
+        
+        Or if I'm to busy to answer, feel free to ping mikeh@ydekproductions.com as well.
+        
+        Follow us on Twitter:
+        
+        - `@ryanmcgrath <https://twitter.com/ryanmcgrath>`_
+        - `@mikehelmick <https://twitter.com/mikehelmick>`_
+        
+        Want to help?
+        -------------
+        Twython is useful, but ultimately only as useful as the people using it (say that ten times fast!). If you'd like to help, write example code, contribute patches, document things on the wiki, tweet about it. Your help is always appreciated!
+        
+        
+        .. :changelog:
+        
+        History
+        -------
+        
+        2.10.0 (2013-05-21)
+        ++++++++++++++++++
+        - Added ``get_retweeters_ids`` method
+        - Fixed ``TwythonDeprecationWarning`` on camelCase functions if the camelCase was the same as the PEP8 function (i.e. ``Twython.retweet`` did not change)
+        - Fixed error message bubbling when error message returned from Twitter was not an array (i.e. if you try to retweet something twice, the error is not found at index 0)
+        - Added "transparent" parameters for making requests, meaning users can pass bool values (True, False) to Twython methods and we convert your params in the background to satisfy the Twitter API. Also, file objects can now be passed seamlessly (see examples in README and in /examples dir for details)
+        - Callback URL is optional in ``get_authentication_tokens`` to accomedate those using OOB authorization (non web clients)
+        - Not part of the python package, but tests are now available along with Travis CI hooks
+        - Added ``__repr__`` definition for Twython, when calling only returning <Twython: APP_KEY>
+        - Cleaned up ``Twython.construct_api_url``, uses "transparent" parameters (see 4th bullet in this version for explaination)
+        - Update ``requests`` and ``requests-oauthlib`` requirements, fixing posting files AND post data together, making authenticated requests in general in Python 3.3
+        
+        2.9.1 (2013-05-04)
+        ++++++++++++++++++
+        
+        - "PEP8" all the functions. Switch functions from camelCase() to underscore_funcs(). (i.e. ``updateStatus()`` is now ``update_status()``)
+        
+        2.9.0 (2013-05-04)
+        ++++++++++++++++++
+        
+        - Fixed streaming issue #144, added ``TwythonStreamer`` to aid users in a friendly streaming experience (streaming examples in ``examples`` and README's have been updated as well)
+        - ``Twython`` now requires ``requests-oauthlib`` 0.3.1, fixes #154 (unable to upload media when sending POST data with the file)
+        
+        2.8.0 (2013-04-29)
+        ++++++++++++++++++
+        
+        - Added a ``HISTORY.rst`` to start tracking history of changes
+        - Updated ``twitter_endpoints.py`` to ``endpoints.py`` for cleanliness
+        - Removed twython3k directory, no longer needed
+        - Added ``compat.py`` for compatability with Python 2.6 and greater
+        - Added some ascii art, moved description of Twython and ``__author__`` to ``__init__.py``
+        - Added ``version.py`` to store the current Twython version, instead of repeating it twice -- it also had to go into it's own file because of dependencies of ``requests`` and ``requests-oauthlib``, install would fail because those libraries weren't installed yet (on fresh install of Twython)
+        - Removed ``find_packages()`` from ``setup.py``, only one package (we can just define it)
+        - added quick publish method for Ryan and I: ``python setup.py publish`` is faster to type and easier to remember than ``python setup.py sdist upload``
+        - Removed ``base_url`` from ``endpoints.py`` because we're just repeating it in ``Twython.__init__``
+        - ``Twython.get_authentication_tokens()`` now takes ``callback_url`` argument rather than passing the ``callback_url`` through ``Twython.__init__``, ``callback_url`` is only used in the ``get_authentication_tokens`` method and nowhere else (kept in init though for backwards compatability)
+        - Updated README to better reflect current Twython codebase
+        - Added ``warnings.simplefilter('default')`` line in ``twython.py`` for Python 2.7 and greater to display Deprecation Warnings in console
+        - Added Deprecation Warnings for usage of ``twitter_token``, ``twitter_secret`` and ``callback_url`` in ``Twython.__init__``
+        - Headers now always include the User-Agent as Twython vXX unless User-Agent is overwritten
+        - Removed senseless TwythonError thrown if method is not GET or POST, who cares -- if the user passes something other than GET or POST just let Twitter return the error that they messed up
+        - Removed conversion to unicode of (int, bool) params passed to a requests. ``requests`` isn't greedy about variables that can't be converted to unicode anymore
+        - Removed `bulkUserLookup` (please use `lookupUser` instead), removed `getProfileImageUrl` (will be completely removed from Twitter API on May 7th, 2013)
+        - Updated shortenUrl to actually work for those using it, but it is being deprecated since `requests` makes it easy for developers to implement their own url shortening in their app (see https://github.com/ryanmcgrath/twython/issues/184)
+        - Twython Deprecation Warnings will now be seen in shell when using Python 2.7 and greater
+        - Twython now takes ``ssl_verify`` parameter, defaults True. Set False if you're having development server issues
+        - Removed internal ``_media_update`` function, we could have always just used ``self.post``
+        
+        2.7.3 (2013-04-12)
+        ++++++++++++++++++
+        
+        - Fixed issue where Twython Exceptions were not being logged correctly
+        
+        2.7.2 (2013-04-08)
+        ++++++++++++++++++
+        
+        - Fixed ``AttributeError`` when trying to decode the JSON response via ``Response.json()``
+        
+        2.7.1 (2013-04-08)
+        ++++++++++++++++++
+        
+        - Removed ``simplejson`` dependency
+        - Fixed ``destroyDirectMessage``, ``createBlock``, ``destroyBlock`` endpoints in ``twitter_endpoints.py``
+        - Added ``getProfileBannerSizes`` method to ``twitter_endpoints.py``
+        - Made oauth_verifier argument required in ``get_authorized_tokens``
+        - Update ``updateProfileBannerImage`` to use v1.1 endpoint
+        
+        2.7.0 (2013-04-04)
+        ++++++++++++++++++
+        
+        - New ``showOwnedLists`` method
+        
+        2.7.0 (2013-03-31)
+        ++++++++++++++++++
+        
+        - Added missing slash to ``getMentionsTimeline`` in ``twitter_endpoints.py``
+        
+        2.6.0 (2013-03-29)
+        ++++++++++++++++++
+        
+        - Updated ``twitter_endpoints.py`` to better reflect order of API endpoints on the Twitter API v1.1 docs site
+        
+Keywords: twitter search api tweet twython stream
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Communications :: Chat
+Classifier: Topic :: Internet
