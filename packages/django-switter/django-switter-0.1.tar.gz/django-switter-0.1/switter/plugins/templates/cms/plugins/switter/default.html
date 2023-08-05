@@ -1,0 +1,25 @@
+{% load sekizai_tags %}
+
+<section class="switter" id="switter-{{ object.id }}">
+    {% if object.header %}
+        <h2>{{ object.header }}</h2>
+    {% endif %}
+
+    <ul class="tweets">{# loading... #}</ul>
+</section>
+
+{% addtoblock "js" %}
+    <script type="text/javascript">
+        $(function(){
+            $('#switter-{{ object.id }} .tweets').switter({
+                // these 3 are Switter-specific:
+                url: '{% url switter_tweets query_type=object.query_type %}',
+                url_params: {{ object.get_jquery_ajax_data|safe }},
+                preloaded_tweets: {{ object.get_tweets_json|safe }},
+
+                // put the rest of your usual jquery.tweet.js configuration here...
+                count: {{ object.count }}
+            });
+        });
+    </script>
+{% endaddtoblock %}
