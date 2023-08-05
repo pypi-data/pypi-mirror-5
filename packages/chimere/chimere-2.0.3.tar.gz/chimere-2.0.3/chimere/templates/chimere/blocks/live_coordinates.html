@@ -1,0 +1,55 @@
+<script type='text/javascript'>
+  OpenLayers.ImgPath = '%schimere/img/';
+  var EPSG_DISPLAY_PROJECTION = epsg_display_projection = new OpenLayers.Projection('EPSG:%s');
+  var EPSG_PROJECTION = epsg_projection = new OpenLayers.Projection('EPSG:%s');
+  var CENTER_LONLAT = centerLonLat = new OpenLayers.LonLat%s.transform(epsg_display_projection, epsg_projection);
+  var DEFAULT_ZOOM = %s;
+  var chimere_init_options = {};
+  chimere_init_options["default_icon"] = new OpenLayers.Icon('%schimere/img/marker-green.png', new OpenLayers.Size(21, 25), new OpenLayers.Pixel(-(21/2), -25));
+  chimere_init_options["map_layers"] = [%s];
+  chimere_init_options['dynamic_categories'] = false;
+  chimere_init_options['edition'] = true;
+  chimere_init_options["checked_categories"] = [];
+  if({{default_area}}) chimere_init_options['selected_map_layer'] = {{default_area}};
+</script>
+
+</div>
+
+
+<div id='map_edit'></div>
+<div id='live_lonlat'>
+  <p>
+    <label for='live_latitude'>{{lat}}</label>
+    <input type='texte' name='live_latitude' id='live_latitude' size='8' adisabled='true' value='{{value_y|stringformat:"f"}}'/>
+  </p>
+  <p>
+    <label for='live_longitude'>{{lon}}</label>
+    <input type='texte' name='live_longitude' id='live_longitude' size='8' adisabled='true' value='{{value_x|stringformat:"f"}}'/>
+  </p>
+  <input type='hidden' name='{{name}}' id='id_{{name}}' value='{{val}}'/>
+
+<script type="text/javascript">
+  $('#map_edit').chimere(chimere_init_options);
+  {% if isvalue %}
+  var mylonlat = new OpenLayers.LonLat({{value_x|stringformat:"f"}},
+                                       {{value_y|stringformat:"f"}});
+  $("#map_edit").chimere(
+        "putEditMarker",
+        mylonlat.transform(EPSG_DISPLAY_PROJECTION, EPSG_PROJECTION),
+        true);
+  {% endif %}
+  $('#live_latitude').change(function() {
+    var mylonlat = new OpenLayers.LonLat($('#live_longitude').val(),
+                                         $('#live_latitude').val());
+    $("#map_edit").chimere("putEditMarker",
+        mylonlat.transform(EPSG_DISPLAY_PROJECTION, EPSG_PROJECTION), false);
+    $("#map_edit").chimere("settings").map.setCenter(mylonlat);
+  });
+  $('#live_longitude').change(function() {
+    var mylonlat = new OpenLayers.LonLat($('#live_longitude').val(),
+                                         $('#live_latitude').val());
+    $("#map_edit").chimere("putEditMarker",
+        mylonlat.transform(EPSG_DISPLAY_PROJECTION, EPSG_PROJECTION), false);
+    $("#map_edit").chimere("settings").map.setCenter(mylonlat);
+  });
+</script>
