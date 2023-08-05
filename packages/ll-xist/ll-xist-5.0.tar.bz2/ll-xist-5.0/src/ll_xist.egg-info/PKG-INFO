@@ -1,0 +1,250 @@
+Metadata-Version: 1.1
+Name: ll-xist
+Version: 5.0
+Summary: Extensible HTML/XML generator, cross-platform templating language, Oracle utilities and various other tools
+Home-page: http://www.livinglogic.de/Python/xist/
+Author: Walter Doerwald
+Author-email: walter@livinglogic.de
+License: MIT
+Download-URL: http://www.livinglogic.de/Python/Download.html#xist
+Description: XIST provides an extensible HTML and XML generator. XIST is also a XML parser
+        with a very simple and pythonesque tree API. Every XML element type corresponds
+        to a Python class and these Python classes provide a conversion method to
+        transform the XML tree (e.g. into HTML). XIST can be considered
+        'object oriented XSLT'.
+        
+        XIST also includes the following modules and packages:
+        
+        * ``ll.ul4c`` is compiler for a cross-platform templating language with
+          similar capabilities to `Django's templating language`__. ``UL4`` templates
+          are compiled to an internal format, which makes it possible to implement
+          template renderers in other languages and makes the template code "secure"
+          (i.e. template code can't open or delete files).
+        
+          __ https://docs.djangoproject.com/en/1.5/topics/templates/
+        
+          There are implementations for Python, Java, Javascript and PHP.
+        
+        * ``ll.ul4on`` provides functions for encoding and decoding a lightweight
+          machine-readable text-based format for serializing the object types supported
+          by UL4. It is extensible to allow encoding/decoding arbitrary instances
+          (i.e. it is basically a reimplementation of ``pickle``, but with string
+          input/output instead of bytes and with an eye towards cross-plattform
+          support).
+        
+          There are implementations for Python, Java, Javascript and PHP.
+        
+        * ``ll.orasql`` provides utilities for working with cx_Oracle_:
+        
+          - It allows calling functions and procedures with keyword arguments.
+        
+          - Query results will be put into Record objects, where database fields
+            are accessible as object attributes.
+        
+          - The ``Connection`` class provides methods for iterating through the
+            database metadata.
+        
+          - Importing the modules adds support for URLs with the scheme ``oracle`` to
+            ``ll.url``.
+        
+          .. _cx_Oracle: http://cx-oracle.sourceforge.net/
+        
+        * ``ll.make`` is an object oriented make replacement. Like make it allows
+          you to specify dependencies between files and actions to be executed
+          when files don't exist or are out of date with respect to one
+          of their sources. But unlike make you can do this in a object oriented
+          way and targets are not only limited to files.
+        
+        * ``ll.color`` provides classes and functions for handling RGB color values.
+          This includes the ability to convert between different color models
+          (RGB, HSV, HLS) as well as to and from CSS format, and several functions
+          for modifying and mixing colors.
+        
+        * ``ll.sisyphus`` provides classes for running Python scripts as cron jobs.
+        
+        * ``ll.url`` provides classes for parsing and constructing RFC 2396
+          compliant URLs.
+        
+        * ``ll.nightshade`` can be used to serve the output of PL/SQL
+          functions/procedures with CherryPy__.
+        
+        * ``ll.misc`` provides several small utility functions and classes.
+        
+        * ``ll.astyle`` can be used for colored terminal output (via ANSI escape
+          sequences).
+        
+        * ``ll.daemon`` can be used on UNIX to fork a daemon process.
+        
+        * ``ll.xml_codec`` contains a complete codec for encoding and decoding XML.
+        
+        __ http://www.cherrypy.org/
+        
+        
+        Changes in 5.0 (released 06/04/2013)
+        ------------------------------------
+        
+        * The HTML namespace (``ll.xist.ns.html``) has been updated to support the
+          current HTML5__ definition.
+        
+          __ http://www.w3.org/TR/2012/CR-html5-20121217/
+        
+          However old elements/attributes from the previous HTML namespace are still
+          supported.
+        
+        * XIST now allows arbitrary elements and attributes. ``ll.xist.parse`` will
+          parse any XML file, even if the pool object doesn't contain an element for
+          the element name, and even if an attribute name isn't declared for an element.
+        
+          Undeclared elements will be "plain" instances of ``ll.xist.xsc.Element``
+          (i.e. not instances of a subclass of ``ll.xist.xsc.Element``) with the
+          attributes ``xmlns`` and ``xmlname`` set accordingly and undeclared
+          attributes will be "plain" instances of ``ll.xist.xsc.Attr`` (with
+          proper ``xmlns`` and ``xmlname`` attributes).
+        
+          This new feature requires several API changes which will be described below.
+        
+        * Validation is now off by default, to turn it on pass ``validate=True`` to
+          ``parse.tree`` or ``parse.itertree`` for parsing, or the publisher
+          object or the ``bytes``, ``iterbytes``, ``string`` or
+          ``iterstring`` methods for publishing.
+        
+        * Accessing an attribute via ``__getattr__`` (i.e.
+          ``htmlelement.attrs.class_``) only works for attributes that are declared
+          for the class, all other attributes must be accessed via ``__getitem__``
+          (i.e. ``htmlelement.attrs["class"]``). ``__getitem__`` always requires
+          the XML name of the attribute. ``__getitem__`` also allows an attribute
+          name for a global attribute in Clark notation (i.e.
+          ``htmlelement.attrs["{http://www.w3.org/XML/1998/namespace}lang"]``). A global
+          attribute can also be accessed via a (namespace name, attribute name) tuple
+          (i.e. ``htmlelement.attrs[("http://www.w3.org/XML/1998/namespace", "lang")]``).
+          Using an attribute class or attribute object is also possible (i.e.
+          ``htmlelement.attrs[xml.Attr.lang]`` or
+          ``htmlelement.attrs[xml.Attr.lang('de')]``).
+        
+        * Using ``__setattr__`` to set attributes only works for declared attributes
+          too. Using ``__setitem__`` to set attributes supports the same kind of
+          arguments as ``__getitem__`` does. For declared attributes the resulting
+          attribute object will always be an instance of the declared attribute class.
+          For all other attributes it will be an instance of ``ll.xist.xsc.Attr``
+          except when an attribute class or instance is used as the key. In this case
+          the attribute will be an instance of that class.
+        
+        * The methods ``convert``, ``clone``, ``__copy__``,
+          ``__deepcopy__``, ``compacted``, ``withsep``, ``reversed``,
+          ``filtered``, ``shuffled``, ``mapped`` and ``normalized``
+          make sure that plain nodes are copied properly, i.e. they retain their custom
+          ``xmlns`` and ``xmlname`` attributes.
+        
+        * The keys in an attribute dictionary (i.e. an ``ll.xist.xsc.Attrs``
+          object) are no longer the attribute classes, but the (namespace name,
+          attribute name) tuples::
+        
+            >>> node = html.div({xml.Attrs.lang: 'de'}, id='id42', class_='foo')
+            >>> list(node.attrs.keys())
+            [('http://www.w3.org/XML/1998/namespace', 'lang'),
+             (None, 'class'),
+             (None, 'id')]
+        
+        * For all methods that existed in Python/XML pairs (e.g. ``withnames`` and
+          ``withnames_xml`` in ``xsc.Attrs`` or ``elementclass`` and
+          ``elementclass_xml`` in ``xsc.Pool`` etc.) there is only one version
+          now: A method without the ``_xml`` suffix that accepts the XML version of the
+          name.
+        
+        * The method ``checkvalid`` has been renamed to ``validate``. It no
+          longer calls ``warnings.warn`` itself, but is a generator that returns
+          the warning objects. Furthermore the ``model`` objects now get passed the
+          complete path instead of only the target node (this is used to implement
+          HTML5's transparent content model).
+        
+        * Validating whether an attribute is allowed is now done in
+          ``Attrs.validateattr``. The default implementation yields warnings about
+          undeclared local attributes. The HTML5 namespace extends this to also accept
+          any attribute whose name starts with ``data-`` or ``aria-``.
+        
+        * Node comparison now ignores the classes for elements, entities and processsing
+          instructions, so that plain nodes compare equal to instances of
+          ``Element``, ``Entity`` or ``ProcInst`` subclasses as long
+          as the name and content of the node matches.
+        
+        * ``ll.xist.parse.Tidy`` no longer has a ``skipbad`` argument.
+        
+        * Converter contexts now support string as keys (which must be hierarchical
+          dot-separated names similar to Java package names (e.g.
+          ``"org.example.project.handler"``) to avoid name collisions).
+        
+        * The ``docbook`` module has been updated to support DocBook 5.0.
+        
+        * ``URL`` objects are pickable now.
+        
+        * When whitespace is removed in the literal text of UL4 templates (via the
+          ``keepws`` parameter), any initial spaces (before the first line feed) are
+          now no longer removed.
+        
+        * If you have Cython__ installed and the environment variable ``LL_USE_CYTHON``
+          set, several modules will now be compiled into extension modules.
+        
+          __ http://www.cython.org/
+        
+        * It's now possible to expose attributes and methods of objects to UL4
+          templates. Exposing attributes can be done by setting a class or instance
+          attribute ``ul4attrs`` to a sequence of attribute names. Exposing methods can
+          be done with the decorators ``ul4c.expose_method`` and
+          ``ul4c.expose_generatormethod``.
+        
+        * A new UL4 function ``list`` has been added. This function works like the
+          Python function ``list``, creating a copy of a sequence or materialzing
+          an iterator.
+        
+        * A new UL4 function ``slice`` has been added. It works like
+          ``itertools.slice``, i.e. returning a slice from an iterator.
+        
+        * The function ``html.astext`` that converts an XIST tree containing HTML
+          to plain text is now implemented in plain Python so it no longer requires
+          a text mode browser. The function also got more configurable.
+        
+        * The objects available to ``db2ul4`` scripts have been changed: ``oracle``,
+          ``sqlite`` and ``mysql`` are now objects with a ``connect`` method that
+          returns a connection object. A connection object now has a method ``query``
+          that executes the query and returns an iterator over the results. Furthermore
+          ``query`` supports keyword arguments for parameterized queries, i.e. you
+          can now do::
+        
+            <?code db = oracle.connect("user/pwd@db")?>
+            <?for row in db.query("select * from foo where bar = :bar", bar=42)?>
+              <?print row?>
+            <?end for?>
+        
+          The ``system`` object now has an ``execute`` method that executes the system
+          command.
+        
+        * Fixed a bug in ``orasql.OracleFileResource.close`` that surfaced when
+          writing to on Oracle object.
+        
+        
+        
+Keywords: ANSI,CSS,CherryPy,FTP,HLS,HSB,HSC,HSV,HTML,HTTP,Oracle,PI,PL/SQL,RFC 2396,RGB,Relax NG,SVG,UNIX,URL,WML,XHTML,XML,XSL-FO,XSLT,build,codec,color,cron,cx_Oracle,daemon,decorator,escape sequence,execnet,fork,iHTML,iterator,job,make,procedure,processing instruction,property,record,schema,ssh,template,templating language,terminal,toxic,user defined function
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: No Input/Output (Daemon)
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Topic :: Database
+Classifier: Topic :: Internet
+Classifier: Topic :: Internet :: File Transfer Protocol (FTP)
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Internet :: WWW/HTTP :: Site Management
+Classifier: Topic :: Multimedia :: Graphics
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Terminals
+Classifier: Topic :: Text Processing :: General
+Classifier: Topic :: Text Processing :: Markup :: HTML
+Classifier: Topic :: Text Processing :: Markup :: XML
