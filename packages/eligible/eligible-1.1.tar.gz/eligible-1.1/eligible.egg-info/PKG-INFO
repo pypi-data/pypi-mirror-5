@@ -1,0 +1,266 @@
+Metadata-Version: 1.0
+Name: eligible
+Version: 1.1
+Summary: Python bindings for the Eligible API
+Home-page: http://github.com/EligibleAPI/eligible-python
+Author: Sourceless
+Author-email: laurence@sourceless.org
+License: MIT
+Description: # Eligible
+        
+        Python bindings for the [Eligible API](https://eligibleapi.com/rest-api-v1)
+        
+        ## Installation
+        
+        Using pip:
+        ```
+        $ pip install eligible
+        ```
+        
+        Using easy_install:
+        ```
+        $ easy_install eligible
+        ```
+        
+        From source:
+        ```
+        $ setup.py install
+        ```
+        
+        ## Usage
+        
+        ### Setup
+            import eligible
+            Eligible.api_key = 'YOUR_KEY'
+        ### Test
+        ```python
+        eligible.test = True
+         ```
+        Include `{ "test": "true" }` in the params for sandbox access (doing the above causes this to happen automatically).
+        
+        
+        ### Retrieve Demographic object and query it
+        
+        ```python
+        params = {
+          'payer_name': "Aetna",
+          'payer_id': "000001",
+          'provider_last_name': "Last",
+          'provider_first_name': "First",
+          'provider_npi': "12345678",
+          'member_id': "12345678",
+          'member_last_name': "Austen",
+          'member_first_name': "Jane",
+          'member_dob': "1955-12-14"
+        }
+        
+        demographic = eligible.Demographic.get(params)
+        ```
+        
+        
+        ### Retrieve Coverage object
+        
+        ```python
+        params = {
+          'service_type': "33",
+          'network': "OUT",
+          'payer_id': "000001",
+          'provider_last_name': "Last",
+          'provider_first_name': "First",
+          'provider_npi': "12345678",
+          'member_id': "12345678",
+          'member_last_name': "Austen",
+          'member_first_name': "Jane",
+          'member_dob': "1955-12-14"
+        }
+        
+        coverage = eligible.Coverage.get(params)
+        ```
+        
+        
+        ### Post Enrollment object
+        
+        ```python
+        params = {
+          "service_provider_list": [
+              {
+                "facility_name": "Quality",
+                "provider_name": "Jane Austen",
+                       "tax_id": "12345678",
+                      "address": "125 Snow Shoe Road",
+                         "city": "Sacramento",
+                        "state": "CA",
+                          "zip": "94107",
+                         "ptan": "54321",
+                          "npi": "987654321"
+              },
+              {
+                "facility_name": "Aetna",
+                "provider_name": "Jack Austen",
+                       "tax_id": "12345678",
+                      "address": "985 Snow Shoe Road",
+                         "city": "Menlo Park",
+                        "state": "CA",
+                          "zip": "94107",
+                         "ptan": "54321",
+                          "npi": "987654321"
+              }
+            ],
+            "payer_ids": [
+              "00431",
+              "00282"
+            ]
+        }
+        
+        eligible.Enrollment.post(params)
+        ```
+        
+        ### Retrieve Enrollment object
+        
+        ```python
+        params = { "enrollment_request_id": "123" }
+        
+        enrollment = eligible.Enrollment.get(params)
+        
+        for enrollment in enrollments:
+            print enrollment.enrollment_npi['status']
+        ```
+        
+        ### Post Claim object
+        
+        ```python
+        params = {
+            "receiver": {
+                "name": "AETNA",
+                "id": "60054"
+            },
+            "billing_provider": {
+                "taxonomy_code": "332B00000X",
+                "practice_name": "Jane Austen Practice",
+                "npi": "1922222222",
+                "address": {
+                    "street_line_1": "419 Fulton",
+                    "street_line_2": "",
+                    "city": "San Francisco",
+                    "state": "CA",
+                    "zip": "94102"
+                },
+                "tin": "43291023"
+            },
+            "subscriber": {
+                "last_name": "Franklin",
+                "first_name": "Benjamin",
+                "member_id": "12312312",
+                "group_id": "455716",
+                "group_name": "",
+                "dob": "1734-05-04",
+                "gender": "M",
+                "address": {
+                    "street_line_1": "435 Sugar Lane",
+                    "street_line_2": "",
+                    "city": "Sweet",
+                    "state": "OH",
+                    "zip": "436233127"
+                }
+            },
+            "payer": {
+                "name": "AETNA",
+                "id": "60054",
+                "address": {
+                    "street_line_1": "Po Box 981106",
+                    "street_line_2": "",
+                    "city": "El Paso",
+                    "state": "TX",
+                    "zip": "799981222"
+                }
+            },
+            "claim": {
+                "total_charge_amount": "275",
+                "claim_frequency": "1",
+                "patient_signature_on_file": "Y",
+                "provider_plan_participation": "A",
+                "direct_payment_authorized": "Y",
+                "release_of_information": "I",
+                "service_lines": [
+                    {
+                        "line_number": "1",
+                        "service_start": "2013-03-07",
+                        "service_end": "2013-03-07",
+                        "place_of_service": "11",
+                        "charge_amount": "275",
+                        "product_service": "99213",
+                        "qualifier": "HC",
+                        "diagnosis_1": "32723"
+                    }
+                ]
+            }
+        }
+        
+        eligible.Claim.post(params)
+        ```
+        
+        ### Retrieve all Claim objects/acknowledgments
+        
+        ```python
+        acknowledgements = eligible.Acknowledgement.get() # returns acknowledgement information for all claims that have been submitted with the API key
+        ```
+        
+        ### Retrieve individual Claim object/acknowledgment
+        
+        ```python
+        params = { 'reference_id': "12345" }
+        
+        acknowledgement = eligible.Acknowledgement.get(params) # returns acknoweldgement information on an individual claim identified by its reference_id
+        ```
+        
+        ### Retrieve  Payment status
+        
+        ```python
+        params = { 'reference_id': "89898989" }
+        
+        payment = eligible.Payment.get(params) # returns status information on an individual payment identified by its reference_id
+        ```
+        
+        
+        
+        ### X12 post
+        
+        ```python
+        X12_request = "ISA*00*          *00*          *ZZ*SENDERID       *ZZ*ELIGIB         *130610*0409*^*00501*100000001*0*T*:~GS*HS*SENDERID*ELIGIB*20130610*0409*1*X*005010X279A1~ST*270*0001*005010X279A1~BHT*0022*13*137083739083716126837*20130610*0409~HL*1**20*1~NM1*PR*2*UnitedHealthCare*****PI*112~HL*2*1*21*1~NM1*1P*1*AUSTEN*JANE****XX*1222494919~HL*3*2*22*0~TRN*1*1*1453915417~NM1*IL*1*FRANKLIN*BENJAMIN****MI*23412342~DMG*D8*17371207~DTP*291*D8*20130610~EQ*30~SE*13*0001~GE*1*1~IEA*1*100000001~"
+        
+        eligible.X12.post(X12_request)
+        ```
+        
+        
+        ## Tests
+        
+        You can run tests with 
+        
+        ```
+        $ setup.py test
+        ```
+        
+        You will need to have nose installed on your system or in a virtualenv. Make sure all tests pass with both Python 2 and Python 3. If you modify url.py, also ensure that you check tests pass on both versions, with AND without requests.
+        
+        For the tests to work, you MUST have a keyfile.py in the tests/ dir, with this as its content:
+        ```python
+        api_key = 'your-api-key-here'
+        ```
+        
+        If you do send a pull request, please add passing tests for the new feature/fix.
+        
+        ## Contributing
+        
+        1. Fork it
+        2. Create your feature branch (`git checkout -b my-new-feature`)
+        3. Commit your changes (`git commit -am 'Add some feature'`)
+        4. Run tests (see above)
+        5. Push to the branch (`git push origin my-new-feature`)
+        6. Create new Pull Request
+        
+        ## Changelog
+        #### 1.0
+        - Initial release
+        
+Keywords: eligible api healthcare rest
+Platform: UNKNOWN
