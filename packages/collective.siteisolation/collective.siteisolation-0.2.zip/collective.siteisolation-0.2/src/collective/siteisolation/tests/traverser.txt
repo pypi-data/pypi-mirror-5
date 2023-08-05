@@ -1,0 +1,199 @@
+Test setup
+----------
+
+We need a well formed REQUEST to be able to traverse::
+
+    >>> def createRequest():
+    ...     request = app.REQUEST
+    ...     request['PARENTS'] = [app]
+    ...     request.response.debug_mode = True
+    ...     return request
+
+    >>> request = createRequest()
+
+We also need some class to be able to instantiate some objects in our Zope.
+These objects are very simple, they are just acquisition aware (as most of
+the objects present in zodb).
+
+A folder first::
+
+    >>> from Acquisition import Implicit
+    >>> class Folder(Implicit):
+    ...     """
+    ...     A very very simple folder
+    ...     Required Docstring for object to be 'publishable'
+    ...     """
+    ...     def __init__(self, id):
+    ...         self.id = id
+
+And a simple definition of a Site where we can add folders::
+
+    >>> from zope.component import getGlobalSiteManager
+    >>> class Site(Implicit):
+    ...     """
+    ...     A very very simple site.
+    ...
+    ...     Required Docstring for object to be 'publishable'
+    ...     """
+    ...
+    ...     def __init__(self, id):
+    ...         self.id = id
+    ...
+    ...     def _setObject(self, id, ob):
+    ...         setattr(self, id, ob)
+    ...
+    ...     def addFolder(self, id):
+    ...         self._setObject(id, Folder(id))
+    ...
+    ...     def getSiteManager(self):
+    ...         return getGlobalSiteManager()
+
+
+Basic traverse
+--------------
+
+Let's show first that what does the default behaviour of a traverser.
+
+    >>> app._setObject('site1', Site('site1'), set_owner=False)
+    'site1'
+    >>> site = request.traverse('/site1')
+    >>> site == app.site1
+    True
+
+Of course if the object doesn't exist we get an exception (`zExceptions.NotFound`)::
+
+    >>> request.traverse('/site999999')
+    Traceback (most recent call last):
+    ...
+    NotFound:   <h2>Site Error</h2>
+    ...
+
+We add a folder in our site and try to traverse to it::
+
+    >>> app.site1.addFolder('apple')
+    >>> appleFolder = request.traverse('/site1/apple')
+    >>> appleFolder == app.site1.apple
+    True
+
+Here is what we would like to avoid and why this package was written::
+
+    >>> app._setObject('site2', Site('site2'), set_owner=False)
+    'site2'
+    >>> site = request.traverse('/site1/apple/site2')
+    >>> site == app.site2
+    True
+    >>> request.traverse('/site1/site2') == app.site2
+    True
+
+Isolated Site Traverser
+-----------------------
+
+We provide our traverser (which is just an adapter) in the component registry::
+
+    >>> from zope.component import provideAdapter
+    >>> from collective.siteisolation.traverser import IsolatedSiteTraverser
+    >>> from zope.publisher.interfaces import IPublishTraverse
+    >>> provideAdapter(IsolatedSiteTraverser,
+    ...                provides=IPublishTraverse)
+
+We want to avoid fetching `site2` while traversing `site1`.
+So we mark `site1` as an isolated object and `site2` as an object to isolate.
+
+    >>> from zope.interface import alsoProvides
+    >>> from collective.siteisolation.interfaces import (IIsolatedObject,
+    ...                                                IObjectToIsolate)
+    >>> alsoProvides(app.site1, IIsolatedObject)
+    >>> alsoProvides(app.site2, IObjectToIsolate)
+
+The traverser needs to know the `IObjectToIsolate` objects in the root. For
+that it uses a `getSite()` call, so we just set the site here::
+
+    >>> from zope.app.component.hooks import setSite
+    >>> setSite(app.site1)
+
+And now the previous traverse is now failing::
+
+    >>> request.traverse('/site1/site2')
+    Traceback (most recent call last):
+    ...
+    NotFound:   <h2>Site Error</h2>
+    ...
+
+But if we traverse `site2` from a sub object of `site1` we succeed to fetch
+the isolated object again. This is solved by Isolated Request Traverser (see
+further)::
+
+    >>> request.traverse('/site1/apple/site2') == app.site2
+    True
+
+Also as `site2` is not marked with `IIsolatedObject` and `site1` is not marked
+with `IObjectToIsolate`, we can fetch `site1` while traversing `site2`
+
+    >>> request.traverse('/site2/site1') == app.site1
+    True
+
+Isolated Site Traverser and Isolated Request Traverser
+------------------------------------------------------
+
+    >>> from zope.component import provideAdapter
+    >>> from collective.siteisolation.traverser import IsolatedRequestTraverser
+    >>> from zope.publisher.interfaces import IPublishTraverse
+    >>> provideAdapter(IsolatedRequestTraverser,
+    ...                provides=IPublishTraverse)
+
+So we have now registered two traverser::
+
+    >>> from zope.component import getSiteManager
+    >>> globalRegistry = getSiteManager()
+    >>> for adapter in globalRegistry.registeredAdapters():
+    ...     print adapter
+    AdapterRegistration(<BaseGlobalComponents base>, [IIsolatedObject, IHTTPRequest], IPublishTraverse, '', IsolatedSiteTraverser, u'')
+    AdapterRegistration(<BaseGlobalComponents base>, [Interface, IPotentialBadRequest], IPublishTraverse, '', IsolatedRequestTraverser, u'')
+
+
+IsolatedSiteTraverser is used if we traverse an object with IIsolatedObject
+interface.
+IsolatedRequestTraverser is used if we traverse a request with IPotentialBadRequest.
+
+And now the previous traverse is now failing::
+
+    >>> request.traverse('/site1/apple/site2')
+    Traceback (most recent call last):
+    ...
+    NotFound:   <h2>Site Error</h2>
+    ...
+
+Caching
+-------
+
+For performance reason, the function which fetch the
+`IObjectToIsolate` is cached for as long as the zope process lives.
+
+This means that if we add a new site and mark it with IObjectToIsolate::
+
+    >>> app._setObject('site3', Site('site3'), set_owner=False)
+    'site3'
+    >>> alsoProvides(app.site3, IObjectToIsolate)
+
+We will still be able to access it from `site1`::
+
+    >>> request.traverse('/site1/apple/site3') == app.site3
+    True
+
+Because only site2 is in the cache::
+
+    >>> from plone.memoize.forever import _memos
+    >>> _memos
+    {'collective.siteisolation.traverser.getRootIsolatedObjects:((), frozenset([]))': frozenset(['site2'])}
+
+Until we reboot::
+
+    >>> _memos.clear()
+
+Then `site3` won't be accessible from `site1`::
+
+    >>> request.traverse('/site1/apple/site3')
+    Traceback (most recent call last):
+    ...
+    NotFound:   <h2>Site Error</h2>
+    ...
