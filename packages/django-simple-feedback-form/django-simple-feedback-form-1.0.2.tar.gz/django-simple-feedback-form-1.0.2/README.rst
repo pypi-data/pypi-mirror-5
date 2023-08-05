@@ -1,0 +1,32 @@
+===========================
+Django Simple Feedback Form
+===========================
+
+This `Django <http://djangoproject.com>`_ app has for provide simple form for sending mail forom users to admins your django-based site.
+
+Installation 
+------------
+ 
+Install into your python path using pip or github version::
+
+  pip install django-simple-feedback-form
+
+or::
+  
+  pip install -e git://github.com/DOOMer/django-simple-feedback-form#egg=django-simple-feedback-form
+
+Using in tour project
+---------------------
+  
+Add *'feedback_form'* to your INSTALLED_APPS in settings.py,
+
+  INSTALLED_APPS = (
+    ...
+    'feedback_form',
+
+  )
+  
+adn add *'feedback_form.urls'* in your main usrs configuration::
+
+  url(r'^feedback/', include("feedback_form.urls", namespace="feedback_form")),
+  
