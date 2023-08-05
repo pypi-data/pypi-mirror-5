@@ -1,0 +1,68 @@
+# -*- encoding: utf-8 -*-
+"""
+applic10
+========
+
+Applic 10
+
+"""
+from pyramid.config import Configurator
+
+from ginsfsm.globals import get_global_app
+
+from {{package}}.applic10.applic10_root import GApplic10
+
+
+#-------------------------------------------------#
+#       Paste entry point
+#       Pyramid wsgi-app configuration
+#-------------------------------------------------#
+def applic10_wsgi_app(global_config, **local_conf):
+    """ Returns a WSGI application.
+    """
+    if 'gaplic' in local_conf:
+        gaplic_name = local_conf.pop('gaplic')
+    else:
+        raise Exception('You must supply a gaplic name in ini file.')
+
+    gaplic = get_global_app(gaplic_name)
+    if not gaplic:
+        raise Exception("gaplic '%s' supplied for wsgi is invalid" %
+                        gaplic_name)
+
+    config = Configurator(
+        root_factory=get_root,
+        settings=local_conf,
+    )
+
+    # Set up views
+    config.scan("{{package}}.applic10")
+
+    # Now we have the gaplic and the config for make the root
+    make_root(gaplic, config)
+
+    return config.make_wsgi_app()
+
+
+#----------------------------------------------------------------------#
+#                           Pyramid root
+#----------------------------------------------------------------------#
+applic10_root = None
+
+
+def make_root(gaplic, config):
+    global applic10_root
+    if applic10_root is not None:
+        return applic10_root
+
+    applic10_root = gaplic.create_gobj(
+        'applic10',
+        GApplic10,
+        gaplic,
+        pyramid_config=config
+    )
+    return applic10_root
+
+
+def get_root(request):
+    return applic10_root
