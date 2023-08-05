@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cnc25D API &mdash; Cnc25D 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Cnc25D 0.1.2 documentation" href="index.html" />
+    <link rel="next" title="Box Wood Frame Design" href="box_wood_frame_design.html" />
+    <link rel="prev" title="Cnc25D Presentation" href="cnc25d_presentation.html" /> 
+  </head>
+  <body>
+      <div class="header"><h1 class="heading"><a href="index.html">
+          <span>Cnc25D 0.1.2 documentation</span></a></h1>
+        <h2 class="heading"><span>Cnc25D API</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="cnc25d_presentation.html">Cnc25D Presentation</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="box_wood_frame_design.html">Box Wood Frame Design</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="cnc25d-api">
+<h1>Cnc25D API<a class="headerlink" href="#cnc25d-api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="import-freecad">
+<h2>1. import FreeCAD<a class="headerlink" href="#import-freecad" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">importing_freecad.</span></tt> <strong>importing_freecad()</strong></div>
+<div class="line-block">
+<div class="line">Modify the global variable <em>sys.path</em>.</div>
+</div>
+</div>
+<p>FreeCAD comes with Python modules. But these FreeCAD modules are not installed in one of the standard directories. You will find the Python FreeCAD modules in a directory such as <em>/usr/lib/freecad/lib</em>. To use FreeCAD from a Python script, you need either to set the PYTHONPATH system environment variable or to extend the sys.path Python variable.</p>
+<p>Because you need to import FreeCAD at each beginning of scripts, this task as been implemented in the module <em>importing_freecad.py</em> that is installed in a standard location. So, after installing Cnc25D, to use the FreeCAD modules, you only need to add those lines at the beginning of your Python script:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">cnc25d</span> <span class="kn">import</span> <span class="n">importing_freecad</span>
+<span class="n">importing_freecad</span><span class="o">.</span><span class="n">importing_freecad</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The function <em>importing_freecad()</em> looks for the FreeCAD modules using a location list. If the function <em>importing_freecad()</em> doesn&#8217;t manage to find FreeCAD on your system, you may need to edit the module <em>importing_freecad.py</em> and add the path to the FreeCAD modules to the <em>FREECADPATH</em> list.</p>
+</div>
+<div class="section" id="cnc-cut-outline">
+<h2>2. cnc_cut_outline<a class="headerlink" href="#cnc-cut-outline" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">cnc_cut_outline.</span></tt> <strong>cnc_cut_outline(</strong> <em>list</em> <strong>)</strong></div>
+<div class="line-block">
+<div class="line">Return a <em>FreeCAD.Part.Shape</em>.</div>
+</div>
+</div>
+<div class="section" id="cnc-cut-outline-purpose">
+<h3>2.1. cnc_cut_outline purpose<a class="headerlink" href="#cnc-cut-outline-purpose" title="Permalink to this headline">¶</a></h3>
+<p>If you work with 3-axis CNC, your free XY-path gets actually some constraints due to the reamer diameter. Real inner angle can not be manufacture and must be replaced either by a smoothed angle or an enlarged angle.</p>
+<img alt="_images/inner_angle_for_3_axis_cnc.png" src="_images/inner_angle_for_3_axis_cnc.png" />
+<p>The <em>cnc_cut_outline</em> function aims at converting a polygon defined by a list of point into an outline with lines and circular arcs makable by a 3-axis CNC. For each point, you choose if you want to enlarge the angle, smooth it or leave it sharp.</p>
+<p>Look at the <a class="reference internal" href="cnc_cut_outline.html"><em>CNC Cut Outline</em></a> chapter to get more information on when you should enlarge and when you should smooth a polygon angle.</p>
+</div>
+<div class="section" id="cnc-cut-outline-usage">
+<h3>2.2. cnc_cut_outline usage<a class="headerlink" href="#cnc-cut-outline-usage" title="Permalink to this headline">¶</a></h3>
+<p>A point is defined by a list of three floats:</p>
+<ul class="simple">
+<li>the X coordinate</li>
+<li>the Y coordinate</li>
+<li>the reamer diameter.</li>
+</ul>
+<p>If the reamer diameter is positive, the angle is smoothed. If the reamer diameter is negative, the angle is enlarged. If the reamer diameter is zero, the angle is unmodified.</p>
+<p>A polygon is a list of points. The <em>cnc_cut_outline</em> function needs as argument a polygon and returns the outline as a FreeCAD Part Object, that can be after some conversion extruded:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_polygon</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">[</span>  <span class="mf">0.0</span> <span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">],</span>   <span class="c"># this point will be sharp</span>
+  <span class="p">[</span> <span class="mf">20.0</span> <span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">5.0</span><span class="p">],</span>   <span class="c"># this point will be smoothed</span>
+  <span class="p">[</span>  <span class="mf">0.0</span> <span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">]]</span>   <span class="c"># this point will be enlarged</span>
+<span class="n">my_part_face</span> <span class="o">=</span> <span class="n">Part</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span><span class="n">Part</span><span class="o">.</span><span class="n">Wire</span><span class="p">(</span><span class="n">cnc_cut_outline</span><span class="o">.</span><span class="n">cnc_cut_outline</span><span class="p">(</span><span class="n">my_polygon</span><span class="p">)</span><span class="o">.</span><span class="n">Edges</span><span class="p">))</span>
+<span class="n">my_part_solid</span> <span class="o">=</span> <span class="n">my_part_face</span><span class="o">.</span><span class="n">extrude</span><span class="p">(</span><span class="n">Base</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Look at the script <em>cnc25d_api_example.py</em> that you can generate with the executable <em>cnc25d_example_generator.py</em> for a more complete example.</p>
+</div>
+<div class="section" id="outline-shift">
+<h3>2.3. outline_shift<a class="headerlink" href="#outline-shift" title="Permalink to this headline">¶</a></h3>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">cnc_cut_outline.</span></tt> <strong>outline_shift_x(</strong> <em>list, x-offset, x-factor</em> <strong>)</strong></div>
+<div class="line"><tt class="docutils literal"><span class="pre">cnc_cut_outline.</span></tt> <strong>outline_shift_y(</strong> <em>list, y-offset, y-factor</em> <strong>)</strong></div>
+<div class="line"><tt class="docutils literal"><span class="pre">cnc_cut_outline.</span></tt> <strong>outline_shift_xy(</strong> <em>list, x-offset, x-factor, y-offset, y-factor</em> <strong>)</strong></div>
+<div class="line-block">
+<div class="line">Return a list that defines a sub-sequence of outline.</div>
+</div>
+</div>
+<p>The definition a polygon can be quiet long and tedious. It might be useful to split a long list of points into several small sequences and concatenate them into one big list using the <em>.append()</em> and <em>.extend()</em> methods. Often it happens that sub-sequence patterns appear several times in one outline either shifted or mirrored. The functions <em>outline_shift_x</em>, <em>outline_shift_y</em> and outline_shift_xy can be use to help the reuse of outline sub sequences. Let&#8217;s look at the following example.</p>
+<img alt="_images/outline_with_repeated_sub_sequences.png" src="_images/outline_with_repeated_sub_sequences.png" />
+<p>If we want to define this outline brutally, we must create a list of 28 points. But we can also define first the blue and the green sub-sequences, which are each 3 points and create the complete outline out of them:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># We follow the points in the counter clock wise (CCW)</span>
+<span class="n">green_sequence</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">[</span> <span class="mi">10</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+  <span class="p">[</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+  <span class="p">[</span> <span class="mi">20</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+<span class="n">blue_sequence</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">[</span>  <span class="mi">0</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+  <span class="p">[</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+  <span class="p">[</span>  <span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">80</span>
+<span class="n">my_outline</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">blue_sequence</span><span class="p">)</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outline_shift_x</span><span class="p">(</span><span class="n">blue_sequence</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">width</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outline_shift_x</span><span class="p">(</span><span class="n">green_sequence</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outline_shift_xy</span><span class="p">(</span><span class="n">green_sequence</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outline_shift_xy</span><span class="p">(</span><span class="n">blue_sequence</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outline_shift_y</span><span class="p">(</span><span class="n">blue_sequence</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outline_shift_y</span><span class="p">(</span><span class="n">green_sequence</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">my_outline</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">green_sequence</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This code is easier to maintain.</p>
+</div>
+</div>
+<div class="section" id="place-plank">
+<h2>3. place_plank<a class="headerlink" href="#place-plank" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">cnc_cut_outline.</span></tt> <strong>place_plank(</strong> <em>FreeCAD.Part.Object, x-size, y-size, z-size, flip, orientation, x-position, y-position, z-posistion</em> <strong>)</strong></div>
+<div class="line-block">
+<div class="line">Return a <em>FreeCAD.Part.Object</em></div>
+</div>
+</div>
+<p>FreeCAD provides the usual <em>rotate</em> and <em>translate</em> methods to place an object in a construction-assembly. Even if those methods are mathematically straight forward, they might require many <em>tries and errors</em> to find out the correct rotation to apply to an object to place it correctly in an assembly. The <em>place_plank()</em> function provides an alternative to the <em>rotate</em> method when you want to place a object in a cuboid assembly.</p>
+<p>To help positioning object we have the following conventions:</p>
+<ul class="simple">
+<li>The largest size of an object defines the <em>main axis</em> of the object.</li>
+<li>The second largest size of an object defines the <em>second axis</em> of the object.</li>
+<li>During the object construction, we choose the X axis as <em>main axis</em> and the Y axis as <em>second axis</em>.</li>
+</ul>
+<p>A cuboid assembly is a construction where most of the objects have their <em>main axis</em> parallel to the X, Y or Z-axis.
+To place an object, construed with the above conventions, in a cuboid assembly, you can define the rotation of the object with two natural parameters:</p>
+<ul class="simple">
+<li>the orientation of the <em>main and second axis</em>. There are just six possibilities: &#8216;xy&#8217;, &#8216;xz&#8217;, &#8216;yx&#8217;, &#8216;yz&#8217;, &#8216;zx&#8217; and &#8216;zy&#8217;. For example, &#8216;yx&#8217; means that the <em>main axis</em> of the object is parallel to the Y-axis of the reference frame and the <em>second axis</em> of the object is parallel to the X-axis.</li>
+<li>the flip of the object. After defining the orientation of the <em>main axis</em> and <em>second axis</em>, there are still four possibilities called <em>flip</em>: &#8216;identity&#8217;, &#8216;x-flip&#8217;, &#8216;y-flip&#8217; and &#8216;z-flip&#8217;.</li>
+</ul>
+<p>The <em>place_plank()</em> function uses this approach to place a object in an cuboid assembly. To realize flip and orientation, the <em>place_plank()</em> function needs to know the sizes along X, Y and Z of the object. Those sizes are virtual and you can play with them for your convenience.</p>
+<img alt="_images/object_definition_and_flip.png" src="_images/object_definition_and_flip.png" />
+<p>A physical object can be defined in several ways respecting our <em>main and second axis</em> conventions. The choice of the definition influences the behavior of the <em>flip</em>. Knowing that, choose the most convenient definitions for your design.</p>
+<p>Look at the <a class="reference internal" href="place_plank.html"><em>Plank Positioning</em></a> chapter to get more explaination on rotation, orientation and flip transformations.</p>
+</div>
+<div class="section" id="drawing-export">
+<h2>4. Drawing export<a class="headerlink" href="#drawing-export" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cut-export-as-dxf">
+<h3>4.1. Cut export as DXF<a class="headerlink" href="#cut-export-as-dxf" title="Permalink to this headline">¶</a></h3>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">export_2d.</span></tt> <strong>export_to_dxf(</strong> <em>FreeCAD.Part.Object, FreeCAD.Base.Vector, depth, path</em> <strong>)</strong></div>
+<div class="line-block">
+<div class="line">Write the <a class="reference external" href="http://en.wikipedia.org/wiki/AutoCAD_DXF">DXF</a> file <em>path</em>.</div>
+</div>
+</div>
+<p>The <em>export_to_dxf()</em> function performs two successive operations:</p>
+<ul class="simple">
+<li>It cuts a slice of the <em>FreeCAD.Part.Object</em> according to the direction <em>FreeCAD.Base.Vector</em> and the <em>depth</em>.</li>
+<li>It writes the <a class="reference external" href="http://en.wikipedia.org/wiki/AutoCAD_DXF">DXF</a> file <em>path</em> containing the projection of the slice.</li>
+</ul>
+<p>If you are designing a 2.5D part, this function is useful to get the <a class="reference external" href="http://en.wikipedia.org/wiki/AutoCAD_DXF">DXF</a> file that will be used by the CNC workflow.</p>
+<p>Usage example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">export_2d</span><span class="o">.</span><span class="n">export_to_dxf</span><span class="p">(</span><span class="n">my_part_solid</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s">&quot;my_part.dxf&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cut-export-as-svg">
+<h3>4.2. Cut export as SVG<a class="headerlink" href="#cut-export-as-svg" title="Permalink to this headline">¶</a></h3>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">export_2d.</span></tt> <strong>export_to_svg(</strong> <em>FreeCAD.Part.Object, FreeCAD.Base.Vector, depth, path</em> <strong>)</strong></div>
+<div class="line-block">
+<div class="line">Write the <a class="reference external" href="http://www.w3.org/Graphics/SVG/">SVG</a> file <em>path</em>.</div>
+</div>
+</div>
+<p>The <em>export_to_svg()</em> function performs the same operations as <em>export_to_dxf()</em> except it write a <a class="reference external" href="http://www.w3.org/Graphics/SVG/">SVG</a> file.</p>
+<p>Usage example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">export_2d</span><span class="o">.</span><span class="n">export_to_svg</span><span class="p">(</span><span class="n">my_part_solid</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s">&quot;my_part.svg&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Warning:</strong> The function <em>export_to_svg()</em> only works when it is used in a script run from the FreeCAD GUI. This is because of a current limitation of the FreeCAD library function <em>Drawing.projectToSVG()</em>.</p>
+</div>
+<div class="section" id="xyz-scanning">
+<h3>4.3. XYZ scanning<a class="headerlink" href="#xyz-scanning" title="Permalink to this headline">¶</a></h3>
+<div class="line-block">
+<div class="line"><tt class="docutils literal"><span class="pre">export_2d.</span></tt> <strong>export_xyz_to_dxf(</strong> <em>FreeCAD.Part.Object, x-size, y-size, z-size, x-list, y-list, z-list, path</em> <strong>)</strong></div>
+<div class="line-block">
+<div class="line">Write the <a class="reference external" href="http://en.wikipedia.org/wiki/AutoCAD_DXF">DXF</a> file <em>path</em>.</div>
+</div>
+</div>
+<p>The <em>export_xyz_to_dxf()</em> function cuts in many slices the <em>FreeCAD.Part.Object</em> according to the three directions of the reference frame axis X, Y and Z. The depth of the slices are provided by the three argument lists <em>x-list</em>, <em>y-list</em> and <em>z-list</em>. All the slices are placed in the plan XY and are written in the <a class="reference external" href="http://en.wikipedia.org/wiki/AutoCAD_DXF">DXF</a> file <em>path</em>.</p>
+<p>The result looks like a medical scan. This is a more comfortable and readable document than the CAD tradition 3 views projections. This helps to show up weaknesses of designs if you choose good slices.</p>
+<img alt="_images/export_xyz_to_dxf.png" src="_images/export_xyz_to_dxf.png" />
+<p>Usage example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">xy_slice_list</span> <span class="o">=</span> <span class="p">[</span> <span class="mf">0.1</span><span class="o">+</span><span class="mi">20</span><span class="o">*</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="p">]</span>
+<span class="n">xz_slice_list</span> <span class="o">=</span> <span class="p">[</span> <span class="mf">0.1</span><span class="o">+</span><span class="mi">20</span><span class="o">*</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span> <span class="p">]</span>
+<span class="n">yz_slice_list</span> <span class="o">=</span> <span class="p">[</span> <span class="mf">0.1</span><span class="o">+</span><span class="mi">20</span><span class="o">*</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span> <span class="p">]</span>
+<span class="n">export_2d</span><span class="o">.</span><span class="n">export_xyz_to_dxf</span><span class="p">(</span><span class="n">my_assembly</span><span class="p">,</span> <span class="mf">180.0</span><span class="p">,</span> <span class="mf">180.0</span><span class="p">,</span> <span class="mf">240.0</span><span class="p">,</span> <span class="n">xy_slice_list</span><span class="p">,</span> <span class="n">xz_slice_list</span><span class="p">,</span> <span class="n">yz_slice_list</span><span class="p">,</span> <span class="s">&quot;my_assembly.dxf&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      
+        <p>
+        «&#160;&#160;<a href="cnc25d_presentation.html">Cnc25D Presentation</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="box_wood_frame_design.html">Box Wood Frame Design</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2013, charlyoleg.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
