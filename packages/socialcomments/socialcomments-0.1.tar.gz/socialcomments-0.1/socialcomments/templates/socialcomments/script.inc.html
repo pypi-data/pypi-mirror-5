@@ -1,0 +1,87 @@
+{% load url from future %}
+<script>
+	function openSocialCommentForm(p) {
+		$('#social-comment-form').closest('form').find('[type="submit"]').attr('disabled', 'disabled');
+		
+		if(typeof(p) == 'undefined') {
+			try {
+				p = $('#social-comment-tabs .active a').attr('href').substr(1);
+			} catch (err) {
+				return;
+			}
+		}
+		
+		$.ajax(
+			{
+				url: '{% url 'socialcomments_ajax_form' %}?p=' + p,
+				dataType: 'html',
+				success: function(html) {
+					$('#social-comment-form').closest('form').find('[type="submit"]').removeAttr('disabled').show();
+					$('#social-comment-form').html(html);
+				}
+			}
+		);
+	}
+	
+	jQuery(document).ready(
+		function() {
+			$('#social-comment-tabs a').on('click',
+				function(e) {
+					$('#social-comment-form').html('');
+					
+					e.preventDefault();
+					$(this).closest('ul').find('li.active').removeClass('active');
+					$(this).closest('li').addClass('active');
+					
+					openSocialCommentForm(
+						$(this).attr('href').substr(1)
+					);
+				}
+			);
+			
+			$('#social-comment-form').closest('form').on('submit',
+				function(e) {
+					$(this).find('[type="submit"]').attr('disabled', 'disabled');
+					
+					if($(this).data('validated')) {
+						return;
+					}
+					
+					e.preventDefault();
+					if($(this).data('submitting')) {
+						return;
+					}
+					
+					$(this).data('submitting', true);
+					
+					$.ajax(
+						{
+							type: 'POST',
+							url: '{% url 'socialcomments_ajax_form' %}',
+							data: $(this).serialize(),
+							context: $(this),
+							success: function(data) {
+								if(data == '::OK::') {
+									$(this).data('validated', true).submit();
+								} else {
+									$('#social-comment-form').closest('form').find('[type="submit"]').removeAttr('disabled');
+									$('#social-comment-form').html(data);
+									
+									try {
+										console.log('Errors detect in form');
+									} catch (err) {
+										// Can't log to console
+									}
+								}
+								
+								$(this).data('submitting', false);
+							}
+						}
+					);
+				}
+			);
+			
+			openSocialCommentForm();
+		}
+	);
+</script>

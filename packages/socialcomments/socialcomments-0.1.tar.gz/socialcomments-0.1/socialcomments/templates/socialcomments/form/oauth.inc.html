@@ -1,0 +1,42 @@
+{% load url from future %}
+
+{% if form.non_field_errors %}
+	<div class="alert-message alert-error alert-block">
+		{% for error in form.non_field_errors %}
+		{{ error }}
+		{% endfor %}
+	</div>
+{% endif %}
+
+<div class="control-group clearfix">
+	<div class="controls">
+		{% if not connected %}
+			{% include 'socialcomments/form/connect.inc.html' %}
+		{% else %}
+			<p style="line-height: 16px;">
+				{% if avatar %}
+					<img src="{{ avatar }}" align="left" width="16" height="16" />&nbsp;
+				{% endif %}
+				
+				You&rsquo;re logged in as <a href="{{ identity.url }}" target="_blank">{{ identity.display_name }}</a>.
+				(<a href="{% url 'socialcomments_disconnect' %}">Log out</a>)
+			</p>
+		{% endif %}
+	</div>
+</div>
+
+{% if not connected %}
+	<script>
+		$('#social-comment-form').closest('form').find('[type="submit"]').hide();
+	</script>
+{% else %}
+	<script>
+		$('#social-comment-form').closest('form').find('[type="submit"]').show();
+	</script>
+	
+	{% for field in form.visible_fields %}
+		{% include 'field.inc.html' %}
+	{% endfor %}
+
+	{{ form.hidden_fields|join:'' }}
+{% endif %}
