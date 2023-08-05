@@ -1,0 +1,82 @@
+from werkzeug.wrappers import Response
+from werkzeug.exceptions import NotFound, BadRequest
+
+import logging
+
+from models import {{TEMPLATE_MODEL}}
+
+logger = logging.getLogger(__name__)
+
+
+class CollectionEndpoint(object):
+
+    def GET(self, request):
+
+        return Response([r.to_dict() for r in {{TEMPLATE_MODEL}}.load_all()])
+
+    def POST(self, request):
+
+        data = request.content
+
+        try:
+            assert "name" in data
+            assert isinstance(data["name"], basestring)
+        except:
+            raise BadRequest("{{TEMPLATE_MODEL}} must have a `name` attribute "
+                             "with a type of string.")
+
+        r = {{TEMPLATE_MODEL}}(name=data["name"])
+
+        r.save()
+
+        return Response(r.to_dict())
+
+
+class InstanceEndpoint(object):
+
+    def GET(self, request, id):
+
+        r = {{TEMPLATE_MODEL}}.load(id)
+
+        if r is None:
+
+            raise NotFound("{{TEMPLATE_MODEL}} with id %s could not be found." % id)
+
+        return Response(r.to_dict())
+
+    def POST(self, request, id):
+
+        data = request.content
+
+        try:
+            assert "name" in data
+            assert isinstance(data["name"], basestring)
+        except:
+            raise BadRequest("{{TEMPLATE_MODEL}} must have a `name` attribute "
+                             "with a type of string.")
+
+        r = {{TEMPLATE_MODEL}}.load(id)
+
+        if r is None:
+
+            raise NotFound("{{TEMPLATE_MODEL}} with id %s could not be found." % id)
+
+        r.name = data['name']
+
+        r.save()
+
+        return Response(r.to_dict())
+
+    PUT = POST
+
+    def DELETE(self, request, id):
+
+        r = {{TEMPLATE_MODEL}}.load(id)
+
+        if r is None:
+
+            raise NotFound("{{TEMPLATE_MODEL}} with id %s could not be found." % id)
+
+        r.delete()
+
+        return Response()
