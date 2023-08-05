@@ -1,0 +1,131 @@
+Configuration with ZConfig
+==========================
+
+ZRS supports configuration of primary and secondary storages via
+ZConfig.  ZRS provides a zrs directive. To use these, you have to
+import zc.zrs:
+
+    >>> import os, time, ZODB.config
+    >>> primary = ZODB.config.storageFromString("""
+    ...   %import zc.zrs
+    ...
+    ...   <zrs>
+    ...      replicate-to ./primary.sock
+    ...      <filestorage>
+    ...          path primary.fs
+    ...      </filestorage>
+    ...   </zrs>
+    ... """)
+    >>> time.sleep(.01) # Wait for server to start
+
+The replicate-to option is used to specify the address used for
+replication.  In this example, we created a primary storage that
+listens on a unix-domain socket. Normally, we'd use a TCP address
+instead, but we used a unix-domain socket to avoid having to pick an
+unused port. :)
+
+The primary storage wraps a file storage.
+
+    >>> primary
+    <zc.zrs.primary.Primary instance at 0x2aaaab0c53f8>
+
+    >>> os.path.exists('primary.sock')
+    True
+    >>> os.path.exists('primary.fs')
+    True
+
+Defining a secondary storage is similar:
+
+    >>> secondary = ZODB.config.storageFromString("""
+    ...   %import zc.zrs
+    ...
+    ...   <zrs>
+    ...      replicate-from ./primary.sock
+    ...      <filestorage>
+    ...          path secondary.fs
+    ...      </filestorage>
+    ...   </zrs>
+    ... """)
+    >>> time.sleep(.01) # Wait for server to start
+
+    >>> secondary
+    <zc.zrs.secondary.Secondary instance at 0x2aaaab0e8d40>
+
+    >>> os.path.exists('secondary.fs')
+    True
+
+Instead of replicate-to, we used replicate-from to specify the
+replication address to use to get data from a primary storage.
+
+A secondary storage can also function as a primary using the
+replicate-to option:
+
+    >>> secondary.close()
+    >>> time.sleep(.01) # Wait for close (in separate thread)
+    >>> os.remove('secondary.fs')
+    >>> os.path.exists('secondary.sock')
+    False
+
+    >>> secondary = ZODB.config.storageFromString("""
+    ...   %import zc.zrs
+    ...
+    ...   <zrs>
+    ...      replicate-from ./primary.sock
+    ...      replicate-to ./secondary.sock
+    ...      <filestorage>
+    ...          path secondary.fs
+    ...      </filestorage>
+    ...   </zrs>
+    ... """)
+    >>> time.sleep(.01) # Wait for server to start
+
+In this example, we also used the replicate-from option. This is an
+alias for the address option.
+
+    >>> secondary
+    <zc.zrs.secondary.Secondary instance at 0x2aaaab36fcf8>
+
+    >>> os.path.exists('secondary.fs')
+    True
+    >>> os.path.exists('secondary.sock')
+    True
+
+Let's create a secondary secondary and commit some data to the primary storage.
+
+    >>> secondary2 = ZODB.config.storageFromString("""
+    ...   %import zc.zrs
+    ...
+    ...   <zrs>
+    ...      replicate-from ./secondary.sock
+    ...      <filestorage>
+    ...          path secondary2.fs
+    ...      </filestorage>
+    ...   </zrs>
+    ... """)
+    >>> time.sleep(.01) # Wait for server to start
+
+    >>> import time, transaction, ZODB
+    >>> db = ZODB.DB(primary)
+    >>> conn = db.open()
+    >>> conn.root()[1] = conn.root().__class__()
+    >>> transaction.commit()
+
+.. wait a little while to replicate
+
+   >>> time.sleep(1)
+
+Now, we see that we have the data replicated to our secondary
+secondary:
+
+   >>> db2 = ZODB.DB(secondary2)
+   >>> db2.open().root()
+   {1: {}}
+
+   >>> os.path.getsize('primary.fs') == os.path.getsize('secondary2.fs')
+   True
+
+.. cleanup
+
+   >>> db2.close()
+   >>> secondary.close()
+   >>> db.close()
