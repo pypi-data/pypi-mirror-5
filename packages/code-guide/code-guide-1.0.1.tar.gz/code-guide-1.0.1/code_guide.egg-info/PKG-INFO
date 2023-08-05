@@ -1,0 +1,131 @@
+Metadata-Version: 1.1
+Name: code-guide
+Version: 1.0.1
+Summary: Turn example code into interactive HTML documentation
+Home-page: http://natpryce.com
+Author: Nat Pryce
+Author-email: sw@natpryce.com
+License: Apache 2.0. Bootstro is used under the MIT license.
+Description: Code Guide
+        ==========
+        
+        A tool that generates an interactive HTML explanation of how code
+        works from unobtrusive markup of comments in the code.  The
+        explanation is readable in the source, as well as in the generated
+        documentation.
+        
+        
+        Installation
+        ============
+        
+        Install with pip:
+        
+            pip install code-guide
+        
+        
+        Running The Tool
+        ================
+        
+        To convert a single file, _example.py_:
+        
+            # This is where we are going to save generated HTML
+            mkdir outdir
+        	
+        	# Generate HTML from some example code    
+            code-guide example.py --extract-resources -o outdir/example.html
+        
+        Run `code-guide --help` for more help on the command-line options.
+        
+        
+        How to Mark Up Example Code
+        ===========================
+        
+        Mark up regions of code to be explained by adding line comments that
+        immediately start with a "|" character at the start of the region, and
+        a line comment that starts with "|." at the end of the region.
+        
+        E.g., in Python:
+        
+            #| This is the start
+            some_code()
+            #|.
+            
+            
+        In Java:
+        
+            //| This is the start
+            SomeCodeFactoryFactoryImpl.getSomeCodeFactory().getSomeCode().run();
+            //|.
+            
+        The rest of this document describes using the tool with a language
+        that has line comments starting with "#", but the documentation
+        applies to just as well languages with a different line-comment
+        syntax.
+        
+        Adjacent #| comments are treated as a single block of Markdown syntax.
+        Regions can be nested but not overlap.
+        
+            #| This if statement compares two numbers.
+            #|
+            #| It copes with floating point _NaN_ values.
+            if a > b:
+                print "larger"
+            elif a < b:
+                print "smaller"
+            elif a == b:
+                print "the same"
+            else:
+                #| _NaN_ is never equal to another floating point value, not even to _NaN_.
+                print "NaN"
+                #|.
+            #|.
+        
+        
+        The order in which explanations are presented to the reader can be
+        controlled by adding indices in square brackets at the start of each
+        #| comment block.  Indices start at 1.  Either all or none of the
+        explanations must have an index.  If no explanations have an index,
+        they are shown in the order they appear in the source code.
+        
+        
+            #| [2] This statement will be explained second.
+            print "goodbye, cruel world."
+            #|.
+        
+            #| [1] This statement will be explained first.
+            sys.exit(1)
+            #|.
+        
+        The generated document can be given an introduction and/or end-note in
+        markdown format with a block of adjacent lines that start with #||.
+        If the introduction has a top-level heading, the text of the heading
+        is used as the title of the generated HTML.
+        
+        Only the first and last block of text will be used.  Any others will
+        be silently ignored (and may cause an error in future versions of the
+        tool).
+        
+        
+            #|| Hello World
+            #|| ===========
+            #||
+            #|| Hello world is traditionally used to illustrate to beginners 
+            #|| the most basic syntax of a programming language, or to verify 
+            #|| that a language or system is operating correctly.
+            
+            #| This is all that is required in Python
+            print "hello, world"
+            #|.
+        
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Natural Language :: English
+Classifier: Topic :: Software Development
+Provides: code_guide
