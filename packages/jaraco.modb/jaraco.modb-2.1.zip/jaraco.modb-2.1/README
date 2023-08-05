@@ -1,0 +1,99 @@
+===========
+jaraco.modb
+===========
+
+.. contents::
+
+Overview
+--------
+
+``jaraco.modb`` is a small, pure-Python library for persisting Python
+objects to `MongoDB <http://www.mongodb.org/>`_.
+
+``jaraco.modb`` is written by Jason R. Coombs.  It is licensed under an
+`MIT-style permissive license
+<http://www.opensource.org/licenses/mit-license.php>`_.
+
+You can install it with ``easy_install jaraco.modb`` or grab the source
+code from the `mercurial repository
+<http://bitbucket.org/jaraco/jaraco.modb>`_.
+
+Usage
+-----
+
+``jaraco.modb`` facilitates using `jsonpickle` to produce MongoDB-friendly
+representations of pickleable Python objects for easy storage in a MongoDB
+database.
+
+One may simply encode and decode Python objects to MongoDB
+BSON-friendly representations::
+
+    class MyObject(object):
+        def __init__(self, val):
+            self.val = val
+
+    import jaraco.modb
+    import pymongo
+    mongo_collection = pymongo.Connection().mydb.mycollection
+    val = MyObject(3)
+    # save the object to the DB
+    id = mongo_collection.save(jaraco.modb.encode(val))
+    # retrieve the object from the DB
+    new_val = jaraco.modb.decode(mongo_collection.find_one(id))
+    assert isinstance(new_val, MyObject)
+    assert new_val.val == 3
+
+Features
+--------
+
+Reduce Support
+~~~~~~~~~~~~~~
+
+``jsonpickle`` 0.4 doesn't support the reduce protocol out of the box.
+``jaraco.modb`` provides a handy way to do this with the SimpleReduceHandler::
+
+    @jaraco.modb.handlers.SimpleReduceHandler.handles
+    class MyUnicode(unicode):
+        def __reduce__(self):
+            return MyUnicode, (unicode(self),)
+
+Note that you must provide the __reduce__ method as the built-in reduce
+method returns a function that jsonpickle cannot serialize.
+
+Changes
+-------
+
+2.1
+~~~
+
+* Added convenience method for decorating functions with the
+  ``SimpleReduceHandler``.
+
+2.0
+~~~
+
+* Removed initializer function (`jaraco.modb.init()`). Clients should remove
+  that call (if present) before upgrading to 2.0.
+
+1.2
+~~~
+
+* Now store naive and UTC datetimes naturally in MongoDB.
+* The encoder/decoder now subclasses the `jsonpickle` classes to more
+  efficiently handle binary strings.
+
+1.1
+~~~
+
+* Added proper support for datetime objects.
+* Added support for OrderedDictionaries.
+
+1.0.4
+~~~~~
+
+* Removed requirement to call `jaraco.modb.init()` to initialize.
+
+1.0
+~~~
+
+* Initial release
