@@ -1,0 +1,71 @@
+Metadata-Version: 1.1
+Name: django-hijackemail
+Version: 1.0.0
+Summary: Reroute outgoing mail (for use in dev/testing/staging environments)
+Home-page: https://github.com/katylava/django-hijackemail
+Author: Katy LaVallee
+Author-email: katy@firelightweb.com
+License: MIT
+Description: django-hijackemail
+        ==================
+        
+        This app fills a very specific use case: you want to test email delivery
+        in a QA environment and your clients, as admins, want to receive real emails, 
+        but you don't want the QA process to trigger emails to real end users. 
+        
+        With a couple settings, you can ensure only email to specified addresses
+        will go to the original recipients, and all others will go to a catch-all
+        address or domain.
+        
+        
+        Installation
+        ------------
+        
+        ``pip install django-hijackemail``
+        
+        Add ``hijackemail`` to your ``INSTALLED_APPS``. In your environment's
+        settings file, set your ``EMAIL_BACKEND`` to
+        ``hijackemail.backends.HijackEmailBackend``.
+        
+        Then configure the settings below as necessary.
+        
+        
+        Settings
+        --------
+        
+        HIJACK_EMAIL_BACKEND
+            A string represented the dotted path to the actual
+            email backend used to send messages.
+            Default is ``django.core.mail.backends.smtp.EmailBackend``.
+        
+        HIJACK_EMAIL_TRANSFORMATION
+            A function which takes an email address, and returns
+            a transformed version of it.
+        
+            The default transformation converts john.doe@example.com to
+            john.doe-at-example.com@local.
+        
+        HIJACK_EMAIL_REPLACEMENT
+            Instead of transforming the original email, just send
+            all email to this address. Default is None.
+        
+        HIJACK_EMAIL_DOMAIN
+            Use the default transformation with this catchall
+            domain. Default is "local".
+        
+        HIJACK_EMAIL_EXCLUDE
+            A list of email addresses that should not be hijacked.
+            Default is empty list.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Communications :: Email
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Software Development :: Quality Assurance
