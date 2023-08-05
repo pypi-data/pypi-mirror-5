@@ -1,0 +1,263 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>velruse.providers.twitter &mdash; Velruse 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within Velruse 1.1 documentation"
+          href="../../../_static/opensearch.xml"/>
+    <link rel="top" title="Velruse 1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="velruse" href="../../velruse.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" accesskey="U">velruse</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for velruse.providers.twitter</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Twitter Authentication Views&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">pyramid.httpexceptions</span> <span class="kn">import</span> <span class="n">HTTPFound</span>
+<span class="kn">from</span> <span class="nn">pyramid.security</span> <span class="kn">import</span> <span class="n">NO_PERMISSION_REQUIRED</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">requests_oauthlib</span> <span class="kn">import</span> <span class="n">OAuth1</span>
+
+<span class="kn">from</span> <span class="nn">..api</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AuthenticationComplete</span><span class="p">,</span>
+    <span class="n">AuthenticationDenied</span><span class="p">,</span>
+    <span class="n">register_provider</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..compat</span> <span class="kn">import</span> <span class="n">parse_qsl</span>
+<span class="kn">from</span> <span class="nn">..exceptions</span> <span class="kn">import</span> <span class="n">ThirdPartyFailure</span>
+<span class="kn">from</span> <span class="nn">..settings</span> <span class="kn">import</span> <span class="n">ProviderSettings</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">flat_url</span>
+
+
+<span class="n">REQUEST_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.twitter.com/oauth/request_token&#39;</span>
+<span class="n">AUTH_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.twitter.com/oauth/authenticate&#39;</span>
+<span class="n">ACCESS_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.twitter.com/oauth/access_token&#39;</span>
+<span class="n">DATA_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.twitter.com/1.1/users/show.json?screen_name=</span><span class="si">%s</span><span class="s">&#39;</span>
+
+<div class="viewcode-block" id="TwitterAuthenticationComplete"><a class="viewcode-back" href="../../../providers/twitter.html#velruse.providers.twitter.TwitterAuthenticationComplete">[docs]</a><span class="k">class</span> <span class="nc">TwitterAuthenticationComplete</span><span class="p">(</span><span class="n">AuthenticationComplete</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Twitter auth complete&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="includeme"><a class="viewcode-back" href="../../../providers/twitter.html#velruse.providers.twitter.includeme">[docs]</a><span class="k">def</span> <span class="nf">includeme</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s">&#39;add_twitter_login&#39;</span><span class="p">,</span> <span class="n">add_twitter_login</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s">&#39;add_twitter_login_from_settings&#39;</span><span class="p">,</span>
+                         <span class="n">add_twitter_login_from_settings</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="add_twitter_login_from_settings"><a class="viewcode-back" href="../../../providers/twitter.html#velruse.providers.twitter.add_twitter_login_from_settings">[docs]</a><span class="k">def</span> <span class="nf">add_twitter_login_from_settings</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s">&#39;velruse.twitter.&#39;</span><span class="p">):</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">settings</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">ProviderSettings</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;consumer_key&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;consumer_secret&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;login_path&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;callback_path&#39;</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_twitter_login</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="add_twitter_login"><a class="viewcode-back" href="../../../providers/twitter.html#velruse.providers.twitter.add_twitter_login">[docs]</a><span class="k">def</span> <span class="nf">add_twitter_login</span><span class="p">(</span><span class="n">config</span><span class="p">,</span>
+                      <span class="n">consumer_key</span><span class="p">,</span>
+                      <span class="n">consumer_secret</span><span class="p">,</span>
+                      <span class="n">login_path</span><span class="o">=</span><span class="s">&#39;/login/twitter&#39;</span><span class="p">,</span>
+                      <span class="n">callback_path</span><span class="o">=</span><span class="s">&#39;/login/twitter/callback&#39;</span><span class="p">,</span>
+                      <span class="n">name</span><span class="o">=</span><span class="s">&#39;twitter&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add a Twitter login provider to the application.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">provider</span> <span class="o">=</span> <span class="n">TwitterProvider</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">consumer_key</span><span class="p">,</span> <span class="n">consumer_secret</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span> <span class="n">login_path</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_view</span><span class="p">(</span><span class="n">provider</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span>
+                    <span class="n">route_name</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span>
+                    <span class="n">permission</span><span class="o">=</span><span class="n">NO_PERMISSION_REQUIRED</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="n">provider</span><span class="o">.</span><span class="n">callback_route</span><span class="p">,</span> <span class="n">callback_path</span><span class="p">,</span>
+                     <span class="n">use_global_views</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                     <span class="n">factory</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">callback</span><span class="p">)</span>
+
+    <span class="n">register_provider</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">provider</span><span class="p">)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">TwitterProvider</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">consumer_key</span><span class="p">,</span> <span class="n">consumer_secret</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;twitter&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span> <span class="o">=</span> <span class="n">consumer_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span> <span class="o">=</span> <span class="n">consumer_secret</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">login_route</span> <span class="o">=</span> <span class="s">&#39;velruse.</span><span class="si">%s</span><span class="s">-login&#39;</span> <span class="o">%</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_route</span> <span class="o">=</span> <span class="s">&#39;velruse.</span><span class="si">%s</span><span class="s">-callback&#39;</span> <span class="o">%</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initiate a Twitter login&quot;&quot;&quot;</span>
+        <span class="c"># grab the initial request token</span>
+        <span class="n">oauth</span> <span class="o">=</span> <span class="n">OAuth1</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span><span class="p">,</span>
+            <span class="n">client_secret</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span><span class="p">,</span>
+            <span class="n">callback_uri</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">route_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback_route</span><span class="p">))</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">REQUEST_URL</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">oauth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span><span class="s">&quot;Status </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+        <span class="n">request_token</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parse_qsl</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+
+        <span class="c"># store the token for later</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s">&#39;token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">request_token</span>
+
+        <span class="c"># redirect the user to authorize the app</span>
+        <span class="n">auth_url</span> <span class="o">=</span> <span class="n">flat_url</span><span class="p">(</span><span class="n">AUTH_URL</span><span class="p">,</span> <span class="n">oauth_token</span><span class="o">=</span><span class="n">request_token</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">HTTPFound</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">auth_url</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process the Twitter redirect&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;denied&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">AuthenticationDenied</span><span class="p">(</span><span class="s">&quot;User denied authentication&quot;</span><span class="p">,</span>
+                                        <span class="n">provider_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                        <span class="n">provider_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+        <span class="n">verifier</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;oauth_verifier&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">verifier</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span><span class="s">&quot;No oauth_verifier returned&quot;</span><span class="p">)</span>
+
+        <span class="n">request_token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s">&#39;token&#39;</span><span class="p">]</span>
+
+        <span class="c"># turn our request token into an access token</span>
+        <span class="n">oauth</span> <span class="o">=</span> <span class="n">OAuth1</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span><span class="p">,</span>
+            <span class="n">client_secret</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span><span class="p">,</span>
+            <span class="n">resource_owner_key</span><span class="o">=</span><span class="n">request_token</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">],</span>
+            <span class="n">resource_owner_secret</span><span class="o">=</span><span class="n">request_token</span><span class="p">[</span><span class="s">&#39;oauth_token_secret&#39;</span><span class="p">],</span>
+            <span class="n">verifier</span><span class="o">=</span><span class="n">verifier</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">ACCESS_URL</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">oauth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span><span class="s">&quot;Status </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+        <span class="n">access_token</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parse_qsl</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+        <span class="n">creds</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;oauthAccessToken&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">],</span>
+            <span class="s">&#39;oauthAccessTokenSecret&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">[</span><span class="s">&#39;oauth_token_secret&#39;</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="n">username</span> <span class="o">=</span> <span class="n">access_token</span><span class="p">[</span><span class="s">&#39;screen_name&#39;</span><span class="p">]</span>
+
+        <span class="c"># Setup the normalized contact info</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;accounts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span>
+            <span class="s">&#39;domain&#39;</span><span class="p">:</span> <span class="s">&#39;twitter.com&#39;</span><span class="p">,</span>
+            <span class="s">&#39;userid&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">[</span><span class="s">&#39;user_id&#39;</span><span class="p">],</span>
+            <span class="s">&#39;username&#39;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span>
+        <span class="p">}]</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;displayName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;preferredUsername&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+
+        <span class="n">oauth</span> <span class="o">=</span> <span class="n">OAuth1</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span><span class="p">,</span>
+            <span class="n">client_secret</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span><span class="p">,</span>
+            <span class="n">resource_owner_key</span><span class="o">=</span><span class="n">access_token</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">],</span>
+            <span class="n">resource_owner_secret</span><span class="o">=</span><span class="n">access_token</span><span class="p">[</span><span class="s">&#39;oauth_token_secret&#39;</span><span class="p">])</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">DATA_URL</span> <span class="o">%</span> <span class="n">username</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">oauth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="c"># replace display name with the full name</span>
+                <span class="n">profile</span><span class="p">[</span><span class="s">&#39;displayName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+                <span class="n">profile</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;formatted&#39;</span><span class="p">:</span> <span class="n">profile</span><span class="p">[</span><span class="s">&#39;displayName&#39;</span><span class="p">]}</span>
+            <span class="k">if</span> <span class="s">&#39;url&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">profile</span><span class="p">[</span><span class="s">&#39;urls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">]}]</span>
+            <span class="k">if</span> <span class="s">&#39;location&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">profile</span><span class="p">[</span><span class="s">&#39;addresses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;formatted&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;location&#39;</span><span class="p">]}]</span>
+            <span class="k">if</span> <span class="s">&#39;profile_image_url&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">profile</span><span class="p">[</span><span class="s">&#39;photos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;profile_image_url&#39;</span><span class="p">]}]</span>
+            <span class="k">if</span> <span class="s">&#39;utc_offset&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">offset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;utc_offset&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="mi">3600</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">offset</span> <span class="o">-</span> <span class="n">h</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+                <span class="n">profile</span><span class="p">[</span><span class="s">&#39;utcOffset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;{h:+03d}:{m:02d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">TwitterAuthenticationComplete</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">,</span>
+                                             <span class="n">credentials</span><span class="o">=</span><span class="n">creds</span><span class="p">,</span>
+                                             <span class="n">provider_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                             <span class="n">provider_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" >velruse</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Ben Bangert.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

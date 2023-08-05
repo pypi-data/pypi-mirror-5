@@ -1,0 +1,424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Usage &mdash; Velruse 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within Velruse 1.1 documentation"
+          href="_static/opensearch.xml"/>
+    <link rel="top" title="Velruse 1.1 documentation" href="index.html" />
+    <link rel="next" title="Provider Documentation" href="providers.html" />
+    <link rel="prev" title="Architecture" href="architecture.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="providers.html" title="Provider Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="architecture.html" title="Architecture"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Velruse 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="usage">
+<span id="id1"></span><h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>Velruse is built around the <a class="reference external" href="http://docs.pylonsproject.org/en/latest/docs/pyramid.html">Pyramid</a> web framework. Each provider
+is implemented as a Pyramid addon via Pyramid&#8217;s <tt class="docutils literal"><span class="pre">include</span></tt> mechanism. This
+means that it is very easy to integrate Velruse with a Pyramid application
+directly. When operating outside of Pyramid, Velruse contains a full
+WSGI Pyramid app that can be run via any WSGI server. The app exposes an
+HTTP API which speaks language-agnostic JSON. This allows the
+Velruse app to run independently of the rest of your web stack.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">In order to get working code examples, many providers require that
+the callback that is configured at the end of the authentication workflow
+must be a fully qualified, externally resolvable domain name.</p>
+</div>
+<div class="section" id="as-a-service">
+<h2>As a Service<a class="headerlink" href="#as-a-service" title="Permalink to this headline">¶</a></h2>
+<p>Velruse will run as a standalone web application which has an API that
+makes it easy to authenticate with various providers, as well as obtain user
+credentials and profile information after a user has already been
+authenticated. This allows virtually anyone to use Velruse, regardless
+of their chosen language or framework.  The standalone app is a standard
+Pyramid application, so if you are familiar with the
+framework, you will feel right at home.  We are going to assume you have no
+experience with Pyramid just to be safe though.</p>
+<p>The first thing we need to do is provide the Velruse application
+with some information about our account details for each provider we are
+supporting. Namely the consumer key and consumer secret of our app. These two
+values can be obtained by creating an application on each of the provider&#8217;s
+websites, commonly found in the &#8220;developers&#8221; section. Once you have obtained
+a consumer key and secret from each of the providers you wish to support,
+we need to tell Velruse about them.  This can be done by creating
+an .ini file that will be used to serve the standalone app.
+It could look something like the following:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span class="k">[server:main]</span>
+<span class="na">use</span> <span class="o">=</span> <span class="s">egg:waitress</span>
+<span class="na">host</span> <span class="o">=</span> <span class="s">0.0.0.0</span>
+<span class="na">port</span> <span class="o">=</span> <span class="s">80</span>
+
+<span class="k">[app:velruse]</span>
+<span class="na">use</span> <span class="o">=</span> <span class="s">egg:velruse</span>
+
+<span class="na">setup</span> <span class="o">=</span> <span class="s">myapp.setup_velruse</span>
+
+<span class="na">endpoint</span> <span class="o">=</span> <span class="s">http://example.com/logged_in</span>
+
+<span class="na">store</span> <span class="o">=</span> <span class="s">redis</span>
+<span class="na">store.host</span> <span class="o">=</span> <span class="s">localhost</span>
+<span class="na">store.port</span> <span class="o">=</span> <span class="s">6379</span>
+<span class="na">store.db</span> <span class="o">=</span> <span class="s">0</span>
+<span class="na">store.key_prefix</span> <span class="o">=</span> <span class="s">velruse_ustore</span>
+
+<span class="na">provider.facebook.consumer_key</span> <span class="o">=</span> <span class="s">KMfXjzsA2qVUcnnRn3vpnwWZ2pwPRFZdb</span>
+<span class="na">provider.facebook.consumer_secret</span> <span class="o">=</span> <span class="s">ULZ6PkJbsqw2GxZWCIbOEBZdkrb9XwgXNjRy</span>
+<span class="na">provider.facebook.scope</span> <span class="o">=</span> <span class="s">email</span>
+
+<span class="na">provider.tw.impl</span> <span class="o">=</span> <span class="s">twitter</span>
+<span class="na">provider.tw.consumer_key</span> <span class="o">=</span> <span class="s">ULZ6PkJbsqw2GxZWCIbOEBZdkrb9XwgXNjRy</span>
+<span class="na">provider.tw.consumer_secret</span> <span class="o">=</span> <span class="s">eoCrFwnpBWXjbim5dyG6EP7HzjhQzFsMAcQOEK</span>
+</pre></div>
+</div>
+<p>Ok so that&#8217;s a lot of stuff.  Let&#8217;s go through each section.  The values
+in the &#8216;[server:main]&#8217; section are saying that we want to serve our app via
+the <a class="reference external" href="http://docs.pylonsproject.org/projects/waitress/en/latest/">Waitress</a> web server, to bind to any ip address, and to run on port 80.
+Next, we have a number of configuration options for our web app.  The
+important ones are as follows:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">setup</span></tt></dt>
+<dd>A Python dotted-name describing the location of a callable. This
+callable must accept a Pyramid <tt class="docutils literal"><span class="pre">Configurator</span></tt> object and use it
+to initialize a session factory as well as a backend storage mechanism.</dd>
+<dt><tt class="docutils literal"><span class="pre">endpoint</span></tt></dt>
+<dd>The url that velruse will redirect to after it finishes authenticating
+with a provider.</dd>
+<dt><tt class="docutils literal"><span class="pre">store</span></tt></dt>
+<dd>The type of cache that you would like velruse to use. We&#8217;ve selected
+<a class="reference external" href="http://redis.io/">Redis</a> but this could be any storage backend supported by the
+<a class="reference external" href="http://pypi.python.org/pypi/anykeystore/">anykeystore</a> library.</dd>
+<dt><tt class="docutils literal"><span class="pre">store.*</span></tt></dt>
+<dd>The parameters within the store are dependent on the backend selected.
+See the <a class="reference external" href="http://pypi.python.org/pypi/anykeystore/">anykeystore</a> documentation for more details.</dd>
+<dt><tt class="docutils literal"><span class="pre">provider.*</span></tt></dt>
+<dd>The parameters for a specific provider. The format is
+<tt class="docutils literal"><span class="pre">provider.&lt;identifier&gt;.&lt;setting&gt;</span></tt> where <tt class="docutils literal"><span class="pre">identifier</span></tt> should be
+the shorthand name of one of the providers. The <tt class="docutils literal"><span class="pre">identifier</span></tt> can
+be anything, but if it is not the name of a provider then
+<tt class="docutils literal"><span class="pre">provider.&lt;identifier&gt;.impl</span></tt> must point to something. This allows
+you to configure multiple endpoints using the same provider (e.g.
+maybe one endpoint for login only, and another for authorization later).</dd>
+</dl>
+<p>Finally, we define all of the provider-specific consumer keys and secrets that
+we talked about earlier.  Reference each provider&#8217;s page for documentation
+on the supported settings.</p>
+<p>Once we are done configuring the application, we can serve it by running:</p>
+<div class="highlight-bash"><div class="highlight"><pre>pserve example.ini
+</pre></div>
+</div>
+<p>This will start serving Velruse at the specified IP and port in your
+INI file. We can then communicate with the app, by sending HTTP requests to
+that IP/port.  The API is quite simple, and it only consists of the
+following two routes:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">/{provider}/login</span></tt></dt>
+<dd>Authenticates with a provider, and redirects back to the url specified by
+the endpoint setting.</dd>
+<dt><tt class="docutils literal"><span class="pre">/auth_info?format=json&amp;token={token}</span></tt></dt>
+<dd>Obtains the profile and credential information for a user with the
+specified token.</dd>
+</dl>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">/auth_info</span></tt> URL should be considered sensitive and only trusted
+services should be allowed access. If an attacker intercepts a an
+authentication token, they could potentially query <tt class="docutils literal"><span class="pre">/auth_info</span></tt> and
+learn all of the credentials for the user.</p>
+</div>
+<div class="section" id="initiating-a-login-attempt">
+<h3>Initiating a Login Attempt<a class="headerlink" href="#initiating-a-login-attempt" title="Permalink to this headline">¶</a></h3>
+<p>In order to get a user to begin the Velruse authentication workflow we need to
+have the user submit a POST request to the provider&#8217;s login URL. This can be
+done by submitting a form placed on some page within your site. An example of
+such a form is given below.</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;/velruse/login/facebook&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;hidden&quot;</span> <span class="na">name=</span><span class="s">&quot;scope&quot;</span> <span class="na">value=</span><span class="s">&quot;publish_stream,create_event&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="na">value=</span><span class="s">&quot;Login with Facebook&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="handling-a-login-attempt">
+<h3>Handling a Login Attempt<a class="headerlink" href="#handling-a-login-attempt" title="Permalink to this headline">¶</a></h3>
+<p>After completing the provider&#8217;s authentication process, Velruse will then
+redirect to your <a class="reference internal" href="glossary.html#term-endpoint"><em class="xref std std-term">endpoint</em></a> using a POST request, with the token
+assigned to a user stored in the form data. This token can be used to obtain
+authentication details about the user.  An example of how to obtain the token
+in the endpoint view of an application is given below.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># sample callback view in flask</span>
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/logged_in&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">login_callback</span><span class="p">():</span>
+    <span class="c"># token is stored in the form data</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s">&#39;token&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s">&#39;result.html&#39;</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">token</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>As you can see, the token is stored in the form data of the request.  We can
+then use the <tt class="docutils literal"><span class="pre">/velruse/auth_info</span></tt> route to obtain a user&#8217;s authentication
+details.  So if we were passed a token with a value of <tt class="docutils literal"><span class="pre">'t0k3n'</span></tt>, then we
+can access everything Velruse knows about that user by visiting
+<tt class="docutils literal"><span class="pre">'/velruse/auth_info?format=json&amp;token=t0k3n'</span></tt>.  We can further add to our
+previous example to make such a call.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># sample callback view in flask</span>
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/logged_in&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">login_callback</span><span class="p">():</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s">&#39;token&#39;</span><span class="p">]</span>
+
+    <span class="c"># the request must contain &#39;format&#39; and &#39;token&#39; params</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;format&#39;</span><span class="p">:</span> <span class="s">&#39;json&#39;</span><span class="p">,</span> <span class="s">&#39;token&#39;</span><span class="p">:</span> <span class="n">token</span><span class="p">}</span>
+    <span class="c"># sending a GET request to /auth_info</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">host_url</span> <span class="o">+</span> <span class="s">&#39;velruse/auth_info&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+    <span class="n">auth_info</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s">&#39;result.html&#39;</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">auth_info</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This example is using the <a class="reference external" href="http://docs.python-requests.org/en/latest/index.html">Requests</a> library. <tt class="docutils literal"><span class="pre">auth_info</span></tt> contains
+information about the user&#8217;s login attempt. In all cases the response will
+contain <tt class="docutils literal"><span class="pre">provider_name</span></tt> and <tt class="docutils literal"><span class="pre">provider_type</span></tt> metadata. If the response
+was successful then the <tt class="docutils literal"><span class="pre">profile</span></tt> and <tt class="docutils literal"><span class="pre">credentials</span></tt> will be available.
+In the case of a failure, the <tt class="docutils literal"><span class="pre">error</span></tt> will be available to explain what
+may have gone wrong.</p>
+</div>
+</div>
+<div class="section" id="as-a-pyramid-plugin">
+<h2>As a Pyramid Plugin<a class="headerlink" href="#as-a-pyramid-plugin" title="Permalink to this headline">¶</a></h2>
+<p>The standalone Velruse application is simply a Pyramid application that
+is configured using Velruse&#8217;s Pyramid plugin. To use Velruse in your own
+Pyramid applications you simply have to include the providers you
+want in your configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">config</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s">&#39;velruse.providers.facebook&#39;</span><span class="p">)</span>
+<span class="n">config</span><span class="o">.</span><span class="n">add_facebook_login_from_settings</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s">&#39;velruse.facebook.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Much like the standalone app, we need to provide Velruse with some
+information about our account details for each provider we are supporting.
+Namely the consumer key and consumer secret of our app. This information can
+be obtained by creating an application on each of the provider&#8217;s websites,
+commonly found in the &#8220;developers&#8221; section.  Once you have obtained
+credentials for your application (usually a consumer key and secret)
+from each of the providers you wish to support, we need to tell Velruse
+about them.  We can easily do this by adding them to our app&#8217;s INI files.
+You can use the following example as a guide:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span class="na">velruse.facebook.consumer_key</span> <span class="o">=</span> <span class="s">411326239420890</span>
+<span class="na">velruse.facebook.consumer_secret</span> <span class="o">=</span> <span class="s">81ef2318a1999tttc6d9c43d4e93be0c</span>
+<span class="na">velruse.facebook.scope</span> <span class="o">=</span> <span class="s">email</span>
+
+<span class="na">velruse.twitter.consumer_key</span> <span class="o">=</span> <span class="s">ULZ6PkJbeqwgGxZaCIbdEBZekrbgXwgXajRl</span>
+<span class="na">velruse.twitter.consumer_secret</span> <span class="o">=</span> <span class="s">eoCrewnpdWXjfim5ayGgEPeHzjcQzFsqAchOEa</span>
+</pre></div>
+</div>
+<div class="section" id="id2">
+<h3>Initiating a Login Attempt<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>After Velruse is included in your app, you can easily generate a login url
+for any particular provider.  This is accomplished by calling the
+<a class="reference internal" href="api/toplevel.html#velruse.login_url" title="velruse.login_url"><tt class="xref py py-func docutils literal"><span class="pre">velruse.login_url()</span></tt></a> like so:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">login_url</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">&#39;twitter&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this case, <a class="reference internal" href="api/toplevel.html#velruse.login_url" title="velruse.login_url"><tt class="xref py py-func docutils literal"><span class="pre">velruse.login_url()</span></tt></a> will generate a url like
+<tt class="docutils literal"><span class="pre">http://www.example.com/login/twitter</span></tt>. A user can then be directed to that
+url when they need to authenticate through the Twitter provider.  This is
+commonly done in the form of a link or a button on the login page of your app.</p>
+<p>In order to get a user to begin the Velruse authentication workflow we need to
+have the user submit a POST request to the provider&#8217;s login URL. This can be
+done by submitting a form placed on some page within your site. An example of
+such a form is given below.</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;${login_url(request, &#39;twitter&#39;)}&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="na">value=</span><span class="s">&quot;Login with Twitter&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>Handling a Login Attempt<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>By integrating your application directly with Velruse, the workflow for
+handling a login attempt is more efficient. Instead of having to talk back
+to the standalone application, the credentials are available directly within
+your app without requiring any external storage. Once the user has visited the
+URL generated by <a class="reference internal" href="api/toplevel.html#velruse.login_url" title="velruse.login_url"><tt class="xref py py-func docutils literal"><span class="pre">velruse.login_url()</span></tt></a>, they will be redirected to the
+respective provider. The provider will eventually redirect the user back to
+the callback URL. Velruse can then perform validation of the results and
+generate the profile. You must then specify Pyramid views that will be invoked
+when authentication was completed or denied. The first view we need to add is
+called when authentication succeeds, and could potentially look something like
+this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@view_config</span><span class="p">(</span>
+    <span class="n">context</span><span class="o">=</span><span class="s">&#39;velruse.AuthenticationComplete&#39;</span><span class="p">,</span>
+    <span class="n">renderer</span><span class="o">=</span><span class="s">&#39;myapp:templates/result.mako&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">login_complete_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">context</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;provider_type&#39;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">provider_type</span><span class="p">,</span>
+        <span class="s">&#39;provider_name&#39;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">provider_name</span><span class="p">,</span>
+        <span class="s">&#39;profile&#39;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">profile</span><span class="p">,</span>
+        <span class="s">&#39;credentials&#39;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">credentials</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&#39;result&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>The important thing to note here, is that we need to register a view that has
+a value of <a class="reference internal" href="api/toplevel.html#velruse.AuthenticationComplete" title="velruse.AuthenticationComplete"><tt class="xref py py-class docutils literal"><span class="pre">velruse.AuthenticationComplete</span></tt></a> assigned to the context
+predicate.  This results in the <tt class="docutils literal"><span class="pre">login_complete_view</span></tt> being invoked when a
+third party redirects to your app and was successful.  This view will most
+likely be used to store credentials, create accounts, and redirect the user
+to the rest of your application.</p>
+<p>If you want to create a view that is only called when a <em>specific</em> third
+party&#8217;s authentication succeeds, you can change the view configuration to
+specify a more specific context:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@view_config</span><span class="p">(</span>
+    <span class="n">context</span><span class="o">=</span><span class="s">&#39;velruse.providers.facebook.FacebookAuthenticationComplete&#39;</span><span class="p">,</span>
+    <span class="n">renderer</span><span class="o">=</span><span class="s">&#39;myapp:templates/result.mako&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">fb_login_complete_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>It is possible to create many views. Only the most specific view will be
+invoked for the matching provider.</p>
+<p>The second view we need to add is called when authentication fails:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@view_config</span><span class="p">(</span>
+    <span class="n">context</span><span class="o">=</span><span class="s">&#39;velruse.AuthenticationDenied&#39;</span><span class="p">,</span>
+    <span class="n">renderer</span><span class="o">=</span><span class="s">&#39;myapp:templates/result.mako&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">login_denied_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&#39;result&#39;</span><span class="p">:</span> <span class="s">&#39;denied&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>We assign a value of <a class="reference internal" href="api/toplevel.html#velruse.AuthenticationDenied" title="velruse.AuthenticationDenied"><tt class="xref py py-class docutils literal"><span class="pre">velruse.AuthenticationDenied</span></tt></a> to the context
+predicate of the view.  The <tt class="docutils literal"><span class="pre">login_denied_view</span></tt> will be invoked
+when a third party redirects to your app and reports a failed authentication.
+This view will most likely be used to display an appropriate error message
+and redirect the user. After Velruse is configured in your Pyramid
+application, login urls are generated for each of the providers that you want
+to support, and the previous two views are defined, you can effectively use
+Velruse to authenticate with third party providers.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Usage</a><ul>
+<li><a class="reference internal" href="#as-a-service">As a Service</a><ul>
+<li><a class="reference internal" href="#initiating-a-login-attempt">Initiating a Login Attempt</a></li>
+<li><a class="reference internal" href="#handling-a-login-attempt">Handling a Login Attempt</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#as-a-pyramid-plugin">As a Pyramid Plugin</a><ul>
+<li><a class="reference internal" href="#id2">Initiating a Login Attempt</a></li>
+<li><a class="reference internal" href="#id3">Handling a Login Attempt</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="architecture.html"
+                        title="previous chapter">Architecture</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="providers.html"
+                        title="next chapter">Provider Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/usage.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="providers.html" title="Provider Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="architecture.html" title="Architecture"
+             >previous</a> |</li>
+        <li><a href="index.html">Velruse 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Ben Bangert.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

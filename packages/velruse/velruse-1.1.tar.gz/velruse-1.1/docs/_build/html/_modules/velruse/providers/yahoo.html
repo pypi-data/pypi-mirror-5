@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>velruse.providers.yahoo &mdash; Velruse 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within Velruse 1.1 documentation"
+          href="../../../_static/opensearch.xml"/>
+    <link rel="top" title="Velruse 1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="velruse" href="../../velruse.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" accesskey="U">velruse</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for velruse.providers.yahoo</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">openid.extensions</span> <span class="kn">import</span> <span class="n">ax</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">requests_oauthlib</span> <span class="kn">import</span> <span class="n">OAuth1</span>
+
+<span class="kn">from</span> <span class="nn">pyramid.security</span> <span class="kn">import</span> <span class="n">NO_PERMISSION_REQUIRED</span>
+
+<span class="kn">from</span> <span class="nn">..api</span> <span class="kn">import</span> <span class="n">register_provider</span>
+<span class="kn">from</span> <span class="nn">..compat</span> <span class="kn">import</span> <span class="n">parse_qsl</span>
+
+<span class="kn">from</span> <span class="nn">.oid_extensions</span> <span class="kn">import</span> <span class="n">OAuthRequest</span>
+<span class="kn">from</span> <span class="nn">.openid</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">OpenIDAuthenticationComplete</span><span class="p">,</span>
+    <span class="n">OpenIDConsumer</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="s">&#39;logging&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<span class="n">YAHOO_OAUTH</span> <span class="o">=</span> <span class="s">&#39;https://api.login.yahoo.com/oauth/v2/get_token&#39;</span>
+
+
+<div class="viewcode-block" id="YahooAuthenticationComplete"><a class="viewcode-back" href="../../../providers/yahoo.html#velruse.providers.yahoo.YahooAuthenticationComplete">[docs]</a><span class="k">class</span> <span class="nc">YahooAuthenticationComplete</span><span class="p">(</span><span class="n">OpenIDAuthenticationComplete</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Yahoo auth complete&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="includeme"><a class="viewcode-back" href="../../../providers/yahoo.html#velruse.providers.yahoo.includeme">[docs]</a><span class="k">def</span> <span class="nf">includeme</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s">&#39;add_yahoo_login&#39;</span><span class="p">,</span> <span class="n">add_yahoo_login</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="add_yahoo_login"><a class="viewcode-back" href="../../../providers/yahoo.html#velruse.providers.yahoo.add_yahoo_login">[docs]</a><span class="k">def</span> <span class="nf">add_yahoo_login</span><span class="p">(</span><span class="n">config</span><span class="p">,</span>
+                    <span class="n">realm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">storage</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">consumer_key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">consumer_secret</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">login_path</span><span class="o">=</span><span class="s">&#39;/login/yahoo&#39;</span><span class="p">,</span>
+                    <span class="n">callback_path</span><span class="o">=</span><span class="s">&#39;/login/yahoo/callback&#39;</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s">&#39;yahoo&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add a Yahoo login provider to the application.</span>
+
+<span class="sd">    OpenID parameters: realm, storage</span>
+
+<span class="sd">    OAuth parameters: consumer_key, consumer_secret</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">provider</span> <span class="o">=</span> <span class="n">YahooConsumer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">realm</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span>
+                             <span class="n">consumer_key</span><span class="p">,</span> <span class="n">consumer_secret</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span> <span class="n">login_path</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_view</span><span class="p">(</span><span class="n">provider</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">route_name</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span>
+                    <span class="n">permission</span><span class="o">=</span><span class="n">NO_PERMISSION_REQUIRED</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="n">provider</span><span class="o">.</span><span class="n">callback_route</span><span class="p">,</span> <span class="n">callback_path</span><span class="p">,</span>
+                     <span class="n">use_global_views</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                     <span class="n">factory</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">callback</span><span class="p">)</span>
+
+    <span class="n">register_provider</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">provider</span><span class="p">)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">YahooConsumer</span><span class="p">(</span><span class="n">OpenIDConsumer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">realm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">oauth_key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">oauth_secret</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle Yahoo Auth</span>
+
+<span class="sd">        This also handles making an OAuth request during the OpenID</span>
+<span class="sd">        authentication.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">OpenIDConsumer</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;yahoo&#39;</span><span class="p">,</span> <span class="n">realm</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span>
+                                <span class="n">context</span><span class="o">=</span><span class="n">YahooAuthenticationComplete</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oauth_key</span> <span class="o">=</span> <span class="n">oauth_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oauth_secret</span> <span class="o">=</span> <span class="n">oauth_secret</span>
+
+    <span class="k">def</span> <span class="nf">_lookup_identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">identifier</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the Yahoo OpenID directed endpoint&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&#39;https://me.yahoo.com/&#39;</span>
+
+    <span class="k">def</span> <span class="nf">_update_authrequest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">authrequest</span><span class="p">):</span>
+        <span class="c"># Add on the Attribute Exchange for those that support that</span>
+        <span class="n">ax_request</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">FetchRequest</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">attrib</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;http://axschema.org/namePerson/friendly&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;http://axschema.org/namePerson&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;http://axschema.org/person/gender&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;http://axschema.org/pref/timezone&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;http://axschema.org/media/image/default&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;http://axschema.org/contact/email&#39;</span><span class="p">]:</span>
+            <span class="n">ax_request</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">AttrInfo</span><span class="p">(</span><span class="n">attrib</span><span class="p">))</span>
+        <span class="n">authrequest</span><span class="o">.</span><span class="n">addExtension</span><span class="p">(</span><span class="n">ax_request</span><span class="p">)</span>
+
+        <span class="c"># Add OAuth request?</span>
+        <span class="k">if</span> <span class="s">&#39;oauth&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">:</span>
+            <span class="n">oauth_request</span> <span class="o">=</span> <span class="n">OAuthRequest</span><span class="p">(</span><span class="n">consumer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">oauth_key</span><span class="p">)</span>
+            <span class="n">authrequest</span><span class="o">.</span><span class="n">addExtension</span><span class="p">(</span><span class="n">oauth_request</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_access_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_token</span><span class="p">):</span>
+        <span class="n">oauth</span> <span class="o">=</span> <span class="n">OAuth1</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">oauth_key</span><span class="p">,</span>
+            <span class="n">client_secret</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">oauth_secret</span><span class="p">,</span>
+            <span class="n">resource_owner_key</span><span class="o">=</span><span class="n">request_token</span><span class="p">)</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">YAHOO_OAUTH</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">oauth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s">&#39;OAuth token validation failed. Status: </span><span class="si">%d</span><span class="s">, Content: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+                <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">access_token</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parse_qsl</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s">&#39;oauthAccessToken&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">[</span><span class="s">&#39;oauth_token&#39;</span><span class="p">],</span>
+                <span class="s">&#39;oauthAccessTokenSecret&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">[</span><span class="s">&#39;oauth_token_secret&#39;</span><span class="p">],</span>
+            <span class="p">}</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" >velruse</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Ben Bangert.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
