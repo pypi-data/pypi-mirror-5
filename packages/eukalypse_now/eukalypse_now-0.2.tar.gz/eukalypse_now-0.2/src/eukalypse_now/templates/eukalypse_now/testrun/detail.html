@@ -1,0 +1,95 @@
+{% extends "eukalypse_now/root.html" %}
+
+{% load thumbnail %}
+
+{% block base_content %}
+<h1>Test vom {{ testrun.created|date:"d. F Y" }} um {{ testrun.created|date:"H:i" }} Uhr</h1>
+<ul class="nav nav-tabs">
+    <li class="active"><a href="#results" data-toggle="tab">Ergebnisse</a></li>
+    <li><a href="#overview" data-toggle="tab">Übersicht</a></li>
+    <li><a href="#project" data-toggle="tab">Projekt</a></li>
+    <li><a href="#notifications" data-toggle="tab">Benachrichtigungen</a></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane active" id="results">
+        <ul class="unstyled">
+        {% for testresult in testrun.testresult.all %}
+            <li>
+            {% if testresult.error %}
+                <a class="anchor" data-ident="{{ testresult.test.identifier }}" name="{{ testresult.test.identifier }}" href="{{testresult.test.url}}">
+                    {% if testresult.error_acknowledged %}
+                        <span class="label label-warning">
+                    {% else %}
+                        <span class="label label-important">
+                    {% endif %}
+                    {{testresult.test.identifier}}</span>
+                </a>
+                {% if testresult.error_reference_updated %}
+                    <i class="icon-refresh"  rel="tooltip" title="reference is updated"></i>
+                {% endif %}
+
+                <br/>
+                <ul class="thumbnails">
+                  <li class="span2"><a title="Reference"  class="thumbnail" rel="tooltip" href="{{testresult.referenceimage.url}}"><img  width="100" src="{{testresult.referenceimage|thumbnail_url:'detail'}}"></a>  </li>
+                  <li class="span2"><a title="Result"     class="thumbnail" rel="tooltip" href="{{testresult.resultimage.url}}"><img width="100" src="{{testresult.resultimage|thumbnail_url:'detail'}}"></a>  </li>
+                  <li class="span2"><a title="Error"      class="thumbnail" rel="tooltip" href="{{testresult.errorimage.url}}"><img width="100" src="{{testresult.errorimage|thumbnail_url:'detail'}}"></a>  </li>
+                  <li class="span2"><a title="Improved Error" class="thumbnail" rel="tooltip" href="{{testresult.errorimage_improved.url}}"><img width="100" src="{{testresult.errorimage_improved|thumbnail_url:'detail'}}"></a>  </li>
+                  <li class="span2">
+                    <div class="btn-group">
+                        {% if not testresult.error_reference_updated %}
+                            <button class="btn ajaxcall" rel="tooltip" title="Use new created image as reference" data-ident="{{testresult.test.identifier}}" href="{{testresult.get_become_reference_url}}"><i class="icon-refresh"></i></button>
+                        {% endif %}
+                        {% if not testresult.error_acknowledged %}
+                            <button class="btn ajaxcall" rel="tooltip" title="acknowledge this error" data-ident="{{testresult.test.identifier}}" href="{{testresult.get_acknowledge_error_url}}" ><i class="icon-ok"></i></button>
+                        {% endif %}
+
+                    </div>
+                  </li>
+                </ul>
+            {% else %}
+                <a href="{{testresult.test.url}}"><span class="label label-success">{{testresult.test.identifier}}</span></a><br/>
+                <ul class="thumbnails">
+                  <li class="span2"><a class="thumbnail" href="{{testresult.referenceimage.url}}"><img  width="100" src="{{testresult.referenceimage|thumbnail_url:'detail'}}"></a>  </li>
+                  <li class="span2"><a class="thumbnail" href="{{testresult.resultimage.url}}"><img width="100" src="{{testresult.resultimage|thumbnail_url:'detail'}}"></a>  </li>
+                </ul>
+            {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    <div class="tab-pane" id="overview">
+        <dl class="dl-horizontal">
+            <dt>Tests gesamt</dt>
+            <dd>{{ testrun.total_tests }}</dd>
+            <dt>Tests erfolgreich</dt>
+            <dd><span class="label label-success">{{ testrun.total_noerror }}</span></dd>
+            <dt>Tests behandelt</dt>
+            <dd><span class="label label-warning">{{ testrun.total_error_handelt }}</span></dd>
+            <dt>Tests fehlgeschlagen</dt>
+            <dd><span class="label label-important">{{ testrun.total_error }}</span></dd>
+        </dl>
+    </div>
+    <div class="tab-pane" id="project">
+        <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd>{{ testrun.project.name }}</dd>
+            <dt>Erstellt am</dt>
+            <dd>{{ testrun.project.created|date:"d. F Y" }} um {{ testrun.project.created|date:"H:i" }} Uhr</dd>
+            <dt>Letzte Änderung am</dt>
+            <dd>{{ testrun.project.modified|date:"d. F Y" }} um {{ testrun.project.created|date:"H:i" }} Uhr</dd>
+            <dt>Letzter Testlauf</dt>
+            <dd>{{ testrun.project.latest_testrun.0.created|date:"d. F Y" }} um {{ testrun.project.latest_testrun.0.created|date:"H:i" }} Uhr</dd>
+        </dl>
+    </div>
+    <div class="tab-pane" id="notifications">
+        <dl class="dl-horizontal">
+            <dt>Status</dt>
+            <dd>{% if testrun.project.notify_mail %}<span class="label label-success">Aktiv</span>{% else %}<span class="label label-error">Inakti</span>{% endif %}</dd>
+            <dt>Versenden</dt>
+            <dd>{% if testrun.project.notify_only_error %}Nur bei Fehler{% else %}Immer{% endif %}</dd>
+            <dt>Empfänger</dt>
+            <dd>{% if testrun.project.notify_recipient %}{{ testrun.project.notify_recipient }}{% else %}No recipients{% endif %}</dd>
+        </dl>
+    </div>
+</div>
+{% endblock %}
