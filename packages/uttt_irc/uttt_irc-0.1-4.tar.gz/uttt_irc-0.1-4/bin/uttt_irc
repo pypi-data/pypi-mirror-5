@@ -1,0 +1,80 @@
+#! /usr/bin/env python
+
+import socket
+from time import sleep
+import subprocess
+import sys
+import uttt_irc
+import imp
+
+server = sys.argv[1]
+port = 6667
+channel = "#%s" % (sys.argv[2])
+nick = sys.argv[3]
+identify_password = ""
+irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+def send_message(message):
+  message = message + '\r\n'
+  irc.send(message.encode())
+
+def connect():
+  irc.connect((server, port))
+  send_message("NICK %s" % (nick))
+  #send_message("PRIVMSG NICKSERV :IDENTIFY %s" % (identify_password))
+  send_message("USER %s %s %s :%s %s" % (nick,nick,nick,nick,nick.title()))
+  while True:
+    buffer = irc.recv(1024).decode()
+    msg = str.split(buffer)
+    if msg[0] == "PING": #check if server have sent ping command
+      message = "PONG "+msg[1]
+      send_message(message)
+      send_message("JOIN %s" % (channel))
+      break
+
+def parsemsg(s):
+    prefix = ''
+    trailing = []
+    if not s:
+       raise IRCBadMessage("Empty line.")
+    if s[0] == ':':
+        prefix, s = s[1:].split(' ', 1)
+    if s.find(' :') != -1:
+        s, trailing = s.split(' :', 1)
+        args = s.split()
+        args.append(trailing)
+    else:
+        args = s.split()
+    command = args.pop(0)
+    return prefix, command, args
+
+def announce(message):
+  send_message("PRIVMSG %s :%s" % (channel,message))
+
+def get_response(query):
+  imp.reload(uttt_irc)
+  output = uttt_irc.parse_query(query)
+  return output
+
+def privmsg(message):
+  speaker = message[0].split('!', 1)[0]
+  query = speaker+' '+message[2][1]
+  query = query.replace('#', '').replace(nick+': ', '').rstrip()
+  response = get_response(query)
+  announce(response)
+
+def listen():
+  while True:
+    rawmessage = irc.recv(1024).decode()
+    message = parsemsg(rawmessage)
+    print(message)
+    if len(message) > 0:
+      if message[1] == "PING":
+        pong = "PONG "+message[2][0]
+        send_message(pong)
+      if message[1] == "PRIVMSG":
+        if message[2][1].startswith(nick+': ') or message[2][1].startswith("#"):
+          privmsg(message)
+
+connect()
+listen()
