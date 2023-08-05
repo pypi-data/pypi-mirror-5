@@ -1,0 +1,332 @@
+#!/usr/bin/python
+import base64, hmac, hashlib
+import requests
+import re
+import os
+import ast
+import json
+from optparse import OptionParser
+from ConfigParser import SafeConfigParser
+
+def get_secondary_indices(url):
+	r = requests.get(url)
+
+	index_pattern=re.compile("^x-riak-index")
+
+	headerDict={}
+
+	for k,v in r.headers.items():
+			match=re.search(index_pattern,k)
+			if match:
+					headerDict[k]=v
+
+	return headerDict
+
+def validate_input(update_file):
+    """
+    This method validates the input file. Returns true if the JSON is valid, false
+    otherwise.
+    """
+    try:
+        json.load(open(update_file))
+        print "\nValid JSON"
+        return True
+    except ValueError:
+        print "\nInvalid JSON"
+        exit(-1)
+        return False
+
+def list_all_buckets(riak_host,riak_port):
+    """ This method will attempt to enumerate all buckets. NEVER DO THIS EXCEPT DURING
+    INITIAL TROUBLESHOOTING
+    """
+    url='http://%s:%s/buckets?buckets=true' % (riak_host,riak_port)
+    r=requests.get(url)
+    print json.dumps(r.json(), sort_keys=True, indent=4)
+
+def list_all_keys(riak_host,riak_port,bucket):
+    """ This method will attempt to enumerate all keys for a given bucket. NEVER DO THIS EXCEPT DURING
+    INITIAL TROUBLESHOOTING
+    """
+    url='http://%s:%s/buckets/%s/keys?keys=true' % (riak_host,riak_port,bucket)
+    #print url
+    r=requests.get(url)
+    print json.dumps(r.json(), sort_keys=True, indent=4)
+
+def get_current_contents(url):
+    """ This method prints the current contents of a riak bucket
+    when passed a valid url """
+    r=requests.get(url)
+    print json.dumps(r.json(), sort_keys=True, indent=4)
+
+def get_current_key(url):
+    """ This method prints the current contents of an api_key riak bucket
+    when passed a valid url """
+    r=requests.get(url)
+    #return json.dumps(r.json(), sort_keys=True, indent=4)
+    return json.dumps(r.json(), sort_keys=True, indent=4, separators=(',', ': '))
+
+def save_current_contents(url,update_file):
+    """ This method saves the current contents of the riak bucket/key to be updated into a
+    file called <update-file>.original"""
+    r=requests.get(url)
+    save_file=update_file+'.original'
+    json.dump(r.json(), open(save_file,'w'))
+
+    print "\nSaved contents of: \n\n\t%s \n\nto \n\n\t%s\n" % (url,save_file)
+
+def do_update(url,indexHeaders,update_file):
+    """
+    This method performs the update/put of the specified bucket and key using
+    the passed json input file. The current contents of the bucket are saved.
+    """
+    updateUrl=url.replace("buckets","riak")
+    indexHeaders['content-type'] = 'application/json'
+    r=requests.post(url, data=json.dumps(update_file), headers=indexHeaders)
+
+def show_riak_host_help():
+    print """
+
+    You should define the riak_host environment variable:
+
+    export riak_host='<ip.of.your.riak_node>'
+
+    Example:
+
+    export riak_host='127.0.0.1'
+
+    Hint: If you're intending to run this locally, you can just copy/paste the line above.
+
+    """
+
+def show_help():
+    print """
+
+    To show the contents of an existing bucket, you must provide:
+
+    1. The -b or --bucket flag along with the bucket name. Example:
+
+       -b configuration_management_system
+
+    2. The -k or --key flag along with the key name. Example:
+
+       -k 1
+
+     """
+
+def save_help():
+    print """
+
+    To save the contents of an existing bucket, you must provide:
+
+    1. The -s or --save flag
+
+    2. The -b or --bucket flag along with the bucket name. Example:
+
+       -b configuration_management_system
+
+    3. The -k or --key flag along with the key name. Example:
+
+       -k 1
+
+    An example of a valid call is:
+
+        es-riak --save save_file.json -b frontend_configuration -k 1
+
+    """
+
+def validation_help():
+    print """
+
+    To perform a validation on a json input file, you must provide:
+
+    1. The --validate flag
+
+    2. The -i or --input-file flag along with a valid update file (json only) Example:
+
+       --input-file update.json
+
+    An example of a valid call is:
+
+        es-riak --validate -i input.json
+
+    """
+
+def update_help():
+    print """
+
+    To perform an update, you must provide 4 arguments:
+
+    1. The -u or --update flag
+
+    2. The -b or --bucket flag along with the bucket name. Example:
+
+       -b configuration_management_system
+
+    3. The -k or --key flag along with the key name. Example:
+
+       -k 1
+
+    4. The -i or --input-file flag along with a valid update file (json only) Example:
+
+       --input-file update.json
+
+    An example of a valid call is:
+
+        riak --update -b frontend_configuration -k 1 -i input.json
+
+    """
+
+def put_help():
+    print """
+    Doing a PUT to a bucket/key combination is accomplished like this:
+
+    es-riak --put -b <bucket_name> -k <key> -i <input_file>
+
+    For example:
+
+    es-riak --put -b frontend_configuration -k 1 -i input.json
+
+    WARNING: This is dangerous, as there is no saving of bucket/key contents prior
+    to putting the contents of input.json to that bucket/key. Use at your own risk.
+
+    """
+    
+
+if __name__ == '__main__':
+    parser = OptionParser()
+    parser.add_option("-i", "--input-file",dest="filename", help="input file (json only)")
+    parser.add_option("-u", "--update", dest="update", action="store_true", help="Perform update of bucket/key contents.",default=False)
+    parser.add_option("-p", "--put", dest="put", action="store_true", help="Perform put/insert of bucket/key contents. \n THIS IS POTENTIALLY VERY DANGEROUS!",default=False)
+    parser.add_option("-s", "--save", dest="save", help="save file for bucket/key content", default=False)
+    parser.add_option("-b", "--bucket", dest="bucket", help="bucket for modification")
+    parser.add_option("-k", "--key", dest="key", help="key to modify")
+    parser.add_option("--validate", dest="validate", action="store_true", help="validate input file (json only)")
+    parser.add_option("--show", action="store_true", help="show contents of bucket/key", default=False)
+    parser.add_option("--list-buckets", dest="listBuckets", action="store_true", help="List all buckets. \nNEVER DO THIS EXCEPT DURING INITIAL TROUBLESHOOTING")
+    parser.add_option("--list-keys", dest="listKeys", action="store_true", help="List all keys in a bucket. \nNEVER DO THIS EXCEPT DURING INITIAL TROUBLESHOOTING")
+    parser.add_option("--elevate-api-key", dest="elevateKey", action="store_true", help="Elevate an api key to a system key. -k <api_key>", default=False)
+
+    (options, args) = parser.parse_args()
+
+    #parser = SafeConfigParser()
+    #parser.read('enstratus.cfg')
+
+    #riak_host=parser.get('riak','host')
+    #riak_port=parser.get('riak','port')
+
+    try:
+        riak_host=os.environ['riak_host']
+        riak_port=8098
+    except KeyError:
+        show_riak_host_help()
+        exit(1)
+
+    bucket=options.bucket
+    key=options.key
+
+    if options.put and ( not options.bucket or not options.key or not options.filename ):
+      print "\n!!! WARNING !!!"
+      put_help()
+      exit(1)
+    if options.put and options.bucket and options.key and options.filename: 
+      if os.path.isfile(options.filename):
+        print "\nSo be it."
+        if validate_input(options.filename):
+        
+          url='http://%s:%s/buckets/%s/keys/%s' % (riak_host,riak_port,bucket,key)
+
+          print "\nPutting the contents of \n\n\t%s \n\nto \n\n\t%s \n" % (options.filename,url)
+          
+          header_dict=get_secondary_indices(url)
+          data = json.load(open(options.filename))
+          do_update(url,header_dict,data)
+          print "\n Done."
+          print "\n To view your actions, call:\n"
+          print "es-riak --show -b %s -k %s" % (bucket,key)
+          print "\n"
+          exit(0)
+      else:
+        print "\nNo file found where you said it would be, or something else is wrong. Either way, exiting.\n"
+        put_help()
+        exit(1)
+
+    if options.elevateKey:
+      api_key=options.key
+      url='http://%s:%s/buckets/api_key/keys/%s' % (riak_host,riak_port,api_key)
+      current_permissions=get_current_key(url)
+
+      elevatedDict=ast.literal_eval(current_permissions)
+      elevatedDict.update({'systemManagementKey':True})
+      elevatedDict.update({'customerManagementKey':True})
+
+      header_dict=get_secondary_indices(url)
+      newPrivileges=json.dumps(elevatedDict)
+      d=json.loads(newPrivileges)
+
+      do_update(url,header_dict,d)
+
+    url='http://%s:%s/buckets/%s/keys/%s' % (riak_host,riak_port,bucket,key)
+
+    if len(args) == 0 and options.listBuckets:
+      list_all_buckets(riak_host,riak_port)
+
+    if len(args) == 0 and options.listKeys and options.bucket:
+      list_all_keys(riak_host,riak_port,bucket)
+
+    if options.show and not options.update:
+        mandatories = ['bucket','key']
+        for m in mandatories:
+            if not options.__dict__[m]:
+                print "\n You must pass a file name where the contents are saved."
+                show_help()
+                exit(-1) 
+            else:
+                get_current_contents(url)
+                exit(0)
+
+    if options.save and not options.update:
+        mandatories = ['save','bucket','key']
+        for m in mandatories:
+            if not options.__dict__[m]:
+                print "\n You must pass a file name where the contents are saved."
+                save_help()
+                exit(-1)
+        else:
+            r=requests.get(url)
+            json.dump(r.json(), open(options.save,'w'))
+
+            print "\nSaved contents of: \n\n\t%s \n\nto \n\n\t%s\n" % (url,options.save)
+
+    if options.validate and not options.update:
+        if not options.__dict__['filename']:
+            print "\n You must pass an input file for validation."
+            validation_help()
+            exit(-1)
+        else:
+            validate_input(options.filename)
+            exit(0)
+
+    if options.update:
+        mandatories = ['filename','bucket','key']
+        for m in mandatories:
+            if not options.__dict__[m]:
+                print "\nYou are missing a mandatory option for performing an update!"
+                update_help()
+                exit(-1)
+            else:
+                if validate_input(options.filename):
+                    print "updating!"
+
+                    url='http://%s:%s/buckets/%s/keys/%s' % (riak_host,riak_port,bucket,key)
+
+                    save_current_contents(url,options.filename)
+
+                    header_dict=get_secondary_indices(url)
+                    data = json.load(open(options.filename))
+                    do_update(url,header_dict,data)
+                    print "\n Done."
+                    print "\n To view your changes, call:\n"
+                    print "es-riak --show -b %s -k %s" % (bucket,key)
+                    print "\n"
+                    exit(0)
