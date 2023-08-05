@@ -1,0 +1,54 @@
+#!python
+"""
+USAGE : per_project cmd1 [cmd2 ...]
+
+This will execute `cmd1 [cmd2 ...]` in the root directory of each project,
+stopping upon the first error.
+
+Examples::
+
+  $ per_project fab test 
+  $ per_project fab alldocs pub
+  $ per_project fab ci
+  $ per_project fab sdist
+  $ per_project geany tests/__init__.py
+
+Projects are configured in a file `/etc/atelier/config.py` 
+which is expected to define a global variable PROJECTS containing 
+a list of names of python modules to be managed in this atelier.
+For example something like::
+
+  # PROJECTS_HOME = '/home/me/hgwork'
+  PROJECTS = 'p1 p2 p3'.split()
+  
+
+
+"""
+import os
+import sys
+import subprocess
+
+import atelier
+
+def main():
+    commands = sys.argv[1:]
+    
+    if len(commands) == 0 or '-h' in commands or '--help' in commands:
+        print __doc__ % globals()
+        return -1
+        
+    for prj in atelier.load_projects():
+        print "==== %s ====" % prj.nickname
+        #~ p = os.path.join(atelier.PROJECTS_HOME,prj)
+        #~ os.chdir(p)
+        #~ print prj.root_dir
+        os.chdir(prj.root_dir)
+        #~ args = ["fab"]
+        #~ args += commands
+        rv = subprocess.call(commands,cwd=prj.root_dir)
+        if rv: return rv
+    return 0
+        
+if __name__ == '__main__':
+    sys.exit(main())
+    
