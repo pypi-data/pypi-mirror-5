@@ -1,0 +1,124 @@
+Metadata-Version: 1.1
+Name: sirep
+Version: 0.2
+Summary: Simple reporting for Django admin.
+Home-page: https://bitbucket.org/barseghyanartur/sirep
+Author: Artur Barseghyan
+Author-email: artur.barseghyan@gmail.com
+License: GPL 2.0/LGPL 2.1
+Description: ===============
+        sirep
+        ===============
+        
+        Description
+        -----------------
+        Simple report generation. Can be used to generate any kind of CSV or HTML reports. Instead of binding the complicated
+        joins in class it expects a queryset to be provided along with headers (which are basically the text values for the
+        first row of the HTML table or CSV file). Further, it requires the redefinition of the ``process_data`` which
+        produce a Python list of lists. Each element of the list shall contain exactly the same number of items as the
+        headers. There are some filtering options built in (date_upper, date_lower, per_page, page). Refer to the code
+        documentation further.
+        
+        There are some obligatory attributes that should be set in the child class:
+            * ``verbose_name`` (example: verbose_name = 'Article word count')
+            * ``fields`` (example: fields = [u'Article ID', u'Title', u'Slug', u'URL']
+            * ``queryset`` (example: queryset = Article._default_manager.all())
+        
+        If you want to have the date filtering set, you should provide the following attribute as well:
+            * ``date_field`` (example: date_field = 'date_published')
+        
+        License
+        -----------------
+        GPL 2.0/LGPL 2.1
+        
+        Installation
+        -----------------
+        * Latest stable version on PyPI (if that doesn't work somehow, use development version):
+            $ pip install sirep
+        * Latest development version:
+            $ pip install -e hg+http://bitbucket.org/barseghyanartur/sirep#egg=sirep
+        * Add 'sirep' to your ``INSTALLED_APPS``:
+            >>> INSTALLED_APPS = (
+            >>> # ...
+            >>> 'sirep',
+            >>> # ...
+            >>> )
+        * Run the following django management command:
+            $ ./manage.py collectstatic
+        * Add the following lines to the global urls.py file.
+            >>> import sirep
+            >>> sirep.autodiscover() # autodiscover sirep in applications
+            >>> urlpatterns = patterns('',
+            >>>    # ... some patterns here
+            >>>    # Sirep URLs
+            >>>    (r'^sirep/', include('sirep.urls')),
+            >>>    # ... some other patterns here
+            >>> )
+        * Create a report in the app directory for which you make the report and name the file "report.py" (follow the
+          sirep.reports example). In order to see the demo, set the ``SIREP_SHOW_ADMIN_TEST_MODEL_DEMO`` to True in your
+          local_settings and visit the "http://localhost:8000/sirep/" URL.
+        
+        Usage examples
+        -----------------
+            >>> # Sample report (file "news/reports.py")
+            >>>
+            >>> # Import sirep module
+            >>> import sirep
+            >>>
+            >>> # Define the report class
+            >>> class ArticleWordCountReport(sirep.Report):
+            >>>     # Title of the report
+            >>>     verbose_name = 'Custom article with word count'
+            >>>
+            >>>     # Field names. Number shall be equal to number of each item in `self.items`.
+            >>>     fields = [u'Article ID', u'Title', u'Slug', u'URL', u'Author', u'Date published', u'Word Count']
+            >>>
+            >>>     items = []
+            >>>
+            >>>     # Per page
+            >>>     limit = 200
+            >>>
+            >>>     # Provide date filtering
+            >>>     date_field = 'date_published'
+            >>>
+            >>>     # Original queryset to work with
+            >>>     queryset = Article._default_manager.published().filter().select_related('author') \
+            >>>                       .batch_select('page_set')
+            >>>
+            >>>     # This method shall be redefined for each report
+            >>>     def process_data(self):
+            >>>         word_count = lambda s : len(s.split())
+            >>>         get_word_count = lambda a : word_count(strip_tags('\r\n'.join([p.content for p in \
+            >>>                                                                        a.page_set_all])))
+            >>>         # Changing the queryset
+            >>>         queryset = self.get_queryset()
+            >>>
+            >>>         self.items = []
+            >>>         # Filling the items
+            >>>         for a in queryset:
+            >>>             self.items.append([
+            >>>                 a.pk,
+            >>>                 a.title,
+            >>>                 a.slug,
+            >>>                 a.get_absolute_url(),
+            >>>                 a.author.username,
+            >>>                 a.date_published,
+            >>>                 get_word_count(a)
+            >>>                 ])
+            >>>
+            >>> # Registering the report
+            >>> sirep.register('article-word-count', ArticleWordCountReport)
+        
+        That's all. You may now navigate to your report http://127.0.0.1:8000/sirep/article-word-count/
+        
+        Author
+        -----------------
+        Artur Barseghyan <artur.barseghyan@gmail.com>
+        
+Keywords: reporting,django,admin,app,python
+Platform: UNKNOWN
+Classifier: Framework :: Django
+Classifier: Programming Language :: Python
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
