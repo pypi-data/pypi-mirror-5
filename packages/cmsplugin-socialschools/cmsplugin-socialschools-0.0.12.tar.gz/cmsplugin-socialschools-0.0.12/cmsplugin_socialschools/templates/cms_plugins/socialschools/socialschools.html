@@ -1,0 +1,49 @@
+{% load staticfiles %}
+{% load sekizai_tags %}
+{% load i18n %}
+
+{% addtoblock 'js' %}
+<script src="{% static 'cmsplugin_socialschools/js/jquery.1.9.1.min.js' %}"></script>
+<script src="{% static 'cmsplugin_socialschools/js/socialschools.js' %}"></script>
+<script src="{% static 'cmsplugin_socialschools/js/lib/underscore-min.js' %}"></script>
+<script src="{% static 'cmsplugin_socialschools/js/lib/moment.min.js' %}"></script>
+<script src="{% static 'cmsplugin_socialschools/js/lib/bootstrap.min.js' %}"></script>
+<script src="{% static 'cmsplugin_socialschools/js/lib/load-image.min.js' %}"></script>
+<script src="{% static 'cmsplugin_socialschools/js/lib/bootstrap-image-gallery.js' %}"></script>
+<script id="post-template" type="text/x-handlebars-template">
+    {% include "cms_plugins/socialschools/post.html" %}
+</script>
+<script id="comment-template" type="text/x-handlebars-template">
+    {% include "cms_plugins/socialschools/comment.html" %}
+</script>
+<script id="photo-template" type="text/x-handlebars-template">
+    {% include "cms_plugins/socialschools/photo.html" %}
+</script>
+<script src="{% static 'cmsplugin_socialschools/js/socialschools_cmsplugin.js' %}"></script>
+<script type="text/javascript">
+    var socialschools = new Socialschools('{{ instance.socialschools_url }}');
+    var posts = socialschools.getPublicPosts({{ instance.community_id }}, {
+        {% if instance.only_descendants %}
+            only_descendants: true
+        {% else %}
+            only_descendants: false
+        {% endif %}
+        }, function (posts) {
+            renderPosts('#cms-instance-{{ instance.id }}', posts)
+        });
+    </script>
+
+{% endaddtoblock %}
+
+<div id="cms-instance-{{ instance.id }}">
+    <div class="css-posts-content">
+    </div>
+    <ul class="pager">
+        <li>
+            <a class="css-posts-prev-page" href="">{% trans 'Previous' %}</a>
+        </li>
+        <li>
+             <a class="css-posts-next-page" href="">{% trans 'Next' %}</a>
+        </li>
+    </ul>
+</div>
