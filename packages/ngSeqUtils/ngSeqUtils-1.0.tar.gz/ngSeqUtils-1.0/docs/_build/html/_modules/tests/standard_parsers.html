@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tests.standard_parsers &mdash; My Common Python Packages 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="My Common Python Packages 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">My Common Python Packages 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tests.standard_parsers</h1><div class="highlight"><pre>
+<span class="c">#!/local/bin/python</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">----------------</span>
+<span class="sd">standard_argparse.py</span>
+
+<span class="sd">A module containing tests for the standard argparser options I&#39;m specifying</span>
+<span class="sd">in &#39;standard_argparse.py&#39;. These tests use the standard `unittest </span>
+<span class="sd">&lt;http://docs.python.org/2/library/unittest.html&gt;`_ package and extend the </span>
+<span class="sd">:py:class`unittest.TestCase` class.</span>
+
+<span class="sd">.. moduleauthor:: Nick Schurch &lt;nschurch@dundee.ac.uk&gt;</span>
+
+<span class="sd">:created_on: 2013-04-08</span>
+<span class="sd">----------------</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;1.0&quot;</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">tempfile</span><span class="o">,</span> <span class="nn">shutil</span><span class="o">,</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">script_options.standard_parsers</span> <span class="kn">as</span> <span class="nn">sp</span>
+      
+<div class="viewcode-block" id="TestStandardArgparse"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse">[docs]</a><span class="k">class</span> <span class="nc">TestStandardArgparse</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39;Tests for the standard argparse parser and options I like&#39;&#39;&#39;</span>
+    
+<div class="viewcode-block" id="TestStandardArgparse.setUp"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">prog</span> <span class="o">=</span> <span class="s">&quot;TestParser&quot;</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="s">&quot;A test parser for testing!&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">standard_parser</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prog</span><span class="o">=</span><span class="n">prog</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">desc</span><span class="p">)</span>
+        
+        <span class="c"># set up an existing path and file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">existing_path</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/thisfileexists.txt&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_path</span>
+        <span class="n">temp_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">temp_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;this exists&quot;</span><span class="p">)</span>
+        <span class="n">temp_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+        <span class="c"># make up a mythical path and file based on the existing dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_path</span><span class="o">+</span><span class="s">&quot;/testfornonexistingdir&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_path</span><span class="o">+</span><span class="s">&quot;/thisdoesntexists.txt&quot;</span>
+                </div>
+<div class="viewcode-block" id="TestStandardArgparse.tearDown"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse.tearDown">[docs]</a>    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_path</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="TestStandardArgparse.test_standard_parser_infile"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse.test_standard_parser_infile">[docs]</a>    <span class="k">def</span> <span class="nf">test_standard_parser_infile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                
+        <span class="c"># test infile with existing file</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;existing infile not being handled correctly&quot;</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">infile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="c"># test infile with non-existent file</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_file</span>
+                    <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">SystemExit</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">,</span>
+                          <span class="n">fakeargs</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="TestStandardArgparse.test_standard_parser_outfile"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse.test_standard_parser_outfile">[docs]</a>    <span class="k">def</span> <span class="nf">test_standard_parser_outfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># test outfile with existing file</span>
+        
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;existing outfile not being handled correctly&quot;</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">outfile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="c"># test outfile with non-existent file</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;non-existent outfile and dir not being handled correctly&quot;</span>
+        <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s">&quot;ignore&quot;</span><span class="p">)</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">outfile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_file</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="TestStandardArgparse.test_standard_parser_log"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse.test_standard_parser_log">[docs]</a>    <span class="k">def</span> <span class="nf">test_standard_parser_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                
+        <span class="c"># test logfile with existing file</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;existing logfile not being handled correctly&quot;</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="c"># test logfile with non-existant dir</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_file</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;non-existant log file and dir not being handled correctly&quot;</span>
+        <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s">&quot;ignore&quot;</span><span class="p">)</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_file</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TestStandardArgparse.test_standard_parser_verbosity"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse.test_standard_parser_verbosity">[docs]</a>    <span class="k">def</span> <span class="nf">test_standard_parser_verbosity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="c"># test verbosity</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;verbosity not being parsed correctly&quot;</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-v&quot;</span>
+                    <span class="p">]</span>
+        
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="TestStandardArgparse.test_standard_parser_tmpdir"><a class="viewcode-back" href="../../standard_parsers_tests_autodocs.html#tests.standard_parsers.TestStandardArgparse.test_standard_parser_tmpdir">[docs]</a>    <span class="k">def</span> <span class="nf">test_standard_parser_tmpdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;omitted tmpdir arg not being handled correctly&quot;</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">tmpdir</span><span class="p">),</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;--tmpdir&quot;</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;unspecified tmpdir arg not being handled correctly&quot;</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">tmpdir</span><span class="p">),</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="c"># test tmpdir with existing but non-random dir</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;--tmpdir&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_path</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;existing tmpdir not being handled correctly&quot;</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">tmpdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_path</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="c"># test tmpdir with non-existant dir</span>
+        <span class="n">fakeargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;-l&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_file</span><span class="p">,</span>
+                    <span class="s">&quot;--tmpdir&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_path</span>
+                    <span class="p">]</span>
+        
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;non-existent tmpdir not being handled correctly&quot;</span>
+        <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s">&quot;ignore&quot;</span><span class="p">)</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">fakeargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">tmpdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonexisting_path</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+    </div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">My Common Python Packages 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Nick Schurch.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
