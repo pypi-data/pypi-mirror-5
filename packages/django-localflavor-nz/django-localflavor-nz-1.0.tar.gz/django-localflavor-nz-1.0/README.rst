@@ -1,0 +1,66 @@
+=====================
+django_localflavor_nz
+=====================
+
+Country-specific Django helpers for New Zealand.
+
+
+What's in the New Zealand localflavor?
+======================================
+
+* forms.NZRegionSelect - a ``Select`` widget 
+  with a list of New Zealand regions.
+
+* forms.NZProvinceSelect - a ``Select`` widget 
+  with a list of New Zealand provinces.
+
+* forms.NZNorthIslandSelect - a ``Select`` widget 
+  with a list of Norh Island city and district councils.
+
+* forms.NZSouthIslandSelect - a ``Select`` widget 
+  with a list of South Island city and district councils.
+
+* forms.NZPostCodeField - a form field that validates input 
+  as a New Zealand postal code. Valid format is XXXX, where X is a digit.
+
+* forms.NZPhoneNumberField - a form field that validates input 
+  as a New Zealand phone number. Validates local and international land line
+  and mobile numbers just as well as 0800 number validation.
+
+See the source code for full details.
+
+
+About django-localflavor-nz
+===========================
+
+``django_localflavor_nz`` package was created by Marek Kuziel, because
+New Zealand "localflavor" didn't make it to Django before 
+``django.contrib.localflavor`` was deprecated in Django 1.5.
+
+Installation
+------------
+
+Simply add ``django_localflavor_nz`` to ``INSTALLED_APPS``.
+
+Testing
+-------
+
+``django test django_localflavor_nz`` will run the tests for this localflavor.
+
+
+About localflavors
+==================
+
+Django's localflavor packages offer additional functionality for particular
+countries or cultures.
+
+For example, these might include form fields for your country's postal codes,
+phone number formats or government ID numbers.
+
+Their code used to live in Django proper -- in django.contrib.localflavor -- but
+was separated into standalone packages in Django 1.5 to keep the framework's
+core clean.
+
+For other localflavors, see https://github.com/django/
+
+
