@@ -1,0 +1,691 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="producepublish">
+
+    <metal:fill fill-slot="main">
+
+        <script type="text/javascript">
+            $j = jQuery.noConflict();
+            $j(document).ready(function() {
+                $j('#chapter-selection-selector').click(function() {
+                    $j('#chapter-selection').toggle();
+                });
+
+                $j('#no-conversion').click(function() {
+                    if (this.checked) {
+                        $j('#store-zip').attr('checked', true);
+                    }
+                });
+
+                $j('#generate-pdf').click(function() {
+                    if (this.checked) 
+                        $j('.pdf-quality').fadeIn('fast');
+                    else
+                        $j('.pdf-quality').fadeOut('fast');
+                });
+                
+                $j('#generate-epub').click(function() {
+                });
+                
+                $j('#conversion-target-drafts').click(function() {
+                    if (this.checked) {
+                        $j('.do-archiving').fadeOut('fast');
+                    }
+                });
+                
+                $j('#conversion-target-publications').click(function() {
+                    if (this.checked) {
+                        $j('.do-archiving').fadeIn('fast');
+                    }
+                });
+
+                $j('#html-mode-split').click(function() {
+                    if (this.checked) {
+                        $j('.reset-counters').fadeIn('fast');
+                        $j('#fieldset-epub').fadeOut('fast');
+                    }
+                });
+
+                $j('#html-mode-complete').click(function() {
+                    if (this.checked) {
+                        $j('.reset-counters').fadeOut('fast');
+                        $j('#fieldset-epub').fadeIn('fast');
+                    }
+                });
+                
+                $j('#removeInternalLinks').click(function() {
+                    if (this.checked) {
+                        $j('#leaveLinksToPrinceXML').attr('checked', false);
+                    }
+                    });
+
+                $j('#leaveLinksToPrinceXML').click(function() {
+                    if (this.checked) {
+                        $j('#removeLinks').attr('checked', false);
+                        $j('#convertFootnotes').attr('checked', false);
+                    }
+                    });
+                $j('#removeLinks').click(function() {
+                    if (this.checked) {
+                        $j('#convertFootnotes').attr('checked', false);
+                        $j('#leaveLinksToPrinceXML').attr('checked', false);
+                    }
+                    });
+
+                $j('#convertFootnotes').click(function() {
+                    if (this.checked) {
+                        $j('#removeLinks').attr('checked', false);
+                        $j('#leaveLinksToPrinceXML').attr('checked', false);
+                    }
+                });
+            });
+
+
+            function show_conversion_table() {
+                $j('#conversion-parameters-small').hide();
+                $j('#more-conversion-options').hide();
+                $j('#conversion-parameters').show();
+                $j('#less-conversion-options').show();
+                }
+
+            function hide_conversion_table() {
+                $j('#conversion-parameters-small').show();
+                $j('#more-conversion-options').show();
+                $j('#conversion-parameters').hide();
+                $j('#less-conversion-options').hide();
+            }
+
+            function resetForm() {
+                $j('input[type="checkbox"]').attr('checked', false);
+            }
+
+            function setDefaultsForm() {
+                resetForm();
+                //                $j('#convertFootnotes').attr('checked', true);
+                $j('#leaveLinksToPrinceXML').attr('checked', true);
+                $j('#addTableOfContents').attr('checked', true);
+                $j('#addImageList').attr('checked', true);
+                $j('#addTableList').attr('checked', true);
+                $j('#addIndexList').attr('checked', true);
+            }
+
+        </script>
+
+        <div tal:replace="structure provider:plone.abovecontenttitle" />
+
+        <div class="vevent">
+
+        <h1 class="documentFirstHeading"> 
+            <metal:field use-macro="python:here.widget('title', mode='view')">
+            Title
+            </metal:field>
+        </h1>
+
+        <div tal:replace="structure provider:plone.belowcontenttitle" />
+
+        <p class="documentDescription">
+            <metal:field use-macro="python:here.widget('description', mode='view')">
+            Description
+            </metal:field>
+        </p>
+
+        <div tal:define="contentFolder context/getContentFolder;
+                         archiveFolder context/getArchiveFolder;
+                         publicationsFolder context/getPublicationsFolder;
+                         frontcoverpage context/getFrontCoverPage;
+                         backcoverpage context/getBackCoverPage;
+                         calibreprofile context/getCalibreProfileObject;
+                         master_template  context/getMasterTemplate;
+                         template context/getConversionTemplate;
+                         supplConversionViews view/getSupplementaryConversionViews;
+                         availableConverters view/availableConverters;
+                         pingOk view/ping;
+                         ">
+
+            <div class="warning" tal:condition="python: pingOk != 'OK'">
+                <span>Error with Produce &amp; Publish server</span>: <span tal:replace="pingOk" />                    
+            </div>
+
+            <div id="conversion-parameters-small">
+                <span class="key-label" i18n:translate="label_contents_folder">Contents folder</span>:
+                    <tal:if condition="contentFolder| nothing">
+                        <a tal:attributes="href contentFolder/absolute_url|nothing; title contentFolder/absolute_url"
+                           tal:content="contentFolder/Title | contentFolder/getId | nothing" />
+                        &nbsp;&nbsp;
+                        <a tal:attributes="href contentFolder/absolute_url|nothing; title contentFolder/absolute_url">
+                            <img tal:attributes="src string:$portal_url/icon-view.gif" title="View editorial content" i18n:attributes="title" /></a>
+                        <a tal:attributes="href string:${context/absolute_url}/@@redirect-edit-view">
+                           <img tal:attributes="src string:$portal_url/edit.gif" title="Edit editorial content" i18n:attributes="title" /></a>
+                        <a tal:attributes="href string:${contentFolder/absolute_url}/@@import-office-document-form">
+                           <img tal:attributes="src string:$portal_url/import.gif" title="Import office content" i18n:attributes="title" /></a>
+                        <a tal:attributes="href string:${contentFolder/absolute_url}/@@import_form">
+                           <img tal:attributes="src string:$portal_url/zip-import.gif" title="Import ZIP file" i18n:attributes="title" /></a>
+                    </tal:if>                 
+                    <span tal:condition="not: contentFolder | nothing" i18n:translate="label_unset">- unset -</span>           
+            </div>
+
+            <div id="debug-options">
+                <label i18n:translate="label_inspectors">Inspectors</label>:
+                <a href="@@debug-levels" i18n:translate="label_debug_document_structure">Document structure</a> &bull;
+                <a href="@@debug-images" i18n:translate="label_debug_images">Images</a> &bull;
+                <a href="@@debug-links" i18n:translate="label_debug_links">Links</a> &bull;
+                <a href="@@debug-anchors" i18n:translate="label_debug_anchors">Anchors</a> &bull;
+                <a href="@@debug-preflight" i18n:translate="label_preflight">Preflight</a>
+            </div>
+
+            <div class="field form-collapsible" >
+                <label for="metadata"
+                       class="collapser"
+                       i18n:translate="label_details">Details</label>
+
+                <table id="conversion-parameters" class="collapse conversion-table" style="display: none">
+                    <tbody>
+                        <tr>
+                            <th rowspan="3" i18n:translate="label_folders">Folders</th>
+                            <td class="key-label" i18n:translate="label_contents_folder">Contents folder</td>
+                            <td>
+                                <div tal:condition="contentFolder| nothing">
+                                    <a tal:attributes="href contentFolder/absolute_url|nothing; title contentFolder/absolute_url"
+                                       tal:content="contentFolder/Title | contentFolder/getId | nothing" />
+                                    &nbsp;&nbsp;
+                                    <a tal:attributes="href contentFolder/absolute_url|nothing; title contentFolder/absolute_url">
+                                        <img tal:attributes="src string:$portal_url/icon-view.gif" title="View editorial content" i18n:attributes="title" /></a>
+                                    <a tal:attributes="href string:${context/absolute_url}/@@redirect-edit-view" tal:condition="contentFolder">
+                                        <img tal:attributes="src string:$portal_url/edit.gif" title="Edit editorial content" i18n:attributes="title" /></a>
+                                    <a tal:attributes="href string:${contentFolder/absolute_url}/@@import-office-document-form">
+                                        <img tal:attributes="src string:$portal_url/import.gif" title="Import office content" i18n:attributes="title" /></a>
+                                    <a tal:attributes="href string:${contentFolder/absolute_url}/@@import_form">
+                                        <img tal:attributes="src string:$portal_url/zip-import.gif" title="Import ZIP file" i18n:attributes="title" /></a>
+                                </div>                 
+                                <span tal:condition="not: contentFolder | nothing" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="key-label" i18n:translate="label_publications_folder">Publications folder</td>
+                            <td>
+                                <div tal:condition="publicationsFolder | nothing">
+                                    <a tal:attributes="href publicationsFolder/absolute_url; title publicationsFolder/absolute_url"
+                                       tal:content="publicationsFolder/Title | publicationsFolder/getId | nothing" />
+                                </div>                            
+                                <span tal:condition="not: publicationsFolder | nothing" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="key-label" i18n:translate="label_archive_folder">Archive folder</td>
+                            <td>
+                                <div tal:condition="archiveFolder | nothing">
+                                    <a tal:attributes="href archiveFolder/absolute_url; title archiveFolder/absolute_url"
+                                       tal:content="archiveFolder/Title | archiveFolder/getId | nothing" />
+                                </div>                            
+                                <span tal:condition="not: archiveFolder | nothing" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                        <tr>
+                            <th rowspan="2" i18n:translate="label_cover">Cover</th>
+                            <td class="key-label" i18n:translate="label_cover_frontpage">Cover frontpage</td>
+                            <td>
+                                <a tal:condition="frontcoverpage | nothing"
+                                   tal:attributes="href frontcoverpage/absolute_url"
+                                   tal:content="frontcoverpage/getId" />
+                                <span tal:condition="python: frontcoverpage is None" i18n:translate="label_unset">- unset -</span>           
+                            </td>                            
+                        </tr>
+                        <tr>
+                            <td class="key-label" i18n:translate="label_cover_backpage">Cover backpage</td>
+                            <td>
+                                <a tal:condition="backcoverpage | nothing"
+                                   tal:attributes="href backcoverpage/absolute_url"
+                                   tal:content="backcoverpage/getId" />
+                                <span tal:condition="python: backcoverpage is None" i18n:translate="label_unset">- unset -</span>           
+                            </td>                            
+                        </tr>
+                        <tr>
+                            <th rowspan="7" i18n:translate="label_conversion">Conversion</th>
+                            <td class="key-label" i18n:translate="label_template_folder">Template folder</td>
+                            <td>
+                                <a tal:attributes="href template/absolute_url; title template/absolute_url"
+                                   tal:condition="template | nothing"
+                                   tal:content="template/Title | template/getId | nothing" />
+                                <span tal:condition="not: template | nothing" i18n:translate="label_unset">- unset -</span>           
+                            </td>                            
+                        </tr>
+                        <tr tal:define="mt context/getMasterTemplate">
+                            <td class="key-label" i18n:translate="label_master_template">Master template</td>
+                            <td>
+                                <a tal:condition="python: mt and template"
+                                   tal:attributes="href string:${template/absolute_url}/$mt" 
+                                   tal:content="mt" />
+                                <span tal:condition="not: mt" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                        <tr tal:condition="template">
+                            <td class="key-label" i18n:translate="label_stylesheets">Styles</td>
+                            <td>
+                                <tal:loop repeat="style context/getStyles">
+                                    <a tal:attributes="href string:${template/absolute_url}/$style" tal:content="style" /><tal:if condition="not: repeat/style/end">,</tal:if>
+                                </tal:loop>
+                                <span tal:condition="not: context/getStyles" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="key-label" i18n:translate="label_calibre_profile">E-book profile (Calibre)</td>
+                            <td>
+                                <a tal:condition="calibreprofile | nothing"
+                                   tal:attributes="href calibreprofile/absolute_url"
+                                   tal:content="calibreprofile/getId" />
+                                <span tal:condition="python: calibreprofile is None" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                        <tr tal:define="mt context/getEbookMasterTemplate">
+                            <td class="key-label" i18n:translate="label_ebook_master_template">E-book Master template</td>
+                            <td>
+                                <a tal:condition="python: mt and template"
+                                   tal:attributes="href string:${template/absolute_url}/$mt" 
+                                   tal:content="mt" />
+                                <span tal:condition="not: mt" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="key-label" i18n:translate="label_ebook_authors">E-book authors</td>
+                            <td tal:content="python: ' & '.join(context.getEbookAuthors())" />
+                        </tr>
+                        <tr>
+                            <td class="key-label" i18n:translate="label_ebook_coverpage_image">E-book cover image</td>
+                            <td>
+                                <img tal:condition="python: context.getEbookCoverpageImage()"
+                                    tal:define="scale context/@@images"
+                                    tal:replace="structure python: scale.scale('ebookCoverpageImage', width=200, height=200).tag()" />
+                                <span tal:condition="not: python: context.getEbookCoverpageImage()" i18n:translate="label_unset">- unset -</span>           
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <br/>
+
+           <div class="formHelp" tal:condition="not: python: contentFolder and template and publicationsFolder and master_template" >
+               <span i18n:translate="label_you_can_not_perform_a_conversion">You can not perform a conversion</span>. 
+               <br/><br/>
+               <span i18n:translate="label_possible_errors">Possible errors</span>:
+               <ul>
+                   <li tal:condition="not: contentFolder" i18n:translate="label_no_content_folder_configured">no content folder configured</li>
+                   <li tal:condition="not: template" i18n:translate="label_no_template_folder_configured">no template folder configured</li>
+                   <li tal:condition="not: publicationsFolder" i18n:translate="label_no_publications_folder_configured">no publications folder configured</li>
+                   <li tal:condition="not: master_template" i18n:translate="label_no_master_template_configured">no master template configured</li>
+               </ul>
+           </div>                                                                                                                             
+
+           <dl class="enableFormTabbing" tal:condition="python: contentFolder and template and publicationsFolder and master_template" >
+               <dt id="fieldsetlegend-pdf" class="switcher">PDF</dt>
+               <dd id="fieldset-pdf"
+                   tal:define="sdata request/SESSION/zopyx_authoring | python: {}">
+
+                    <div class="formHelp" i18n:translate="pdf_conversion_help">Convert the documents within the contents folder using the templates into a PDF document</div>
+    
+                    <div class="warning" 
+                         tal:condition="python: 'pdf-prince' not in availableConverters" 
+                         i18n:translate="label_no_princexml_converter">
+                         PrinceXML is not installed
+                     </div>
+                    <form method="post" 
+                        tal:attributes="action string:${context/absolute_url}/@@generate_pdf" 
+                        tal:condition="python: contentFolder and template and publicationsFolder" 
+                        tal:define="transformations python: sdata.get('transformations', [])">
+                        <input type="hidden" name="transformations:list" value="cleanupHtml" />
+                        <input type="hidden" name="transformations:list" value="makeImagesLocal" />
+                        <input tal:condition="nothing" type="hidden" name="transformations:list" value="convertFootnotes" />
+
+                        <fieldset>
+                            <legend i18n:translate="label_transformations">Transformations</legend>
+                            <div>
+                                <div class="leftcontent">
+                                    <input type="checkbox" name="transformations:list" value="removeInternalLinks" id="removeInternalLinks" 
+                                           tal:attributes="checked python: 'removeInternalLinks' in transformations"
+                                           />
+                                    <label for="removeInternalLinks" i18n:translate="label_remove_cross_references">Remove cross-references</label>
+                                </div>
+                                <div class="centercontent">
+                                    <input type="checkbox" name="use_front_cover_page:int" value="1" id="use-front-cover-page"
+                                           tal:attributes="checked sdata/use-front-cover-page| nothing"
+                                            />
+                                    <label for="use-front-cover-page" i18n:translate="label_frontpage">With front coverpage</label>
+                                    <br/>
+                                    <input type="checkbox" name="use_back_cover_page:int" value="1" id="use-back-cover-page"
+                                           tal:attributes="checked sdata/use-back-cover-page| nothing"
+                                            />
+                                    <label for="use-back-cover-page" i18n:translate="label_backpage">With back coverpage</label>
+                                </div>
+                                <div class="rightcontent">
+                                    <input type="checkbox" name="published-only:int" value="1" id="published-only"
+                                           tal:attributes="checked sdata/published-only | nothing"
+                                            />
+                                    <label for="published-only" i18n:translate="label_convert_only_published_content">Convert only published content</label>
+                                    <br/>
+                                    <input type="checkbox" name="show-debug-info:int" value="1" id="show-debug-info"
+                                           tal:attributes="checked sdata/show-debug-info | nothing"
+                                            />
+                                    <label for="show-debug-info" i18n:translate="label_add_debug_information_to_pdf">Add debugging information to PDF</label>
+                                    <br/>
+                                    <input type="checkbox" name="store-zip:int" value="1" id="store-zip" 
+                                           tal:attributes="checked sdata/store-zip | nothing"
+                                            />
+                                    <label for="store-zip" i18n:translate="label_store_as_zip">Store as ZIP</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend i18n:translate="label_hyperlinks">Hyperlinks</legend>
+                            <div>
+                                <div class="leftcontent">
+                                    <input type="checkbox" name="transformations:list" value="leaveLinksToPrinceXML" id="leaveLinksToPrinceXML" 
+                                        tal:attributes="checked python: 'leaveLinksToPrinceXMLremoveLinks' in transformations"
+                                           CHECKED="1"
+                                           />
+                                    <label for="leaveLinksToPrinceXML" i18n:translate="label_leave_links_to_princexml">No special links treatment</label>
+                                </div>
+                                <div class="centercontent">
+                                    <input type="checkbox" name="transformations:list" value="removeLinks" id="removeLinks" 
+                                           tal:attributes="checked python: 'removeLinks' in transformations"
+                                           />
+                                    <label for="removeLinks" i18n:translate="label_remove_leave_link_text">Replace hyperlinks with link text</label>
+                                </div>
+                                <div class="rightcontent">
+                                    <input type="checkbox" name="transformations:list" value="convertFootnotes" id="convertFootnotes" 
+                                           tal:attributes="checked python: 'convertFootnotes' in transformations"
+                                           />
+                                    <label for="convertFootnotes" i18n:translate="label_convert_into_footnotes">Convert hyperlinks into footnotes</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend i18n:translate="label_create_listings">Create listings</legend>
+                            <div>
+                                <div class="leftcontent">
+                                    <input type="checkbox" name="transformations:list" value="addTableOfContents" id="addTableOfContents" 
+                                           tal:attributes="checked python: 'addTableOfContents' in transformations"
+                                           />
+                                    <label for="addTableOfContents" i18n:translate="label_table_of_contents">Add table of contents</label>
+                                </div>
+                                <div class="centercontent">
+                                    <input type="checkbox" name="transformations:list" value="addTableList" id="addTableList" 
+                                           tal:attributes="checked python: 'addTableList' in transformations"
+                                           />
+                                    <label for="addTableList" i18n:translate="label_table_list">Add table list</label>
+                                </div>
+                                <div class="rightcontent">
+                                    <input type="checkbox" name="transformations:list" value="addImageList" id="addImageList" 
+                                           tal:attributes="checked python: 'addImageList' in transformations"
+                                           />
+                                    <label for="addImageList" i18n:translate="label_image_list">Add image list</label>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="leftcontent">
+                                    <input type="checkbox" name="transformations:list" value="addIndexList" id="addIndexList" 
+                                           tal:attributes="checked python: 'addIndexList' in transformations"
+                                           />
+                                    <label for="addIndexList" i18n:translate="label_index_listing">Add index listing</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend i18n_translate="label_pdf">PDF</legend>
+                            <div>
+                                <div class="leftcontent">
+                                    <label for="pdf-quality" i18n:translate="label_pdf_quality">Quality</label>&nbsp;
+                                    <select name="pdf_quality" id="pdf-quality">
+                                      <option value="default">Default (high quality)</option>
+                                      <option value="screen">Screen (low quality, 72dpi)</option>
+                                      <option value="ebook">Ebook (low-quality, 150dpi)</option>
+                                      <option value="printer">Printer (high-quality, 300dpi)</option>
+                                      <option value="prepress">Prepress (high-quality, 300dpi, color preservation)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend i18n:translate="label_selection" id="chapter-selection-selector">Selection</legend>
+                            <div id="chapter-selection" style="display: none">
+                                <div class="leftcontent">
+                                    <div tal:repeat="brain view/getContentFolderContents">
+                                        <input type="checkbox" name="filter_uids:list" tal:attributes="value brain/UID" />
+                                        <span tal:content="brain/Title" />
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <br/>                                                    
+                        <input type="hidden" name="converter" value="pdf-prince" />
+                        <input type="submit" name="generate" class="context" value="Generate PDF" i18n:attributes="value label_generate_pdf" /> 
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="button" name="reset" class="context" value="Clear all options" onclick="javascript: resetForm()" i18n:attributes="value label_clear_all_options" />
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="button" name="setdefaults" class="context" value="Set default options" onclick="javascript: setDefaultsForm()" i18n:attributes="value label_set_default_options" />
+                    </form>
+               </dd>
+
+               <dt id="fieldsetlegend-html" 
+                   class="switcher" i18n:translate="label_multi_channel">Multi channel</dt>
+               <dd id="fieldset-html"> 
+                    <div class="formHelp" i18n:translate="help_consolidated_html_form">Consolidate editorial HTML documents into a single or a set of HTML pages. The "Generate HTML (in drafts)" option will create new folder
+                      within the drafts directory containing the consolidated HTML files. "Generate HTML (in publication folder" will <u>not create</u> a new folder but remove all
+                      contents from the existing and configuration publication folder and store the consolidate HTML files directly inside the publication folder <u>use this option
+                      with care</u>.
+                    </div>
+                    <div class="warning" 
+                         tal:condition="python: 'pdf-prince' not in availableConverters" 
+                         i18n:translate="label_no_princexml_converter">
+                         PrinceXML is not installed
+                     </div>
+
+                    <form method="post" tal:attributes="action string:${context/absolute_url}/@@generate_html_pdf" tal:condition="python: contentFolder and template and publicationsFolder" >
+                        <fieldset>
+                            <legend i18n:translate="label_aggregation">Aggregation</legend>
+                            <input type="radio" name="html_mode" value="complete" id="html-mode-complete" CHECKED />
+                            <label for="html-mode-complete" i18n:translate="label_nosplit_html">One HTML document (aggregated)</label>
+                            <br/>
+                            <input type="radio" name="html_mode" value="split" id="html-mode-split" />
+                            <label for="html-mode-split" i18n:translate="label_split_html">One HTML document per chapter</label>
+                            <div class="reset-counters" style="display: none">
+                                <input type="checkbox" name="reset_counters:int" value="1" id="reset-counters" />
+                                <label for="reset-counters" i18n:translate="label_reset_counters">Reset counters for each document</label>
+                            </div>
+                            <div>                                
+                                <label for="counter-start" i18n:translate="label_counter_start">Counter start</label>
+                                <input type="radio" name="counter_start" value="h1" checked id="counter_start" />
+                                H1
+                                <input type="radio" name="counter_start" value="h2" id="counter_start" />
+                                H2
+                            </div>
+                        </fieldset>
+                        <fieldset tal:condition="python: 'ebook-calibre' in availableConverters" id="fieldset-epub">
+                            <legend i18n:translate="label_ebook_epub">EBooks</legend>
+                            <input type="checkbox" name="generate_epub:int" value="1" id="generate-epub" />
+                            <label for="generate-epub" i18n:translate="label_generate_ebook">Generate e-book</label>
+                            <br/>
+                            <select name="ebook_format" size="1">
+                                <optgroup label="E-Book format" i18n:attributes="label label_ebook_format">
+                                    <option value="epub" selected>EPUB</option>
+                                    <!--
+                                    <option value="mobi">MOBI</option>
+                                    <option value="lit">LIT</option>
+                                    <option value="fb2">FB2</option>
+                                    -->
+                                </optgroup>
+                            </select>
+                        </fieldset>
+                        <fieldset>
+                            <legend i18n:translate="label_pdf">PDF</legend>
+                            <div class="warning" 
+                                 tal:condition="python: 'pdf-prince' not in availableConverters" 
+                                 i18n:translate="label_no_princxml_converter">
+                                 PrinceXML is not installed
+                            </div>
+                            <input type="checkbox" name="generate_pdf:int" value="1" id="generate-pdf" />
+                            <label for="generate-pdf" i18n:translate="label_generate_pdf">Generate PDF</label>
+                            
+                            <div style="display: none" class="pdf-quality" colspan="2"
+                                  tal:condition="view/haveGhostscript"> 
+                                <label tal:condition="nothing" i18n:translate="label_pdf_quality">Quality</label>
+                                <select name="pdf_quality" id="pdf-quality">
+                                    <option value="default">Default (high quality)</option>
+                                    <option value="screen">Screen (low quality, 72dpi)</option>
+                                    <option value="ebook">Ebook (low-quality, 150dpi)</option>
+                                    <option value="printer">Printer (high-quality, 300dpi)</option>
+                                    <option value="prepress">Prepress (high-quality, 300dpi, color preservation)</option>
+                                </select>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend i18n:translate="label_s5">S5</legend>
+                            <input type="checkbox" name="generate_s5:int" value="1" id="generate-s5" />
+                            <label for="generate-s5" i18n:translate="label_generate_s5">Generate S5 </label>
+                        </fieldset>
+                        <fieldset>
+                            <legend i18n:translate="label_storage_location">Storage location</legend>
+                            <input type="radio" name="target" value="drafts" id="conversion-target-drafts" 
+                                   tal:attributes="checked sdata/conversion-target | string:CHECKED"
+                                               />
+                            <label for="conversion-target-drafts" i18n:translate="label_conversion_target_drafts">Store in drafts</label>
+                            <br/>
+                            <input type="radio" name="target" value="publications" id="conversion-target-publications" 
+                                               tal:attributes="checked sdata/conversion-target | nothing"
+                                                />
+                            <label for="conversion-target-publications" i18n:translate="label_conversion_target_publications">Store in publications</label>
+                            <div style="display: none" class="do-archiving">
+                                <input type="checkbox" name="do_archive:int" value="1" id="do-archive" />
+                                <label i18n:translate="label_archive_published_version">Archive published version</label>
+                            </div>
+                        </fieldset>
+
+                        <br/>                                                    
+                        <input type="submit" name="generate" class="context" value="Generate" i18n:attributes="value label_generate" /> 
+                    </form>
+                </dd>
+
+                <tal:if condition="python: 'ebook-calibre' in availableConverters"> 
+                    <dt id="fieldsetlegend-epub" class="switcher">E-Books</dt>
+                    <dd>
+                        <div class="formHelp" i18n:translate="help_epub">
+                            Generate an eBook using the external Calibre converter
+                        </div>
+
+                        <form method="post" tal:attributes="action string:${context/absolute_url}/@@generate_epub" tal:condition="python: contentFolder and template and publicationsFolder" >
+                            <fieldset tal:condition="nothing">
+                                <legend i18n:translate="label_ebook_epub">EBook/EPub</legend>
+                            </fieldset>
+                            <br/>
+                            <input type="submit" name="generate" class="context" value="Generate" i18n:attributes="value label_generate" /> 
+                        </form>
+                    </dd>
+                </tal:if>
+
+               <tal:loop repeat="d supplConversionViews">
+                   <dt tal:content="d/tab_text" class="switcher" tal:attributes="id string:fieldsetlegend-${d/name}"/>
+                   <dd tal:content="structure d/tab_content" tal:attributes="id string:fieldset-${d/name}"/>
+               </tal:loop>
+
+           </dl>
+        </div>
+
+        <br/>
+        <dl class="enableFormTabbing">
+            <dt id="fieldsetlegend-drafts" class="switcher" i18n:translate="label_drafts">Drafts</dt>
+            <dd id="fieldset-drafts">
+                <div id="conversionfolder-contents" tal:define="results python: context.drafts.getFolderContents({'sort_on' : 'created', 'sort_order' : 'descending'})">
+
+                    <tal:if condition="not: results" i18n:translate="label_no_drafts_available">The drafts folder is empty</tal:if>
+                    <a href="@@cleanDrafts" tal:condition="results" i18n:translate="label_clear_drafts_folder">[Clear drafts folder]</a>
+                    <table width="100%" tal:condition="results" class="conversion-table" id="conversion-draft-contents">
+                        <tbody>
+                            <tr tal:repeat="obj results">
+                                <td> 
+                                    <div>
+                                        <img tal:condition="python: obj.getId.endswith('.zip')"  tal:attributes="src string:$portal_url/zip_icon.gif" />
+                                        <img tal:condition="python: obj.getId.endswith('.pdf')"  tal:attributes="src string:$portal_url/pdf_icon.gif" />
+                                        <img tal:condition="python: obj.getId.endswith('.epub')" tal:attributes="src string:$portal_url/epub_icon.gif" />
+                                        <img tal:condition="python: obj.portal_type == 'Folder'" tal:attributes="src string:$portal_url/folder_icon.gif" />
+                                        <a tal:attributes="href string:${obj/getURL}; 
+                                                           class python: (request.has_key('show_latest_draft') and repeat['obj'].index==0) and 'label highlight' or ''" 
+                                           tal:content="obj/Title | obj/getId" />
+                                        (<span tal:replace="obj/getObjSize" />)
+                                    </div>
+                                    <div style="padding-left: 18px">
+                                        <span tal:content="python: context.toLocalizedTime(obj.created, 1)" /> - 
+                                        <span tal:content="obj/Creator" />
+                                    </div>
+
+                                    <div style="padding-left: 18px">
+                                        <a tal:attributes="href string:${obj/getURL}/edit" i18n:translate="label_edit">[edit]</a>
+                                        &bull; <a tal:attributes="href string:@@publishDraft?uid=${obj/UID}" i18n:translate="label_publish">[publish]</a>
+                                        <tal:if condition="python: obj.portal_type == 'File'">
+                                            &bull; <a tal:attributes="href string:@@publishDraft?uid=${obj/UID}&rename:int=1" i18n:translate="label_publish_and_rename">[publish/rename]</a>
+
+                                        </tal:if>
+                                        <tal:if condition="context/getDropboxEnabled">
+                                            &bull; <a tal:attributes="href string:@@publishDropbox?uid=${obj/UID}&rename:int=1" i18n:translate="label_copy_dropbox">[copy to Dropbox]</a>
+                                        </tal:if>
+                                        <tal:actions repeat="action python:context.portal_actions.listFilteredActionsFor(context).get('ae_export', {})">
+                                        &bull; <a tal:attributes="href action/url; title action/title;" tal:content="action/title" />
+                                        </tal:actions>
+                                        <tal:actions repeat="action python:context.portal_actions.listFilteredActionsFor(context).get('ae_publish', {})">
+                                        &bull; <a tal:attributes="href action/url; title action/title;" tal:content="action/title" />
+                                        </tal:actions>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </dd>
+            <dt id="fieldsetlegend-published" class="switcher" i18n:translate="label_published">Published</dt>
+            <dd id="fieldset-published" tal:condition="not: context/getPublicationsFolder">
+                <span i18n:translate="label_no_publication_folder_configured">No publication folder configured</span>
+            </dd>
+            <dd id="fieldset-published" tal:condition="context/getPublicationsFolder">
+                <div id="conversionfolder-contents" 
+                    tal:define="results python: context.getPublicationsFolder().getFolderContents({'sort_on' : 'getObjPositionInParent', 'sort_order' : 'ascending'})">
+                    <tal:if condition="not: results" i18n:translate="label_no_publications_available">no publications available</tal:if>
+
+                    <table width="100%" tal:condition="results" class="conversion-table" id="conversion-published-contents">
+                        <tbody>
+                            <tr tal:repeat="obj results">
+                                <td>
+                                    <div>
+                                        <img tal:condition="python: obj.getId.endswith('.zip')"  tal:attributes="src string:$portal_url/zip_icon.gif" />
+                                        <img tal:condition="python: obj.getId.endswith('.pdf')"  tal:attributes="src string:$portal_url/pdf_icon.gif" />
+                                        <img tal:condition="python: obj.getId.endswith('.epub')" tal:attributes="src string:$portal_url/epub_icon.gif" />
+                                        <img tal:condition="python: obj.portal_type == 'Folder'" tal:attributes="src string:$portal_url/folder_icon.gif" />
+                                        <img tal:condition="python: obj.portal_type == 'Image'"  tal:attributes="src string:$portal_url/image_icon.gif" />
+                                        <img tal:condition="python: obj.portal_interface.objectImplements(obj, 'Products.ATContentTypes.interfaces.IATDocument')" src="document_icon.gif" />
+                                        <a tal:attributes="href string:${obj/getURL}; 
+                                                           class python: (request.has_key('show_latest_draft') and repeat['obj'].index==0) and 'label highlight' or ''" 
+                                           tal:content="obj/Title | obj/getId" />
+                                        (<span tal:replace="obj/getObjSize" />)
+                                    </div>
+                                    <div style="padding-left: 18px">
+                                        <span tal:content="python: context.toLocalizedTime(obj.ModificationDate, 1)" /> -
+                                        <span tal:content="obj/Creator" />
+                                    </div>
+                                    <div style="padding-left: 18px">
+                                        <a tal:attributes="href string:${obj/getURL}/edit" i18n:translate="label_edit">[edit]</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </dd>
+        </dl>
+
+        <script type="text/javascript">
+                jq('.form-collapsible').do_search_collapse()
+        </script>
+    </metal:fill>
+</html>
