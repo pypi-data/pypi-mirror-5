@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{%block css_this_page%}page.css{%endblock%}
+{% block title %} 
+  {% if page.first%} {#is the first page#}
+    {{blog.name}}
+  {% else %}
+    Page {{page.number}} of {{blog.name}} 
+  {%endif%}
+{% endblock %}
+{% block content%}
+  {%for post in page.posts%}
+  <div class="post">
+    <p class="title"><a href="{{root_path}}/post/{{post.name}}.html">{{post.title}}</a></p>
+    <p class="separator"><span class="date">{{post.datetime.strftime("%b  %d, %y")}}</span></p>
+    {#get the first 200 char as sumary#}
+    <div class="post-html">
+    {{post.summary}}
+   </div>
+   <p></p>
+    <div class="tags">
+      {%for tag in post.tags%}
+      <a href="{{root_path}}/tag/{{tag}}.html">{{tag}}</a>
+      {%endfor%}
+    </div>
+    <p class="readmore"><a href="{{root_path}}/post/{{post.name}}.html">Read more  >> </a></p>
+  </div>
+  {%endfor%}
+  <p class="paging">
+    {% if page.first == False %}
+    <a class="prev" href="{{root_path}}{%if page.number == 2%}/{%else%}/page/{{page.number-1}}.html{%endif%}"> << Prev</a>
+    {%endif%}
+    {% if page.last == False %}
+    <a class="next" href="{{root_path}}/page/{{page.number+1}}.html">Next >> </a>
+    {%endif%}
+  </p>
+{%endblock%}
