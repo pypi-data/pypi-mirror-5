@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import argparse
+
+from projects.default import make_project
+from services.default import make_service
+
+
+parser = argparse.ArgumentParser()
+
+commands = parser.add_subparsers()
+
+###############################################################################
+# Setup project based commands.
+project_parser = commands.add_parser("project",
+                                     help="Manage RESTful service projects.")
+
+project_commands = project_parser.add_subparsers()
+
+project_create = project_commands.add_parser("create",
+                                             help="Create a new project.")
+
+project_create.add_argument("name",
+                            help="The name of the project.")
+project_create.set_defaults(func=make_project)
+###############################################################################
+
+###############################################################################
+# Setup service based commands.
+service_parser = commands.add_parser("service",
+                                     help="Manage RESTful service plugins.")
+
+service_commands = service_parser.add_subparsers()
+
+service_create = service_commands.add_parser("create",
+                                             help="Create a new plugin.")
+
+service_create.add_argument("name",
+                            help="The name of the plugin.")
+service_create.set_defaults(func=make_service)
+###############################################################################
+
+
+def main():
+
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == '__main__':
+
+    main()
