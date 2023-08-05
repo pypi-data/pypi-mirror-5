@@ -1,0 +1,137 @@
+Metadata-Version: 1.1
+Name: unfold-protein
+Version: 0.2
+Summary: unfold-protein: velocity clamp protein unfolding experiment control
+Home-page: http://blog.tremily.us/posts/unfold-protein/
+Author: W. Trevor King
+Author-email: wking@tremily.us
+License: GNU General Public License v3 (GPLv3)
+Download-URL: http://git.tremily.us/?p=unfold-protein.git;a=snapshot;h=0.2;sf=tgz
+Description: Unfold-protein
+        ==============
+        
+        Unfold-protein is a set of tools for controlling velocity-clamp single
+        molecule force spectroscopy.  It uses the pyafm_ package for low level
+        AFM control.  This package contains the high-level experiment control
+        logic.
+        
+        Packages
+        ========
+        
+        Gentoo
+        ------
+        
+        I've packaged pyafm for Gentoo.  You need layman_ and my `wtk
+        overlay`_.  Install with::
+        
+          # emerge -av app-portage/layman
+          # layman --add wtk
+          # emerge -av sci-physics/unfold-protein
+        
+        Dependencies
+        ============
+        
+        Unfold-protein requires the following Python modules:
+        
+        * Pyafm_
+        * Pypiezo_ (required directly, and via ``pyafm``)
+        * H5config_ (required directly, and via ``pyafm``)
+        * h5py_ (required directly, and via ``h5config``)
+        * Matplotlib_
+        * NumPy_
+        
+        Getting the source
+        ==================
+        
+        Unfold-protein is available as a Git_ repository::
+        
+          $ git clone git://tremily.us/unfold-protein.git
+        
+        There are also periodic bundled releases.  For example, get version
+        0.2 as a gzipped tarball with::
+        
+          $ wget 'http://git.tremily.us/?p=unfold-protein.git;a=snapshot;h=v0.2;sf=tgz'
+          $ tar -xzvf unfold-protein-0.2.tar.gz
+        
+        Installation
+        ============
+        
+        After downloading, change to the source directory and run::
+        
+          $ python setup.py install
+        
+        to install unfold-protein.  Run::
+        
+          $ python setup.py install --help
+        
+        to see a list of installation options you may want to configure.
+        
+        Usage
+        =====
+        
+        The ``unfold.py`` script runs a series of unfolding pulls while
+        scanning the pulling velocity and contact position.  It has a few
+        command line options; get details with::
+        
+          $ unfold.py --help
+        
+        You can configure the unfolding and scanning behavior using h5config_.
+        The configuration is stored in ``~/.config/unfold-default.yaml``.  To
+        seed this configuration file before tweaking it, you should configure
+        pyafm_ (as described in its ``README``).  Then run::
+        
+          >>> import unfold_protein.storage as storage
+          >>> config = storage.get_default_config()
+          >>> storage.save_scan_config(config=config)
+        
+        to create a configuration using the default settings.  The YAML_
+        syntax is plain text, which you can edit as you see fit.  Future runs
+        of ``unfold.py`` (and calls to
+        ``unfold_protein.storage.load_scanner()``) will load this
+        configuration by default.
+        
+        ``unfold.py`` saves each unfolding pull in its own timestamped file
+        with the unfolding data along with the complete configuration used to
+        acquire it.  You can configure the directory where these files are
+        stored with the ``unfold/save/base directory`` setting.  You can
+        convert the saved unfolding data to PNGs__ with ``plot-unfold.py``.
+        For example::
+        
+          $ plot-unfold.py ~/rsrch/data/unfold/*.h5
+        
+        __ PNG_
+        
+        For more detailed analysis, you may want to use Hooke_.  You may also
+        want to use calibcant_ to calibrate your AFM cantilever's bending
+        spring constant.
+        
+        .. _pyafm: http://blog.tremily.us/posts/pyafm/
+        .. _layman: http://layman.sourceforge.net/
+        .. _wtk overlay: http://blog.tremily.us/posts/Gentoo_overlay/
+        .. _pyafm: http://blog.tremily.us/posts/pyafm/
+        .. _pypiezo: http://blog.tremily.us/posts/pypiezo/
+        .. _h5config: http://blog.tremily.us/posts/h5config/
+        .. _H5Py: http://code.google.com/p/h5py/
+        .. _NumPy: http://numpy.scipy.org/
+        .. _Matplotlib: http://matplotlib.sourceforge.net/
+        .. _Git: http://git-scm.com/
+        .. _YAML: http://www.yaml.org/
+        .. _PNG: http://en.wikipedia.org/wiki/Portable_Network_Graphics
+        .. _Hooke: http://blog.tremily.us/posts/hooke/
+        .. _calibcant: http://blog.tremily.us/posts/calibcant/
+        
+Platform: all
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Unix
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires: pyafm (>= 0.5)
+Provides: unfold_protein (0.2)
