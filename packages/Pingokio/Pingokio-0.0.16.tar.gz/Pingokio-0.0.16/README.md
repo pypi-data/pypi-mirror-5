@@ -1,0 +1,48 @@
+DESCRIPTION
+--------
+Pingokio is a server that collect you sites uptime statistic by sending post or get requests periodically.
+
+
+STATUS
+--------
+In-development  
+
+
+FEATURES
+--------
+* Multi-domain  
+* GET request  
+
+
+PLANS
+--------
+* Nice statistic representation  
+* POST requests  
+* SMS notifications  
+
+
+
+INSTALLATION
+--------
+    pip install pingokio  
+    pingokio init  
+    pingokio syncdb --all  
+
+
+USAGE
+--------
+    pingokio runserver 0.0.0.0:8000  
+    pingokio celeryd -B  
+(You should run both command in different terminals.)  
+Now you can access configuration interface by address http://127.0.0.1:8000/  
+
+
+SETUP AS DEAMON
+--------
+    sudo apt-get install supervisor
+    sudo pip install pingokio
+    pingokio init  
+    pingokio syncdb --all  
+    cp /usr/local/lib/python2.7/dist-packages/pingokio/conf/pingokio.conf /etc/supervisor/conf.d/
+    cp /usr/local/lib/python2.7/dist-packages/pingokio/conf/pingokio_celery.conf /etc/supervisor/conf.d/
+    sudo /etc/init.d/supervisor restart
