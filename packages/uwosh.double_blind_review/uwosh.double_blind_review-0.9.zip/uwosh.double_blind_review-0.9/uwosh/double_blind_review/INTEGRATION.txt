@@ -1,0 +1,797 @@
+Integration Tests
+-----------------
+
+This is a DocTest file, using the Python doctest format.
+
+In an integration test, here's some of the globals you have to work with::
+
+    >>> portal
+    <PloneSite at /plone>
+
+    >>> portal_name
+    'plone'
+
+    >>> folder
+    <ATFolder at /plone/Members/test_user_1_>
+
+    >>> user_name
+    'test_user_1_'
+
+    >>> user_password
+    'secret'
+
+    >>> user_role
+    'test_role_1_'
+
+    >>> app.REQUEST
+    <HTTPRequest, URL=http://nohost>
+
+    >>> app
+    <Application at >
+
+uwosh.double_blind_review integration testing.  I have chosen to implement all
+the tests as doctests in order to provide some explanation of the functionality.
+
+TODO:  Things that could use testing but are less critical:  backward
+transitions, complete set of permissions for site managers and managers under
+each state (presently only those critical to the double blind workflow functions
+are tested).
+
+NOTE:  The overide templates for history and byline views must
+be tested manually in the user interface, since they could potentially be 
+overridden by some other product that is installed.
+
+This product installs a folderish object loaded with instructions at the root 
+level of the portal which is only available to those with roles of "Site 
+Administrator" or "Manager".  Check that the permissions  and workflow state
+are correct.::
+    >>> user = portal.acl_users._doAddUser('manager', 'secret', ['Manager'], [])
+    >>> self.login('manager')    
+    >>> root_content = portal.contentIds()
+    >>> 'double-blind-review-instructions' in root_content
+    True
+
+    >>> from Products.CMFCore.utils import _checkPermission as checkPerm
+    >>> from Products.CMFCore.permissions import AccessContentsInformation
+    >>> instructions = portal['double-blind-review-instructions']
+    >>> user = portal.acl_users._doAddUser('member', 'secret', ['Member'], [])
+    >>> self.login('member')
+    >>> checkPerm(AccessContentsInformation,instructions)
+
+Good, generic users cannot access this information.  Now check that managers can.::
+    >>> user = portal.acl_users._doAddUser('manager', 'secret', ['Manager'], [])
+    >>> self.login('manager')
+    >>> checkPerm(AccessContentsInformation,instructions)
+    1
+
+    >>> user = portal.acl_users._doAddUser('site manager', 'secret', ['Site Administrator'], [])
+    >>> self.login('site manager')
+    >>> checkPerm(AccessContentsInformation,instructions)
+    1
+
+The product adds two special roles that are used to control access to proposals
+at different times: 1) 'submitter' anybody with this role can submit a proposal
+(usually assigned to the Faculty group on my Campus); 2) 'Panelist' is a special
+form of reviewer, used to allow access by the final decision panel to proposals
+and reviews when they are in the 'panel_review' state.  Check that these exist,
+since workflow behavior depends on these roles.::
+    >>> roles = portal.acl_users.portal_role_manager.valid_roles()
+    >>> 'Submitter' in roles
+    True
+    >>> 'Panelist' in roles
+    True
+    
+Now check that the Dexterity type 'proposal_drop_box' has been defined and
+the workflow 'proposal_folder_workflow'exists.::
+    >>> workflows = portal.portal_workflow.listWorkflows()
+    >>> 'proposal_folder_workflow' in workflows
+    True
+   
+    >>> 'proposal_drop_box' in portal.portal_types
+    True
+    
+Now iterate through all the roles on the portal and make sure that only 'manager'
+and 'site manager' can create one of these drop boxes.::
+    >>> from Products.CMFCore.exceptions import AccessControl_Unauthorized
+
+    >>> for role in roles:
+    ...    if role != 'manager'and role !='site manager' :
+    ...        user = portal.acl_users._doAddUser('user', 'secret', [role], [])
+    ...        # we are looking for a different result for managers.
+    ...        self.login('user')
+    ...        self.assertRaises(AccessControl_Unauthorized,portal.invokeFactory,'proposal_drop_box', 'test-drop-box')
+
+Now check our managers::
+    >>> self.login('manager')
+    >>> portal.invokeFactory('proposal_drop_box', 'test-manager-drop-box')
+    'test-manager-drop-box'
+    
+    >>> self.login('site manager')
+    >>> portal.invokeFactory('proposal_drop_box', 'test-site-manager-drop-box')
+    'test-site-manager-drop-box'
+    
+Convert a drop box that should have been created in the 'private' state
+to 'open' (accepting submissions).::
+    >>> working_drop = portal['test-site-manager-drop-box']
+    >>> 'private' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    
+    >>> portal.portal_workflow.doActionFor(working_drop, 'open')
+    >>> 'open' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+
+Now check that the Dexterity type 'mock_proposal' has been defined and
+the workflow 'proposal_workflow'exists.::
+    >>> 'proposal_workflow' in workflows
+    True
+   
+    >>> 'mock_proposal' in portal.portal_types
+    True
+    
+Now we can test that members can add a proposal, but only submit if they also 
+have the role of 'submitter'.  I'm going to be careful and make two new users
+for this test.::
+    >>> user = portal.acl_users._doAddUser('student1', 'secret', ['Member'], [])
+    >>> user = portal.acl_users._doAddUser('faculty1', 'secret', ['Submitter'], [])
+    >>> self.login('student1')
+    >>> working_drop.invokeFactory('mock_proposal', 'proposal1')
+    'proposal1'
+    
+    >>> proposal1 = working_drop['proposal1']
+    >>> 'private' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    
+Now verify that the Members cannot submit.::
+    >>> from Products.CMFCore.WorkflowCore import WorkflowException
+    >>> self.assertRaises(WorkflowException,portal.portal_workflow.doActionFor, proposal1, 'submit')
+    
+However they can "send to Advisor/Mentor for review and submission".::
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_advisor_review')
+    >>> 'advisor_review' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+
+Even after sending it to the mentor changes are possible.  Test adding ID 
+information which is only visible to administrators, owners and editors 
+(advisors/mentors).  First check if the proper types and workflows are available.::
+    >>> 'proposer' in portal.portal_types
+    True
+    
+    >>> 'mentor' in portal.portal_types
+    True
+    
+    >>> 'id_info_workflow' in workflows
+    True
+    
+Add proposer and mentor information.::
+    >>> proposal1.invokeFactory('proposer','test-proposer')
+    'test-proposer'
+    
+    >>> proposal1.invokeFactory('mentor','test-mentor')
+    'test-mentor'
+    
+Verify their review states.::    
+    >>> proposerinfo = proposal1['test-proposer']
+    >>> 'private' == portal.portal_workflow.getInfoFor(proposerinfo,'review_state')
+    True
+    
+    >>> mentorinfo = proposal1['test-mentor']
+    >>> 'private' == portal.portal_workflow.getInfoFor(mentorinfo, 'review_state')
+    True
+    
+Check that the permissions are correct.::
+    >>> from Products.CMFCore.permissions import View   
+    >>> checkPerm(View, proposerinfo)
+    1
+    
+    >>> checkPerm(View, mentorinfo)
+    1
+    
+    >>> self.login('member')
+    >>> checkPerm(View, proposerinfo)
+    >>> checkPerm(View, mentorinfo)
+    
+    >>> self.login('manager')
+    >>> checkPerm(View, proposerinfo)
+    1
+    
+    >>> checkPerm(View, mentorinfo)
+    1
+    
+    >>> self.login('site manager')
+    >>> checkPerm(View, proposerinfo)
+    1
+    
+    >>> checkPerm(View, mentorinfo)
+    1
+
+The advisor/mentor will usually be granted the local role of editor for the
+proposal, but anybody with editor access on the site can also
+access the proposal. Test this.::
+    >>> user = portal.acl_users._doAddUser('editor', 'secret', ['Editor'], [])
+    >>> self.login('editor')
+    >>> checkPerm(View, proposerinfo)
+    1
+    
+    >>> checkPerm(View, mentorinfo)
+    1
+    
+    >>> checkPerm(View, proposal1)
+    1
+    
+Now, give faculty1 the local role of Editor for proposal1 and check that the
+permissions are correct.::
+    >>> proposal1.manage_addLocalRoles('faculty1',['Editor'])
+    >>> self.login('faculty1')
+    >>> checkPerm(AccessContentsInformation, proposal1)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, proposerinfo)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, mentorinfo)
+    1
+    
+After editting they submit the proposal.::
+    >>> portal.portal_workflow.doActionFor(proposal1, 'submit')
+    >>> 'submitted' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    
+    >>> 'private' == portal.portal_workflow.getInfoFor(proposerinfo,'review_state')
+    True
+
+    >>> 'private' == portal.portal_workflow.getInfoFor(mentorinfo, 'review_state')
+    True
+    
+Check Permissions.::
+    >>> self.login('member')
+    >>> checkPerm(AccessContentsInformation, proposal1)
+    >>> checkPerm(AccessContentsInformation, proposerinfo)
+    >>> checkPerm(AccessContentsInformation, mentorinfo)
+    
+    >>> self.login('student1')
+    >>> checkPerm(AccessContentsInformation, proposal1)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, proposerinfo)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, mentorinfo)
+    1
+
+Once submitted they can no longer modify it.::    
+    >>> from Products.CMFCore.permissions import ModifyPortalContent   
+    >>> checkPerm(ModifyPortalContent, proposal1)
+    
+    >>> self.login('faculty1')
+    >>> checkPerm(AccessContentsInformation, proposal1)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, proposerinfo)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, mentorinfo)
+    1
+    
+Nor should they have permission to delegate (and thus see) reviewer assignments.
+They do have permission to delegate roles so that they can see the status bar.::
+    >>> from plone.app.workflow.permissions import DelegateRoles
+    >>> from plone.app.workflow.permissions import DelegateReviewerRole
+    >>> checkPerm(DelegateReviewerRole,proposal1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+   
+    >>> self.login('manager')
+    >>> checkPerm(AccessContentsInformation, proposal1)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, proposerinfo)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, mentorinfo)
+    1
+    
+    >>> checkPerm(DelegateReviewerRole,proposal1)
+    1
+    
+    >>> self.login('site manager')
+    >>> checkPerm(AccessContentsInformation, proposal1)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, proposerinfo)
+    1
+    
+    >>> checkPerm(AccessContentsInformation, mentorinfo)
+    1
+    
+    >>> checkPerm(DelegateReviewerRole,proposal1)
+    1
+
+When the proposal submission deadline is reached the site manager (or manager)
+should close the proposal drop box.::
+    >>> portal.portal_workflow.doActionFor(working_drop, 'close')
+    >>> 'closed' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    
+It should not be possible for a proposer to create a new proposal in a closed 
+drop box.::
+    >>> self.login('student1')
+    >>> from Products.CMFCore.permissions import AddPortalContent
+    >>> checkPerm(AddPortalContent, working_drop)
+
+The site manager (or manager) can now assign reviewers using local roles.::
+    >>> user = portal.acl_users._doAddUser('reviewer1', 'secret', ['Member'], [])
+    >>> proposal1.manage_addLocalRoles('reviewer1',['Reviewer'])
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    
+Once reviewer(s) is(are) assigned the site manager (or manager) transitions the
+proposal to "under_review" status.  Normally this would probably be done to all
+proposals within a proposal drop box at the same time by transitioning the drop
+box and checking the "apply to contents" choice in the advanced options.:: 
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(working_drop, 'to_under_review')
+    >>> 'under_review' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_under_review')
+    >>> 'under_review' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+        
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposerinfo)
+    >>> checkPerm(View, mentorinfo)
+    >>> checkPerm(View, proposal1)
+    1
+    
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+
+The reviewer can create a review inside the proposal.  First check that such a
+beast and the appropriate workflow exists.::
+    >>> 'mock_review' in portal.portal_types
+    True
+    
+    >>> 'anonymous_peer_review_workflow' in workflows
+    True
+    
+    >>> proposal1.invokeFactory('mock_review','test-review')
+    'test-review'
+    
+    >>> review1 = proposal1['test-review']
+    >>> 'private' == portal.portal_workflow.getInfoFor(review1, 'review_state')
+    True
+    
+Now check that the permissions are such that the proposers cannot see their own
+proposal once it is in the review process.  This is to avoid proposers seeing
+tentative decisions or incomplete reviews. You will notice that objects created
+inside owned objects seem to treat the container owner and the owner as owners::
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(View,review1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(View,review1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    
+When the reviewer finishes the review they submit it.  The reviewer should no
+longer be able to change it and the proposers should still not be able to see
+it.::
+    >>> self.login('reviewer1')
+    >>> portal.portal_workflow.doActionFor(review1, 'submit')
+    >>> 'submitted' == portal.portal_workflow.getInfoFor(review1, 'review_state')
+    True
+    
+    >>> checkPerm(ModifyPortalContent, review1)
+    >>> checkPerm(View, review1)
+    1
+    
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(View,review1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+
+    >>> self.login('faculty1')
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View,review1)
+    
+Just to be careful.  Make sure random logged in users cannot see it either.::
+    >>> self.login('member')
+    >>> checkPerm(View, review1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    
+When all the reviews are done the site manager (or manager) changes the proposal
+and its contents to the under_panel_review state.  Normally this would probably
+be done by transitioning the folder for all proposals of the same kind and 
+checking the "apply to contents" choice in the advanced options.::
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(working_drop, 'to_panel_review')
+    >>> 'panel_review' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_panel_review')
+    >>> 'panel_review' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    
+    >>> portal.portal_workflow.doActionFor(review1, 'to_panel_review')
+    >>> 'panel_review' == portal.portal_workflow.getInfoFor(review1, 'review_state')
+    True
+    
+In this state only panelists and site managers (or managers) should be able to
+see proposals and reviews. Note that panelists cannot see anything with an
+ID_info workflow unless the managers explicitely share it with them.::
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> user = portal.acl_users._doAddUser('panelist1', 'secret', ['Panelist'], [])
+    >>> self.login('panelist1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+
+    
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    
+When a decision is made by the panel the site manager (or manager) sets the
+proposal and its contents to a state corresponding to the decision.  There are
+two versions of each of these:  an invisible state that can only be seen by the
+managers and panelists and a visible version that is visible to proposers and
+reviewers as well.
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_denied_invisible')
+    >>> 'denied_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True    
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+
+    
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_approved_invisible')
+    >>> 'approved_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True    
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+
+    
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_alternate_invisible')
+    >>> 'alternate_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True    
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+    
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+
+    
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    >>> checkPerm(DelegateRoles,proposal1)
+
+Lots of possible transitions to check.::
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_denied_invisible')
+    >>> 'denied_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True 
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_alternate_invisible')
+    >>> 'alternate_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_approved_invisible')
+    >>> 'approved_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_panel_review')
+    >>> 'panel_review' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_alternate_invisible')
+    >>> 'alternate_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_panel_review')
+    >>> 'panel_review' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_approved_invisible')
+    >>> 'approved_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    
+When the whole proposal drop box is converted to cycle_complete the proposals
+should automatically convert to a visible state (this done by
+make_decisions_visible.py in the product).  Need to check conversion and
+permissions for both the proposal and reviews.::
+    >>> portal.portal_workflow.doActionFor(working_drop, 'to_cycle_complete')
+    >>> 'cycle_complete' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    >>> 'approved' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> 'cycle_complete' == portal.portal_workflow.getInfoFor(review1, 'review_state')
+    True
+    
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+    
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)    
+    1
+    
+Revert and check the other possibilities.::
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(working_drop, 'to_panel_review')
+    >>> 'panel_review' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_approved_invisible')
+    >>> 'approved_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_denied_invisible')
+    >>> 'denied_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    
+    >>> portal.portal_workflow.doActionFor(working_drop, 'to_cycle_complete')
+    >>> 'cycle_complete' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    >>> 'denied' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> 'cycle_complete' == portal.portal_workflow.getInfoFor(review1, 'review_state')
+    True
+    
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+    
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+    
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+    
+    >>> self.login('site manager')
+    >>> portal.portal_workflow.doActionFor(working_drop, 'to_panel_review')
+    >>> 'panel_review' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_denied_invisible')
+    >>> 'denied_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> portal.portal_workflow.doActionFor(proposal1, 'to_alternate_invisible')
+    >>> 'alternate_invisible' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    
+    >>> portal.portal_workflow.doActionFor(working_drop, 'to_cycle_complete')
+    >>> 'cycle_complete' == portal.portal_workflow.getInfoFor(working_drop, 'review_state')
+    True
+    >>> 'alternate' == portal.portal_workflow.getInfoFor(proposal1, 'review_state')
+    True
+    >>> 'cycle_complete' == portal.portal_workflow.getInfoFor(review1, 'review_state')
+    True
+    
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    1
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+
+    >>> self.login('student1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+    
+    >>> self.login('faculty1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1)
+    1
+    
+    >>> self.login('reviewer1')
+    >>> checkPerm(View, proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,proposal1)
+    1
+    >>> checkPerm(AccessContentsInformation,review1)
+    >>> checkPerm(View, review1)
+    1
+    >>> checkPerm(DelegateRoles,proposal1) 
+    1
