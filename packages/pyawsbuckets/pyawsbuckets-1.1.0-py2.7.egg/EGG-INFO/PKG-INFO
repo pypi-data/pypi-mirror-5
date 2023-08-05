@@ -1,0 +1,98 @@
+Metadata-Version: 1.1
+Name: pyawsbuckets
+Version: 1.1.0
+Summary: Handle Amazon S3 PUT/DELETE/sign interactions
+Home-page: http://pypi.python.org/pypi/pyawsbuckets
+Author: Mark Henwood
+Author-email: mark@mcbh.co.uk
+License: MIT
+Description: Handle Amazon S3 interactions
+        =============================
+        
+        Objects / files can be put in S3 and deleted from S3.  Also signed URLs
+        can be generated to allow limited-time access to a particular object in an
+        S3 bucket.
+        
+        Requires Python 2.7 or above.
+        
+        Available as Python package at http://pypi.python.org/pypi/pyawsbuckets [ pip
+        install pyawsbuckets ]
+        Source at https://github.com/mhenwood/pyawsbuckets
+        
+        Usage
+        -----
+        
+        Initiate the access object with your credentials::
+        
+            from pyawsbuckets import AwsInterface
+            aws_interface = AwsInterface(amazon_access_key, amazon_secret_key)
+        
+        Put an object into an existing bucket at S3 (repeat: the bucket must ALREADY
+        exist)::
+        
+            aws_interface.put(
+                'https',
+                'bucket999',
+                'somefile.pdf',
+                content)
+        
+        Put an object into an existing bucket at S3, activating server-side
+        encryption for that object::
+        
+            aws_interface.put(
+                'https',
+                'bucket999',
+                'somefile.pdf',
+                content,
+                server_side_encryption=True)
+        
+        The put method also accepts an optional content_type keyword argument which
+        should be a standard internet media type (e.g. "image/jpeg")
+        
+        Delete an object from S3::
+        
+            aws_interface.delete('bucket999', 'somefile.pdf')
+        
+        Get a signed URL which gives access to a private object, but only for (e.g.) 15
+        minutes::
+        
+            expiring_url = aws_interface.sign_object_request('https', 'bucket999', 'somefile.pdf', 15)
+        
+        Using HTTPS
+        -----------
+        
+        You can specify 'https' as the protocol for putting files and for signing.
+        However you should bear in mind that given the way wildcard certificates work,
+        the certificate presented by the S3 service will not match the requested
+        hostname *if* your bucket name contains dots (periods).
+        
+        This is because a certificate for "\*.s3.amazon.com" will work nicely for
+        hostnames like "foo.s3.amazon.com" and "foo-example-com.s3.example.com" but
+        will NOT work for hostnames like "foo.bar.s3.amazon.com". This is a feature of
+        wildcard certificates and their jurisdiction, not of S3 or this library.
+        
+        Because the bucket name gets translated into a hostname, this matters. It
+        matters because your request will fail.
+        
+        In short: avoid dots (periods) in bucket names if you plan to use https at all.
+        
+        Known Limitations
+        -----------------
+        
+        Does not currently handle '307' redirects from AWS - You will receive these for
+        the first few hours of a bucket's lifetime, until AWS's DNS changes have
+        propagated fully.
+        
+        
+Keywords: amazon aws s3 buckets
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Plugins
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Utilities
+Requires: httplib2
+Provides: pyawsbuckets
