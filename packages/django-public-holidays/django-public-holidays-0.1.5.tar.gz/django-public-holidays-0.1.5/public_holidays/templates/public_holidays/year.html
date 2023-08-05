@@ -1,0 +1,32 @@
+{% load dateparse %}
+<html>
+  <head>
+    <title>
+      Public holidays for {% if province %}{{ province }}, {% endif %}
+      {{ country }}
+    </title>
+  </head>
+  <body>
+    <h1>
+      Public holidays for {% if province %}{{ province }}, {% endif %}
+      {{ country.name }} in {{ start|date:'Y' }}{% if start|date:'Y' != finish|date:'Y' %}-{{ finish|date:"Y"}}{% endif %}.
+    </h1>
+    <small>
+      Note: future holidays beyond the current year may not be correct.
+    </small>
+
+    <dl>
+      {% for date,holiday_list in holidays.items %}
+        <dt><time datetime="{{ date }}">{{ date|dateparse|date:'l, jS F Y' }}</time></dt>
+        {% for item in holiday_list %}
+          <dd>
+            {{ item.name }}
+            {% if not province and item.provinces %}
+            ({% for p in item.provinces %}{{ p }}{% if not forloop.last %}, {% endif %}{% endfor %})
+            {% endif %}
+          </dd>
+        {% endfor %}
+      {% endfor %}      
+    </dl>
+  </body>
+</html>
