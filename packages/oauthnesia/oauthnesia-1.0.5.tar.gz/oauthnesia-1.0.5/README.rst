@@ -1,0 +1,32 @@
+=====================
+OAUTHnesia for Python
+=====================
+
+A Python module to interact with Urbanesia's OAUTH v1.0a API using `requests <http://python-requests.org>`_ and `requests-oauthlib: <https://github.com/requests/requests-oauthlib>`_
+
+=======
+Example
+=======
+
+::
+
+    from oauthnesia import oauthnesia
+
+    urb = oauthnesia(cons_key="xxxxxx", cons_sec="xxxxxx")
+
+    print "OAUTH Request"
+    print urb.call(uri='get/super_search', post=None, get={
+        'what': 'steak'
+    })
+
+    print "\nXAUTH Request"
+    print urb.xauth('URBANESIA EMAIL', 'URBANESIA PASSWORD')
+
+Available at <https://github.com/tistaharahap/python-bayes-redis/blob/master/test.py>
+
+==========
+Get Access
+==========
+
+- Register at Urbanesia - <https://www.urbanesia.com/auth/register>
+- Go here to register your application and receive consumer tokens by email - <http://v1.urbanesia.com/auth/api_reg/>
