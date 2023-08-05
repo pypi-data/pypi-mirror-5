@@ -1,0 +1,92 @@
+<html metal:use-macro="context/main_template/macros/master" i18n:domain="plone">
+
+    <metal:slot fill-slot="javascript_head_slot"
+        tal:define="language python: request.get('LANGUAGE', 'en')[:2]">
+
+        <script type="text/javascript" tal:content="string:SEARCH_URL = '${portal_url}/@@searchJSON'"></script>
+        <script type="text/javascript"
+                tal:content="string:LANGUAGE = '${language}'"></script>
+        <script type="text/javascript"
+            tal:define="columns context/portal_properties/flexigridsearch_properties/columns; 
+                        columns python: [col.strip() for col in columns if col.strip()]"
+            tal:content="string:COLUMNS = $columns" 
+            >
+        </script>
+        <script type="text/javascript" src="vs_flexigridsearch_translations.js"></script>
+        <script type="text/javascript" tal:condition="request/SearchableText | nothing">
+
+            /* KEYS *must* be identical with ZCatalog index names */
+
+            KNOWN_FIELDS = {
+              Title:        {display: vs_translate(LANGUAGE, 'title'), name : 'sortable_title', width : 200, sortable : true, align: 'left'},
+              Description:  {display: vs_translate(LANGUAGE, 'description'), name : 'Description', width : 150, sortable : false, align: 'left'},
+              Creator:      {display: vs_translate(LANGUAGE, 'creator'), name : 'Creator', width : 50, sortable : true, align: 'left'},
+              created:      {display: vs_translate(LANGUAGE, 'created'), name : 'created', width : 75, sortable : true, align: 'left'},
+              modified:     {display: vs_translate(LANGUAGE, 'modified'), name : 'modified', width : 75, sortable : true, align: 'left'},
+              expires:      {display: vs_translate(LANGUAGE, 'expires'), name : 'expires', width : 75, sortable : true, align: 'left'},
+              effective:    {display: vs_translate(LANGUAGE, 'effective'), name : 'effective', width : 75, sortable : true, align: 'left'},
+              location:     {display: vs_translate(LANGUAGE, 'location'), name : 'location', width : 70, sortable : true, align: 'left'},
+              start:        {display: vs_translate(LANGUAGE, 'start'), name : 'start', width : 75, sortable : true, align: 'left'},
+              end:          {display: vs_translate(LANGUAGE, 'end'), name : 'end', width : 75, sortable : true, align: 'left'},
+              getId:        {display: vs_translate(LANGUAGE, 'getId'), name : 'getId', width : 75, sortable : true, align: 'left'},
+              Subject:      {display: vs_translate(LANGUAGE, 'subject'), name : 'subject', width : 50, sortable : false, align: 'left'},
+              portal_type:  {display: vs_translate(LANGUAGE, 'portal_type'), name : 'portal_type', width : 75, sortable : true, align: 'left'},
+              getObjSize:   {display: vs_translate(LANGUAGE, 'getObjSize'), name : 'getObjSize', width : 50, sortable : false, align: 'left'},
+              review_state: {display: vs_translate(LANGUAGE, 'review_state'), name : 'review_state', width : 50, sortable : true, align: 'left'}
+            };
+
+            $j = jQuery.noConflict()
+
+            function clearForm() {
+                $j('#SearchableText').val('');
+                $j('#results').hide();
+            }
+
+            $j(document).ready(function() {
+
+                /* Calculate colModel */
+                var colModel = new Array()
+                for (var i=0; i < COLUMNS.length; i++) {
+                    var col = COLUMNS[i];
+                    if (col in KNOWN_FIELDS)
+                        colModel.push(KNOWN_FIELDS[col]);
+                    else
+                        alert('Unknown field found in column specification: ' + col);
+                }
+
+                $j('#results').flexigrid({
+                    url : SEARCH_URL,
+                    dataType : 'json',
+                    colModel : colModel,
+                    sortname: "id",
+                    sortorder: "asc",
+                    usepager: true,
+                    useRp: true,
+                    rp: 10,
+                    showTableToggleBtn: false,
+                    resizable: true,
+                    height: 300,
+                    singleSelect: true,
+                    title: vs_translate(LANGUAGE, 'results'),
+                    pagestat: vs_translate(LANGUAGE, 'display_from_to'),
+                    pagetext: vs_translate(LANGUAGE, 'page'),
+                    outof: vs_translate(LANGUAGE, 'outof')
+                    });
+            });
+        </script>
+    </metal:slot>
+
+    <div metal:fill-slot="main">
+        <fieldset>
+            <legend i18n:translate="Search">Search</legend>
+            <form method="get" tal:attributes="action string:$portal_url/search">
+                <span i18n:translate="Text">Text</span>: 
+                <input type="text" size="80" name="SearchableText" id="SearchableText" tal:attributes="value request/SearchableText | nothing" />
+                <br/>
+                <input class="context" type="submit" value="Search" i18n:attributes="value label_perform_search" /> &nbsp;
+                <input class="context" type="button" value="Reset form" i18n:domain="vs.flexigridsearch" i18n:attributes="value label_reset" nclick="clearForm()" />
+            </form>
+        </fieldset>
+        <table id="results" style="display: none"></table>
+    </div>
+</html>
