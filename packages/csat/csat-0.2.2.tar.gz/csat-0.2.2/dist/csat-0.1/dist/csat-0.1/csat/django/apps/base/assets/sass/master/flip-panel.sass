@@ -1,0 +1,58 @@
+.flip-panel
+	$hd: $dialogsAnimationDuration/2
+	display: block
+	position: relative
+
+	+perspective(600)
+	+transform-style(preserve-3d)
+
+	&:not(.open):not(.visible)
+		.back-panel
+			position: absolute
+			display: none
+			top: 0
+			left: 0
+			width: 100%
+			height: 100%
+
+		&.closed .back-panel
+			display: block
+
+	&.visible
+		z-index: $zindexModal
+		+transition-duration($dialogsAnimationDuration)
+		+transition-property(top, left, width, height)
+
+		.front-panel, .back-panel
+			position: absolute
+			display: block
+			top: 0
+			left: 0
+			width: 100%
+			+backface-visibility(hidden)
+			+transition-property(transform, opacity)
+
+	&.closed, &.open
+		position: absolute
+		margin: 0
+
+	&.closed .front-panel,
+	&.open .back-panel
+		opacity: 1
+		+transform(rotateY(0deg))
+		+transition-duration($hd, 0s)
+		+transition-delay($hd, $hd)
+		+transition-timing-function(ease-out)
+
+	&.closed .back-panel,
+	&.open .front-panel
+		opacity: 0
+		+transition-duration($hd, 0s)
+		+transition-delay(0s, $hd)
+		+transition-timing-function(ease-in)
+
+	&.closed .back-panel
+		+transform(rotateY(-90deg))
+
+	&.open .front-panel
+		+transform(rotateY(90deg))
