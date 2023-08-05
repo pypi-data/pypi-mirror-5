@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+import spiff
+import argparse
+
+class Command(object):
+  def __init__(self):
+    super(Command, self).__init__()
+
+  @classmethod
+  def addOptions(cls, parser):
+    pass
+
+  def run(self, api, args):
+    raise NotImplementedError
+
+class SensorCommand(Command):
+  help = "Update sensors"
+
+  @classmethod
+  def addOptions(cls, parser):
+    parser.add_argument (
+      '--sensor-id',
+      dest='sensor_id',
+      help='Sensor ID to modify'
+    )
+    parser.add_argument (
+      '--set',
+      dest='set',
+      help='Value to set',
+      default=None
+    )
+    parser.add_argument (
+      '--type',
+      dest='type',
+      help='Value type {string,int}',
+      default='string'
+    )
+
+  def run(self, api, args):
+    sensor = api.sensor(args.sensor_id)
+    if args.set is not None:
+      val = args.set
+      if args.type == "string":
+        val = str(args.set)
+      if args.type == "int":
+        val = int(args.set)
+      sensor.setValue(val)
+      sensor.refresh()
+    print sensor.value
+
+COMMANDS = {
+  'sensor': SensorCommand
+}
+
+def main():
+  parser = argparse.ArgumentParser (
+    description="command line interface to Spiff"
+  )
+
+  parser.add_argument (
+    '--url',
+    dest='url',
+    help='Spiff URL to use, unless one is automatically discovered'
+  )
+  parser.add_argument (
+    '--noverify',
+    dest='verify',
+    action='store_false',
+    default=True,
+    help="Don't try to verify the SSL certificate"
+  )
+
+  subparsers = parser.add_subparsers(help="subcommand")
+  for commandName,cmd in COMMANDS.iteritems():
+    cmd = cmd()
+    subparser = subparsers.add_parser(commandName, help=cmd.help)
+    cmd.addOptions(subparser)
+    subparser.set_defaults(cmd=cmd)
+
+  args = parser.parse_args()
+
+  api = spiff.API(args.url, verify=args.verify)
+
+  args.cmd.run(api, args)
+
+if __name__ == "__main__":
+  main()
