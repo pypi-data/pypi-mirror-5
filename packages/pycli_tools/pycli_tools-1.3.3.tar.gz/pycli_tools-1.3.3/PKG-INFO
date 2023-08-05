@@ -1,0 +1,109 @@
+Metadata-Version: 1.0
+Name: pycli_tools
+Version: 1.3.3
+Summary: A python module to help create predictable command line tools
+Home-page: http://nrocco.github.io/
+Author: Nico Di Rocco
+Author-email: dirocco.nico@gmail.com
+License: Copyright (c) 2013, Nico Di Rocco.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+Download-URL: http://github.com/nrocco/pycli-tools
+Description: pycli_tools
+        ===========
+        
+        A python module to help create predictable command line tools
+        
+        `pycli_tools` is a python module that wraps the `ArgumentParser` class from the
+        build-in `argparse` module. If you use it in your command line scripts you will
+        get some defaults options added to your application such as `--verbose` and
+        `--quiet` to control the verbosity of your application (using the python logging
+        module). Also there is the `--config` option that gives you the ability to read
+        command line arguments from a configuration file to save users of your
+        application a lot of typing.
+        
+        Copyright (c) 2013 Nico Di Rocco.
+        License: MIT (see LICENSE for details)
+        
+        
+        installation
+        ------------
+        
+        Install from pip
+        
+            $ pip install pycli_tools
+        
+        Or clone this git repository to get the latest version and install using
+        setuptools or distribute.
+        
+            $ python setup.py install
+        
+        
+        usage
+        -----
+        
+        Use the `get_argparser` helper function instead of creating your own
+        ArgumentParser instance like you're used to. Save the following snippet as a
+        file `myapp.py`
+        
+            $ cat myapp.py
+            from pycli_tools import get_argparser
+            parser = get_argparser(prog='myapp', version='1.0',
+                                   default_config='~/.myapprc')
+            parser.add_argument('action')
+            args = parser.parse_args()
+        
+        
+        Try it out for yourself. You will get some default command line options
+        without doing anything
+        
+            $ python myapp.py -h
+            usage: myapp [-h] [-c CONFIG_FILE] [-v] [-q] [-V] action
+        
+            positional arguments:
+              action
+        
+            optional arguments:
+              -h, --help            show this help message and exit
+              -c CONFIG_FILE, --config CONFIG_FILE
+                                    path to the config file
+              -v, --verbose         output more verbose
+              -q, --quiet           surpress all output
+              -V, --version         show program's version number and exit
+        
+        
+        The `-c` or `--config` option by default uses the configuration file that you
+        passed to the `get_argparser` helper function. Defaults are read from that
+        file from the section with the same name as the `prog` variable. In the above
+        case `myapp`:
+        
+            $ cat ~/.myapprc
+            [myapp]
+            verbose = 10
+        
+        
+        Now you don't have to pass `-vvv` as a command line option to enable verbose
+        otuput.
+        
+Platform: UNKNOWN
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
