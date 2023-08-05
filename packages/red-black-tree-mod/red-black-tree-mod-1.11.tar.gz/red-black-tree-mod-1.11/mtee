@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import string
+
+#def no_eol(line):
+#    if sys.line[-1:] == '\n':
+#        return line[:-1]
+#    else:
+#        return line
+
+def usage(retval):
+    sys.stderr.write('%s sets up multiple pipes and sends a copy of stdin to each of them\n' % sys.argv[0])
+    sys.stderr.write('\n')
+    sys.stderr.write('Usage: %s [-f file_of_commands1] [-f file_of_commands2] ... [-f file_of_commandsn] [-h] [--] command1 command2 ... commandn\n' % sys.argv[0])
+    sys.stderr.write('\n')
+    sys.stderr.write('-h shows this help message\n')
+    sys.stderr.write('-- signals the end of options, so that commands may start with a "-"\n')
+    sys.stderr.write('-f filename reads commands to set up pipes with, one command per line\n')
+    sys.stderr.write('-q says to operate quietly\n')
+    sys.stderr.write('commandx says to use commandx to set up a pipe\n')
+    sys.exit(retval)
+
+commands = []
+quiet = 0
+
+while sys.argv[1:] and sys.argv[1][0:1] == '-':
+    if sys.argv[1] == '--':
+        del sys.argv[1]
+        break
+    elif sys.argv[1] == '-f' and sys.argv[2:]:
+        filename = sys.argv[2]
+        commands += open(filename, 'r').readlines()
+        del sys.argv[1]
+    elif sys.argv[1] == '-h':
+        usage(0)
+    elif sys.argv[1] == '-q':
+        quiet = 1
+    else:
+        sys.stderr.write('%s: Illegal option: %s\n' % (sys.argv[0], sys.argv[1]))
+        usage(1)
+    del sys.argv[1]
+
+commands += sys.argv[1:]
+
+# Bourne shell (or bash, as the case may be) doesn't care about leading and trailing whitespace anyway
+commands = map(string.strip, commands)
+
+pipes=[]
+if not quiet:
+    sys.stderr.write('Creating %d pipes\n' % len(commands))
+for i in xrange(len(commands)):
+    if not quiet:
+        sys.stderr.write('popening command %d: %s\n' % (i, commands[i]))
+    pipes.append([os.popen(commands[i],'w'),1])
+    
+eof = 0
+while 1:
+    at_least_one_pipe_remains=0
+    buf = sys.stdin.read(1024 * 1024)
+    if not buf:
+        eof = 1
+        break
+    for p in xrange(len(pipes)):
+        if pipes[p][1]:
+            try:
+                pipes[p][0].write(buf)
+                at_least_one_pipe_remains = 1
+            except:
+                if not quiet:
+                    sys.stderr.write('terminated: %s\n' % commands[p])
+                pipes[p][1] = 0
+    if not at_least_one_pipe_remains:
+        break
+
+if eof:
+    for p in xrange(len(pipes)):
+        if pipes[p][1]:
+            pipes[p][0].close()
+

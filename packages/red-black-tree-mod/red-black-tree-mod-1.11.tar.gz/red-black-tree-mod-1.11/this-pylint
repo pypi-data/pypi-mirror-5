@@ -1,0 +1,114 @@
+#!/usr/bin/python3
+
+import os
+import re
+import sys
+import subprocess
+
+IGNORE_MESSAGES = []
+
+def usage(retval):
+    w = sys.stderr.write
+    w('Usage: %s --ignore-message re1 --ignore-message re2 --to-pylint --pylint-option file_to_check\n' % sys.argv[0])
+    sys.exit(retval)
+
+def get_output_ignore_exit_code(command):
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #process.communicate()
+    stdout = process.stdout.read()
+    dummy = process.wait()
+    lines = stdout.split(b'\n')
+    return lines
+
+def is_relevant(line):
+    for prefix in [ b'***', b'C:', b'E:', b'F:', b'I:', b'R:', b'W:', ]:
+        if line.startswith(prefix):
+            return True
+    return False
+
+def is_traceback(line):
+    if line.startswith(b'Traceback (most recent call last):'):
+        return True
+    else:
+        return False
+
+def has_traceback(lines):
+    if any(is_traceback(line) for line in lines):
+        return True
+    else:
+        return False
+
+def remove_semi_relevant(lines):
+    for line in lines:
+        if is_semi_relevant(line):
+            pass
+        else:
+            yield line
+
+def is_semi_relevant(line):
+    if b'FIXME' in line:
+        return True
+    elif line.startswith(b'I:') and b'Locally disabling' in line:
+        return True
+    elif line.startswith(b'***'):
+        return True
+    else:
+        for ignore_message in IGNORE_MESSAGES:
+            # We compile these more than necessary, but this isn't really much of a bottleneck
+            ignore_regex = re.compile(ignore_message, re.IGNORECASE)
+            match = ignore_regex.match(line)
+            if match:
+                return True
+        else:
+            return False
+
+def main():
+    to_pylint = ''
+    while sys.argv[1:]:
+        if sys.argv[1] == '--ignore-message':
+            IGNORE_MESSAGES.append(bytes(sys.argv[2], 'ASCII'))
+            del sys.argv[1]
+        elif sys.argv[1] in '--to-pylint':
+            to_pylint = ' '.join(sys.argv[2:])
+            del sys.argv[2:]
+        elif sys.argv[1] in [ '--help', '-h' ]:
+            usage(0)
+        else:
+            sys.stderr.write('%s: Unrecognized option: %s\n' % (sys.argv[0], sys.argv[1]))
+            usage(1)
+        del sys.argv[1]
+
+    significant_found = False
+    messages_of_interest = []
+    for pylint in [ '/usr/local/cpython-2.5/bin/pylint', '/usr/local/cpython-3.2/bin/pylint', ]:
+        if os.path.exists(pylint):
+            command = ('%s ' % pylint) + \
+                ('--init-hook=\'import sys; sys.path.append("%s"); sys.path.append(".")\' ' % os.path.expanduser('~/lib')) + \
+                '--max-line-length=133 ' + \
+                "--indent-string='    ' " + \
+                '--module-rgx="[A-Za-z_][-a-zA-Z0-9_]+$" ' + \
+                '--class-rgx="[A-Za-z_][-a-zA-Z0-9_]+$" ' + \
+                to_pylint
+            output_lines=get_output_ignore_exit_code(command)
+            if has_traceback(output_lines):
+                sys.stderr.write('%s: Detected pylint traceback:\n' % sys.argv[0])
+                sys.stderr.write('\n'.join(output_lines))
+                sys.exit(1)
+            relevant_lines = [ output_line for output_line in output_lines if is_relevant(output_line) ]
+            pruned_lines = list(remove_semi_relevant(relevant_lines))
+            if pruned_lines:
+                significant_found = True
+                messages_of_interest.extend(relevant_lines)
+        else:
+            sys.stderr.write('%s: %s does not exist\n' % (sys.argv[0], pylint))
+            sys.exit(1)
+
+    if significant_found:
+        for message_of_interest in messages_of_interest:
+            sys.stderr.write('%s\n' % message_of_interest.decode('ISO-8859-1'))
+        sys.exit(1)
+    else:
+        sys.exit(0)
+
+main()
+
