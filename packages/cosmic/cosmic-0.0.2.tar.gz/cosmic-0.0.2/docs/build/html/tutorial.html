@@ -1,0 +1,260 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. Tutorial &mdash; Cosmic 0.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Cosmic 0.0.2 documentation" href="index.html" />
+    <link rel="next" title="2. Reference" href="reference.html" />
+    <link rel="prev" title="Cosmic in Python" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="2. Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Cosmic in Python"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Cosmic 0.0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<h1>1. Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>The working code for this example API can be found <a class="reference external" href="https://github.com/cosmic-api/cosmic.py/blob/master/examples/zodiac.py">here</a>.</p>
+<div class="section" id="building-an-api">
+<h2>1.1. Building an API<a class="headerlink" href="#building-an-api" title="Permalink to this headline">¶</a></h2>
+<p>Start by creating a new <a class="reference internal" href="reference.html#cosmic.api.API" title="cosmic.api.API"><tt class="xref py py-class docutils literal"><span class="pre">API</span></tt></a> object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">from</span> <span class="nn">cosmic.api</span> <span class="kn">import</span> <span class="n">API</span>
+<span class="kn">from</span> <span class="nn">cosmic.models</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">S</span>
+<span class="kn">from</span> <span class="nn">teleport</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">zodiac</span> <span class="o">=</span> <span class="n">API</span><span class="p">(</span><span class="s">&quot;zodiac&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To define a model, we subclass <a class="reference internal" href="reference.html#cosmic.models.Model" title="cosmic.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a>.</p>
+<p>Models are data type definitions which are helpful for validation and
+generating documentation. Let&#8217;s create a simple string model responsible for
+the zodiac sign:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@zodiac.model</span>
+<span class="k">class</span> <span class="nc">Sign</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">String</span><span class="p">()</span>
+
+    <span class="n">SIGNS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s">&quot;aries&quot;</span><span class="p">,</span>
+        <span class="s">&quot;taurus&quot;</span><span class="p">,</span>
+        <span class="s">&quot;gemini&quot;</span><span class="p">,</span>
+        <span class="s">&quot;cancer&quot;</span><span class="p">,</span>
+        <span class="s">&quot;leo&quot;</span><span class="p">,</span>
+        <span class="s">&quot;virgo&quot;</span><span class="p">,</span>
+        <span class="s">&quot;libra&quot;</span><span class="p">,</span>
+        <span class="s">&quot;scorpio&quot;</span><span class="p">,</span>
+        <span class="s">&quot;sagittarius&quot;</span><span class="p">,</span>
+        <span class="s">&quot;capricorn&quot;</span><span class="p">,</span>
+        <span class="s">&quot;aquarius&quot;</span><span class="p">,</span>
+        <span class="s">&quot;pisces&quot;</span>
+    <span class="p">]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">datum</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">datum</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">SIGNS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;Unknown zodiac sign&quot;</span><span class="p">,</span> <span class="n">datum</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note the <tt class="xref py py-attr docutils literal"><span class="pre">schema</span></tt> attribute in the model class. This is a Teleport
+serializer, a special type definition that cosmic uses for serialization,
+validation as well as to automatically generate documentation. You can get
+started with Teleport <a class="reference external" href="/docs/teleport/python/">here</a>.</p>
+<p>After Cosmic passes raw JSON data through the Teleport schema, it will invoke
+the model&#8217;s <tt class="xref py py-meth docutils literal"><span class="pre">validate()</span></tt> function if such exists.</p>
+<p>Now we can use this model to create an <em>action</em>, a function that may be called
+with a POST request to your API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@zodiac.action</span><span class="p">(</span>
+    <span class="n">accepts</span><span class="o">=</span><span class="n">S</span><span class="p">(</span><span class="n">Sign</span><span class="p">),</span>
+    <span class="n">returns</span><span class="o">=</span><span class="n">String</span><span class="p">())</span>
+<span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">sign</span><span class="p">):</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="s">&quot;For </span><span class="si">%s</span><span class="s">, now is a good time to &quot;</span> <span class="o">%</span> <span class="n">sign</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span>
+        <span class="s">&quot;build an API.&quot;</span><span class="p">,</span>
+        <span class="s">&quot;mow the lawn.&quot;</span><span class="p">,</span>
+        <span class="s">&quot;buy Bitcoin.&quot;</span><span class="p">,</span>
+        <span class="s">&quot;get a snake tatoo.&quot;</span>
+    <span class="p">])</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot; It is &quot;</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span>
+        <span class="s">&quot;probable&quot;</span><span class="p">,</span>
+        <span class="s">&quot;not improbable&quot;</span><span class="p">,</span>
+        <span class="s">&quot;conceivable&quot;</span><span class="p">,</span>
+        <span class="s">&quot;not entirely out of the question&quot;</span>
+    <span class="p">])</span> <span class="o">+</span> <span class="s">&quot; that you will meet a handsome stranger.&quot;</span>
+    <span class="k">return</span> <span class="n">ret</span>
+</pre></div>
+</div>
+<p>The <em>accepts</em> and <em>returns</em> arguments are both serializers. Notice how we can
+use the model we defined above in a schema simply by wrapping it in an
+<tt class="xref py py-class docutils literal"><span class="pre">S</span></tt> instance. By providing an <em>accepts</em> definition like
+the one above, we are ensuring that the function will only get called with
+deserialized and validated data, in this case a <tt class="xref py py-class docutils literal"><span class="pre">Sign</span></tt> instance.</p>
+<p>Now you are ready to run the API. The <a class="reference internal" href="reference.html#cosmic.api.API.run" title="cosmic.api.API.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a> method uses
+<a class="reference external" href="http://flask.pocoo.org/">Flask</a> to serve your API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">zodiac</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This will create several HTTP endpoints. If you visit <tt class="docutils literal"><span class="pre">/spec.json</span></tt> you will see:</p>
+<div class="code json highlight-python"><div class="highlight"><pre><span class="p">{</span>
+    <span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="s">&quot;zodiac&quot;</span><span class="p">,</span>
+    <span class="s">&quot;models&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="s">&quot;Sign&quot;</span><span class="p">,</span>
+            <span class="s">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;string&quot;</span><span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="s">&quot;actions&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="s">&quot;predict&quot;</span><span class="p">,</span>
+            <span class="s">&quot;accepts&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;zodiac.Sign&quot;</span><span class="p">},</span>
+            <span class="s">&quot;returns&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;string&quot;</span><span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This endpoint can be used to dynamically build a client for your API.
+The type signatures are used for documentation and validation.</p>
+<p>You can now interact with your new API via POST requests:</p>
+<div class="code bash highlight-python"><pre>$ curl -X POST -H "Content-Type: application/json" -d '"leo"' http://localhost:5000/actions/predict
+"For leo, now is a good time to get a snake tatoo. It is probable that you will meet a handsome stranger."</pre>
+</div>
+<p>If you try to submit an invalid zodiac sign, you&#8217;ll get a 400 error response:</p>
+<div class="code bash highlight-python"><pre>$ curl -X POST -H "Content-Type: application/json" -d '"tiger"' http://localhost:5000/actions/predict
+{"error": "Unknown zodiac sign: u'tiger'"}</pre>
+</div>
+</div>
+<div class="section" id="consuming-an-api">
+<h2>1.2. Consuming an API<a class="headerlink" href="#consuming-an-api" title="Permalink to this headline">¶</a></h2>
+<p>Now that we&#8217;ve launched our API, we can consume it using the same library we used to build it.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cosmic.api</span> <span class="kn">import</span> <span class="n">API</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">zodiac</span> <span class="o">=</span> <span class="n">API</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">&quot;http://localhost:5000/spec.json&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pisces</span> <span class="o">=</span> <span class="n">zodiac</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Sign</span><span class="p">(</span><span class="s">&quot;pisces&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">zodiac</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">pisces</span><span class="p">)</span>
+<span class="go">&quot;For pisces, now is a good time to mow the lawn. It is not entirely out of the question that you will meet a handsome stranger.&quot;</span>
+</pre></div>
+</div>
+<p>When we instantiate a model from a third-party API, the only validation Cosmic can run is schema
+validation. Thus, this will work without error:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pisces</span> <span class="o">=</span> <span class="n">zodiac</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Sign</span><span class="p">(</span><span class="s">&quot;pies&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>However, when you try to use it in an action, you will receive and error:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">zodiac</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">pisces</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+  File <span class="nb">&quot;cosmic/actions.py&quot;</span>, line <span class="m">93</span>, in <span class="n">__call__</span>
+    <span class="k">raise</span> <span class="n">InternalServerError</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">])</span>
+<span class="gr">werkzeug.exceptions.InternalServerError</span>: <span class="n">Unknown zodiac sign: u&#39;pies&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">1. Tutorial</a><ul>
+<li><a class="reference internal" href="#building-an-api">1.1. Building an API</a></li>
+<li><a class="reference internal" href="#consuming-an-api">1.2. Consuming an API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Cosmic in Python</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="reference.html"
+                        title="next chapter">2. Reference</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="2. Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Cosmic in Python"
+             >previous</a> |</li>
+        <li><a href="index.html">Cosmic 0.0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, 8313547 Canada Inc..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. Reference &mdash; Cosmic 0.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Cosmic 0.0.2 documentation" href="index.html" />
+    <link rel="prev" title="1. Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="1. Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Cosmic 0.0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="reference">
+<h1>2. Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-cosmic.api">
+<span id="apis"></span><h2>2.1. APIs<a class="headerlink" href="#module-cosmic.api" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cosmic.api.API">
+<em class="property">class </em><tt class="descclassname">cosmic.api.</tt><tt class="descname">API</tt><big>(</big><em>name</em>, <em>homepage=None</em>, <em>actions=</em><span class="optional">[</span><span class="optional">]</span>, <em>models=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#cosmic.api.API" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="staticmethod">
+<dt id="cosmic.api.API.load">
+<em class="property">static </em><tt class="descname">load</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#cosmic.api.API.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a spec URL, loads the JSON form of an API and deserializes
+it, returning the <a class="reference internal" href="#cosmic.api.API" title="cosmic.api.API"><tt class="xref py py-class docutils literal"><span class="pre">API</span></tt></a> object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cosmic.api.API.get_blueprint">
+<tt class="descname">get_blueprint</tt><big>(</big><em>debug=False</em><big>)</big><a class="headerlink" href="#cosmic.api.API.get_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <tt class="xref py py-class docutils literal"><span class="pre">flask.blueprints.Blueprint</span></tt> instance containing
+everything necessary to run your API. You may use this to augment an
+existing Flask website with an API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
+<span class="kn">from</span> <span class="nn">cosmic</span> <span class="kn">import</span> <span class="n">API</span>
+
+<span class="n">hackernews</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">hnapi</span> <span class="o">=</span> <span class="n">API</span><span class="p">(</span><span class="s">&quot;hackernews&quot;</span><span class="p">)</span>
+
+<span class="n">hackernews</span><span class="o">.</span><span class="n">register_blueprint</span><span class="p">(</span>
+    <span class="n">hnapi</span><span class="o">.</span><span class="n">get_blueprint</span><span class="p">(),</span>
+    <span class="n">url_prefix</span><span class="o">=</span><span class="s">&quot;/api&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <em>debug</em> parameter will determine whether Cosmic will propagate
+exceptions, letting them reach the debugger or swallow them up,
+returning proper HTTP error responses.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cosmic.api.API.get_flask_app">
+<tt class="descname">get_flask_app</tt><big>(</big><em>debug=False</em>, <em>url_prefix=None</em><big>)</big><a class="headerlink" href="#cosmic.api.API.get_flask_app" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Flask application with nothing but the API blueprint
+registered.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cosmic.api.API.run">
+<tt class="descname">run</tt><big>(</big><em>url_prefix=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cosmic.api.API.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the API as a Flask app. All keyword arguments except
+<em>url_prefix</em> channelled into <tt class="xref py py-meth docutils literal"><span class="pre">Flask.run()</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cosmic.api.API.action">
+<tt class="descname">action</tt><big>(</big><em>accepts=None</em>, <em>returns=None</em><big>)</big><a class="headerlink" href="#cosmic.api.API.action" title="Permalink to this definition">¶</a></dt>
+<dd><p>A decorator for creating actions out of functions and registering
+them with the API.</p>
+<p>The <em>accepts</em> parameter is a schema that will deserialize the input of
+the action, <em>returns</em> is a schema that will serialize the output of
+the action. The name of the function becomes the name of the action.
+Internally <a class="reference internal" href="#cosmic.actions.Action.from_func" title="cosmic.actions.Action.from_func"><tt class="xref py py-meth docutils literal"><span class="pre">from_func()</span></tt></a> is used.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">teleport</span> <span class="kn">import</span> <span class="n">Integer</span>
+
+<span class="n">random</span> <span class="o">=</span> <span class="n">API</span><span class="p">(</span><span class="s">&quot;random&quot;</span><span class="p">)</span>
+
+<span class="nd">@random.action</span><span class="p">(</span><span class="n">returns</span><span class="o">=</span><span class="n">Integer</span><span class="p">())</span>
+<span class="k">def</span> <span class="nf">generate</span><span class="p">():</span>
+    <span class="k">return</span> <span class="mi">9</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="cosmic.api.API.model">
+<tt class="descname">model</tt><big>(</big><em>model_cls</em><big>)</big><a class="headerlink" href="#cosmic.api.API.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>A decorator for registering a model with an API. The name of the
+model class is used as the name of the resulting model.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">teleport</span> <span class="kn">import</span> <span class="n">String</span>
+
+<span class="n">dictionary</span> <span class="o">=</span> <span class="n">API</span><span class="p">(</span><span class="s">&quot;dictionary&quot;</span><span class="p">)</span>
+
+<span class="nd">@dictionary.model</span>
+<span class="k">class</span> <span class="nc">Word</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">String</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cosmic.models.Model">
+<em class="property">class </em><tt class="descclassname">cosmic.models.</tt><tt class="descname">Model</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#cosmic.models.Model" title="Permalink to this definition">¶</a></dt>
+<dd><p>A data type definition attached to an API.</p>
+<dl class="classmethod">
+<dt id="cosmic.models.Model.get_schema">
+<em class="property">classmethod </em><tt class="descname">get_schema</tt><big>(</big><big>)</big><a class="headerlink" href="#cosmic.models.Model.get_schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Teleport serializer that describes the structure of the
+data for this model. By default this method will return the
+<tt class="xref py py-attr docutils literal"><span class="pre">schema</span></tt> attribute of the <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> subclass. This is the
+attribute you should override to set the schema.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cosmic.models.Model.serialize_self">
+<tt class="descname">serialize_self</tt><big>(</big><big>)</big><a class="headerlink" href="#cosmic.models.Model.serialize_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the JSON form of the model</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="cosmic.models.Model.deserialize_self">
+<em class="property">classmethod </em><tt class="descname">deserialize_self</tt><big>(</big><em>datum</em><big>)</big><a class="headerlink" href="#cosmic.models.Model.deserialize_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the JSON form of the model, deserializes it, validates it and
+instantiates the model.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="cosmic.models.Model.validate">
+<em class="property">classmethod </em><tt class="descname">validate</tt><big>(</big><em>datum</em><big>)</big><a class="headerlink" href="#cosmic.models.Model.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the native data as deserialized by <tt class="xref py py-attr docutils literal"><span class="pre">schema</span></tt>, validate
+it, raising a <tt class="xref py py-exc docutils literal"><span class="pre">teleport.exceptions.ValidationError</span></tt> if the data
+is invalid.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cosmic.actions">
+<span id="actions"></span><h2>2.2. Actions<a class="headerlink" href="#module-cosmic.actions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cosmic.actions.Action">
+<em class="property">class </em><tt class="descclassname">cosmic.actions.</tt><tt class="descname">Action</tt><big>(</big><em>name</em>, <em>accepts=None</em>, <em>returns=None</em>, <em>raw_func=None</em><big>)</big><a class="headerlink" href="#cosmic.actions.Action" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="classmethod">
+<dt id="cosmic.actions.Action.from_func">
+<em class="property">classmethod </em><tt class="descname">from_func</tt><big>(</big><em>func</em>, <em>accepts=None</em>, <em>returns=None</em><big>)</big><a class="headerlink" href="#cosmic.actions.Action.from_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an action from a function <em>func</em> that expects data as
+defined by the <em>accepts</em> schema and returns data that will be
+serialized by the <em>returns</em> schema. Both <em>accepts</em> and <em>returns</em> must
+be Teleport serializers.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cosmic.actions.Action.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cosmic.actions.Action.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>If action was generated from a function, calls it with the passed
+in data, otherwise serializes the data, makes an HTTP request to the
+API and returns its normalized response.</p>
+<p>Uses <a class="reference internal" href="#cosmic.tools.pack_action_arguments" title="cosmic.tools.pack_action_arguments"><tt class="xref py py-func docutils literal"><span class="pre">pack_action_arguments()</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cosmic.exceptions">
+<span id="exceptions"></span><h2>2.3. Exceptions<a class="headerlink" href="#module-cosmic.exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cosmic.exceptions.ModelNotFound">
+<em class="property">class </em><tt class="descclassname">cosmic.exceptions.</tt><tt class="descname">ModelNotFound</tt><a class="headerlink" href="#cosmic.exceptions.ModelNotFound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-cosmic.tools">
+<span id="tools-and-helpers"></span><h2>2.4. Tools and Helpers<a class="headerlink" href="#module-cosmic.tools" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cosmic.tools.Namespace">
+<em class="property">class </em><tt class="descclassname">cosmic.tools.</tt><tt class="descname">Namespace</tt><a class="headerlink" href="#cosmic.tools.Namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Essentially a sorted dictionary. Allows to reference actions or
+models as attributes and implements __all__ so that a Namespace
+instance can be treated as a module.</p>
+<dl class="method">
+<dt id="cosmic.tools.Namespace.add">
+<tt class="descname">add</tt><big>(</big><em>name</em>, <em>item</em><big>)</big><a class="headerlink" href="#cosmic.tools.Namespace.add" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.get_arg_spec">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">get_arg_spec</tt><big>(</big><em>func</em><big>)</big><a class="headerlink" href="#cosmic.tools.get_arg_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate JSON schema spec for action. If function has no
+arguments, returns None.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.apply_to_func">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">apply_to_func</tt><big>(</big><em>func</em>, <em>data</em><big>)</big><a class="headerlink" href="#cosmic.tools.apply_to_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a piece of normalized data to the user-defined action function
+based on its argument spec. The data is assumed to be normalized by a
+schema compatible with <em>func</em>. (see
+<a class="reference internal" href="#cosmic.tools.schema_is_compatible" title="cosmic.tools.schema_is_compatible"><tt class="xref py py-func docutils literal"><span class="pre">schema_is_compatible()</span></tt></a>). Thus, no validation is
+performed.</p>
+<p>If <em>func</em> takes a single argument, <em>data</em> is passed in as is. If it takes
+multiple arguments, <em>data</em> is assumed to be a dict and is unpacked into
+the function arguments.</p>
+<p>If object is None, <em>func</em> is called with no arguments.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.pack_action_arguments">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">pack_action_arguments</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cosmic.tools.pack_action_arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes arbitrary args and kwargs and packs them into a dict if there are
+more than one. Returns <cite>None</cite> if there are no arguments. Must be called
+with either a single argument or multiple keyword arguments.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.schema_is_compatible">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">schema_is_compatible</tt><big>(</big><em>general</em>, <em>detailed</em><big>)</big><a class="headerlink" href="#cosmic.tools.schema_is_compatible" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given two Teleport serializers, checks if the detailed one is
+compatible with the general one. The general schema is a subset as
+returned by <tt class="xref py py-func docutils literal"><span class="pre">tools.get_arg_spec()</span></tt>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.normalize_json">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">normalize_json</tt><big>(</big><em>schema</em>, <em>datum</em><big>)</big><a class="headerlink" href="#cosmic.tools.normalize_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.serialize_json">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">serialize_json</tt><big>(</big><em>schema</em>, <em>datum</em><big>)</big><a class="headerlink" href="#cosmic.tools.serialize_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.string_to_json">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">string_to_json</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#cosmic.tools.string_to_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cosmic.tools.json_to_string">
+<tt class="descclassname">cosmic.tools.</tt><tt class="descname">json_to_string</tt><big>(</big><em>box</em><big>)</big><a class="headerlink" href="#cosmic.tools.json_to_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. Reference</a><ul>
+<li><a class="reference internal" href="#module-cosmic.api">2.1. APIs</a></li>
+<li><a class="reference internal" href="#module-cosmic.actions">2.2. Actions</a></li>
+<li><a class="reference internal" href="#module-cosmic.exceptions">2.3. Exceptions</a></li>
+<li><a class="reference internal" href="#module-cosmic.tools">2.4. Tools and Helpers</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">1. Tutorial</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/reference.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="1. Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">Cosmic 0.0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, 8313547 Canada Inc..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
