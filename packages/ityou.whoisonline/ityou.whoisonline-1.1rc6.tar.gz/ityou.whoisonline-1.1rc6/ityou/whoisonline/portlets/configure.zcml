@@ -1,0 +1,60 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:browser="http://namespaces.zope.org/browser"    
+    i18n_domain="ityou.whoisonline">
+
+    <!-- Ensure Plone's portlets ZCML has already been processed; without
+         this, we may get a permission lookup error
+      -->
+    <include package="plone.app.portlets" />
+
+    <!-- you cannot use this because ajax calls login page
+        view_permission="cmf.ListPortalMembers"      -->  
+
+    <plone:portlet
+        name="ityou.portlets.whoisonline"
+        interface=".whoisonline.IWhoIsOnlinePortlet"
+        assignment=".whoisonline.Assignment"
+        edit_permission="cmf.ManagePortal"        
+        view_permission="cmf.ListPortalMembers"        
+        renderer=".whoisonline.Renderer"
+        addview=".whoisonline.AddForm"
+        editview=".whoisonline.EditForm"
+        />
+            
+     <plone:portlet
+         name="ityou.portlets.whoami"
+         interface=".whoami.IWhoAmIPortlet"
+         assignment=".whoami.Assignment"
+         edit_permission="cmf.ManagePortal"
+         view_permission="cmf.ListPortalMembers"         
+         renderer=".whoami.Renderer"
+         addview=".whoami.AddForm"
+         editview=".whoami.EditForm"
+         />
+
+     <browser:page
+        for="*"
+        name="whoisonline-ajax"
+        class=".ajax.AjaxWhoIsOnlineView"
+        permission="cmf.ListPortalMembers"
+        		layer="ityou.whoisonline.interfaces.IWhoIsOnline"
+        />
+        <!-- Nicht jeder darf sehen wer online ist!
+            permission="zope.Public" raus! -->
+
+	  <browser:resourceDirectory
+        name="ityou.whoisonline.resources"
+	    directory="resources"
+	    />        
+	    
+      <browser:page
+        name="whoisonline-settings"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".controlpanel.WhoIsOnlineSettingsControlPanel"
+        permission="cmf.ManagePortal"
+        		layer="ityou.whoisonline.interfaces.IWhoIsOnline"
+        />
+	    
+</configure>

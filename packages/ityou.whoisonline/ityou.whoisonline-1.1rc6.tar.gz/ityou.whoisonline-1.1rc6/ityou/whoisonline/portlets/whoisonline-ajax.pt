@@ -1,0 +1,56 @@
+<div tal:define="users view/online_users | nothing">
+    <dd class="portletItem odd" tal:condition="users" >
+        <tal:users tal:repeat="user users">
+            
+            <div class="portrait" 
+                tal:attributes="href user/profile; id user/id">
+                <img class="img-icon" 
+                    tal:attributes="
+                        src user/portrait;
+                        style python:'opacity:' + str( float(user.get('''bar''')) )" />
+                        
+                <div class="userprofile-box"><!--  ajax JQ box --></div>
+            </div>
+                
+        </tal:users>        
+        <div class="visualClear" ></div>    
+    </dd>
+
+    <!--  ================= JQ-TMPL ================= -->		
+    <div id="no-tal" tal:replace='structure string:
+
+        <script id="userprofile-tmpl" type="text/x-jquery-tmpl">
+        
+                    <!--  box -->
+                    <div class="arrow-top" ></div>
+                    <div class="who-is-online-box"  title="$${id}" >
+                        <a href="$${profile}" title="$${fullname} ">                                                   
+                            <img class="img-portrait" src="$${portrait}" />
+                        </a>
+                        <div class="bar-wrapper">
+                            <span style="width: $${bar*75}px" class="bar"></span>
+                        </div>
+                            
+                        <dl class="info-profile">
+                            <dd>                    
+                               <b><a class="fullname" href="$${profile}">$${fullname}</a></b>
+                           </dd>
+                           <dd>                               
+                               <a href="mailto:$${email}">$${email}</a>
+                           </dd>
+                           <dd tal:condition="view/imessage_installed">
+                               <a href="@@messages?sid=$${id}">-> Mitteilung versenden</a>
+                           </dd>
+                           <dd>Letzte Aktivität am <br /> $${recent_time}
+                           </dd>
+                        </dl>                                   
+
+                    </div>
+                    <!-- /box -->
+        </script>
+    '/>	
+    <!--  ================= /JQ-TMPL ================= -->		
+
+    
+
+</div>

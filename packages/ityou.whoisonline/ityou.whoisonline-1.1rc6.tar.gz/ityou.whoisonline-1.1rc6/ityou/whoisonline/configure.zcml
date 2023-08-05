@@ -1,0 +1,41 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="ityou.whoisonline">
+
+  <five:registerPackage package="." initialize=".initialize" />
+  
+    <include package="Products.CMFCore" file="permissions.zcml" />
+
+  <i18n:registerTranslations directory="locales" />
+  
+  <genericsetup:registerProfile
+      name="default"
+      title="ITYOU ESI - Who is online"
+      directory="profiles/default"
+      description="Installs the ityou.whoisonline package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+           
+  <!-- -*- extra stuff goes here -*- -->
+  <include package=".portlets" />
+
+  <browser:viewlet
+        name="ityou.whoisonline.tracking"
+        manager="plone.app.layout.viewlets.interfaces.IPortalTop"
+        class=".viewlets.OnlineTrackingViewlet"
+               permission="cmf.ListPortalMembers"
+        />
+  
+  <browser:page
+        for="*"
+        name="whoisonline-trigger"
+        class=".portlets.ajax.AjaxWhoIsOnlineTrigger"
+        permission="zope.Public"
+                layer="ityou.whoisonline.interfaces.IWhoIsOnline"
+        />
+  
+</configure>
