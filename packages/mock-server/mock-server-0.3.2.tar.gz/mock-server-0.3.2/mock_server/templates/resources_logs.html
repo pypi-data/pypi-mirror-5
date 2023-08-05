@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block header %}
+{% set active_page = "resources_logs" %}
+{% end %}
+
+{% block body %}
+<div class="span12 access-logs">
+    <div>
+        {% for line in reversed(data) %}
+        <div class="navbar request-item">
+          <div class="navbar-inner">
+            <a class="brand" href="#">{{line["method"]}} {{line["uri"]}} - {{line["status"]}}</a>
+            <ul class="nav pull-right">
+              <li><a href="#">{{datetime.datetime.strptime(line["time"], '%Y-%m-%dT%H:%M:%S.%f').strftime("%Y-%m-%d %H:%M:%S")}}</a></li>
+            </ul>
+          </div>
+          <div class="request-container">
+              <strong>Request headers</strong>
+              <pre>{% for key, value in line["headers"].iteritems() %}{% if key not in ("X-Real-IP", "X-Scheme", "X-Subdomain", "X-Real-Ip", "Connection") %}
+                {{key}} {{value}}{% end %}{% end %}
+              </pre>
+              {% if line["body"] %}
+              <strong>Request body</strong>
+              <pre>{{line["body"]}}</pre>
+              {% end %}
+          </div>
+        </div>
+        {% end %}
+    </div>
+</div>
+{% end %}
+
+{% block javascripts %}
+<script type="text/javascript">
+// make code pretty
+window.prettyPrint && prettyPrint()
+</script>
+{% end %}
