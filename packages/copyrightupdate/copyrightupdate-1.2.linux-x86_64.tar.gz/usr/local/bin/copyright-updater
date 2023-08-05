@@ -1,0 +1,64 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright © 2012-2013 Martin Ueding <dev@martin-ueding.de>
+# Copyright © 2013 K Richard Pixley <rich@noir.com>
+
+"""
+CLI client for the copyrightupdate module.
+
+Parses the given files and updates the copyright string.
+
+If no input files are given, the program acts as a filter from STDIN to STDOUT.
+"""
+
+import argparse
+import os
+import sys
+
+import copyrightupdate
+
+__docformat__ = "restructuredtext en"
+
+def main():
+    """
+    Parses command line options and checks all given files.
+    """
+    options = _parse_args()
+
+    if len(options.files) > 0:
+        for f in options.files:
+            # Ignore nonexistant files.
+            if not os.path.isfile(f):
+                continue
+
+            copyrightupdate.process_file(f, options.linecount)
+
+    else:
+        lines = sys.stdin.readlines()
+
+        if len(lines) > 0:
+            copyrightupdate.process_lines(lines, len(lines))
+
+            for line in lines:
+                sys.stdout.write(line)
+
+
+def _parse_args():
+    """
+    Parses the command line arguments.
+
+    :return: Namespace with arguments.
+    :rtype: Namespace
+    """
+    parser = argparse.ArgumentParser(description="Updates the copyright dates in source code.")
+    parser.add_argument('files', metavar='file', type=str, nargs='*',
+                        help='Files to check.')
+    parser.add_argument("-n", dest="linecount", type=int, default=copyrightupdate.default_linelimit,
+                        help="Number of lines to check from the beginning of the document. [default %(default)s]")
+
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    main()
