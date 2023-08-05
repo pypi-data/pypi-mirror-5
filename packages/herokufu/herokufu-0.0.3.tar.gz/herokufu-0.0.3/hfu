@@ -1,0 +1,340 @@
+#!/usr/bin/python
+"""
+
+Major (required) commands are:
+
+  action to take
+  -e / --environment -- environment to affect
+
+
+up: Creates (if necessary), configures, and deploys a complete environment, including uploading static files. (local uploads to same static file server as staging)
+hfu up -e local
+hfu up -e staging
+hfu up -e prod (For production, does test, then ups prod.)
+hfu up -e test
+
+manage: Allows you to run manage.py commands in a particular environment
+hfu manage -e local -o [ createdb / syncdb / migrate / etc. ]
+hfu manage -e staging -o [ createdb / syncdb / migrate / etc. ]
+hfu manage -e prod -o [ createdb / syncdb / migrate / etc. ]
+hfu manage -e test -o [ createdb / syncdb / migrate / etc. ]
+
+destroy: Use with caution. Destorys an environment, good for keeping you from being charged for it.
+hfu destroy -e local
+hfu destroy -e staging
+hfu destroy -e prod
+hfu destroy -e test
+
+test: Runs your test suite
+hfu test (ups test, runs test)
+
+reset: Destroys and then ups an environment.
+hfu reset -e local
+hfu reset -e staging
+hfu reset -e prod
+hfu reset -e test
+
+revert: Revert to the state prior to the most recent "up." Does not apply to local.
+hfu revert -e staging
+hfu revert -e prod
+hfu revert -e test
+
+"""
+
+import os
+import re
+import sys
+import os.path
+import urllib2
+import argparse
+import subprocess
+
+
+actions = ('up', 'manage', 'destroy', 'reset', 'test', 'revert')
+environments = ('local', 'staging', 'prod', 'test')
+
+prod_app_name = 'dakim-www-prod'
+staging_app_name = 'dakim-www-staging'
+test_app_name = 'dakim-www-test'
+
+
+def run_command(command):
+    print('\nRUNNING: %s' % command)
+    output = []
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    while True:
+        nextline = process.stdout.readline()
+        if (nextline == '') and (process.poll() is not None):
+            break
+        output.append(nextline)
+        sys.stdout.write(nextline)
+        sys.stdout.flush()
+
+    exitcode = process.returncode
+    if exitcode != 0:
+        print('ERROR: Command <%s> got returncode %s' % (command, exitcode))
+        sys.exit(100)
+    return "".join(output)
+
+
+def parse_commandline(args):
+    parser = argparse.ArgumentParser(description="Heroku Fu -- utilities to demonstate your heroku fu.")
+    parser.add_argument('action', help="What action to take. up, manage, destroy, or reset.")
+    parser.add_argument('-e', '--environment')
+    parser.add_argument('-o', '--options')
+    input = parser.parse_args(args)
+    if input.action not in actions:
+        print('You must pick an action of either up, manage, destroy, test, or reset')
+        sys.exit(10)
+    if (input.environment not in environments) and (input.action.upper() != 'TEST'):
+        print('you must pick an environment of local, staging, prod, or test.')
+        sys.exit(10)
+    if input.options and input.action != "manage":
+        print('You only use the --options argument when running "hfu manage."')
+        sys.exit(10)
+    if input.action == "manage" and input.options is None:
+        print('You must use the --options argument when running "hfu manage" to tell manage.py what to do.')
+        sys.exit(10)
+    return (input.action, input.environment, input.options)
+
+
+def verify_local_environment():
+    # Get current directory
+    CWD = os.getcwd()
+
+    # Get updates if any
+    run_command('git pull -u')
+    run_command('git submodule update --remote')
+
+    # Verify git
+    git_dir = os.path.join(CWD, '.git')
+    if not os.path.isdir(git_dir):
+        print('ERROR: You need to execute this from your project folder. Your project folder must be a git repo.')
+        sys.exit(100)
+    # Verify Vagrant
+    if not os.path.isfile(os.path.join(CWD, 'Vagrantfile')):
+        print('ERROR: You need to execute this from your project folder. Your project folder must contain a Vagrantfile.')
+        sys.exit(100)
+
+
+def heroku_create_app(appname):
+    run_command('heroku create --remote %s' % appname)
+    run_command('heroku apps:rename --remote %s %s' % (appname, appname))
+
+
+def heroku_add_addon(appname, addon):
+    run_command('heroku addons:add %s --app %s' % (addon, appname))
+
+
+def heroku_get_db_url(appname):
+    return run_command('heroku config:get DATABASE_URL --app %s' % appname).strip()
+
+
+def heroku_get_db_name(appname):
+    output = run_command('heroku pg --app %s' % appname)
+    for line in output.split('\n'):
+        if '===' in line:
+            return line.strip('=').strip()
+
+
+def heroku_set_config(file_list, appname):
+    config_list = []
+    for filename in file_list:
+        with open(os.path.join('hfu_settings', filename), 'r') as fileobj:
+            config_list.extend([x.strip() for x in fileobj.readlines()])
+    for config_pair in config_list:
+        key, value = config_pair.split('=')
+        result = run_command('heroku config:get %s --app %s' % (key, appname)).strip()
+        if result != value:
+            run_command('heroku config:set %s --app %s' % (config_pair, appname))
+
+
+def heroku_up_environment(appname, desired_addons, dynos_web, database_type):
+    current_app_list = run_command('heroku apps')
+    if appname not in current_app_list:
+        heroku_create_app(appname)
+
+    if appname == prod_app_name:
+        heroku_set_config(['settings_all', 'settings_auth_prod', 'settings_prod'], appname)
+    elif appname == staging_app_name:
+        heroku_set_config(['settings_all', 'settings_auth_staging', 'settings_staging'], appname)
+    elif appname == test_app_name:
+        heroku_set_config(['settings_all', 'settings_auth_test', 'settings_test'], appname)
+    else:
+        raise NotImplementedError
+
+    current_addons = run_command('heroku apps:info --app %s' % appname)
+
+    for addon in desired_addons:
+        if addon not in current_addons:
+            heroku_add_addon(appname, addon)
+
+    current_db_list = run_command('heroku pg --app %s' % appname)
+    if appname == prod_app_name:
+        if "===" not in current_db_list:
+            run_command('heroku addons:add %s --app %s' % (database_type, appname))
+    else:
+        if "===" not in current_db_list:
+            prod_dburl = heroku_get_db_url(prod_app_name)
+            run_command('heroku addons:add %s --fork %s --app %s' % (database_type, prod_dburl, appname))
+            db_name = heroku_get_db_name(appname)
+            run_command('heroku pg:promote %s --app %s' % (db_name, appname))
+
+    run_command('git push %s master' % appname)
+    run_command('heroku pg:wait --app %s' % appname)
+    run_command('heroku ps:scale web=%s --app %s' % (dynos_web, appname))
+    if appname == prod_app_name:
+        manage_command('prod', 'collectstatic --noinput')
+    elif appname == staging_app_name:
+        manage_command('staging', 'collectstatic --noinput')
+    elif appname == test_app_name:
+        manage_command('test', 'collectstatic --noinput')
+    else:
+        raise NotImplementedError
+
+
+
+def up_command(environment):
+    CHUNK = 16 * 1024
+    verify_local_environment()
+    CWD = os.getcwd()
+    sys.path.append(CWD)
+
+    if environment == "local":
+        # Get a copy of the production DB here:
+        run_command('heroku pgbackups:capture --expire --app %s' % prod_app_name)
+        output = run_command('heroku pgbackups:url --app %s' % prod_app_name)
+        with open('prod.dump', 'wb') as fobj:
+            for url in output.split('\n'):
+                if url:
+                    urlobj = urllib2.urlopen(url)
+                    while True:
+                        chunk = urlobj.read(CHUNK)
+                        if not chunk:
+                            break
+                        fobj.write(chunk)
+        run_command('vagrant plugin list | grep -q "vagrant-vbguest" || vagrant plugin install vagrant-vbguest  ')
+        if os.path.isfile(os.path.join(CWD, '.vagrant/machines/default/virtualbox/id')):
+            # Virtual machine exists
+            run_command('vagrant reload')
+        else:
+            # Virtual machine does not exist
+            run_command('vagrant up')
+        manage_command(environment, 'collectstatic --noinput')
+
+    elif environment == 'prod':
+        test_command()
+        import hfu_settings.herokuconfig_prod as hsettings
+        heroku_up_environment(prod_app_name, hsettings.desired_addons, hsettings.dynos_web, hsettings.database_type)
+
+    elif environment == 'staging':
+        import hfu_settings.herokuconfig_staging as hsettings
+        heroku_up_environment(staging_app_name, hsettings.desired_addons, hsettings.dynos_web, hsettings.database_type)
+
+    elif environment == 'test':
+        import hfu_settings.herokuconfig_test as hsettings
+        heroku_up_environment(test_app_name, hsettings.desired_addons, hsettings.dynos_web, hsettings.database_type)
+
+    else:
+        raise NotImplementedError
+
+
+def manage_command(environment, options):
+    verify_local_environment()
+    if environment == "local":
+        run_command('vagrant ssh -c "/vagrant/devserver/manage_local.bash %s"' % options)
+
+    elif environment == 'prod':
+        run_command('heroku run python manage.py %s --app %s' % (options, prod_app_name))
+
+    elif environment == 'staging':
+        run_command('heroku run python manage.py %s --app %s' % (options, staging_app_name))
+
+    elif environment == 'test':
+        run_command('heroku run python manage.py %s --app %s' % (options, test_app_name))
+    else:
+        raise NotImplementedError
+
+
+def heroku_destroy_app(appname):
+    run_command('heroku apps:destroy --app %s --confirm %s' % (appname, appname))
+
+
+def destroy_command(environment):
+    verify_local_environment()
+    if environment == "local":
+        run_command('vagrant destroy -f')
+    elif environment == "prod":
+        print('')
+        print('')
+        print('BIG FREAKING WARNING: If you continue, the PRODUCTION environment will be destroyed!')
+        print('This will take down the production environment. It will not serve requests until it is rebuilt.')
+        print('In addtion, this will DELETE THE PRODUCTION DATABASE which will require that you restore from backup.')
+        print('If the backup is not recent, you will lose data. You may lose data anyway.')
+        print('It will also delete the Redis DB which contains split-testing info.')
+        print('YOU ALMOST CERTAINLY SHOULD NOT DO THIS.')
+        print('')
+        print('At the following prompt, type (all caps) "DESTROY PRODUCTION" and hit ENTER to continue, or anything else to quit.')
+        verify = raw_input('Verify destruction of production: ')
+        print('')
+        if verify == "DESTROY PRODUCTION":
+            heroku_destroy_app(prod_app_name)
+        else:
+            print('Will not destroy production. Quitting.')
+            sys.exit(0)
+    elif environment == "staging":
+        heroku_destroy_app(staging_app_name)
+    elif environment == "test":
+        heroku_destroy_app(test_app_name)
+    else:
+        raise NotImplementedError
+
+
+def vagrant_command(command):
+    run_command('vagrant ssh -c "%s"' % command)
+
+
+def test_command():
+    up_command('test')
+    vagrant_command('/bin/bash /vagrant/devserver/run_tests.bash')
+
+
+def revert_command(environment):
+    if environment == "prod":
+        appname = prod_app_name
+    elif environment == "test":
+        appname = test_app_name
+    elif environment == 'staging':
+        appname = staging_app_name
+    else:
+        raise NotImplementedError
+    run_command('heroku rollback --app %s' % appname)
+
+
+def reset_command(environment):
+    destroy_command(environment)
+    up_command(environment)
+
+
+def main(args):
+    action, environment, options = parse_commandline(args)
+    if action == 'up':
+        up_command(environment)
+    elif action == 'manage':
+        manage_command(environment, options)
+    elif action == 'destroy':
+        destroy_command(environment)
+    elif action == 'test':
+        test_command()
+    elif action == 'reset':
+        reset_command(environment)
+    elif action == "revert":
+        revert_command(environment)
+    else:
+        print('ERROR: Command line incorrect.')
+        print(__doc__)
+        sys.exit(10)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
