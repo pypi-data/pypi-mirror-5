@@ -1,0 +1,73 @@
+stages=[
+dict(
+	name='pcfg0',
+	mode='pcfg', # use the PCFG CKY parser
+	split=True, # split discontinuous nodes to get a PCFG: VP_2 => {VP*, VP*}
+	markorigin=0, #when splitting nodes, mark origin: VP_2 => {VP*1, VP*2}
+),
+dict(
+	name='pcfg1',
+	mode='pcfg', # use the PCFG CKY parser
+	split=True, # split discontinuous nodes to get a PCFG: VP_2 => {VP*, VP*}
+	markorigin=1, #when splitting nodes, mark origin: VP_2 => {VP*1, VP*2}
+),
+dict(
+	name='pcfg2',
+	mode='pcfg', # use the PCFG CKY parser
+	split=True, # split discontinuous nodes to get a PCFG: VP_2 => {VP*, VP*}
+	markorigin=2, #when splitting nodes, mark origin: VP_2 => {VP*1, VP*2}
+),
+#dict(
+#	name='plcfrs',
+#	mode='plcfrs', # use the agenda-based PLCFRS parser
+#	prune=True, #whether to use previous chart to prune parsing of this stage
+#	splitprune=True, #VP_2[101] is treated as { VP*[100], VP*[001] } during parsing
+#	k=10000, #number of coarse pcfg derivations to prune with; k=0 => filter only
+#),
+#dict(
+#	name='dop',
+#	mode='plcfrs',
+#	split=False,
+#	markorigin=True,
+#	prune=True, #whether to use previous chart to prune parsing of this stage
+#	k=5000, #number of coarse plcfrs derivations to prune with; k=0 => filter only
+#	dop=True, # enable DOP mode
+#	usedoubledop=True, # when Fales, use dop reduction, otherwise use Double-DOP
+#	iterate=False, #for double dop, whether to include fragments of fragments
+#	complement=False, #for double dop, whether to include fragments which form
+#			#the complement of the maximal recurring fragments extracted
+#	m=10000, #number of derivations to sample/enumerate
+#	sample=False, kbest=True, # whether to use sampling during marginalization
+#	estimator="dop1", # choices: dop1, ewe
+#	objective="mpp", # choices: shortest, sl-dop[-simple]
+#)
+],
+# corpus options
+corpusfmt="export", # choices: export, bracket, discbracket
+corpusdir=".",
+traincorpus="negra-corpus.export", trainencoding="iso-8859-1",
+testcorpus="negra-corpus.export", testencoding="iso-8859-1",
+testmaxwords=999, # max number of words for sentences in test corpus
+trainmaxwords=999, # max number of words for sentences in train corpus
+trainnumsents=18602, testnumsents=1000, # number of sentences to parse
+#skip=0, # test set
+skiptrain=True,
+skip=1000, #skip test set to get dev set
+punct="move",
+unfolded=False,
+postagging=None,
+
+# binarization options
+bintype="binarize", # choices: binarize, optimal, optimalhead
+factor="right",
+revmarkov=False,
+v=1,
+h=1,
+headrules="negra.headrules",
+fanout_marks_before_bin=False,
+leftmostunary=False, #start binarization with unary node
+rightmostunary=False, #end binarization with unary node
+tailmarker="",
+# misc
+quiet=False, reallyquiet=False, #quiet=no per sentence results
+numproc=1,	#increase to use multiple CPUs. Set to None to use all CPUs.
