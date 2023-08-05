@@ -1,0 +1,120 @@
+{% extends "maps/map_base.html" %}
+{% load i18n %}
+
+{% block head %}
+{{ block.super }}
+<link href="{{ STATIC_URL }}lib/css/jquery-ui.css" rel="stylesheet" />
+{% endblock %}
+
+{% block body %}
+<div class="twocol">
+  <h3>{% trans "Download" %} {{map.title}}</h3>
+  <p>
+    {% blocktrans %}
+      Here you can download all the layers of this map that
+      are hosted on this GeoNode.  The following layers will
+      be downloaded:
+    {% endblocktrans %}
+    <ul>
+      {% for layer in downloadable_layers %} 
+        <li>
+          {% if layer.local %}
+            {{ layer.local_link|safe }}
+          {% else %}
+            {{ layer }}
+          {% endif %}
+        </li>
+      {% endfor %} 
+    </ul>
+   
+    {% if locked_layers %}
+      {% blocktrans %}
+        Additionally, the map contains these layers which will not be downloaded
+        due to security restrictions:
+      {% endblocktrans %}
+      <ul>
+        {% for layer in locked_layers %} 
+          <li>{{ layer.layer_title }}</li>
+        {% endfor %} 
+      </ul>
+    {% endif %}
+
+	  {% if remote_layers %}
+      {% blocktrans %}
+        Finally, the map contains these layers which will not be downloaded
+        because they are not available directly from this GeoNode:
+      {% endblocktrans %}
+      <ul>
+        {% for layer in remote_layers %} 
+          <li>{{ layer }}</li>
+        {% endfor %} 
+      </ul>
+    {% endif %}
+
+    {% if map_status %} 
+      <button type="button" id="cancel">Cancel</button>
+      <div id="pb"></div>
+      <div id="pb-status">Downloading.....</div>
+    {% elif downloadable_layers|length > 0 %} 
+      <form action="{{site}}maps/{{map.id}}/download" method="POST"> 
+        {% csrf_token %}
+        <div class="form-actions">
+          <input type="submit" class="btn btn-primary" value="{% trans "Start downloading this map" %}" /> 
+        </div>
+      </form>
+    {% endif %} 
+</div>
+{% endblock %}
+{% block extra_script %}
+<script src="{{ STATIC_URL }}lib/js/jquery-ui.js"></script>
+<script type="text/javascript">
+'use strict'
+  {% autoescape off %}
+      {% if map_status %} 
+      var checkStatus, progress, pb, process;
+
+      function update(){
+        $.get(
+          '{% url "map_download_check" %}'
+        ).
+        done(function(result){
+          process = $.parseJSON(result);
+          if (process["process"]["status"] === "FINISHED"){ 
+            location.href = "{{geoserver}}rest/process/batchDownload/download/" +  process["process"]["id"];
+            clearInterval(checkStatus); 
+            pb.progressbar("option","value",100);
+            $('#pb-status').html("Done");
+          } 
+          else { 
+            pb.progressbar("option","value",process["process"]["progress"]/100); 
+          } 
+        });
+      };
+
+      $(function(){
+        checkStatus = setInterval("update()",1000);
+        pb = $( "#pb" ).progressbar({
+          value: 10
+        });
+
+        $("#cancel").click(function(){
+          $.get(
+            "{{geoserver}}rest/process/batchDownload/kill/" + process["process"]["id"]
+            ).
+            done(function(){
+              alert("You successfuly canceled the download"); 
+              location.href = "{{site}}maps/{{map.id}}"; 
+              clearInterval(checkStatus);
+            }).
+            fail(function(result){
+              console.log(result); 
+              clearInterval(checkStatus); // break if something fails
+            });
+        });
+      });
+
+      {% endif %}
+  {% endautoescape %}
+
+</script>
+{% endblock extra_script %}
