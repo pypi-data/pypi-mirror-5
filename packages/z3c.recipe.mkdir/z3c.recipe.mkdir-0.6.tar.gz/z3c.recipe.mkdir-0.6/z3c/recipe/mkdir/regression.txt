@@ -1,0 +1,32 @@
+Regression Tests
+================
+
+Empty path is not processed
+---------------------------
+
+Up to version 0.4 the empty path was considered to be the current
+directory and permissions set. This does not happen anymore.
+
+We create a `paths` definition with empty entries (first and middle):
+
+  >>> write('buildout.cfg',
+  ... '''
+  ... [buildout]
+  ... parts = mydir
+  ... offline = true
+  ...
+  ... [mydir]
+  ... recipe = z3c.recipe.mkdir
+  ... paths =
+  ...    mypath1
+  ...
+  ...    mypath2
+  ... mode = 0750
+  ... ''')
+
+  >>> printx(system(join('bin', 'buildout')))
+  Installing mydir.
+  mydir: created path: /sample-buildout/mypath1
+  mydir:   mode 0750
+  mydir: created path: /sample-buildout/mypath2
+  mydir:   mode 0750
