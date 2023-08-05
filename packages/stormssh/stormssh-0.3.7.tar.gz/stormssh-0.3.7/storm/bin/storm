@@ -1,0 +1,163 @@
+#!/usr/bin/python
+
+import sys
+sys.path.append("../..")
+
+from manage import Manager
+from storm import Storm
+from storm.exceptions import StormValueError
+from storm.ssh_uri_parser import parse
+
+from termcolor import colored
+import getpass
+
+manager = Manager()
+storm_ = Storm()
+
+default_user = getpass.getuser()
+
+
+def fixed_width(text, size):
+    text_width = len(text)
+    if size > text_width:
+        for i in range(text_width, size):
+            text = text + " "
+
+    return text
+
+
+def get_formatted_message(message, format_type):
+    format_typed = fixed_width(format_type, 8)
+    all_message = ""
+    message = " %s" % message
+
+    if format_type == 'error':
+        all_message = colored(format_typed, 'white', 'on_red')
+    if format_type == 'success':
+        all_message = colored(format_typed, 'white', 'on_green')
+
+    return all_message+message
+
+
+@manager.command
+def add(name, connection_uri, id_file=""):
+    """
+    Adds a new entry to sshconfig.
+    """
+    try:
+
+        # validate name
+        if '@' in name:
+            raise StormValueError('invalid value: "@" cannot be used in name.')
+
+        user, host, port = parse(connection_uri)
+        result = storm_.add_entry(name, host, user, port, id_file)
+        return get_formatted_message('{0} added to your ssh config. you can connect it by typing "ssh {0}".'.format(
+            name
+        ), 'success')
+    except StormValueError as error:
+        return get_formatted_message(error, 'error')
+
+
+@manager.command
+def edit(name, connection_uri, id_file=""):
+    """
+    Edits the related entry already defined in ssh config.
+    """
+    try:
+        if ',' in name:
+            name = " ".join(name.split(","))
+
+        user, host, port = parse(connection_uri)
+        result = storm_.edit_entry(name, host, user, port, id_file)
+        return get_formatted_message(
+            '"{0}" updated successfully.'.format(
+                name
+            ), 'success')
+    except StormValueError as error:
+        return get_formatted_message(error, 'error')
+
+@manager.command
+def delete(name):
+    """
+    Deletes a single host.
+    """
+    try:
+        result = storm_.delete_entry(name)
+        return get_formatted_message('hostname "{0}" deleted successfully.'.format(name), 'success')
+    except StormValueError as error:
+        return get_formatted_message(error, 'error')
+
+@manager.command
+def list():
+    """
+    Lists all hosts from ssh config.
+    """
+    try:
+        result = 'listing entries:\n'
+        result_stack = ""
+        for host in storm_.list_entries(True):
+
+            if host.get("type") == 'entry':
+                if not host.get("host") == "*":
+                    result += "  {0} -> {1}@{2}:{3}\n".format(
+                        host["host"],
+                        host.get("options").get("user", default_user),
+                        host.get("options").get("hostname", "[hostname_not_specified]"),
+                        host.get("options").get("port", 22)
+                    )
+                else:
+                    result_stack = "  (*) -> "
+                    for key, value in host.get("options").iteritems():
+                        value_to_str = ""
+                        if isinstance(value, type([])):
+                            result_stack += "{0}:\n".format(key)
+                            for value_ in value:
+                                result_stack += "    {0}\n".format(
+                                    value_
+                                )
+                        else:
+                            result_stack += "    {0}:{1}\n".format(
+                                key,
+                                value,
+                            )
+                    result_stack = result_stack[0:-2] + "\n"
+
+        result += result_stack
+        return result
+    except Exception as error:
+        return get_formatted_message(str(error), 'error')
+
+@manager.command
+def search(search_text):
+    """
+    searches entries by %LIKE%
+    """
+    try:
+        results = storm_.search_host(search_text)
+        if len(results) == 0:
+            return ('no results found.')
+        message = 'Listing results for {0}:\n'.format(search_text)
+        message += "".join(results)
+        return message
+
+    except Exception as error:
+        return get_formatted_message(str(error), 'error')
+
+
+@manager.command
+def delete_all():
+    """
+    Deletes all hosts from ssh config.
+    """
+    try:
+        storm_.delete_all_entries()
+        return get_formatted_message('all entries deleted.', 'success')
+    except Exception as error:
+        return get_formatted_message(str(error), 'error')
+
+
+manager.main()
+
+
+
