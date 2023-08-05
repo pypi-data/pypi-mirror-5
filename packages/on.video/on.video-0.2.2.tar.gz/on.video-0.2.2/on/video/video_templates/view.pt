@@ -1,0 +1,79 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="on.video">
+<body>
+
+<metal:content-core fill-slot="content-core">
+    <metal:content-core define-macro="content-core">
+
+        <div class="on-video-thumbnail">
+	    <video tal:attributes="poster view/thumbnail;
+	                           width  view/x;
+	                           height view/y;"
+	           width="#" height="#" controls="control"
+	           poster="#" tabindex="0">
+
+	        <!-- list the available video files for the player: -->
+       	        <source tal:repeat="ps view/playerchoices" src="#" type="#"
+	                tal:attributes="src ps/url;
+	                                type ps/filetype" />
+	        <!-- specify the actual player: -->
+
+                <object tal:condition="view/player|nothing" tal:attributes="data view/player;
+	                                width  view/x;
+                                        height view/y;"
+                                        width="#" height="#"
+	                                type="application/x-shockwave-flash" data="#">
+	            <param tal:attributes="value view/player" name="movie" value="#" />
+	            <param value="true" name="allowFullScreen">
+	            <param value="transparent" name="wmode">
+
+	            <param name="flashvars" value="#"
+	                   tal:attributes="value view/genFlashVars"
+	            />
+                    <img src="#" alt="#"
+	                 title="No video playback capabilities, please download the video below"
+	                 tal:attributes="src view/thumbnail;
+	                                 alt context/title;"
+	            />
+	        </object>
+	    </video>
+	    <br />
+	    "<span class="video-title" tal:content="context/title">Caption</span>"
+	      <br /><span tal:condition="context/director">by
+	    <span class="onvideo-director" tal:content="context/director">director</span>, </span>
+	  <span tal:condition="context/recorded">
+	  on <span class="onvideo-recorded" tal:content="python:context.recorded.strftime('%Y-%m-%d %H:%M')">2011-01-01</span></span>
+	  <span tal:condition="context/place"> recorded at <span class="onvideo-place" tal:content="context/place">place</span></span>
+        </div>
+
+	<div class="playingtime_label">Playing Time: 
+	    <span class="playingtime" tal:content="view/playing_time" />
+        </div>
+	<tal:downloadlinks tal:condition="view/videos">
+	<div class="video-download-block">
+	  <div>Download this video:
+	    <ul class="video-downloadlinks-urllist">
+	      <li class="video-download-link"
+	         tal:repeat="video view/videos">
+	             <a href="#" tal:attributes="href python: video.url"
+	                tal:content="python: video.displayformat">Link to video file</a>
+	      </li>
+	    </ul>
+	  </div>
+	</div>
+	</tal:downloadlinks>
+	<div class="visualClear"></div>
+	<div class="video-description"
+	     tal:content="structure context/body/output | context/description/output | string:No description available">
+	         long description here
+	</div>
+    </metal:content-core>
+</metal:content-core>
+
+</body>
+</html>
