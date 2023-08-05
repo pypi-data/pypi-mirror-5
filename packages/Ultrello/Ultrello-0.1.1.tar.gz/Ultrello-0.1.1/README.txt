@@ -1,0 +1,23 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf360
+{\fonttbl\f0\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red38\green38\blue38;\red235\green255\blue186;}
+\margl1440\margr1440\vieww9000\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl300\qj
+
+\f0\fs24 \cf2 \cb3 ===========\
+Ultrello\
+===========\
+\
+Ultrello provides Trello users with access to user, board, list, and card information. Useful tasks include retrieving card creation dates and identifying board admins. Typical usage\
+often looks like this:\
+\
+    #!/usr/bin/env python\
+\
+    import ultrello\
+\
+    newUser = TrelloUser('username','org','userToken','APIKey')\
+    newUser.user_cards()\
+    for i in range(len(testResult2)):\
+        print testResult2[i]\
+}
