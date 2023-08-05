@@ -1,0 +1,123 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      i18n:domain="ityou.astream">
+<body>
+<metal:macro define-macro="astream-macro">       
+
+    <!-- astream ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <metal:slot define-slot="title">    
+        <h1 class="documentFirstHeading" 
+            i18n:translate="lastest_activities">The latest activities</h1>
+    </metal:slot>
+
+    <button class="activity-all-button small" i18n:translate="activity_all">View all</button>       
+    <div class="visualClear"></div>
+    <div id="activity-stream">
+            <tal:get_act tal:define="author author | nothing; 
+                                     as python:view.get_activities(au_id=author)">
+                <ul class="activities"> 
+                  <tal:li tal:repeat="a as" >
+                  
+                    <li tal:condition="a/content_url | nothing" tal:attributes="id a/hash; class string:activity odd-${repeat/a/odd} tal-render document_activity">
+
+                        <div class="activity-portrait">     
+                            <a href="" tal:attributes="href string:$portal_url/author/${a/user_id}"><img class="small-personal-portrait" tal:attributes="src a/portrait; title a/user_name; alt a/user_name" /></a>
+                        </div>
+                        
+                        <div class="activity-wrapper">
+
+                            <div class="activity-hide-button" i18n:attributes="activity_hide"></div>
+                                                    
+                            <div class="activity-text">
+                                <a class="user-name" href="#" tal:attributes="href string:/author/${a/user_id}"><span tal:replace="a/user_name" >HANS MUSTER</span></a>                            
+                                <span class="timestamp" tal:content="a/timestr" tal:attributes="id a/timestamp">12.08.2012 UM 10:12 UHR</span><br />
+                                <a class="user-message" href="#" tal:attributes="href a/content_url"><span tal:replace="structure a/message" >HAT FOLGENDES GEMCHT</span></a>
+                            </div>
+
+                            <ul class="comments" tal:define="cs a/comments" >
+                              <tal:li tal:repeat="c cs">
+                                <li tal:attributes="id c/hash; class string:comment odd-${repeat/c/odd} tal-render">
+                                    <div class="comment-hide-button"></div>
+                                    <div class="comment-portrait">      
+                                        <a href="" tal:attributes="href string:$portal_url/author/${c/user_id}"><img class="very-small-personal-portrait" tal:attributes="src c/portrait; title c/user_name; alt c/user_name" /></a>
+                                    </div>
+                                    <div class="comment-wrapper">
+                                            <a class="user-name" tal:attributes="href string:/author/${a/user_id}"><b tal:content="c/user_name" ></b></a>
+                                            <span class="c-timestamp" tal:content="c/timestr" tal:attributes="id c/timestamp">12.08.2012 UM 10:12 UHR</span><br />
+                                            <div class="user-message" style="white-space:pre; overflow-x:auto" tal:content="structure c/comment" />   
+                                    </div>
+                                </li>                               
+                              </tal:li>
+                            </ul>
+                            
+                            <div class="activity-controls"> 
+                                <button class="comment-input-button small" i18n:translate="comment_activity" onClick="return false">comment</button>
+                                <div class="comment-input-field"><textarea></textarea></div>
+                                <button class="comment-save-button small" i18n:translate="comment_save" onClick="return false">save</button>
+                                <button class="comment-all-button small" i18n:translate="comment_all" onClick="return false">view all</button>                              
+                            </div>
+                                                                                                            
+                        </div>
+                                                    
+                        <div class="visualClear"></div>
+                    </li>
+
+                    <li tal:condition="python: not a['content_url'] and view.user_astream" tal:attributes="id a/hash; class string:activity odd-${repeat/a/odd} tal-render user_activity">
+
+                        <div class="activity-portrait">     
+                            <a href="" tal:attributes="href string:$portal_url/author/${a/user_id}"><img class="small-personal-portrait" tal:attributes="src a/portrait; title a/user_name; alt a/user_name" /></a>
+                        </div>
+                        
+                        <div class="activity-wrapper">
+
+                            <div class="activity-hide-button" i18n:attributes="activity_hide"></div>
+                                                    
+                            <div class="activity-text">
+                                <a class="user-name" href="#" tal:attributes="href string:/author/${a/user_id}"><span tal:replace="a/user_name" >HANS MUSTER</span></a>                            
+                                <span class="timestamp" tal:content="a/timestr" tal:attributes="id a/timestamp">12.08.2012 UM 10:12 UHR</span><br />
+                                <div class="user-message"><span tal:replace="a/message" >HAT FOLGENDES GEMCHT</span></div>
+                            </div>
+
+                            <ul class="comments" tal:define="cs a/comments" >
+                                
+                              <tal:li tal:repeat="c cs">
+                                
+                                <li tal:attributes="id c/hash; class string:comment odd-${repeat/c/odd} tal-render">
+                                
+                                    <div class="comment-hide-button"></div>
+
+                                    <div class="comment-portrait">      
+                                        <a href="" tal:attributes="href string:${view/site/absolute_url}/author/${c/user_id}"><img class="very-small-personal-portrait" tal:attributes="src c/portrait; title c/user_name; alt c/user_name" /></a>
+                                    </div>
+                                    <div class="comment-wrapper">
+                                            <a class="user-name" tal:attributes="href string:/author/${a/user_id}"><b tal:content="c/user_name" ></b></a>
+                                            <span class="c-timestamp" tal:content="c/timestr" tal:attributes="id c/timestamp">12.08.2012 UM 10:12 UHR</span><br />
+                                            <div class="user-message" style="white-space:pre; overflow-x:auto" tal:content="structure c/comment" />   
+                                    </div>             
+                                </li>                              
+                              </tal:li>
+                            </ul>
+                            <div class="activity-controls"> 
+                                <button class="comment-input-button small" i18n:translate="comment_activity" onClick="return false">comment</button>
+                                <div class="comment-input-field"><textarea></textarea></div>
+                                <button class="comment-save-button small" i18n:translate="comment_save" onClick="return false">save</button>
+                                <button class="comment-all-button small" i18n:translate="comment_all" onClick="return false">view all</button>                              
+                            </div>                                                                       
+                        </div>                   
+                        <div class="visualClear"></div>
+                    </li>
+                  </tal:li>
+            </tal:get_act>
+    </div>
+    <!-- /astream ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <div class="ajax-params invisible">
+        <div id="ASTREAM_DELAY" tal:content="view/ASTREAM_DELAY | python:10000"></div>
+    </div>
+
+</metal:macro>
+</body>
+</html>
