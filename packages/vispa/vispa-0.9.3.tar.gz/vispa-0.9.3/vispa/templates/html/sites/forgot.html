@@ -1,0 +1,88 @@
+<%! import os.path%>
+<%! from vispa import url%>
+<%inherit file="${os.path.join('..','base.html')}" />
+<%namespace name="base" file="${os.path.join('..','base.html')}"/>
+
+<%block name="head">
+    <script src="${url.static('frameworks/jquery/jquery.js')}"></script>
+    <script src="${url.static('frameworks/jquery/jquery-sha256.js')}"></script>
+    <script src="${url.static('js/vispa/prototype.js')}"></script>
+    <script src="${url.static('js/vispa/helper.js')}"></script>
+    <script src="${url.static('js/vispa/url.js')}"></script>
+    <link rel="stylesheet" type="text/css" href="${url.static('css/resets.css')}" />
+    <link rel="stylesheet" type="text/css" href="${url.static('css/activate.css')}" />
+
+    <script>
+        var hash = "${hash if success else ''}";
+        if (hash == "") {
+            vispa.helper.redirect();
+        }
+
+        var submitFn = function() {
+            if (hash == "") {
+                return null;
+            }
+            var pass1 = jQuery("#pw1").val();
+            var pass2 = jQuery("#pw2").val();
+
+            if (pass1 == null || pass2 == null || pass1 == "" || pass2 == "") {
+                alert("One or both passwords not set yet!");
+            } else if (pass1 != pass2) {
+                alert("The passwords do not match eatch other!");
+            } else if (pass1.length < 8) {
+                alert("The minimal length is 8!");
+            } else {
+                var passhash = jQuery.sha256(pass1);
+
+                jQuery.ajax({
+                    type: "POST",
+                    url: vispa.url.dynamic("ajax/user/resetpassword"),
+                    data: { userhash: hash, password: passhash },
+                    success: function() {
+                        vispa.helper.redirect();
+                    }
+                });
+            }
+        };
+        jQuery(document).ready(function() {
+
+            jQuery("#submit").click(function() {
+                submitFn();
+            });
+
+            jQuery("#pw1").keyup(function(event) {
+                vispa.helper.checkEnterKey(event, function() {
+                    jQuery("#pw2").focus();
+                });
+            }).focus();
+
+            jQuery("#pw2").keyup(function(event) {
+                vispa.helper.checkEnterKey(event, function() {
+                    jQuery("#submit").trigger("click");
+                });
+            });
+        });
+    </script>
+</%block>
+
+<div class="error">
+    <div class="error_text">
+        <div class="error_logo">
+            Vispa @ Web
+        </div>
+        <table style="width:300px;margin:auto;">
+            <tr style="padding:20px;">
+                <td style="font-size:14px;width:120px;">New Password:</td>
+                <td><input type="password" id="pw1"/></td>
+            </tr>
+            <tr>
+                <td style="font-size:14px;width:120px;">Retype:</td>
+                <td><input type="password" id="pw2"/></td>
+            </tr>
+            <tr>
+                <td />
+                <td><input type="button" value="Submit" id="submit" /></td>
+            </tr>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,161 @@
+## login.html
+<%! import os.path%>
+<%! from vispa import url%>
+<%inherit file="${os.path.join('..','base.html')}" />
+<%namespace name="base" file="${os.path.join('..','base.html')}"/>
+
+<%block name="title">Vispa - Login</%block>
+
+<%block name="favicon">"${url.static('img/ico/favicon.ico')}"</%block>
+
+<%block name="js_imports_pre">
+    <%
+        jquery_scripts = ["jquery.min.js",
+                          "ui/jquery.ui.min.js",
+                          "qtip/jquery.qtip.min.js",
+                          "ui/jquery.ui.touch-punch.min.js",
+                          "topics/jquery.topics.min.js",
+                          "sha256/jquery.sha256.min.js",
+                          "logger/jquery.logger.min.js"]
+        base_scripts = ["jquerymods.js",
+                        "helpers.js",
+                        "messenger.js",
+                        "url.js"]
+        framework_scripts = ["class/class.min.js"]
+        site_scripts = ["login.js",
+                        "view.js"]
+
+        for script in jquery_scripts:
+            base.import_js(url.static(url.join("frameworks/jquery", script)))
+        for script in framework_scripts:
+            base.import_js(url.static(url.join("frameworks", script)))
+        for script in base_scripts:
+            base.import_js(url.static(url.join("js/base", script)))
+        for script in site_scripts:
+            base.import_js(url.static(url.join("js/sites/login", script)))
+    %>
+</%block>
+
+<%block name="css_imports">
+    <%
+        jquery_scripts = ["qtip/css/jquery.qtip.min.css",
+                          "ui/css/overcast/jquery-ui-1.10.2.custom.min.css"]
+        base_scripts = ["resets.css",
+                        "overlay.css",
+                        "messenger.css"]
+        site_scripts = ["login.css"]
+
+        for script in jquery_scripts:
+            base.import_css(url.static(url.join("frameworks/jquery", script)))
+        for script in base_scripts:
+            base.import_css(url.static(url.join("css/base", script)))
+        for script in site_scripts:
+            base.import_css(url.static(url.join("css/sites/login", script)))
+    %>
+</%block>
+
+<%block name="js_inline_post">
+$(function() {
+    // simple config
+    var config = {
+        requestedPath: '${requested_path}',
+        useForgot: ${"true" if use_forgot else "false"},
+        urlHandler: {
+            dynamicBase: '${base_dynamic}',
+            staticBase: '${base_static}'
+        }
+    };
+    window.Vispa = new Vispa(config);
+    window.Vispa.startup();
+});
+</%block>
+
+## Login GUI Markup
+
+<div id='startup-overlay' class='startup-overlay'></div>
+
+<div class='content-outer'>
+    <div class='content-logo'>
+        <img src='${url.static('img/vispa/Vispa2.0Logo_300.png')}' />
+    </div>
+    <div class='content-top'>
+        ${welcome_text or ''}
+    </div>
+    <div>
+        <div id='accordion'>
+            <h3>Login</h3>
+            <div>
+                ${login_text + '<br />' if login_text else ''}
+                <table class='table'>
+                    <tr>
+                        <td>Username or mail address:</td>
+                        <td><input type='text' id='login-name' class='input' style='font-size:14px;' /></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Password:</td>
+                        <td><input type='password' id='login-password' class='input' style='font-size:14px;' /></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <button id='login-submit'>Login</button>
+                        </td>
+                        <td>
+                            <button id='login-forgot'>Forgot Password</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <h3>Register</h3>
+            <div>
+                ${registration_text + '<br />' if registration_text else ''}
+                <table class='table'>
+                    <tr>
+                        <td>Username:</td>
+                        <td><input type='text' id='register-name' class='input' style='font-size:14px;' /></td>
+                    </tr>
+                    <tr>
+                        <td>Mail address:</td>
+                        <td><input type='text' id='register-mail-1' class='input' style='font-size:14px;' /></td>
+                    </tr>
+                    <tr>
+                        <td>Confirm mail address:</td>
+                        <td><input type='text' id='register-mail-2' class='input' style='font-size:14px;' /></td>
+                    </tr>
+                    <tr>
+                        <td>Password:</td>
+                        <td><input type='password' id='register-password-1' class='input' style='font-size:14px;' /></td>
+                    </tr>
+                    <tr>
+                        <td>Confirm Password:</td>
+                        <td><input type='password' id='register-password-2' class='input' style='font-size:14px;' /></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <button id='register-submit'>Register</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <h3 id='forgot-container-header'>Forgot password</h3>
+            <div id='forgot-container'>
+                ${forgot_text + '<br /><br />' if forgot_text else ''}
+                <table class='table'>
+                    <tr>
+                        <td>Username or mail address:</td>
+                        <td><input type='text' id='forgot-name' class='input' style='font-size:14px;' /></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <button id='forgot-submit'>Send</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

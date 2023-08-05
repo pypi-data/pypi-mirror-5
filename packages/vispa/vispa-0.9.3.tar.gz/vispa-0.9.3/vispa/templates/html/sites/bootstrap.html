@@ -1,0 +1,178 @@
+## sites/bootstrap.html
+
+<%! import os.path%>
+<%! from vispa import url %>
+
+<%inherit file="${os.path.join('..','base.html')}" />
+<%namespace name="base" file="${os.path.join('..','base.html')}"/>
+
+<%block name="title">Vispa</%block>
+
+<%block name="js_imports_pre">
+    <%
+        jquery_scripts = ["jquery.min.js",
+                          "ui/jquery.ui.custom.min.js",
+                          "ui/jquery.ui.touch-punch.min.js",
+                          "hotkeys/jquery.hotkeys.min.js",
+                          "shortcuts/jquery.shortcuts.min.js",
+                          "topics/jquery.topics.min.js",
+                          "polling/jquery.polling.min.js",
+                          "history/jquery.history.min.js",
+                          "slimscroll/jquery.slimscroll.min.js",
+                          "slimscroll/jquery.slimscroll-horizontal.min.js",
+                          "logger/jquery.logger.min.js",
+                          "transparency/jquery.transparency.min.js"]
+        framework_scripts = ["class/class.min.js",
+                             "json/json2.js",
+                             "bootstrap/js/bootstrap.min.js"]
+        base_scripts = ["jquerymods.js",
+                        "helpers.js",
+                        "url.js"]
+        site_scripts = ["index.js",
+                        "view.js"]
+
+        for script in jquery_scripts:
+            base.import_js(url.static(url.join("frameworks/jquery", script)))
+        for script in framework_scripts:
+            base.import_js(url.static(url.join("frameworks", script)))
+        for script in base_scripts:
+            base.import_js(url.static(url.join("js/base", script)))
+        for script in site_scripts:
+            base.import_js(url.static(url.join("js/sites/bootstrap", script)))
+    %>
+</%block>
+
+<%block name="css_imports">
+    <%
+        base_scripts = []
+        framework_scripts = ["bootstrap/css/bootstrap.min.css"]
+        site_scripts = ["view.css"]
+
+        for script in base_scripts:
+            base.import_css(url.static(url.join("css/base", script)))
+        for script in framework_scripts:
+            base.import_css(url.static(url.join("frameworks", script)))
+        for script in site_scripts:
+            base.import_css(url.static(url.join("css/sites/bootstrap", script)))
+    %>
+</%block>
+
+<%block name="js_inline_post">
+$(function() {
+    $.Logger().enable().level("debug");
+
+    // store template data
+    var templateData = {
+        urlHandler: {
+            dynamicBase: "${base_dynamic}",
+            staticBase: "${base_static}"
+        }
+    };
+
+    // startup
+    window.Vispa = new Vispa(templateData);
+    window.Vispa.startup();
+});
+</%block>
+
+## Main GUI Markup
+<div class="body-wrapper">
+
+    <div class="header-wrapper">
+        <div class="header">
+            <div class="navbar navbar-inverse navbar-fixed-top">
+                <div class="navbar-inner">
+                    <div class="wrapper">
+                        <ul class="nav pull-left">
+                            <button class="btn btn-inverse wo-menu-btn" data-toggle="dropdown">
+                                <span class="wo-menu-btn-bar"></span>
+                                <span class="wo-menu-btn-bar"></span>
+                                <span class="wo-menu-btn-bar"></span>
+                            </button>
+                             <ul class="dropdown-menu">
+                                <li><a href="#">new File ...</a></li>
+                                <li><a href="#">Hide All</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">Preferences</a></li>
+                            </ul>
+                        </ul>
+                        <a class="wo-logo-link" href="#">Logo</a>
+                        <ul class="nav pull-right">
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    Marcel <b class="caret"></b>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#"><span class="icon-cog"></span> Account Settings</a></li>
+                                    <li><a href="#"><span class="icon-thumbs-up"></span> Upgrade</a></li>
+                                    <li class="divider"></li>
+                                    <li class="dropdown-submenu">
+                                        <a tabindex="-1" href="#"><span class="icon-question-sign"></span> Help</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="#"><span class="icon-facetime-video"></span> Tutorial Mode</a></li>
+                                            <li><a href="#"><span class="icon-comment"></span> Support</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#"><span class="icon-off"></span> Logout</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="subheader-wrapper">
+        <div class="subheader">
+            <div class="subheader-workspaces">
+                <!-- workspace groups -->
+            </div>
+            <div class="subheader-wsbutton">
+                <div class="btn-group">
+                    <a class="btn btn-primary btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
+                        <span class="icon-plus icon-white"></span> <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu pull-right">
+                        <li class="disabled"><a href="#"><span class="icon-ok"></span> Local</a></li>
+                        <li><a href="#">Physik</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#"><span class="icon-plus-sign"></span> Add workspace</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content-wrapper">
+        <div class="content">
+            Content
+        </div>
+    </div>
+
+</div>
+
+
+<!-- <div class="row-fluid">
+                <div class="span4 text-left">
+                    <button class="btn btn-inverse" data-toggle="dropdown">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                     <ul class="dropdown-menu">
+                        <li><a href="#">new File ...</a></li>
+                        <li><a href="#">Hide All</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Preferences</a></li>
+                    </ul>
+                </div>
+                <div class="span4 text-center">
+                    Logo
+                </div>
+                <div class="span4 text-right">
+                    <div class="navbar">
+                        <ul class="nav">
+                            <li><a href="#">Marcel</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div> -->

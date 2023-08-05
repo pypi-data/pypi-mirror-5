@@ -1,0 +1,136 @@
+## Vispa Logging
+##
+## 1. Quick guide
+##    For a quick log entry e.g. within the code of an extension write:
+##       'logging.getLogger("extension").info("This is the message to log")'
+##    You should find your log entry in the log file 'extension.log'.
+##    To see the log entry within the console, configure the "[logger_extension]" handlers option to:
+##       'handlers=extensionFile,console'
+##
+## 2. Mechanism:
+##       - Logs are managed by the python logging package (http://docs.python.org/2/library/logging.html). 
+##         A log message can be performed within the code by
+##             1. Get a logger object by: 
+##                 'logger = logging.getLogger("<logger name>")' 
+##             where <logger name> is the name of the logger which should refer to the system component 
+##             from where the log entry originates.
+##             In this file the system component loggers "SYSTEM", "ACCESS", "ERROR", "EXTENSION", and "RPC" 
+##             are preconfigured (definded by the 'qualname' attribute in the "logger section").
+##             Each logger can have multiple children e.g. "system.platform", "extension.pxlbrowser.dataaccessor". Log entries are
+##             first processed by the last child logger and then propagated backwards through all parent loggers 
+##             (Note: The "root" logger is the parent of all loggers and should not be configured to keep the entries separated).
+##             2. Write a log entry by:
+##                 'logger.log(logging.<LogLevel>,<message>)' or 'logger.info(<message>)', 'logger.debug(<message>)',...
+##       - Loggers receive the log message with the given level and pass it (after checking their level)
+##         to all specified handlers
+##       - Handlers (again) check the level of the log, format the message string and pass it to
+##         the specified handler class (e.g. StreamHandler for console output or RotationFileHandler
+##         for access/error/system file outputs)
+##       - Formatters create the format of the log where various variables can be used,
+##         see http://docs.python.org/2/library/logging.html#logrecord-attributes
+##         The access log follows the Apache/NCSA Combined Log format (http://httpd.apache.org/docs/2.0/logs.html#combined).
+##
+## 3. LogLevels:
+##       - NOTSET
+##       - DEBUG
+##       - INFO
+##       - WARNING
+##       - ERROR
+##       - CRITICAL
+##
+## 4. Further information:
+##       Python logging library: http://docs.python.org/2/library/logging.html
+##       Vispa-web Wiki: https://forge.physik.rwth-aachen.de/projects/vispa-web/wiki/Logging
+##
+
+
+## Key Definitions
+####################################################################################################
+
+[loggers]
+## the keys correspond to the logger names, e.g. net -> [logger_net]
+keys = root,vispa,cherrypy,cherrypy.access
+
+[handlers]
+## the keys correspond to the handler names, e.g. console -> [handler_console]
+## and can be used in the Logger specifications, e.g. handlers = console,accessFile
+keys = console,net,vispaFile,cherrypyFile,accessFile
+
+[formatters]
+## the keys correspond to the formatter names, e.g. access -> [formatter_access]
+## and can be used in the Handler specifications, e.g. formatter = system
+keys = default,access
+
+
+## Loggers
+####################################################################################################
+
+## the root logger receives all logs by default
+## and does not need a 'qualname'
+[logger_root]
+handlers = 
+level = WARNING
+
+[logger_vispa]
+qualname = vispa
+handlers = vispaFile
+level = WARNING
+
+[logger_cherrypy]
+qualname = cherrypy
+handlers = cherrypyFile
+level = WARNING
+
+[logger_cherrypy.access]
+qualname = cherrypy.access
+handlers = accessFile
+level = WARNING
+propagate=0
+
+## Handlers
+####################################################################################################
+
+[handler_console]
+class = StreamHandler
+args = (sys.stdout,)
+formatter = default
+level = DEBUG
+
+## Use this handler to send log entries to the log server (bin/LogServer.py).
+## This can even be used within remote processes across networks by configuring the host and port.
+[handler_net]
+class = logging.handlers.SocketHandler
+args = ("localhost", 50000) ##host = localhost; port = 50000
+formatter = default
+level = DEBUG
+
+[handler_vispaFile]
+class = logging.handlers.RotatingFileHandler
+args = (os.path.join("var", "logs", "vispa.log"), "a", 10485760, 5)
+formatter = default
+level = DEBUG
+
+[handler_cherrypyFile]
+class = logging.handlers.RotatingFileHandler
+args = (os.path.join("var", "logs", "cherrypy.log"), "a", 10485760, 5)
+formatter = default
+level = DEBUG
+
+[handler_accessFile]
+class = logging.handlers.RotatingFileHandler
+args = (os.path.join("var", "logs", "access.log"), "a", 10485760, 5)
+formatter = access
+level = DEBUG
+
+
+## Formatters
+####################################################################################################
+
+[formatter_default]
+format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+datefmt =
+
+## The actual format is specified within the logging facility of cherrypy
+[formatter_access]
+format = %(message)s
+datefmt =

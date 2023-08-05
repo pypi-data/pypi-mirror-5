@@ -1,0 +1,111 @@
+<div id="${extid}-CondorBatchManagerStatusContainer">
+<table id="${extid}-CondorBatchManagerStatus" class="tablesorter">
+    <thead>
+        <tr>
+            <th>Condor Status</th>
+			<th>Resources</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+        	<td>Available Cores</td>
+            <td>${availableCores}</td>
+        </tr>
+        <tr>
+        	<td>Claimed</td>
+            <td>${coresClaimedByCondor}</td>
+        </tr>
+        <tr>
+        	<td>Unclaimed</td>
+            <td>${unclaimedCores}</td>
+        </tr>
+        <tr>
+       		<td>Claimed by owner</td>
+            <td>${coresClaimedByOwner}</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+<p>
+<p>
+<p>
+<div id="${extid}-CondorBatchManagerUserPrioritiesContainer">
+<%
+columns_indexlist = [0, 1, 3]
+
+table_header = ""
+columns_header = ["User name", "Effective Priority", "Resources in use"]
+data = []
+
+header = ""
+
+for row_index,element in enumerate(userpriorities):
+     values = []
+     for column_index,element in enumerate(element):
+          if column_index in columns_indexlist:
+              if row_index==0:
+                  table_header += element
+              elif row_index>0:
+              	   values.append(element)
+     if len(values)>0:
+          data.append(values)
+%>
+<table id="${extid}-CondorBatchManagerUserPrioritiesTable" class="tablesorter">
+    <thead>
+        <tr>
+% for element in columns_header:
+            <th>${element}</th>
+% endfor
+        </tr>
+    </thead>
+    <tbody>
+% for row in data:
+        <tr>
+    % for element in row:
+            <td>${element}</td>
+    % endfor
+        </tr>
+% endfor
+    </tbody>
+</table> 
+</div>
+<script>
+$(document).ready(function(){
+	
+    $('#${extid}-CondorBatchManagerStatus').tablesorter({
+        theme : 'jui', // theme "jui" and "bootstrap" override the uitheme widget option in v2.7+
+        headerTemplate : '{content} {icon}', // needed to add icon for jui theme
+        sortList: [[0,0]],
+//    	widgets : ['uitheme', 'zebra'],
+		widgets : ['uitheme'],
+        widgetOptions : {
+            // zebra striping class names - the uitheme widget adds the class names defined in
+            // $.tablesorter.themes to the zebra widget class names
+            zebra   : ["even", "odd"]
+
+            // set the uitheme widget to use the jQuery UI theme class names
+            // ** this is now optional, and will be overridden if the theme name exists in $.tablesorter.themes **
+             //uitheme : 'jui'
+          }
+    });
+    
+    $('#${extid}-CondorBatchManagerUserPrioritiesTable')
+    .tablesorter({
+        theme : 'jui', // theme "jui" and "bootstrap" override the uitheme widget option in v2.7+
+        headerTemplate : '{content} {icon}', // needed to add icon for jui theme        
+    	widthFixed: true,
+    	sortList: [[0,0]],
+//    	widgets : ['uitheme', 'zebra'],
+		widgets : ['uitheme'],
+        widgetOptions : {
+            // zebra striping class names - the uitheme widget adds the class names defined in
+            // $.tablesorter.themes to the zebra widget class names
+            zebra   : ["even", "odd"]
+
+            // set the uitheme widget to use the jQuery UI theme class names
+            // ** this is now optional, and will be overridden if the theme name exists in $.tablesorter.themes **
+            //uitheme : 'jui'
+          } 
+    });    
+});
+</script>
