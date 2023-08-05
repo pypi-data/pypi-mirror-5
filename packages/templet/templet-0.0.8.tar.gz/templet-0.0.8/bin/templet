@@ -1,0 +1,130 @@
+#!/usr/bin/env python2
+# coding=utf8
+import os
+import sys
+import argparse
+import json
+from clint.textui import puts_err as _puts_err
+from clint.textui import colored
+# local imports
+import templet
+
+
+def puts_err(color, msg):
+    """Do not colorize output not in terminal"""
+    if sys.stderr.isatty():
+        return _puts_err(getattr(colored, color)(msg))
+    return _puts_err(msg)
+
+def warning(msg):
+    puts_err('blue', msg)
+
+def error(msg):
+    puts_err('red', msg)
+    puts_err('red', 'Exiting')
+    sys.exit(1)
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Templet')
+    parser.add_argument('name', help='Project name')
+    parser.add_argument('-t', '--template', metavar='template',
+                                 help='Name of predifind template or full path to template folder')
+    parser.add_argument('-v', '--vars', metavar='vars',
+                                 help='Project variables')
+    parser.add_argument('-V', '--vars-from-file', metavar='/path/to/*.json',
+                                 help='Read project variables from json file')
+    return (vars(parser.parse_args()), parser)
+
+def parse_vars_from_cli(vars_string):
+    """Parse project variables defined in format 'var=value'
+
+    :param vars: variables to parse
+    :return: dict. Parsed to dict variables
+    """
+
+    res = {}
+    separate_vars = vars_string.split(',')
+    for var in separate_vars:
+        key, val = var.split('=')
+        res[key] = val
+    return res
+
+def parse_vars_from_file(path):
+    """Parse project variables from json file
+
+    :param path: absolute path to json file
+    :return: dict.
+    """
+
+    if os.path.exists(path):
+        with open(path) as fp:
+            return json.load(fp)
+    return {}
+
+def get_project_template_path(template):
+    """Find template directory which template will be copied from.
+
+    Template can be either a name or a full absolute path.  If template is
+    given by name, `get_project_template_path` will try to look up template
+    name in config file.  If there is no config file, it will return None.
+    If template was not defined in config file and was not fould in
+    $PATH, return None.
+
+    If template is given by name and $PATH is defined in config, firstly try to
+    look up template by name, otherwise try to look up template in $PATH.
+
+    :param template: Name or absolute path to template
+    :return: string. Absolute path to template
+    """
+
+    if os.path.exists(template):
+        return template
+    cfg = load_cfg()
+    if not cfg or 'templates' not in cfg:
+        return
+    if cfg['templates'].get(template):
+        return cfg['templates'][template]
+    if cfg['templates'].get('$PATH'):
+        path = cfg['templates'].get('$PATH')
+        return find_in_path(path, template)
+
+def load_cfg():
+    cfg_path = os.path.expandvars('$HOME/.config/templet/config.json')
+    if os.path.exists(cfg_path):
+        with open(cfg_path) as fp:
+            return json.load(fp)
+
+def find_in_path(path, what_to_find):
+    """Do path look up.
+
+    :return: string. First existing absolute path joining each element of
+    `path` with `what_to_find`
+    """
+
+    for p in path:
+        if os.path.exists(os.path.join(p, what_to_find)):
+            return os.path.join(p, what_to_find)
+
+def main():
+    args, parser = parse_args()
+    template = args['template'] or 'default'
+
+    tempalte_data = { 'PROJECT_NAME': args['name'] }
+    if args['vars']:
+        try:
+            tempalte_data.update(parse_vars_from_cli(args['vars']))
+        except ValueError:
+            warning('--vars argument is wrong, skipping variables from cli')
+    if args['vars_from_file']:
+        tempalte_data.update(parse_vars_from_file(args['vars_from_file']))
+
+    project_template_path = get_project_template_path(template)
+    project_root = os.path.join(os.path.abspath(os.getcwd()), tempalte_data['PROJECT_NAME'])
+
+    if not project_template_path:
+        error('Template %s is not found' % template)
+    templet.handle_project(project_template_path, project_root, tempalte_data)
+
+if __name__ == "__main__":
+    main()
+
