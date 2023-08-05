@@ -1,0 +1,93 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PyWizard remote</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Bootstrap -->
+        <link href="{% static "pwmanager/css/main.css" %}" rel="stylesheet" media="screen">
+
+        <script>
+            global_data = {{ group_nodes|safe }}
+        </script>
+        <script data-main="{% static "pwmanager/js/app" %}" src="{% static "pwmanager/js/lib/require.js" %}"></script>
+
+    </head>
+    <body>
+
+
+        <section class="main">
+
+            <div class="error" id="server-down-msg" style="display: none;">
+                Pywizard server is down.
+            </div>
+
+            <div id="header" class="tabs">
+
+                <div data-bind="foreach: tabs">
+                    <div class="tab" data-bind="
+                        attr: { id: id },
+                        css: { selected: is_selected, highlighted: node && node.highlighted },
+                        click: $parent.select_tab
+                    ">
+                        <span data-bind="text: title"></span><span class="up-marker" data-bind="visible: node && node.is_online"></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="content" class="tabs-content">
+
+                <div data-bind="foreach: tabs">
+                    <div class="tab-content" data-bind="visible: is_selected, attr: { id: 'tab-content-' + $index() }">
+
+                        <div data-bind="if: node">
+
+                            <form action="#noaction" class="cmd-form form-inline" data-bind="submit: node.execCmd" method="post">
+                                <input type="text" name="text" class="input-xxlarge">
+                                <button type="submit" class="btn" >Execute</button>
+                                <button data-bind="click: node.provision">Provision</button>
+                            </form>
+
+                            <div class="messages">
+
+                                <b data-bind="ifnot: node.messages().length > 0">No messages yet for <span data-bind="text: title"></span>!</b>
+
+                                <ul data-bind="foreach: node.messages">
+                                    <li data-bind="text: message"></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div data-bind="ifnot: node">
+                            <button data-bind="click: $parent.provision_all">Provision all nodes</button>
+                        </div>
+
+                    </div>
+                </div>
+
+
+{#                <div class="error" id="server-down-msg" style="display: none;">#}
+{#                    Pywizard server is down.#}
+{#                </div>#}
+{##}
+{#                <form class="form-inline" data-bind="submit: cmdTest">#}
+{#                    <input type="text" name="text" id="cmd-field" class="input-xxlarge">#}
+{#                    <button type="submit" class="btn" >Execute</button>#}
+{#                    <button data-bind="click: provision">Provision</button>#}
+{#                </form>#}
+            </div>
+
+        </section>
+
+
+
+{#        <script src="{% static "pwmanager/js/jquery.js" %}"></script>#}
+{#        <script src="{% static "pwmanager/js/knockout.js" %}"></script>#}
+{#        <script src="{% static "pwmanager/js/jquery.inputHistory.min.js" %}"></script>#}
+{#        <script src="{% static "pwmanager/js/reconnecting-websocket.min.js" %}"></script>#}
+{#        <script src="{% static "pwmanager/js/sammy-latest.min.js" %}"></script>#}
+{#        <script src="{% static "pwmanager/js/pywizard.js" %}"></script>#}
+
+    </body>
+</html>
