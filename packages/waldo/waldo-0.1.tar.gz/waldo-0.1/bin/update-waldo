@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+# Copyright (C) 2009-2012
+# Luis Pedro Coelho <luis@luispedro.org>
+# vim: set ts=4 sts=4 sw=4 expandtab smartindent:
+# License: MIT. See COPYING.MIT file in the Waldo distribution
+
+from sqlalchemy.orm.session import Session
+
+import waldo.mgi.load
+import waldo.go.load
+import waldo.goslim.load
+import waldo.uniprot.load
+import waldo.locate.load
+import waldo.hpa.load
+import waldo.sequences.load
+import waldo.nog.load
+import waldo.refseq.load
+import waldo.uniprot.models
+import waldo.go.models
+import waldo.goslim.models
+import waldo.mgi.models
+import waldo.locate.models
+import waldo.hpa.models
+import waldo.translations.models
+import waldo.predictions.models
+import waldo.sequences.models
+import waldo.nog.models
+
+modules = [
+    ('go', waldo.go.load),
+    ('mgi', waldo.mgi.load),
+    ('uniprot', waldo.uniprot.load),
+    ('locate', waldo.locate.load),
+    ('hpa', waldo.hpa.load),
+    ('goslim', waldo.goslim.load),
+    ('sequences', waldo.sequences.load),
+    ('nog', waldo.nog.load),
+    ('refseq', waldo.refseq.load),
+    ]
+
+urls = {
+    'mgi': [
+            'ftp://ftp.informatics.jax.org/pub/reports/go_terms.mgi',
+            'ftp://ftp.informatics.jax.org/pub/reports/go_refs.mgi',
+            'ftp://ftp.informatics.jax.org/pub/reports/gene_association.mgi',
+            'ftp://ftp.informatics.jax.org/pub/reports/MRK_ENSEMBL.rpt',
+            'ftp://ftp.informatics.jax.org/pub/reports/MRK_Reference.rpt',
+            ],
+    'mgi-goslim': [
+            'http://www.informatics.jax.org/gotools/data/input/map2MGIslim.txt',
+            ],
+    'go': [
+            'http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology.1_2.obo',
+            ],
+    'uniprot': [
+            'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz',
+            'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping_selected.tab.gz',
+            'ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/docs/sec_ac.txt',
+            ],
+    'locate': [
+            'http://locate.imb.uq.edu.au/info_files/LOCATE_mouse_v6_20081121.xml.zip',
+            'http://locate.imb.uq.edu.au/info_files/LOCATE_human_v6_20081121.xml.zip',
+            ],
+
+    'sequences': [
+            'ftp://ftp.ensembl.org/pub/current_fasta/mus_musculus/pep/Mus_musculus.*.pep.all.fa.gz',
+            ],
+    'hpa': [
+            'http://www.proteinatlas.org/download/subcellular_location.csv.zip',
+            ],
+    'nog': [
+            'http://eggnog.embl.de/download/maNOG.mapping.txt.gz',
+            ],
+
+    'refseq': [
+            'ftp://ftp.ncbi.nih.gov/gene/DATA/gene2ensembl.gz',
+            ],
+}
+
+triggers = ['go', 'refseq']
+
+def get_time(url):
+    from os import path
+    from glob import glob
+    filename = path.basename(url)
+    if '*' in filename:
+        filenames = glob(filename)
+        if not filenames: return -1
+        return max(map(path.getmtime, filenames))
+    if not path.exists(filename): return -1
+    return path.getmtime(filename)
+
+
+def download(url):
+    from os import system
+    system("wget -N '%s'" % url)
+
+
+def main(argv):
+    import optparse
+    from os import makedirs, chdir, getcwd
+    parser = optparse.OptionParser()
+    parser.add_option('--user', action='store_true', dest='user', help='Store database in this users directory')
+    parser.add_option('--verbose', action='store_true', dest='verbose', help='Verbose output')
+    parser.add_option('--datadir', action='store', dest='datadir', default='/var/lib/waldo/data/', help='Where to store data files')
+    parser.add_option('--database', action='store', dest='database', default='/var/lib/waldo/waldo.sqlite3', help='Path to database file')
+    parser.add_option('--force-reindex', action='store_true', dest='force_reindex', help='Reindex data even if no changes are detected')
+    parser.add_option('--no-download', action='store_true', dest='no_download', help='Do not download any data (only useful with --force_reindex)')
+    parser.add_option('--unsafe', action='store_true', dest='unsafe', help='Use database in unsafe mode (faster, but potentially a problem if there is a machine crash')
+    options,args = parser.parse_args(argv)
+
+    if options.user:
+        from os import path
+        options.datadir = path.expanduser('~/.local/share/waldo/data')
+        options.database = path.expanduser('~/.local/share/waldo/waldo.sqlite3')
+
+    try:
+        makedirs(options.datadir)
+    except OSError:
+        pass
+
+
+    startdir = getcwd()
+    chdir(options.datadir)
+
+    if options.no_download and not options.force_reindex:
+        from sys import stderr
+        stderr.write('Option --no-download does not make sense without option --force-reindex.\n')
+        stderr.write('Doing nothing.\n')
+        return
+    dirty_mods = []
+    for k,us in urls.iteritems():
+        if options.no_download:
+            continue
+        dirty = False
+        for u in us:
+            prev = get_time(u)
+            download(u)
+            if get_time(u) != prev:
+                dirty = True
+        if dirty:
+            if options.verbose:
+                print('Database {0} has been updated'.format(k))
+            dirty_mods.append(k)
+
+    for t in triggers:
+        if t in dirty_mods:
+            dirty_mods = modules
+            if options.verbose:
+                print("GO has changed, reindexing all libraries")
+
+    if options.force_reindex:
+        dirty_mods = modules
+
+    if options.verbose and not dirty_mods:
+        print('No databases have changed')
+
+    # The reason why we need to chdir to initial directory is because
+    # options.database might be a relative path
+    chdir(startdir)
+    if dirty_mods:
+        waldo.backend.init(options.database)
+        waldo.backend.create_tables()
+
+        if options.unsafe:
+            from sqlalchemy import event
+            from waldo.backend import create_session
+            s = create_session()
+            def set_unsafe(c, _):
+                # These are only valid for SQLite3, but it makes it much faster
+                c.execute('PRAGMA synchronous=OFF;')
+                c.execute('PRAGMA journal_mode=OFF;')
+                c.execute('PRAGMA temp_store=MEMORY;')
+            c = s.connection()
+            event.listen(c.engine, 'connect', set_unsafe)
+            del c
+            del s
+
+        if sum(1 for name,_ in dirty_mods if name == 'go'):
+            if options.verbose:
+                print('GO will be reindexed. This triggers whole-database reindexing.')
+            for _,mod in dirty_mods:
+                mod.clear()
+
+        for name,mod in dirty_mods:
+            if options.verbose:
+                print('Indexing {0}...'.format(name))
+            mod.clear()
+            mod.load(datadir=options.datadir)
+
+if __name__ == '__main__':
+    from sys import argv
+    main(argv)
+
