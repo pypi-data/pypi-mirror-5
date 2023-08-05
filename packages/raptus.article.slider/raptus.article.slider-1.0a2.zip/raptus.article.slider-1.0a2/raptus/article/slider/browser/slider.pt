@@ -1,0 +1,64 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      tal:omit-tag="">
+<div class="slider"
+     tal:condition="view/articles"
+     tal:attributes="class string:slider ${view/css_class}">
+  <div class="easyslider"
+       tal:attributes="class string:easyslider easyslider-${view/component}">
+    <ul class="visualNoMarker">
+      <tal:item repeat="item view/articles">
+      <li class="component"
+          tal:attributes="class string:component ${item/class}">
+        <div class="content">
+          <metal:manage use-macro="context/raptus_article_macros/macros/manage" />
+          <h2 tal:condition="view/title_pre">
+            <a href=""
+               tal:omit-tag="not: item/url"
+               tal:attributes="href item/url"
+               tal:content="item/title">
+              Title 
+            </a>
+          </h2>
+          <div class="image"
+               tal:condition="item/image|nothing">
+            <a href=""
+               tal:omit-tag="not: item/image/url"
+               tal:attributes="href item/image/url;
+                               rel item/image/rel;
+                               title item/image/caption">
+            <span tal:omit-tag="item/image/url">
+              <img src="" tal:replace="structure item/image/img" />
+              <span tal:condition="python: view.show_caption and item['image']['caption'] != item['title']"
+               tal:content="item/image/caption"
+               class="discreet">
+               Caption-text
+              </span>
+            </span> 
+            </a>
+          </div>
+          <h2 tal:condition="not: view/title_pre">
+            <a href=""
+               tal:omit-tag="not: item/url"
+               tal:attributes="href item/url"
+               tal:content="item/title">
+              Title
+            </a>
+          </h2>
+          <p tal:condition="item/description|nothing"
+             tal:content="item/description">
+            Description
+          </p>
+          <div tal:condition="item/text|nothing"
+               tal:content="structure item/text">
+            Text
+          </div>
+        </div>
+      </li>
+      </tal:item>
+    </ul>
+  </div>
+</div>
+</html>
