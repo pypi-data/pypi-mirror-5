@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}
+InferTweet | Sentiment
+{% end %}
+
+{% block content %}
+<form method="get">
+  <input type="text" id="query" name="q" autofocus="autofocus"
+         value="{{ query }}">
+  <input type="submit" value="Estimate Tone">
+  <label for="as_is">Use as-is:</label>
+  <input type="checkbox" id="as_is" name="as_is" value="1" {%if as_is %}checked{% end %}>
+  <label for="geo">Geo analysis:</label>
+  <input type="checkbox" id="geo" name="geo" value="1" {%if geo %}checked{% end %}>
+</form>
+<section id="query">
+  <h1>Query:</h1>
+  {{ query }}
+</section>
+<section id="results">
+  {% if tweets %}
+  <div id='stats'>
+    <h1>Overall Statistics:</h1>
+    <div id='chart_overall_count'></div>
+    {% if geo %}
+    <h1>Geo Subjectivity:<h1>
+    <div id='chart_geo'></div>
+    {% end %}
+  </div>
+  {% end %}
+  {% for result in results %}
+  {% if tweets %}
+  {% set (tweet, features, label, probability) = result %}
+  {% set text = tweet.text %}
+  {% else %}
+  {% set (text, features, label, probability) = result %}
+  {% end %}
+  <div id="result">
+    <section>
+      {% if tweets %}
+      <h1>Tweet:</h1><br>
+      <div class="result-tweet"
+           style="background-color: {{ color_code(label, probability) }}">
+        <blockquote class="twitter-tweet">
+          <p>
+            {{ tweet.text }}
+          </p>&mdash; {{ tweet.from_user_name }}(@{{ tweet.from_user }})
+          <a href="https://twitter.com/{{ tweet.from_user }}/status/{{ tweet.id }}">
+            {{  tweet.created_at }}
+          </a>
+        </blockquote>
+      </div>
+      {% else %}
+      <h1>Text:</h1>
+      {{ text }}
+      {% end %}
+      <div class="flag">
+        {% set flags = []; labels = ('neutral', 'positive', 'negative') %}
+        {% for flag in (x for x in labels if x != label) %}
+        {% set flags.append("""
+        <form action="misclassified" method="post" target="_blank"
+              class="report">
+          <input type="hidden" name="text" value="{text}">
+          <input type="hidden" name="flag" value="{flag}">
+          <a href="#" onclick="parentNode.submit(); return false;">{flag}</a>
+        </form>
+        """.format(text=escape(text.encode('utf-8')),
+                   flag=flag.capitalize())) %}
+        {% end %}
+        Flag as: {% raw ' | '.join(flags) %}
+      </div>
+    </section>
+    <section>
+      <h1>Sentiment:</h1>
+      <span style="color: {{ color_code(label, probability) }}">
+        {{ label }}
+      </span>
+      ({{ '{:.2%}'.format(probability) }})
+    </section>
+    <section>
+      <h1>Features:</h1><br>
+      {% for (feature, f_label, f_prob) in features %}
+      <span style="color: {{ color_code(f_label, f_prob) }}"
+            title="{{ '{}: {:.2%}'.format(f_label, f_prob) }}">
+        {{ feature }}
+      </span>
+      {% end %}
+    </section>
+  </div>
+  {% end %}
+</section>
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+{% if tweets %}
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+  google.load("visualization", "1", {packages:["corechart"]});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([
+      ['Subjectivity', 'Neutral', 'Negative', 'Positive'],
+      ['Objective', {{ overall_count['neutral'] }}, 0, 0],
+      ['Subjective', 0, {{ overall_count['negative'] }}, {{ overall_count['positive'] }}],
+    ]);
+
+    var options = {
+      title: 'Number of Tweets by Sentiment',
+      isStacked: true,
+      colors: ['#0077CC', '#c00000', '#00c000']
+    };
+
+    var chart = new google.visualization.BarChart(document.getElementById('chart_overall_count'));
+    chart.draw(data, options);
+  }
+</script>
+{% if geo %}
+<script type='text/javascript'>
+ google.load('visualization', '1', {'packages': ['geochart']});
+ google.setOnLoadCallback(drawRegionsMap);
+
+  function drawRegionsMap() {
+    var data = google.visualization.arrayToDataTable([
+      ['Country', 'Subjectivity (average)'],
+      {% for country in geo %}
+      ['{{ country }}', {{ round(sum(geo[country]) / len(geo[country]), 3) }}],
+      {% end %}
+    ]);
+
+    var options = {colorAxis: {minValue: 0,
+                               maxValue: 1,
+                               colors: ['red', 'lightblue', 'green']},
+                   };
+
+    var chart = new google.visualization.GeoChart(document.getElementById('chart_geo'));
+    chart.draw(data, options);
+};
+</script>
+{% end %}
+{% end %}
+{% end %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}
+InferTweet | Sentiment | Active Learning
+{% end %}
+
+{% block content %}
+<section id="results">
+  {% for result in results %}
+  {% set (tweet, features, label, probability) = result %}
+  {% set text = tweet.text %}
+  <div id="result">
+    <section>
+      <h1>Tweet:</h1><br>
+      <div class="result-tweet"
+           style="background-color: {{ color_code(label, probability) }}">
+        <blockquote class="twitter-tweet">
+          <p>
+            {{ tweet.text }}
+          </p>&mdash; {{ tweet.from_user_name }}(@{{ tweet.from_user }})
+          <a href="https://twitter.com/{{ tweet.from_user }}/status/{{ tweet.id }}">
+            {{  tweet.created_at }}
+          </a>
+        </blockquote>
+      </div>
+      <div class="flag">
+        {% set flags = []; labels = ('neutral', 'positive', 'negative') %}
+        {% for flag in labels %}
+        {% set flags.append("""
+        <form method="post" target="_blank"
+              class="report">
+          <input type="hidden" name="text" value="{text}">
+          <input type="hidden" name="flag" value="{flag}">
+          <a href="#" onclick="parentNode.submit(); return false;">{flag}</a>
+        </form>
+        """.format(text=escape(text.encode('utf-8')),
+                   flag=flag.capitalize())) %}
+        {% end %}
+        Flag as: {% raw ' | '.join(flags) %}
+      </div>
+    </section>
+    <section>
+      <h1>Sentiment:</h1>
+      <span style="color: {{ color_code(label, probability) }}">
+        {{ label }}
+      </span>
+      ({{ '{:.2%}'.format(probability) }})
+    </section>
+    <section>
+      <h1>Features:</h1><br>
+      {% for (feature, f_label, f_prob) in features %}
+      <span style="color: {{ color_code(f_label, f_prob) }}"
+            title="{{ '{}: {:.2%}'.format(f_label, f_prob) }}">
+        {{ feature }}
+      </span>
+      {% end %}
+    </section>
+  </div>
+  {% end %}
+</section>
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+{% end %}
