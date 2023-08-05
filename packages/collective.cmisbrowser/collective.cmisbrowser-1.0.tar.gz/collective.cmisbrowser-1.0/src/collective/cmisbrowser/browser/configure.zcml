@@ -1,0 +1,157 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <!-- Browser content -->
+  <browser:resource
+     name="collective.cmisbrowser.icon.png"
+     image="static/CMISBrowser.png"
+     />
+
+  <browser:page
+     for="zope.app.container.interfaces.IAdding"
+     name="collective.cmisbrowser.CMISBrowser"
+     class=".forms.CMISBrowserAddForm"
+     permission="collective.cmisbrowser.AddCMISBrowser"
+     />
+
+  <adapter
+     for="zope.app.container.interfaces.IAdding"
+     factory=".forms.DefaultTitleAdapter"
+     provides="plone.app.content.interfaces.INameFromTitle"
+     />
+
+  <browser:page
+     for="..interfaces.ICMISBrowser"
+     name="edit"
+     class=".forms.CMISBrowserEditForm"
+     permission="cmf.ModifyPortalContent"
+     />
+
+  <browser:page
+     for="..interfaces.ICMISBrowser"
+     name="cmis_error"
+     class=".views.CMISBrowserErrorView"
+     template="templates/cmisbrowsererrorview.pt"
+     permission="zope2.View"
+     />
+
+
+  <browser:page
+     for="..interfaces.ICMISBrowser"
+     name="information.html"
+     class=".views.CMISBrowserInfoView"
+     template="templates/cmisbrowserinfoview.pt"
+     permission="zope2.View"
+     />
+
+  <browser:page
+     for="..interfaces.ICMISBrowser"
+     name="view"
+     class=".views.CMISBrowserView"
+     permission="zope2.View"
+     />
+
+  <adapter
+     for="..interfaces.ICMISBrowser"
+     factory=".forms.RSSSettingAdapter"
+     provides="..interfaces.IRSSSetting"
+     />
+
+  <!-- CMIS content url management (for Plone 4+) -->
+  <browser:page
+     for="..interfaces.ICMISContent"
+     name="breadcrumbs_view"
+     class=".urls.NavigationBreadcrumbs"
+     permission="zope.Public"
+     allowed_attributes="breadcrumbs"
+     />
+
+  <browser:page
+     for="..interfaces.ICMISContent"
+     name="absolute_url"
+     class=".urls.AbsoluteURL"
+     permission="zope.Public"
+     allowed_interface="zope.traversing.browser.interfaces.IAbsoluteURL"
+     />
+
+  <view
+     for="..interfaces.ICMISContent"
+     factory=".urls.AbsoluteURL"
+     type="zope.publisher.interfaces.http.IHTTPRequest"
+     permission="zope.Public"
+     provides="zope.traversing.browser.interfaces.IAbsoluteURL"
+     />
+
+  <!-- CMIS content view -->
+  <browser:page
+     for="..interfaces.ICMISFolder"
+     name="view"
+     class=".views.CMISFolderView"
+     permission="zope2.View"
+     />
+
+  <browser:page
+     for="..interfaces.ICMISFileResult"
+     name="view"
+     class=".views.CMISFileResultView"
+     permission="zope2.View"
+     />
+
+  <browser:page
+     for="..interfaces.ICMISStaleResult"
+     name="view"
+     class=".views.CMISStaleResultView"
+     permission="zope2.View"
+     />
+
+  <!-- CMIS content icons -->
+  <browser:resource
+     name="collective.cmisbrowser.document.png"
+     image="static/CMISDocument.png"
+     />
+
+  <browser:resource
+     name="collective.cmisbrowser.folder.png"
+     image="static/CMISFolder.png"
+     />
+
+  <adapter
+     for="*
+          zope.publisher.interfaces.browser.IBrowserRequest
+          ..interfaces.ICMISContent"
+     factory=".icons.CMISContentIcon"
+     provides="plone.app.layout.icons.interfaces.IContentIcon"
+     />
+
+  <!-- Control panel -->
+  <browser:page
+     for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+     name="cmis-settings-controlpanel"
+     class=".settings.CMISSettings"
+     permission="cmf.ManagePortal"
+     />
+
+  <adapter
+     for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+     factory=".settings.CMISSettingsAdapter"
+     provides="..interfaces.ICMISSettings"
+     />
+
+  <adapter
+     for="*"
+     factory=".settings.default_cmis_settings"
+     provides="..interfaces.ICMISSettings"
+     />
+
+
+   <!-- Viewlet -->
+   <browser:viewlet
+     name='cmisbrowser.text'
+     for='..interfaces.ICMISRootFolder'
+     manager="plone.app.layout.viewlets.interfaces.IAboveContentBody"
+     class=".viewlets.TextViewlet"
+     permission="zope2.View"
+     />
+
+</configure>
