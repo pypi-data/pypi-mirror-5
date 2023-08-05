@@ -1,0 +1,104 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="redturtle.logoswitch">
+<body>
+
+<div metal:fill-slot="main">
+    <tal:main-macro metal:define-macro="main" 
+         tal:define="toLocalizedTime nocall:plone_view/toLocalizedTime;
+                     templateId string:select_logo">
+	
+        <h1 class="documentFirstHeading" i18n:translate="change_logo"> 
+            Change Logo
+        </h1>
+		<tal:switch define="logos_folder view/hasLogosFolder">
+			<div tal:condition="python:not logos_folder">
+				<dl class="portalMessage error">
+		            <dt i18n:translate="msg_error">
+		                Error
+		            </dt>
+		            <dd i18n:translate="no_folder_err">
+		                Folder Logos does not exist
+		            </dd>
+		        </dl>
+				<form method="POST" action="select-logo">
+			            	
+			        <div class="formControls">
+					  
+					  	<div class="selection_buttons"> 
+						  <input class="context"
+						         type="submit"
+				                 value="Add Folder"
+				                 name="form.button.AddFolder"
+								 i18n:attributes="value add_folder_button"
+				                 />
+								 
+						</div>
+			        </div>
+		
+		        </form>
+			</div>	
+			<div tal:condition="python:logos_folder"
+				 tal:define="image_list view/getImageList">
+				<tal:has_images condition="image_list">
+					<p class="documentDescription" i18n:translate="change_descr">
+            			Select an image for the site logo.
+        			</p>
+					<form method="POST"
+			            action="select-logo"
+			            name="select-logo">
+			            	
+				        <div class="formControls">
+						  
+						  <input type="hidden" name="form.submitted" value="1" />
+						  
+						  <tal:for repeat="img image_list">
+						  	<div class="list_images">
+						  		<input type="radio"
+									   name="image_selected"
+									   value=""
+									   tal:attributes="value img/getId"/>
+								   
+								<img class="image_for_logo" src="" tal:attributes="src img/absolute_url"/>
+							</div>	   
+						  	</tal:for>
+						  	<div class="selection_buttons"> 
+							  <input class="context"
+							         type="submit"
+					                 value="Switch"
+					                 name="form.button.Submit"
+									 i18n:attributes="value label_switch"
+					                 />
+									 
+					          <input class="standalone"
+					                 type="submit"
+					                 value="Cancel"
+					                 name="form.button.Cancel"
+					                 i18n:attributes="value label_cancel;"
+					                 />
+							</div>
+				        </div>
+			
+			        </form>
+				</tal:has_images>
+				<tal:no_images condition="not:image_list">
+					<p class="documentDescription" i18n:translate="no_img_descr">
+            			No images in the folder.
+        			</p>
+				</tal:no_images>
+			</div>
+		
+		</tal:switch>
+	
+        <span class="visualClear"><!-- --></span>
+
+		
+    </tal:main-macro>
+</div>
+
+</body>
+</html>
