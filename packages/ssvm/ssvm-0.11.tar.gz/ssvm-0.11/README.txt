@@ -1,0 +1,97 @@
+SSVM-Python is a Python version of DSMI Lab's Smooth Support Vector Machine Toolbox
+See: http://dmlab8.csie.ntust.edu.tw/download.html#toolbox
+
+Smooth Support Vector Machine is Prof.Lee's paper.
+See: http://research.cs.wisc.edu/dmi/svm/ssvm/
+
+
+Usage:
+Put SSVM-Python on the PYTHON-PATH and install "Numpy"
+
+=======================================================================================================
+Training:
+Trainer( data, label_pos )                             Instantiate the Trainer object with a data set.
+Trainer.make( r = 1 , v = 1 )                          Setup the partitions to use for cross-validation.
+Trainer.tune( c = 100, g = 0.1, k = 1, s = 0 )         Set parameters for model training.
+Trainer.train()                                        Train
+Trainer.save( model_name = model)                      Save the trained model.
+=======================================================================================================
+
+
+#Training
+1)Import the module
+----------------------------------
+from ssvm.trainer import Trainer
+
+2)Create a Trainer object
+----------------------------------
+A Trainer object expects to be initialized with a 2D Numpy array representing 
+containing the data. label_pos indicates which column is the label.
+
+trainer = Trainer( data, label_pos )
+
+3)Setup the Trainer
+----------------------------------
+r -> How much of the data to use for the reduced set
+v -> How many folds to use for cross-validation
+
+trainer.make( r = 1 , v = 1 )
+
+4)Set Training parameters
+----------------------------------
+c = SVM penality
+g = gamma parameter of the RBF kernel
+k = linear vs nonlinear, 0 -> linear, 1 -> nonlinear
+s = How to deal with multi-class classification, 0 -> One-Against-One, 1 -> One-Against-Rest
+
+trainer.tune( c = 100, g = 0.1, k = 1, s = 0 )
+
+5)Begin Training
+----------------------------------
+Use the train() method to begin training.
+Which parameters are used during training depends on what was passed to the
+tune() method earlier.
+
+trainer.train()
+
+6)Save the model
+----------------------------------
+Save the trained model to use for prediction later on.
+Trainer.save( model_name = model )
+
+
+
+=======================================================================================================
+Prediction:
+Predictor( model )                                     Instantiate Predictor object with a saved trained model
+Predictor.predict( data )                              Make prediction on data with the Predictor object
+=======================================================================================================
+
+
+
+#Prediction
+1)Indicated the saved model to use
+----------------------------------
+from ssvm.predictor import Predictor
+Predictor( model.pkl )
+
+2)Make predictions
+----------------------------------
+Use the Predictor to make predictions on the data, assumed to be 2D numpy array
+with the same number of columns (minus the label) as that used in the Training 
+object.
+
+Predictor.predict( data )
+
+
+
+
+=======================================================================================================
+
+If you have any questions, please contact any of the following:
+Author:
+    Prof.Lee(yuh-jye@mail.ntust.edu.tw)
+Maintainer:
+    Evan(evan176@hotmail.com)
+    
+=======================================================================================================
