@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript" src="http://jzaefferer.github.com/jquery-validation/jquery.validate.js"></script>
+    <script type="text/javascript" src="https://raw.github.com/alexei/sprintf.js/master/src/sprintf.min.js"></script>
+    <script type="text/javascript">
+        jQuery.validator.setDefaults({
+            debug : true,
+            success : "valid"
+        });
+        ;
+    </script>
+
+    <script>
+        $(document).ready(function () {
+
+            jQuery.validator.addMethod("math", function (value, element, params) {
+                console.log(this.optional(element));
+                return this.optional(element) || value == params[0] + params[1];
+            }, function (params) {
+                console.log(this);
+                params.splice(0,0,"Please enter the correct value for %d + %d");
+                console.log(params);
+                return sprintf.apply(this, params);
+            });
+
+            $("#myform").validate({
+                rules : {
+                    field : {
+                        required : true,
+                        min : 13,
+                        math : [10, 5]
+                    }
+                }
+            });
+        });
+    </script>
+    <style>#field {
+        margin-left: .5em;
+        float: left;
+    }
+
+    #field, label {
+        float: left;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: small;
+    }
+
+    br {
+        clear: both;
+    }
+
+    input {
+        border: 1px solid black;
+        margin-bottom: .5em;
+    }
+
+    input.error {
+        border: 1px solid red;
+    }
+
+    label.error {
+        background: url('http://dev.jquery.com/view/trunk/plugins/validate/demo/images/unchecked.gif') no-repeat;
+        padding-left: 16px;
+        margin-left: .3em;
+    }
+
+    label.valid {
+        background: url('http://dev.jquery.com/view/trunk/plugins/validate/demo/images/checked.gif') no-repeat;
+        display: block;
+        width: 16px;
+        height: 16px;
+    }
+    </style>
+</head>
+<body>
+
+<form id="myform">
+    <label for="field">Required, minimum 13: </label>
+    <input class="left" id="field" name="field"/>
+    <br/>
+    <input type="submit" value="Validate!"/>
+</form>
+
+</body>
+</html>

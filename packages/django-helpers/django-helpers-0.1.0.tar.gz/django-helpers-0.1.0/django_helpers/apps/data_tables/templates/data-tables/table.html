@@ -1,0 +1,85 @@
+{% block html %}
+    <table id="{{ table_id }}" {% if width %}style="width: {{ width }}" {% endif %}{% if bootstrap_theme %}class="table table-striped table-bordered" {% endif %}>
+        <thead>
+        <tr>
+            {% for column in columns %}
+                <th{% if title_class %} class="{{ title_class }}" {% endif %}>{{ column.title }}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td colspan="{{ columns|length }}">{% block loading_message %}{{ loading_message }}{% endblock %}</td>
+        </tr>
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block javascript %}
+    <script type="text/javascript">
+        jQuery(function () {
+            $("#" + "{{ table_id }}").dataTable({
+
+                "bProcessing" : true,
+                "bServerSide" : true,
+
+                "iDisplayLength" : {{ display_length }},
+                "aLengthMenu" : [
+                    [2, 3, 5, 10, 25, 50, 100],
+                    [2, 3, 5, 10, 25, 50, 100]
+                ],
+
+                {% if ui_themes %}
+                    "bJQueryUI": true,
+                {% endif %}
+
+                "fnDrawCallback" : function (oSettings) {
+                    {% block draw_callback %}{% endblock %}
+                },
+
+            {% if not bootstrap_theme and not scroller %}
+                "sPaginationType" : "full_numbers", {# TODO: Make this a variable #}
+                "bPaginate" : true, {# TODO: Make this a variable #}
+            {% endif %}
+
+            {% if dom %}
+            {% autoescape off %}
+                "sDom" : '{{ dom }}',
+            {% endautoescape %}
+            {% endif %}
+
+
+            {% if scroller %}
+                "sScrollY": "{{ scroller_height }}px",
+                "oScroller": {
+                    "loadingIndicator": true {% comment %}Make this to a variable{% endcomment %}
+                },
+                "bDeferRender": true,
+            {% endif %}
+
+                "sAjaxSource" : "{{ ajax_source }}",
+                "aoColumns" : [
+                    {% for column in columns %}
+                        {
+                            "bSortable" : {% if column.sortable %}true{% else %}false{% endif %},
+                            "bSearchable" : {% if column.searchable %}true{% else %}false{% endif %},
+                            {% if column.title_width %}"sWidth": "{{ column.title_width }}" {% endif %}
+                        },
+                    {% endfor %}
+                ],
+
+                "oLanguage": {
+                    {% if info_empty %}
+                    "sZeroRecords": "{{ info_empty }}",
+                    {% endif %}
+                    {% if info_loading %}
+                    "sLoadingRecords": "{{ info_loading }}",
+                    {% endif %}
+                    {% if info_processing %}
+                    "sProcessing": "{{ info_processing }}",
+                    {% endif %}
+                }
+            });
+        });
+    </script>
+{% endblock %}
