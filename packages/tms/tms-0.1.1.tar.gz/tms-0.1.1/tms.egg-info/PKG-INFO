@@ -1,0 +1,94 @@
+Metadata-Version: 1.1
+Name: tms
+Version: 0.1.1
+Summary: Test match special: fuzzy value matching for test assertions
+Home-page: UNKNOWN
+Author: Oliver Cope
+Author-email: oliver@redgecko.org
+License: BSD
+Description: 
+        tms: Test Match Special
+        =======================
+        
+        tms lets you test values in test code, where you may not be able to test
+        against an exact, known value.
+        
+        Some quick examples:
+        
+        Test an object's class and instance attributes::
+        
+            assert zoo.get('elephant') == tms.InstanceOf(Elephant, name='nelly')
+        
+        Match data structures::
+        
+            assert resultset.any() == {'id': tms.InstanceOf(int),
+                                       'name': tms.Contains('bob'),
+                                       'data': tms.Anything()}
+        
+        Test for in / not in::
+        
+            assert 'business' == tms.Contains('sin')
+            assert 'my lunch' == tms.DoesntContain('nuts')
+        
+        Test attributes::
+        
+            assert Circle(1) == tms.InstanceOf(Circle, radius=1)
+        
+            assert Circle(1) == tms.InstanceOf(Circle, radius=tms.InstanceOf(int))
+        
+            assert Circle(1) == tms.InstanceOf(Circle, has_attrs=['radius'])
+        
+        
+        Test dictionaries or dict-like objects::
+        
+            # Check that it contains keys and values
+            assert {'x': 1} == tms.DictLike(x=1)
+        
+            # Check that it contains certain keys
+            assert dict(x=1, y=2) == tms.Contains('x', 'y')
+        
+            # Check that it doesn't contain certain keys
+            assert dict(x=1, y=2) == tms.DoesntContain('foo', 'bar')
+        
+        
+        Combining tests::
+        
+            assert mylunch == tms.InstanceOf(Sandwich) & tms.DoesntContain(cheese)
+        
+        
+        Unlike `hamcrest <https://pypi.python.org/pypi/PyHamcrest>`_, tms uses the
+        ``__eq__`` method to evaluate comparisons. This means it works with python's
+        built in assert statement. This also means it works well with other test
+        libraries: you can drop a ``tms.Matcher`` object into any regular equality
+        test and have it work.
+        
+        Note that this also means that it may not work for objects that override
+        the __eq__ method. If the matcher doesn't seem to be firing, try putting it on
+        the left hand side of the comparison::
+        
+            >>> import tms
+            >>> class MySpecialObject(object):
+            ...     def __eq__(self, other):
+            ...         return False
+            ... 
+            >>> MySpecialObject() == tms.Anything()
+            False
+            >>> tms.Anything() == MySpecialObject()
+            True
+        
+        
+        CHANGELOG
+        =========
+        
+        Version 0.1.1
+        
+        - Initial release
+        
+        
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Topic :: Software Development :: Testing
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python :: 3.3
