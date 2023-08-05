@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n st_core %}
+
+{% block title %}{% trans "Archive" %}{% endblock %}
+
+{% block extra_head %}
+  {% get_current_language as LANGUAGE_CODE %}
+  <link rel="alternate" type="application/rss+xml" title="{% trans "Archive" %}" href="{% i18n_url LANGUAGE_CODE blog_feed %}"></link>  
+{% endblock %}
+
+{% block body_class %}blog{% endblock %}
+
+{% block content %}
+<section>
+  <header>
+    <h1>{% trans "Archive" %}</h1>
+  </header>
+  {% regroup object_list by pubdate|date:"Y" as year_posts %}
+  <ul>
+{% for year in year_posts %}
+  <li><h2>{{ year.grouper  }}</h2></li>
+  <ul>
+  {% for post in year.list %}
+    <li>{{ post.pubdate|date:"b d" }}, {{LANGUAGE_MARKER}}<a href="{{ post.get_absolute_url  }}">{{ post.title }}</a></li>
+  {% endfor %}
+  </ul>
+{% endfor %}
+  </ul>
+</section>
+{% endblock %}
