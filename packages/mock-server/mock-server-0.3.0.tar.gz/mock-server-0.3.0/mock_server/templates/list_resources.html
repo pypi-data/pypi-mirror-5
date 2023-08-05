@@ -1,0 +1,175 @@
+{% extends "layout.html" %}
+
+{% block header %}
+{% set active_page = "list_resources" %}
+{% end %}
+
+{% block body %}
+
+{% set MAX_NUMBER_OF_METHODS = 9 %}
+
+{% if some_method %}
+<div class="span3 bs-docs-sidebar">
+    <ul class="nav nav-list bs-docs-sidenav" id="sidenav">
+      {% for category, paths in categories.iteritems() %}{% if paths %}
+        <li{% if number_of_methods < MAX_NUMBER_OF_METHODS %} class="category"{% end %}><a href="#{{category}}"><i class="icon-chevron-right"></i> {% if category == "__default" %}Not in category{% else %}{{category}}{% end %}</a></li>
+        {% if number_of_methods < MAX_NUMBER_OF_METHODS %}
+        {% for type, path in paths %}
+          {% if type == "rest" %}
+          <li class=""><a href="#{{path.path}}"><i class="icon-chevron-right"></i> /{{path.path}}</a></li>
+          {% else %}
+          <li class=""><a href="#xmlrpc-{{path["name"]}}"><i class="icon-chevron-right"></i> RPC/{{path["name"]}}</a></li>
+          {% end %}
+        {% end %}
+        {% end %}
+      {% end %}{% end %}
+    </ul>
+</div>
+{% end %}
+
+<div class="span9 list-resources">
+    <div class="page-header">
+        <h1>List resources</h1>
+    </div>
+
+    {% if flash_messages %}{% for type, message in flash_messages %}
+    <div class="alert alert-{{type}}">
+      <button type="button" class="close" data-dismiss="alert">×</button>
+      {{message}}
+    </div>
+    {% end %}{% end %}
+
+    {% if some_method %}
+
+    {% for category, paths in categories.iteritems() %}{% if paths %}
+    <h2 id="{{category}}">{% if category == "__default" %}Not in category{% else %}{{category}}{% end %}</h2>
+    {% for type, path in paths %}
+    {% if type == "rest" %}
+    {% for resource in path.resources.itervalues() %}
+    <section id="{{resource.url_path}}">
+    <div class="navbar">
+      <div class="navbar-inner">
+        <a class="brand" href="#">{{resource.method}} /{{resource.url_path}}</a>
+        <ul class="nav">
+          {% for i, file in enumerate(resource.files) %}
+          <li {% if i == 0 %}class="active"{% end %}><a class="trigger-{{resource.method}}{{path.id}}{{file.status_code}}" href="#{{resource.method}}{{path.id}}{{file.status_code}}{{i}}" data-toggle="tab">{{file.status_code}} - {{file.format}}</a></li>
+          {% end %}
+        </ul>
+        <ul class="nav pull-right">
+            {% if handler.api_data.upstream_server and current_user %}
+            <li>
+                <form class="form-inline" method="post" action="/__manage/resource/{{resource.method}}-{{resource.url_path}}">
+                  {% module xsrf_form_html() %}
+                  <label class="checkbox">
+                    <input type="checkbox" name="upstream_server"{% if resource.upstream_server %} checked="checked"{% end %} onclick="this.form.submit();"> Upstream server
+                  </label>
+                </form>
+            </li>
+            {% end %}
+            {% if current_user %}
+            <li class="divider-vertical"></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Actions <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a id="trigger-{{resource.method}}{{path.id}}-edit" class="edit-button" href="/__manage/create?method={{resource.method}}&url_path={{resource.url_path}}">Edit</a></li>
+                <li>
+                    <a href="javascript:void(0)" onclick="if (confirm('Do you really want to delete {{resource.method}} /{{resource.url_path}} ?')) { this.href = '/__manage/resource/{{resource.method}}-{{resource.url_path}}?_method=delete'; } else { return false; }">Delete</a>
+                </li>
+              </ul>
+            </li>
+            {% end %}
+        </ul>
+      </div>
+      <div class="tab-content">
+          {% if resource.description %}
+          <div class="bs-docs-example">
+              <p>{% raw resource.description %}</p>
+          </div>
+          {% end %}
+          {% for i, file in enumerate(resource.files) %}
+          <div id="{{resource.method}}{{path.id}}{{file.status_code}}{{i}}" class="{% if resource.description %}ppp {% end %}tab-pane{% if i == 0 %} active{% end %}">
+          <pre class="prettyprint linenums">{{file.data}}</pre>
+          <pre class="prettyprint">
+          curl -v -X {{resource.method}} http://{{request.host}}/{{resource.url_path}}.{{file.format}}{% if file.status_code != "200" %}?__statusCode={{file.status_code}}{% end %}
+          </pre>
+          </div>
+          {% end %}
+      </div>
+    </div>
+    </section>
+
+    {% end %}
+
+    {% else %}
+
+    <section id="xmlrpc-{{path["name"]}}">
+      <div class="navbar">
+        <div class="navbar-inner">
+          <a class="brand" href="#">RPC/{{path["name"]}}</a>
+          <ul class="nav">
+            {% for i, format in enumerate(path["responses"].iterkeys()) %}
+            <li {% if i == 0 %}class="active"{% end %}><a class="trigger-{{path["id"]}}{{format}}" href="#{{path["id"]}}{{format}}" data-toggle="tab">{{format}}</a></li>
+            {% end %}
+          </ul>
+          <ul class="nav pull-right">
+              {% if handler.api_data.upstream_server and current_user %}
+              <li>
+                  <form class="form-inline" method="post" action="/__manage/rpc/{{path["name"]}}">
+                    {% module xsrf_form_html() %}
+                    <label class="checkbox">
+                      <input type="checkbox" name="upstream_server"{% if path["upstream_server"] %} checked="checked"{% end %} onclick="this.form.submit();"> Upstream server
+                    </label>
+                  </form>
+              </li>
+              {% end %}
+              {% if current_user %}
+              <li class="divider-vertical"></li>
+              <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Actions <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li><a href="/__manage/create/rpc?method_name={{path["name"]}}">Edit</a></li>
+                  <li>
+                      <a href="javascript:void(0)" onclick="if (confirm('Do you really want to delete {{path["name"]}} method?')) { this.href = '/__manage/rpc/{{path["name"]}}?_method=delete'; } else { return false; }">Delete</a>
+                  </li>
+                </ul>
+              </li>
+              {% end %}
+          </ul>
+        </div>
+        <div class="tab-content">
+            {% if path["description"] %}
+            <div class="bs-docs-example">
+                <p>{% raw path["description"] %}</p>
+            </div>
+            {% end %}
+            {% for i, (format, response) in enumerate(path["responses"].iteritems()) %}
+            <div id="{{path["id"]}}{{format}}" class="{% if path["description"] %}ppp {% end %}tab-pane{% if i == 0 %} active{% end %}">
+              <pre class="prettyprint linenums">{{response.data}}</pre>
+              <pre class="prettyprint">
+              curl -v -X POST http://{{request.host}}/RPC2 -d {{response.method_call}} --header "Content-Type:{{response.CONTENT_TYPE}}"
+              </pre>
+            </div>
+            {% end %}
+        </div>
+      </div>
+    </section>
+
+    {% end %}
+
+    {% end %}
+    {% end %}
+    {% end %}
+
+    {% else %}
+
+    Api does't exists, <a href="/__manage/create">create resource method</a>.
+
+    {% end %}
+</div><!--/.list-resources -->
+
+{% end %}
+
+{% block javascripts %}
+<script src="/__static/js/list-resources.js" type="text/javascript" charset="utf-8"></script>
+
+{% end %}
