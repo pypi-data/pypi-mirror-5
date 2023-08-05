@@ -1,0 +1,65 @@
+<dtml-var manage_page_header>
+
+<dtml-var manage_tabs>
+
+<p class="form-help">
+This is an OAI Site Harvester object. It gets the site records and updates them periodically.
+</p>
+
+<form action="manage_OAIHarvesterPrefs">
+
+<table>
+<tr><td width=120>Site Host:</td> <td valign="top"><input size="30" name="site_host" value="&dtml-get_siteHost;"></input></td></tr>
+<tr><td>Site URL:</td> <td><input size="30" name="site_url" value="&dtml-get_siteURL;"></input></td></tr>
+<tr><td>OAI set:</td> <td><input name="oai_set" size="30" value="&dtml-get_oaiSet4html;"></td></tr>
+<tr><td>Title:</td> <td><input size="30" name="title" value="&dtml-title;"></td></tr>
+
+<tr><td>Update records:</td> <td><select name="minutes:int">
+
+<dtml-in "[['Daily', 1], ['Weekly', 7], ['Monthly', 30]]">
+
+<dtml-let d_name="_['sequence-item'][0]"
+d_num="_['sequence-item'][1]">
+&dtml-d_num;
+<option value="&dtml-d_num;" <dtml-if "d_num==update_period">SELECTED</dtml-if> ><dtml-var d_name></option>
+
+</dtml-let>
+</dtml-in>
+</select></td></tr>
+
+<tr><td colspan="2"><hr/></td></tr>
+<tr><td colspan="2"><b>Exist configuration:</b></td></tr>
+
+<tr><td>Exist storage collection</td> <td><input type="text" name="exist_col:string" value="<dtml-var "get_exist_col()">" size="30">  &nbsp; <i style="color:grey;font-size:11px;"></i></td></tr>
+<tr><td>&nbsp;</td> <td>
+
+<dtml-if "testCollection(get_exist_col())">
+<font style="color:green;">OK</font>, this collection exists. You can <input type="checkbox" value="1" name="deleteColl"> delete it or <input type="checkbox" value="1" name="emptyColl"> remove its content.
+<dtml-else>
+<font style="color:red;">Warning</font>, this collection doesn't exist. You can <input type="checkbox" value="1" name="createColl"> create it now. Otherwise it will be created at the first harvest.
+</dtml-if>
+</td></tr>
+
+
+
+<tr><td colspan="2"><hr/></td></tr>
+<tr><td colspan="2"><b>Specific harvesting options:</b></td></tr>
+
+<tr><td>OAI_DC to LOM:</td> <td><input type="checkbox" name="dc2lom" value="1" <dtml-if "get_dc2lom()">checked="true"</dtml-if>"> &nbsp; <i style="color:grey;font-size:11px;">Transform oai_dc records aggregated to LOM format for storage</i></td></tr>
+
+<tr><td>        Ressource location transformation</td> <td><input type="text" name="locationTransform" value="<dtml-var "get_locationTransform()">">  &nbsp; <i style="color:grey;font-size:11px;">Edit a RE applied to location field to transform it if needed (this option works only on record tranform from oai_dc to LOM through the above option) "RE example: .*(https?://.*)" --> we take only the first group of the RE</i></td></tr>
+
+<tr><td>        Keywords separator</td> <td><input type="text" size="3" name="keywordSep" value="<dtml-var "get_keywordSep()">">  &nbsp; <i style="color:grey;font-size:11px;">You can specify a separtor use in OAI to LOM process to split keyword</i></td></tr>
+
+<tr><td>        Replace operation</td> <td><i style="color:grey;font-size:11px;">You can realize a replace operation before the DC conversion if you need to add some name space for example</i></td></tr>
+<tr><td>        Search string</td> <td><input type="text" size="30" name="replaceThis" value="<dtml-var "get_replaceThis()" html_quote>"></td></tr>
+<tr><td>        Replace string</td> <td><input type="text" size="30" name="replaceBy" value="<dtml-var "get_replaceBy()" html_quote>"></td></tr>
+
+
+<tr><td colspan=2 align="left"><input type="submit" value="submit"></td></tr>
+
+</table>
+</form>
+
+
+<dtml-var manage_page_footer>
