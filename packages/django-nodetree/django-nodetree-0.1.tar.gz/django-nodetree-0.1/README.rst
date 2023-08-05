@@ -1,0 +1,1 @@
+.. image:: https://travis-ci.org/lukasbuenger/nodetree.png?branch=master
