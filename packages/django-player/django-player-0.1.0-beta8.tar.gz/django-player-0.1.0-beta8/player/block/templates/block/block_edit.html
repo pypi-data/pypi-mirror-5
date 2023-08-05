@@ -1,0 +1,27 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs %}
+
+{% block extrahead %}
+  {{ form.media }}
+{% endblock %}
+
+{% block breadcrumbs %}
+{% if placed_block %}
+  {% breadcrumbs "Blocks:../.." "Block edit:" %}
+{% else %}
+  {% breadcrumbs "Blocks:.." "Block add:" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+  <h2>{% if placed_block %}{% trans "Block edit" %}{% else %}{% trans "Block add" %}{% endif %}</h2>
+
+  <form action="{% if placed_block %}{% url block_edit placed_block.id %}{% else %}{% url block_add %}{% endif %}" method="post">{% csrf_token %}
+    {{ form.as_p }}
+    {% if placed_block %}
+      <input class="button" type="submit" value="{% trans "Save changes" %}" />
+    {% else %}
+      <input class="button" type="submit" value="{% trans "Add" %}" />
+    {% endif %}
+  </form>
+{% endblock %}

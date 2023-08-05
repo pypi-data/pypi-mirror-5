@@ -1,0 +1,81 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs generic_delete %}
+
+{% block breadcrumbs %}
+{% breadcrumbs "Report index:../../" %}
+{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript">
+//<![CDATA[
+(function ($) {
+ $(document).ready(function() {
+    $(".view_items a").click(function(){
+        $(this).parent().parent().find("ul").fadeIn();
+        $(this).parent().find("a.hidden").fadeIn();
+        $(".view_items").hide();
+    });
+ });
+}(jQuery));
+//]]>
+</script>
+{% endblock %}
+
+
+{% block content %}
+    {% head "Report" %}
+    <ul>
+     <li><label>{% trans "Affected collections" %}</label>:
+       {% for collection in collections %}
+         <a href="{{ collection.get_absolute_url }}">{{ collection }}</a>{% if not forloop.last %}, {% endif %}
+       {% endfor %}
+     </li>
+
+     <li><label>{% trans "Crawling time" %}</label>:
+          {{ report.crawling_time }}
+     </li>
+
+     <li><label>{% trans "Return code" %}</label>:
+       {{ report.get_return_code_display }}
+     </li>
+
+    {% if report.crawled_data %}
+        <li> <label>{% trans "Crawled raw data" %}</label>:
+            <a href="{% url crawled_view report.id %}">{% trans "here" %}</a>
+        </li>
+    {% endif %}
+
+    <li class="item_list"><label>{% trans "Added items" %}</label>: {{ added_items.count }}
+    {% with added_items as item_list %}
+      {% include "crawler/inc.grouped_item_list.html" %}
+    {% endwith %}
+    </li>
+    <li class="item_list"><label>{% trans "Updated items" %}</label>: {{ updated_items.count }}
+    {% with updated_items as item_list %}
+      {% include "crawler/inc.grouped_item_list.html" %}
+    {% endwith %}
+    </li>
+    <li class="deleted_items_json"> <label>{% trans "Deleted items" %}</label>: {{ report.deleted_items_json|length }}
+        {% regroup report.deleted_items_json by collection as item_list_grouped %}
+      <ul class="hidden">
+        {% for items_in_collection in item_list_grouped %}
+          <li><span>{{ items_in_collection.grouper }}</span>
+          <ul>
+            {% for deleted_item in items_in_collection.list %}
+              <li>
+                {{ deleted_item.repr }}
+              </li>
+            {% endfor %}
+          </ul>
+          </li>
+        {% endfor %}
+      </ul>
+    </li>
+    <li class="view_items"><a href="#">{% trans "Click here to view above items" %}</a></li>
+    </ul>
+
+   {% if report.traceback %}
+     {% head "Traceback" %}
+     <pre class="code">{{ report.traceback }}</pre>
+   {% endif %}
+{% endblock %}

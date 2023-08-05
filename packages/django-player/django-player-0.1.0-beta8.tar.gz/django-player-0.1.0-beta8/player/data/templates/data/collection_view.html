@@ -1,0 +1,290 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs generic_delete content_delete pagination_tags %}
+
+{% block breadcrumbs %}
+{% breadcrumbs "Collection groups:../../../" collection.collectiongroup collection %}
+{% endblock %}
+
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery.autopaginate_link_tabs.js"></script>
+<script type="text/javascript">
+//<![CDATA[
+(function ($) {
+ $(document).ready(function() {
+     $("#paginate-tab").hide();
+     $('.editable').editable('{% url player.data.views.collection_edit_fields collection.collectiongroup.slug collection.slug %}', {
+        loadurl : '{% url player.data.views.collection_fields_in_json collection.collectiongroup.slug collection.slug %}',
+        type    : 'select',
+        submit  : 'OK',
+        style   : 'display: inline'
+     });
+     $('#change-repr').click( function () {
+         $('#repr-field').click();
+         return false;
+     });
+     $(".tabs").tabs();
+     $('.publishingStepsLink').click(function() {
+         $(".tabs").tabs('select', 4);
+         return false;
+     });
+ });
+}(jQuery));
+//]]>
+</script>
+<script type="text/javascript">
+{% include "manage/inc.confirmation_javascript.html" %}
+</script>
+
+{% endblock %}
+
+{% block content %}
+  {% with collection.collectiongroup as collectiongroup %}
+    <h2>{{ collection }}</h2>
+
+<span id="paginate-tab">elements-tab</span>
+<div class="tabs">
+  <ul>
+    <li><a href="#data-tab">{% trans "Data" %}</a></li>
+    <li><a href="#elements-tab">{% trans "Elements" %}</a></li>
+    <li><a href="#invalid-elements-tab">{% trans "Invalid elements" %}</a></li>
+    <li><a href="#crawler-tab">{% trans "Crawler" %}</a></li>
+    <li><a href="#steps-tab">{% trans "Publishing steps" %}</a></li>
+  </ul>
+
+  <div id="data-tab">
+    {% head "Collection meta data" %}
+    <ul>
+     <li><label class="mandatory">{% trans "Status" %}</label>:
+        <strong>{{ collection.get_status_display }}</strong>
+     </li>
+     <li><label class="mandatory">{% trans "CollectionGroup" %}</label>:
+       <a href="{{ collectiongroup.get_absolute_url }}" title="{{ collectiongroup }}">{{ collectiongroup }}</a>
+     </li>
+     <li><label class="mandatory">{% trans "Field representing item" %}</label>:
+       <pre id="repr-field" class="code editable">{{ collection.repr_field|default_if_none:"no definido" }}</pre>
+       <a href="#" id="change-repr" class="changeLink" title="{% trans "Change" %}">{% trans "Change" %}</a>
+     </li>
+    </ul>
+
+    {% head "Publishing status" %}
+
+    <p>
+    {% if collection.is_publishable %}
+      <img src="{{ STATIC_URL }}manage/img/step-done_16.png" />
+      {% trans "This collection is ready to use" %}
+    {% else %}
+      <img src="{{ STATIC_URL }}manage/img/step-undone_16.png" />
+      {% trans "This collection is NOT ready to use" %}
+    {% endif %}
+    ({% blocktrans %}go to <a href="#" class="publishingStepsLink">publishing steps</a> tab for more details{% endblocktrans %})
+    </p>
+
+    {% head "Fields" %}
+    <table class="listing">
+    <thead>
+      <th>{% trans "Name" %}</th><th>{% trans "Slug" %}</th><th>{% trans "Field type" %}</th><th>{% trans "Is matchup" %}</th>
+    </thead>
+    <tbody>
+    {% for field in collection.fields.all %}
+    <tr class="centered">
+      <td>{{ field }}</td><td>{{ field.slug }}</td><td>{{ field.get_field_type_display }}</td><td>{{ field.is_matchup|yesno:"sí,no" }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+  </div>
+
+  <div id="elements-tab">
+    {% with collection.item_set.all as items_parsed %}
+    {% head "Items parsed" %}
+    <p>{% blocktrans with items_parsed.count as items_number %} {{ items_number }} extracted elements{% endblocktrans %}</p>
+    {% autopaginate items_parsed %}
+    {% if items_parsed %}
+      <div class="pagelements">{% paginate %}</div>
+      <ul>
+      {% for item in items_parsed %}
+        <li><a href="{{ item.get_manage_url }}">{{ item }}</a></li>
+      {% endfor %}
+      </ul>
+      <div class="pagelements">{% paginate %}</div>
+    {% else %}
+      {% trans "There are no items parsed for this collection" %}
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <div id="invalid-elements-tab">
+    {% with collection.item_set.invalids as items_parsed %}
+    {% head "Invalid elements" %}
+    <p>{% blocktrans with items_parsed.count as items_number %} {{ items_number }} invalid elements{% endblocktrans %}</p>
+    {% autopaginate items_parsed %}
+    {% if items_parsed %}
+      <div class="pagelements">{% paginate %}</div>
+      <ul>
+      {% for item in items_parsed %}
+        <li><a href="{{ item.get_absolute_url }}">{{ item }}</a></li>
+      {% endfor %}
+      </ul>
+      <div class="pagelements">{% paginate %}</div>
+    {% else %}
+      {% trans "There are no invalid items for this collection" %}
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <div id="crawler-tab">
+   {% if not collection.fields.all %}
+        <p>
+        {% trans "There is no crawler collection mapped yet" %}
+        </p>
+        <p>
+        {% trans "You can not map a collection without fields. Please edit this collection and add some fields to it." %}
+        </p>
+   {% else %}
+    {% with collection.crawler_collection as crawler_collection %}
+      {% if crawler_collection %}
+        {% head "Crawling information" %}
+        <ul>
+        <li><label>{% trans "Backend" %}</label>:
+          <b>{{ collection.crawler_collection.backend }}</b>
+        </li>
+        <li><label>{% trans "External code" %}</label>:
+          <a href="{{ collection.collection_link }}">{{ collection.crawler_collection }}</a>
+        </li>
+        <li><label>{% trans "Last extraction from scraping tool" %}</label>:
+          {{ collection.last_crawling_time }}
+        </li>
+        <li><label>{% trans "Last job executed in scraping tool" %}</label>:
+          {{ crawler_collection.last_job_time }}
+        </li>
+        </ul>
+        {% head "Field mapping" %}
+        <table class="listing">
+        <thead>
+          <th>{% trans "P. Layer" %}</th><th>{% trans "Scraping tool" %}</th>
+        </thead>
+        <tbody>
+        {% for field in collection.fields.all %}
+        <tr class="centered">
+          <td>{{ field.slug }}</td><td>{{ field.mapped_field }}{% if field.custom_format %} ({{ field.custom_format }}){% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+        {% head "Parameters" %}
+        <ul>
+        <li><label>{% trans "Check deleted" %}</label>:
+          {{ collection.crawler_collection.check_deleted|yesno }}
+        </li>
+        <li><label>{% trans "Maximum number of new elements" %}</label>:
+          {{ collection.crawler_collection.new_elements_threshold|default:"No definido" }}
+        </li>
+        <li><label>{% trans "Maximum number of modified elements" %}</label>:
+          {{ collection.crawler_collection.modified_elements_threshold|default:"No definido" }}
+        </li>
+        <li><label>{% trans "Maximum number of deleted elements" %}</label>:
+          {{ collection.crawler_collection.deleted_elements_threshold|default:"No definido" }}
+        </li>
+        </ul>
+        {% head "Crawler schema" %}
+        <pre>{{ crawler_collection.schema|json_format }}</pre>
+        <ul class="actions" style="text-align: right;">
+        <li class="withdialog"><a href="{% url scrap_association collection.collectiongroup.slug collection.slug %}" class="confirm-button">{% trans "Remap collection" %}</a>
+        <p style="display: none;" class="dialog" title="{% trans "Remap collection will delete items" %}">{% trans "If you remap the collection all current items will be deteled. Are you sure you want to continue?" %}</p>
+        </li>
+        </ul>
+      {% else %}
+        <p>
+        {% trans "There is no crawler collection mapped yet" %}
+        </p>
+      <ul class="actions" style="text-align: right;">
+      <li><a href="{% url scrap_association collection.collectiongroup.slug collection.slug %}">{% trans "Map collection" %}</a></li>
+      </ul>
+      {% endif %}
+    {% endwith %}
+   {% endif %}
+  </div>
+
+  <div id="steps-tab" class="collectionState">
+   <ol id="collection-steps">
+    <li class="{% if collection.is_well_defined %}finished{% else %}stepOne{% endif %}">
+      <h4><a name="stepOne">{% trans "Collection well defined" %}</a></h4>
+      <p>
+        {% if collection.is_well_defined %}
+        {% trans "The collection is properly defined." %}
+        {% else %}
+        {% trans "The collection is not properly defined. Maybe left:" %}
+        <ul>
+          <li>{% trans "A field as identifier" %}</li>
+          <li>{% trans "A field as text representation" %}</li>
+          <li>{% trans "All the fields are mapped properly" %}</li>
+        </ul>
+        {% endif %}
+      </p>
+    </li>
+    <li class="{% if collection.first_crawl_done %}finished{% else %}stepThree{% endif %}">
+      <h4><a name="stepThree">{% trans "First crawl" %}</a></h4>
+      <p>
+        {% if collection.first_crawl_done %}
+        {% trans "The first crawl has been done" %}
+        {% else %}
+        {% trans "There is no crawl done for this collection" %}
+        {% endif %}
+      </p>
+    </li>
+    <li class="{% if collection.crawling_checked %}finished{% else %}stepFour{% endif %}">
+      <h4><a name="stepFour">{% trans "First crawl validation" %}</a></h4>
+      <p>
+        {% if collection.crawling_checked %}
+        {% trans "The crawl was checked as correct" %}
+        {% else %}
+        {% url collection_source collection.slug as url_result %}
+        {% blocktrans %}
+        The first crawl has not been checked yet. To check it take a look to
+        <a href="{{ url_result }}" target="blank">the result XML</a> and see
+        if everything is correct.
+        {% endblocktrans %}
+        {% endif %}
+      </p>
+      <form action="{% url collection_toggle_crawling_checked collection.collectiongroup.slug collection.slug %}" method="post">{% csrf_token %}
+        <input class="button" type="submit" value="{% if collection.crawling_checked %}{% trans "Mark the first crawl as invalid" %}{% else %}{% trans "Mark the first craw as valid" %}{% endif %}" />
+      </form>
+    </li>
+   </ol>
+  </div>
+
+
+  <ul class="actions">
+    {% if collection.is_mapped %}
+      <li><a href="{% url player.data.views.collection_crawl collection.collectiongroup.slug collection.slug %}">{% trans "Launch crawling for this collection" %}</a></li>
+    {% endif %}
+    {% if collection.is_mapped %}
+    <li class="withdialog"><a href="{% url player.data.views.collection_edit collection.collectiongroup.slug collection.slug %}" class="confirm-button">{% trans "Edit collection" %}</a>
+    <p style="display: none;" class="dialog" title="{% trans "Edit collection will delete items" %}">{% trans "If you edit the collection the crawler collection map and all current items will be deteled. Are you sure you want to continue?" %}</p>
+    </li>
+    {% else %}
+    <li><a href="{% url player.data.views.collection_edit collection.collectiongroup.slug collection.slug %}">{% trans "Edit collection" %}</a></li>
+    {% endif %}
+    {% url collectiongroup_view collection.collectiongroup.slug as next_url %}
+    {% if not collection.is_published %}
+      <li class="withdialog {% if not collection.is_publishable %}disabled{% endif %}"><a href="{% url player.data.views.collection_publish collection.collectiongroup.slug collection.slug %}" title="{% trans "Publish collection" %}" class="confirm-button">{% trans "Publish collection" %}</a>
+      <p style="display: none;" class="dialog" title="{% trans "Publishing note" %}">
+       {% if not collection.is_publishable %}
+        {% trans "Collection is not ready for publishing yet. Are you sure you want to publish it?" %}
+       {% else %}
+        {% trans "Publishing action will delete all items extracted for testing purposes. Are you sure you want to continue?" %}
+       {% endif %}
+      </p>
+      </li>
+    {% else %}
+      <li><a href="{% url player.data.views.collection_unpublish collection.collectiongroup.slug collection.slug %}" title="{% trans "Unpublish collection" %}">{% trans "Unpublish collection" %}</a></li>
+    {% endif %}
+    {% generic_delete collection next_url "Delete collection" %}
+    {% content_delete collection %}
+  </ul>
+
+  <br />
+</div>
+  {% endwith %}
+{% endblock %}

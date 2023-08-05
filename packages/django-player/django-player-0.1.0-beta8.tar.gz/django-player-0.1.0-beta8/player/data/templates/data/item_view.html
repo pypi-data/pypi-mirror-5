@@ -1,0 +1,50 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs generic_delete %}
+
+{% block breadcrumbs %}
+{% breadcrumbs "Collection groups:../../../" item.collection.collectiongroup item.collection item.get_manage_url %}
+{% endblock %}
+
+
+{% block content %}
+  {% with item.collection as collection %}
+  {% with collection.collectiongroup as collectiongroup %}
+    <h2>{{ item }}</h2>
+    {% if item.is_deleted %}
+    <p id="item-deleted">
+    {% blocktrans %}
+    Important: this item has been deleted from source. We preserve it because there are notifications pending.
+    {% endblocktrans %}
+    </p>
+    {% endif %}
+    {% head "Item meta data" %}
+    <ul>
+     <li><label>UID</label>: {{ item.uid }}</li>
+     <li><label>{% trans "Collection" %}</label>:
+       <a href="{{ collection.get_absolute_url }}" title="{{ collection }}">{{ collection }}</a></li>
+     <li><label>{% trans "CollectionGroup" %}</label>: 
+       <a href="{{ collectiongroup.get_absolute_url }}" title="{{ collectiongroup }}">{{ collectiongroup }}</a>
+     </li>
+    </ul>
+    {% head "Raw extracted data" %}
+    <pre>{{ item.content|json_format }}</pre>
+
+    {% head "Parsed data" %}
+    <pre>{{ item.data|pprint }}</pre>
+
+    <ul class="actions">
+    {% if not item.is_deleted %}
+      {% url collection_view collectiongroup.slug collection.slug as next_url %}
+      {% generic_delete item next_url %}
+    {% endif %}
+    {% if not item.is_valid %}
+      <li>
+        <a href="{% url player.data.views.item_validate collectiongroup.slug item.id %}">
+          {% trans "Validate this item" %}
+        </a>
+      </li>
+    {% endif %}
+    </ul>
+  {% endwith %}
+  {% endwith %}
+{% endblock %}

@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+{% load i18n breadcrumbs compress %}<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" href="{{ STATIC_URL }}manage/css/jquery-ui.css" type="text/css" />
+  <link rel="shortcut icon" href="{{ STATIC_URL }}manage/img/favicon.ico" type="image/gif" />
+  <link rel="stylesheet" href="{{ STATIC_URL }}base/css/reset.css" type="text/css" />
+  {% if debug %}
+    <link rel="stylesheet/less" href="{{ STATIC_URL }}manage/css/style.less" type="text/css">
+    <script type="text/javascript" src="{{ STATIC_URL }}base/js/less.js"></script>
+  {% else %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}manage/css/style.css" type="text/css" />
+  {% endif %}
+  <script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery.min.js"></script>
+  <script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery.jeditable.mini.js"></script>
+  {% compress js %}
+    <script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery.csrf.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery.generic-delete.js"></script>
+  {% endcompress %}
+  <script type="text/javascript">
+    //<![CDATA[
+(function ($) {
+    $(document).ready(function () {
+        $(".button").button();
+
+        {% if debug %}
+        // When compiling less to css via javascript, relative links inside
+        // the css get broken and we need to manually fix them
+        $("style").text($("style").text().replace(/\.\.\//gi, "{{ STATIC_URL }}manage/"));
+        {% endif %}
+
+        });
+}(jQuery));
+//]]>
+  </script>
+  <title>{% block title %}Presentation Layer{% endblock %}</title>
+  {% block extrahead %}
+  {% endblock %}
+</head>
+<body>
+{% block page %}
+  <div id="container">
+  {% block container %}
+    <div id="header">
+    <div id="usertools">
+      {% if user.is_authenticated %}
+      <span>{{ user.username }}</span> |
+      <a href="/admin/">{% trans "Admin site" %}</a> |
+      <a href="{% url auth_logout %}">{% trans "Logout" %}</a>
+      {% endif %}
+    </div>    
+      <h1 id="headerlogo">
+        <a href="{% url player.manage.views.index %}">Web parser</a>
+      </h1>
+    </div>
+    {% block sidebar %}
+    <div id="left-sidebar">
+      <h3>{% trans "Data" %}</h3>
+      <ul class="menu" id="sysadmin-menu">
+        <li><a href="{% url player.data.views.collectiongroup_list %}">{% trans "Collection groups" %}</a></li>
+        <li><a href="{% url player.data.views.collection_list %}">{% trans "Collections" %}</a></li>
+        <li><a href="{% url player.crawler.views.report_index %}">{% trans "Crawling jobs" %}</a></li>
+      </ul>
+      <h3>{% trans "Presentation" %}</h3>
+      <ul class="menu" id="sysadmin-menu">
+        <li><a href="{% url player.dburl.views.url_list %}">{% trans "URLs" %}</a></li>
+        <li><a href="{% url player.dbtemplate.views.template_list %}">{% trans "Templates" %}</a></li>
+        <li><a href="{% url player.block.views.block_list %}">{% trans "Blocks" %}</a></li>
+        <li><a href="{% url fb_browse %}">{% trans "Media" %}</a></li>
+      </ul>
+      <h3>{% trans "Staging" %}</h3>
+      <ul class="menu" id="sysadmin-menu">
+        <li><a href="{% url player.player_staging.views.publish %}">{% trans "Status" %}</a></li>
+        <li><a href="{% url player.player_staging.views.log_view %}">{% trans "Log" %}</a></li>
+        <li><a href="{% url player.player_staging.views.server_list %}">{% trans "Servers" %}</a></li>
+      </ul>
+      <h3><a href="/" title="{% trans "Go to public site" %}">{% trans "Go to public site" %}</a></h3>
+    </div>
+    {% endblock %}
+
+    <div id="breadcrumbs">
+    {% block breadcrumbs %}
+    {% breadcrumbs %}
+    {% endblock %}
+    </div>
+    <div id="content">
+      {% block messages %}
+        {% if messages %}
+        <ul class="messages">
+        {% for message in messages %}
+          <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+      {% endblock %}
+      {% block content %}
+      {% endblock %}
+    </div>
+
+    <div id="footer">
+      <div id="footer_right">
+        {% trans "Presentation Layer system. Powered by Django." %}
+      </div>
+    </div>
+  {% endblock %}
+  </div>
+{% endblock %}
+
+</body>
+</html>

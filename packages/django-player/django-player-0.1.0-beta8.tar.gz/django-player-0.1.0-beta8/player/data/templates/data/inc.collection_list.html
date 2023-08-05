@@ -1,0 +1,23 @@
+{% load i18n get_collection_status %}
+
+{% if collection_list %}
+<table class="listing">
+    <thead>
+    <th>{% trans "Name" %}</th><th>{% trans "CollectionGroup" %}</th><th>{% trans "Ready to use" %}</th><th>{% trans "Status" %}</th><th>{% trans "Items" %}</th><th>{% trans "Last crawling" %}</th>
+    </thead>
+    <tbody>
+    {% for collection in collection_list %}
+    <tr>
+    <td><a href="{{ collection.get_absolute_url }}" title="{{ collection }}">{{ collection }}</a></td>
+    <td class="centered"><a href="{{ collection.collectiongroup.get_absolute_url }}" title="{{ collection.collectiongroup }}">{{ collection.collectiongroup }}</a></td>
+    <td class="centered"><a href="{% url collection_view collection.collectiongroup.slug collection.slug %}#steps-tab" title="{% trans "Steps to publish" %}">{% get_collection_status collection %}</a></td>
+    <td class="centered">{{ collection.get_status_display }}</td>
+    <td class="centered">{{ collection.item_set.with_invalids.count }}</td>
+    <td class="centered">{{ collection.last_crawling_time }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>{% trans "There are no collections managed yet" %}</p>
+{% endif %}

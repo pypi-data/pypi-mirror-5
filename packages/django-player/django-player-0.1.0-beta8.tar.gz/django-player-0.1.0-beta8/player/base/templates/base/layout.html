@@ -1,0 +1,138 @@
+{% load i18n inlinetrans block_tags media_tags toolbar compress %}
+{% block doctype %}<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">{% endblock %}
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  {% if LANGUAGE_CODE %}
+    <meta http-equiv="content-language" content="{{ LANGUAGE_CODE }}">
+  {% endif %}
+  <title>{% block pagetitle %}{% endblock %} - {% block sitetitle %}django-player powered site{% endblock %}</title>
+
+  {% compress css %}
+    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}base/css/base.css" />
+    {% block cssstyles %}
+    {% endblock %}
+  {% endcompress %}
+
+  {% render_bundled_media "css" %}
+
+  <script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery.min.js"></script>
+  {% compress js %}
+    <script type="text/javascript" src="{{ STATIC_URL }}base/js/jquery.csrf.js"></script>
+  {% endcompress %}
+  {% render_blocks_media %}
+
+  {% block headscripts %}
+  {% endblock %}
+
+  {% block extrahead %}{% endblock %}
+</head>
+
+<body dir="ltr" class="{% block bodycssclasses %}{% endblock %}" {% block extrabodytag %}{% endblock %}>
+{% block toolbar %}
+{% render_toolbar %}
+{% endblock %}
+
+<div id="pagewrapper">
+{% block pagetop %}{% endblock %}
+
+<div id="page">
+{% block page %}
+  <div id="container">
+  {% block headerwrapper %}
+    <div id="header">
+      {% block headerlogowrapper %}
+      <div id="headerlogo">
+        {% block headerlogo %}
+          {% include "inc.headerlogo.html" %}
+        {% endblock %}
+      </div>
+      {% endblock %}
+
+      {% block headerblockswrapper %}
+      <div id="header-blocks">
+        {% block headerblocks %}
+          {% include "inc.headerblocks.html" %}
+        {% endblock %}
+      </div>
+      {% endblock %}
+
+      {% block useractionswrapper %}
+      <div id="user-actions">
+        {% block useractions %}
+          {% include "inc.useractions.html" %}
+        {% endblock %}
+      </div>
+      {% endblock %}
+
+      {% block sitebrandingwrapper %}
+      <div id="site-branding">
+        {% block sitebranding %}
+          {% include "inc.sitebranding.html" %}
+        {% endblock %}
+      </div>
+      {% endblock %}
+
+      {% block extraheader %}
+        {# things like page titles, or whatever thing you could think #}
+      {% endblock %}
+    </div>
+  {% endblock headerwrapper %}
+
+  {% block breadcrumbswrapper %}
+    <div id="breadcrumbs">
+      {% block breadcrumbs %}
+        {% include "inc.breadcrumbs.html" %}
+      {% endblock %}
+    </div>
+  {% endblock %}
+
+    <div id="contenttop">
+    {% block contenttop %}{% endblock %}
+    </div>
+
+    <div id="contentwrapper">
+    {% block contentwrapper %}
+
+      {% block leftsidebarwrapper %}
+        <div id="leftsidebar">
+        {% block leftsidebar %}
+          {% include "inc.leftsidebar.html" %}
+        {% endblock %}
+        </div>
+      {% endblock %}
+
+      <div id="content" class="{% block contentclass %}{% endblock %}">
+      {% block content %}
+      {% endblock %}
+      </div>
+
+      {% block rightsidebarwrapper %}
+        <div id="rightsidebar">
+        {% block rightsidebar %}
+          {% include "inc.rightsidebar.html" %}
+        {% endblock %}
+        </div>
+      {% endblock %}
+
+      {% block footerwrapper %}
+        <div id="footer">
+        {% block footer %}
+          {% include "inc.footer.html" %}
+        {% endblock %}
+        </div>
+      {% endblock %}
+
+    {% endblock %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block pagebottom %}{% endblock %}
+</div>
+</div>
+
+{# placeholder to allow plugins and other templates to add javascript assets #}
+{% render_bundled_media "js" %}
+</body>
+</html>

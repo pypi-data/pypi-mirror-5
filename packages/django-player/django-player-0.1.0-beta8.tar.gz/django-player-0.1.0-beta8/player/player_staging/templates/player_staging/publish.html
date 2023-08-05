@@ -1,0 +1,41 @@
+{% extends "manage/base.html" %}
+
+{% load i18n breadcrumbs generic_delete content_delete %}
+
+{% block breadcrumbs %}
+  {% breadcrumbs "Staging:../" "Publish:." %}
+{% endblock %}
+
+{% block content %}
+  <h2>{% trans "Publish new version" %}</h2>
+  <ul>
+   <li><label>{% trans "Current local version" %}</label>:
+   {% if uninitialized %}
+   <pre>{% trans "The repository is uninitialized" %}</pre>
+   {% else %}
+   <pre>{{ revision }}</pre>
+   {% endif %}
+  </ul> 
+
+  <ul class="actions">
+    <li>
+      <a href="{% url player.player_staging.views.publish_new %}">
+        {% if uninitialized %}{% trans "Create an empty repository" %}{% else %}{% trans "Publish a new version" %}{% endif %}
+      </a>
+    </li>
+    {% if uninitialized %}
+    <li>
+      <a href="{% url player.player_staging.views.create_repo_from_server %}">
+        {% trans "Create repository from server" %}
+      </a>
+    </li>
+    {% else %}
+    <li>
+      <a href="{% url player.player_staging.views.update_from_repository %}">
+        {% trans "Update website from local repository" %}
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+
+{% endblock %}

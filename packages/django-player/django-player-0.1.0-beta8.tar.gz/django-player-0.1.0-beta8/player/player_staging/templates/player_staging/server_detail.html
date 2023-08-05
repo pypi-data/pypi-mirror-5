@@ -1,0 +1,32 @@
+{% extends "manage/base.html" %}
+
+{% load i18n breadcrumbs generic_delete content_delete %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}player_staging/js/jquery.staging.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% breadcrumbs "Staging:../" server.name:. %}
+{% endblock %}
+
+{% block content %}
+<div class="StagingServer">
+  <h2>{% trans "Staging Server detail" %}</h2>
+  <ul>
+   <li><label>{% trans "Name" %}</label>: {{ server.name }}</li>
+   <li><label>{% trans "Domain" %}</label>: <span id="server-domain">{{ server.hostname }}</span></li>
+   <li><label>{% trans "Revision" %}</label>:
+   <pre id="server-revision"></pre>
+   <span style="display: none;" class="revision-url">{% url staging_revision %}</span>
+   </li>
+  </ul> 
+
+  <ul class="actions">
+    <li><a href="{% url player.player_staging.views.server_edit server.id %}">{% trans "Edit server" %}</a></li>
+    {% url server_list as next_url %}
+    {% generic_delete server next_url "Delete server" %}
+    <li style="display: none;"><a id="trigger-update" href="#">{% trans "Update server" %}</a></li>
+  </ul>
+</div>
+{% endblock %}

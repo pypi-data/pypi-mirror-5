@@ -1,0 +1,33 @@
+{% load i18n pagination_tags %}
+
+{% autopaginate reports %}
+{% if reports %}
+    <div class="pagelements">{% paginate %}</div>
+    <table class="listing">
+    <thead>
+     <th>{% trans "Date" %}</th><th>{% trans "Return code" %}</th><th>{% trans "Affected collections" %}</th>
+     <th>{% trans "Added items" %}</th><th>{% trans "Updated items" %}</th><th>{% trans "Deleted items" %}</th>
+    </thead>
+    <tbody>
+    {% for report in reports %}
+      {% with report.get_absolute_url as report_url %}
+      <tr>
+        <td><a href="{{ report_url }}">{{ report.crawling_time }}</a></td>
+        <td><a href="{{ report_url }}">{{ report.get_return_code_display }}</a></td>
+        <td>
+        {% for collection in report.crawler_collection.collection_set.all %}
+          <a href="{{ collection.get_absolute_url }}">{{ collection }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+        </td>
+        <td class="centered">{{ report.added_items.count }}</td>
+        <td class="centered">{{ report.updated_items.count }}</td>
+        <td class="centered">{{ report.deleted_items_json|length }}</td>
+      </tr>
+      {% endwith %}
+    {% endfor %}
+    </tbody>
+    </table>
+    <div class="pagelements">{% paginate %}</div>
+{% else %}
+    {% trans "There are no crawling reports yet" %}
+{% endif %}

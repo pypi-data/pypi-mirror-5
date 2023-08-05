@@ -1,0 +1,38 @@
+{% extends "manage/base.html" %}
+
+{% load i18n breadcrumbs generic_delete content_delete %}
+
+{% block extrahead %}
+{{ block.super }}
+{% if style %}
+<style>
+{{ style }}
+</style>
+{% endif %}
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% breadcrumbs "Staging:../../" "Publish:../" "New version:." %}
+{% endblock %}
+
+{% block content %}
+  <h2>{% trans "Publish new version" %}</h2>
+  <ul>
+   <li><label>{% trans "New content" %}</label>:
+   {% if added %}<pre>{% for f in added %}{{ f }}
+{% endfor %}</pre>{% else %}<pre>{% trans "No new content" %}</pre>{% endif %}
+   <li><label>{% trans "Deleted content" %}</label>:
+   {% if deleted %}<pre>{% for f in deleted %}{{ f }}
+{% endfor %}</pre>{% else %}<pre>{% trans "No deleted content" %}</pre>{% endif %}</li>
+   <li><label>{% trans "Differences of the new version" %}</label>:
+   {% if plain_diff %}{{ diff|safe }}{% else %}<pre>{% trans "No differences" %}{% endif %}</li>
+  </ul> 
+
+  <ul class="actions">
+    {% if added or deleted or plain_diff %}
+    <li><a href="{% url player.player_staging.views.commit %}">{% trans "Publish a new version" %}</a></li>
+    {% endif %}
+    <li><a href="{% url player.player_staging.views.publish %}">{% trans "Cancel" %}</a></li>
+  </ul>
+
+{% endblock %}

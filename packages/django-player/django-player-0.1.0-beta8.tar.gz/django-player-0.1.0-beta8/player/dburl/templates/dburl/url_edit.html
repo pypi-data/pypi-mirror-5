@@ -1,0 +1,23 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs %}
+
+{% block breadcrumbs %}
+{% if url %}
+  {% breadcrumbs "URLs:../../" "URL edit:" %}
+{% else %}
+  {% breadcrumbs "URLs:.." "URL add:" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+  <h2>{% if url %}{% trans "URL edit" %}{% else %}{% trans "URL add" %}{% endif %}</h2>
+
+  <form action="{% if url %}{% url url_edit url.id %}{% else %}{% url url_add %}{% endif %}" method="post">{% csrf_token %}
+    {{ form.as_p }}
+    {% if url %}
+      <input class="button" type="submit" value="{% trans "Save changes" %}" />
+    {% else %}
+      <input class="button" type="submit" value="{% trans "Add" %}" />
+    {% endif %}
+  </form>
+{% endblock %}

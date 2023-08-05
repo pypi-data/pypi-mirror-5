@@ -1,0 +1,23 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs %}
+
+{% block breadcrumbs %}
+{% if server %}
+  {% breadcrumbs "Staging:../../" "Server edit:" %}
+{% else %}
+  {% breadcrumbs "Staging:.." "Server add:" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+  <h2>{% if server %}{% trans "Server edit" %}{% else %}{% trans "Server add" %}{% endif %}</h2>
+
+  <form action="{% if server %}{% url server_edit server.id %}{% else %}{% url server_add %}{% endif %}" method="post">{% csrf_token %}
+    {{ form.as_p }}
+    {% if server %}
+      <input class="button" type="submit" value="{% trans "Save changes" %}" />
+    {% else %}
+      <input class="button" type="submit" value="{% trans "Add" %}" />
+    {% endif %}
+  </form>
+{% endblock %}

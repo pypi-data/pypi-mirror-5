@@ -1,0 +1,37 @@
+{% extends "manage/base.html" %}
+{% load i18n breadcrumbs %}
+
+{% block breadcrumbs %}
+{% breadcrumbs "Collection groups:" %}
+{% endblock %}
+
+{% block content %}
+    <h2>{% trans "CollectionGroups managed by parser" %}</h2>
+    {% if collectiongroup_list %}
+    <dl class="listing">
+      {% for collectiongroup in collectiongroup_list %}
+        <dt><a href="{{ collectiongroup.get_absolute_url }}" title="{{ collectiongroup }}">{{ collectiongroup }}</a></dt>
+        {% with collectiongroup.collection_set.all as collections %}
+        <dd>{% trans "Collections" %}:
+        {% if collections %}
+        <ul>
+        {% for c in collections %}
+          <li><a href="{{ c.get_absolute_url }}" title="{{ c }}">{{ c }}</a></li>
+        {% endfor %}
+        </ul>
+        {% else %}
+          {% trans "There are no collections for this collectiongroup" %}
+        {% endif %}
+        </dd>
+        </li>
+        {% endwith %}
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>{% trans "There are no collectiongroups managed yet" %}</p>
+    {% endif %}
+    <ul class="actions">
+      <li><a href="{% url player.data.views.collectiongroup_list %}add/">{% trans "Add a new group" %}</a></li>
+      <li><a href="#">{% trans "Remove selected sites" %}</a></li>
+    </ul>
+{% endblock %}

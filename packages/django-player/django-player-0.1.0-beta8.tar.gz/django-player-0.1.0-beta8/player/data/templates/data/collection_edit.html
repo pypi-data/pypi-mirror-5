@@ -1,0 +1,60 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs %}
+
+{% block extrahead %}
+  <script type="text/javascript" src="{{ STATIC_URL }}manage/js/jquery.collection.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}
+{% if collection %}
+{% breadcrumbs collection.collectiongroup collection "Collection edit:" %}
+{% else %}
+{% breadcrumbs "Collections:.." "Collection add:" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+  <h2>{% if collection %}{% trans "Collection edit" %}{% else %}{% trans "Collection add" %}{% endif %}</h2>
+
+  <form action="" method="post">{% csrf_token %}
+    <h3>{% trans "Collection data" %}</h3>
+    <table>
+    {{ form }}
+    </table>
+ 
+    <div class="CollectionFields">
+    <h3>{% trans "Collection fields" %}</h3>
+    <table class="CollectionFieldsTable">
+    {{ form.field_formset.management_form }}
+    {% for field_form in form.field_formset.forms %}
+    <tr> 
+        {% for field in field_form %}
+            <th class="{% if field.field.required %}{{ field_form.required_css_class }}{% endif %}">
+            {% if not field.is_hidden %}
+                {{ field.label }}
+            {% endif %}
+            </th>
+        {% endfor %}
+    </tr>
+    <tr>
+        {% for field in field_form %}
+        <td>{{ field.errors }}{{ field }}</td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    </table>
+
+    <a href="#" class="CollectionFieldsAddTrigger">{% trans "Add new field" %}</a>
+    </div>
+    <ul class="actions">
+      <li>
+    {% if collection %}
+      <input class="button" type="submit" value="{% trans "Save changes" %}" />
+    {% else %}
+      <input class="button" type="submit" value="{% trans "Create collection" %}" />
+    {% endif %}
+      </li>
+    </ul>
+  </form>
+{% endblock %}

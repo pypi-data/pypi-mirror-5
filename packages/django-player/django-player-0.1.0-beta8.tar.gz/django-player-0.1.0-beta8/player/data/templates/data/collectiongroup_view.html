@@ -1,0 +1,43 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs generic_delete %}
+
+{% block extrahead %}
+<script type="text/javascript">
+ $(document).ready(function() {
+     $('.publish.disabled').click( function () {
+         $('#dialog').dialog({
+             width: 400
+         });
+         return false;
+     });
+ });
+</script>
+
+{% endblock %}
+
+{% block breadcrumbs %}
+{% breadcrumbs "Collection groups:.." collectiongroup %}
+{% endblock %}
+
+{% block content %}
+    <h2>{{ collectiongroup }}</h2>
+    {% with collectiongroup.collection_set.all as collectiongroup_collections %}
+    {% head "Collections" %}
+    {% if collectiongroup_collections %}
+    <dl>
+      {% for collection in collectiongroup_collections %}
+      <dt><a href="{{ collection.get_absolute_url }}" title="{{ collection }}">{{ collection }}</a></dt>
+      <dd>
+        {% trans "Items parsed" %}: <a href="{{ collection.get_absolute_url }}#items-parsed" title="{{ collection }}">{{ collection.item_set.with_valids.count }}</a>
+      </dd>
+      {% endfor %}
+    </dl>
+    {% else %}
+      <p>{% trans "There are collections parsed for this collectiongroup" %}</p>
+    {% endif %}
+    {% endwith %}
+    <ul class="actions">
+      {% url player.data.views.collectiongroup_list as next_url %}
+      {% generic_delete collectiongroup next_url "Remove this group" %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "manage/base.html" %}
+{% load i18n base_tags breadcrumbs %}
+
+{% block breadcrumbs %}
+{% if collectiongroup %}
+{% breadcrumbs "Collection groups:.." "CollectionGroup edit:" %}
+{% else %}
+{% breadcrumbs "Collection groups:.." "CollectionGroup add:" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+  <h2>{% if collectiongroup %}{% trans "CollectionGroup edit" %}{% else %}{% trans "CollectionGroup add" %}{% endif %}</h2>
+
+  <form action="{% if collectiongroup %}{% url collectiongroup_edit collectiongroup.slug %}{% else %}{% url collectiongroup_add %}{% endif %}" method="post">{% csrf_token %}
+    {{ form.as_p }}
+    {% if collectiongroup %}
+      <input class="button" type="submit" value="{% trans "Save changes" %}" />
+    {% else %}
+      <input class="button" type="submit" value="{% trans "Add" %}" />
+    {% endif %}
+  </form>
+{% endblock %}

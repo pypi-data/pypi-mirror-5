@@ -1,0 +1,40 @@
+{% extends "manage/base.html" %}
+
+{% load i18n breadcrumbs generic_delete content_delete %}
+
+{% block extrahead %}
+{{ block.super }}
+{% if style %}
+<style>
+{{ style }}
+</style>
+{% endif %}
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% breadcrumbs "Staging:../../" "Log:../" changeset:. %}
+{% endblock %}
+
+{% block content %}
+  <h2>{% trans "History of changes" %}: {{ changeset }}</h2>
+  <pre>{{ log.head }}</pre></li>
+  <br />
+
+  <ul>
+   <li><label>{% trans "Added files" %}</label>:
+   <pre>{% for file in log.added_files %}{{ file }}
+{% empty %}{% trans "No added files" %}{% endfor %}</pre></li>
+   <li><label>{% trans "Removed files" %}</label>:
+   <pre>{% for file in log.removed_files %}{{ file }}
+{% empty %}{% trans "No removed files" %}{% endfor %}</pre></li>
+   <li><label>{% trans "Modified files" %}</label>:
+   <pre>{% for file in log.modified_files %}{{ file }}
+{% empty %}{% trans "No modified files" %}{% endfor %}</pre></li>
+  </ul> 
+
+  <br />
+  <br />
+
+  {{ diff|safe }}
+
+{% endblock %}
