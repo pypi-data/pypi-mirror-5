@@ -1,0 +1,57 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      lang="en-US"
+      metal:use-macro="here/prefs_main_template/macros/master"
+      i18n:domain="collective.request.player"> 
+
+<body>
+  <div metal:fill-slot="prefs_configlet_content"
+       tal:define="errors python:request.get('errors', {});
+                   portal_url context/@@plone_portal_state/portal_url;">
+
+    <div class="documentEditable">
+        <div id=content class="documentContent">
+            <h1 i18n:translate="heading_requestplayer">Plone Request Player</h1>
+            <div class="documentDescription"> Please specify request according to 
+                <a href=http://docs.python-requests.org/>requests</a>.
+            </div>
+            <form tal:attributes="action string:${portal_url}/@@requests_player" method="post">     
+                <table class="plain">
+                    <thead>
+                    <tr> 
+                        <th class="request_selector"> </th>
+                        <tal:block tal:repeat="header view/getHeaders">
+                            <th tal:content="header"> List of headers</th>
+                        </tal:block>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr tal:define="headers view/getHeaders"
+                            tal:repeat="request python: view.requests">
+                            <td class="request_selector">
+                                <!--Post the checkboxes that are unchecked. 
+                                Otherwise, the publisher record arguments will not work. -->
+                               <input value="False"
+                                       type="hidden"
+                                       title="Select request" name="requests.checked_request:boolean:records">
+                               <input class='request_selector' value="True"
+                                       type="checkbox"
+                                       title="Select request" name="requests.checked_request:boolean:records">
+                            </td>
+                            <td tal:repeat="header headers">
+                                <textarea tal:attributes="name string:requests.${header}:records"
+                                    tal:content="python:request.get(header, None)">Requests</textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <a tal:attributes="href string:${portal_url}/@@requests_loader">Specify a file which has requests.</a> <br>
+                <input name="form.button.play" type="submit" value="Play"/>
+                <input type="hidden" name="form.submitted" value="1" />
+            </form>
+        </div>
+    </div>
+  </div>
+</body>
+</html>
