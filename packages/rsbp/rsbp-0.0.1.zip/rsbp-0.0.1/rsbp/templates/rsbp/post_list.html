@@ -1,0 +1,37 @@
+{% extends "rsbp/base.html" %}
+
+{% block title %}Posts{% endblock %}
+
+{% block main %}
+  <div class="rsbp-post-list">
+    {% if not object_list %}
+      {% include "rsbp/includes/no_posts.html" %}
+    {% endif %}
+    {% for object in object_list %}
+      {% with post=object.downcast %}
+        <div class="rsbp-post">
+          {% include post.template %}
+        </div>
+      {% endwith %}
+      {% if not forloop.last %}
+        <hr>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% if paginator.num_pages > 1 %}
+    <div class="rsbp-pagination">
+      <p class="rsbp-pagination-links">
+        <span class="rsbp-pagination-current">
+          Page {{ page_obj.number }} of {{ paginator.num_pages }}.
+        </span>
+        <br>
+        {% if page_obj.has_previous %}
+          <a href="{% url 'page' page_obj.previous_page_number %}">Previous</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a href="{% url 'page' page_obj.next_page_number %}">Next</a>
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+{% endblock %}

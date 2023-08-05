@@ -1,0 +1,106 @@
+Really Simple Blogging Platform
+===============================
+
+I made a reusable blog application using Django. *It is really simple.*
+
+It does tagging, rss, ckeditor rich text entry with image uploads, slugged urls
+and that's about it.
+
+No comments, no social integration, no trackbacks.
+
+It is pretty customisable though because I'm be using it for two very
+different blogs.
+
+
+Install
+-------
+
+All within a Django project:
+
+Add to ``INSTALLED_APPS``::
+
+    INSTALLED_APPS = (
+        ...
+        'ckeditor',
+        'rsbp',
+    )
+
+Configure ckeditor::
+
+    from rsbp.ck_settings import RSBP_CKEDITOR_CONFIG
+    CKEDITOR_UPLOAD_PATH = os.path.join(MEDIA_ROOT, 'uploads')
+    CKEDITOR_CONFIGS = {
+        'rsbp': RSBP_CKEDITOR_CONFIG,
+    }
+
+Customise
+---------
+
+Probably the first things you'll want to do are:
+
+- Tweak the templates a bit, you'll probably want to start with
+  ``templates/rsbp/includes/footer.html``
+
+- Tweak the default settings:
+
+  ``RSBP_IMAGE_UPLOAD_DIR``
+    Will be appended to your media directory, default: "uploads"
+
+  ``RSBP_POSTS_PER_PAGE``
+    How many posts show per page, default: 5
+
+  ``RSBP_FEED_TITLE``
+    The title of your rss feed, default: "Blog"
+
+  ``RSBP_FEED_LINK``
+    The default link for the rss feed, default: "/"
+
+  ``RSBP_FEED_DESCRIPTION``
+    The description of your blog for the rss feed, default: ""
+
+  ``RSBP_FEED_MAX_ITEMS``
+    The number of items to publish at any time on your rss feed, default: 10
+
+
+After that you can go crazy and add:
+
+Custom Post Types
+-----------------
+
+You can add them like this:
+
+``models.py``::
+
+    from rsbp.models import Post
+    from django import models
+
+    class EventPost(Post):
+
+        when = models.DateTimeField()
+        description = models.TextField(blank=True, null=True)
+
+        def feed_title(self):
+            return "{0} at {1}".format(self.title, self.when.strftime('%x %X'))
+
+        def feed_description(self):
+            return self.description
+
+    EventPost.register_type()
+
+``admin.py``::
+
+    from django.contrib import admin
+    from rsbp.admin import PostAdmin
+    from .models import EventPost
+
+    admin.site.register(EventPost, PostAdmin)
+
+``templates/rsbp/event_post.html``::
+
+    <h2><a href="{% url 'post' post.id post.slug %}">{{ post }}</a></h2>
+    <div class="rsbp-event">
+      {{ post.description|safe }}
+    </div>
+    <div class="rsbp-meta">
+      {% include rsbp/includes/default_meta.html" %}
+    </div>
