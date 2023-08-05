@@ -1,0 +1,113 @@
+% docdriven - A Python package to support documentation-driven development
+% Jon Crowell
+% May 16, 2013
+
+# Introduction
+
+Documentation-driven development is an approach to software development in which the documentation of how the software works is the conceptual starting point.  You begin by writing the documentation, then from this documentation tests are automatically-generated (which will initially all fail since there is no code yet), and then code is written to cause the tests to pass.  Each time the testing process is run it concludes by updating the documentation from which the tests were derived -- each step in the documentation is given a time-stamped status report indicating whether the system actually behaved as documented or not.
+
+One of the insights of documentation-driven development is that it does not make sense to document the behavior of a system separately from testing that behavior.  Test results are considered to be the "actual documentation" of how the system really behaves, so documentation-driven development seeks to unify the "actual documentation" with the published documentation.  This has the happy consequence that the published documentation can never be out of sync with the code it is documenting without "red alerts" being immediately inserted directly into the published documentation.  It is similar to test-driven development, but uses an approach to writing tests that relies on a literate programming technique in which the tests are extracted from legitimate examples provided in the documentation.
+
+### From Markdown to Documentation-driven down
+
+In order to unify the publication of documentation with testing the documented code, the docdriven Python package relies on a variety of Markdown called Drivendown (or Documentation-driven down).  These are plain text files that have a *.dd extension and which conform to the Pandoc Markdown implementation, which means they can be easily transformed into PDF or HTML files, among other formats.  (In fact, this document itself was written as a Drivendown file.)
+
+Drivendown and Markdown are related in the following ways:
+
+* A line that begins with '# ' is considered a level-one header in Markdown and a chapter title in Driven down.
+
+* A line that begins with '## ' is considered a level-two header in Markdown and an incident title in Drivendown.  (The terms 'method', 'incident' and 'route' have the same meaning in the docdriven context -- I use 'method' when speaking about testing a module, 'route' when speaking about testing an API over HTTP (in which case the route is the URL), and 'incident' when speaking generically)
+
+* A line that begins with '#### ' is considered a level-four header in Markdown and a code label in Drivendown.  Only five code labels are presently permitted in Drivendown: config, predict, response, runtime, and status.  Any other label following '#### ' will cause Drivendown to throw an error
+
+* A line that begins with an exclamation point is completely ignored in Drivendown and should not be passed along to the Markdown interpreter (this is not implemented yet -- currently these lines will show up in the Pandoc-generated output, but are ignored by Drivendown) [TODO: think more about commenting]
+
+* A line that begins with four spaces is considered a code block in Markdown and is given no special treatment in Drivendown, where it is just considered part of the natural text of the document.
+
+### Docdriven's theory of testing and documentation
+
+The docdriven package expects the documentation of a project (or system/module/API/whatever) to consist of a set of related Drivendown documents, each of which has the following attributes:
+
+1. A title, which must be the first line and must start with '% ' and cannot be left blank.
+
+2. Optional author/organization information, which must be the second line of the document and must start with '% '.  If you wish not to include this information then the second line should be left blank following the '%'.
+
+3. A date and time stamp, which must be the third line, must start with '% ', and cannot be blank.
+
+4. An optional introduction chapter, which must have the title 'Introduction' (not case sensitive).
+
+5. Zero or more chapters, each of which begins with a level-one Markdown header, which will become the chapter title.
+
+6. An optional conclusion, which must have the title 'Conclusion'.
+
+The shortest possible valid Drivendown file would consist of three lines for the title, authors, and timestamp and would have no other content.
+
+When docdriven "drives" a Drivendown file, it processes the introduction (i.e., this section) for global configuration and setup information, then processes each chapter (in random order), and then processes the conclusion for cleanup and teardown.  This corresponds to standard unit testing frameworks, which usually have 'set up' and 'tear down' sections that are run before and after the tests are run.
+
+The entire Drivendown file can be thought of as a story with an introduction, several self-contained chapters which may be read in any order, and then a conclusion.
+
+##### What is a chapter and what is an incident?
+
+A chapter in the docdriven approach is both an individual unit test and a readable story about a sequence of related "incidents".  (Imagine a person telling a story of the form: "first this happened, then that happened, then the first thing happened again, then yet another thing happened" and so on.)  The sequence of incidents is meaningful and is preserved.  An incident may be an individual method invocation, a call to a certain API route, or any other distinct unit that, in broad terms, accepts input, does something, and produces output.
+
+So a chapter is an individual unit to be tested and the incidents describe the behavior that is supposed to occur.
+
+One may ask why each incident should not be considered an individual unit test.  In fact if one one wishes to write a chapter that consists of only a single incident, that is legitimate.  Often, however, there is a close relationship between several methods in a system.  For example, suppose you are documenting an API which provides an add_user(username) method which returns a user_id, and a delete_user(user_id) method.  Until a user has been added a user cannot be deleted, so it would be impossible to write a test of the delete_user method without first adding a user.  For this reason chapters expect a list of incidents of arbitrary length which will be executed in order.
+
+When docdriven processes a chapter it will first merge the chapter's specific configuration information with the global configuration information that was provided in the introduction, then it will process each incident in order.  Processing an incident consists of merging the incident's configuration information with the general configuration information for the chapter, then invoking the method, then comparing the response returned from the method with what the documentation predicted the response would be, and finally producing a status report.
+
+Note that it is not necessary for chapters and incidents to provide individual configuration information -- if no specific configuration information is provided, then the general configuration information from the introduction is inherited and used.
+
+### What is a Status Report?
+
+A status report is a snippet of JSON that roughly looks like the following:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON
+{
+    "code": "8CharMax",
+    "level": 2,
+    "timestamp": "2013-05-16 08:23:41",
+    "speed": 2.3,
+    "note": "a short string of arbitrary length"
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Status reports are produced by the testing framework.  The code word can be any string of up to 8 characters that summarizes the result.  Examples would be words like "BLANK", "FAIL", "WARNING", "SUCCESS", "OKAY", "HTTP-500", "HTTP-200", "UNKNOWN", "WORKS", "CRASHED", "HALFWAY", "BEGUN", or whatever you would like.  Of course they don't have to be all upper case.  The level must be a number between 0 and 4 -- corresponding to increasing levels of success and corresponding to the colors blue, red, orange, yellow, and green respectively.
+
+In general terms I think of the status reports as 0=BLANK=blue, 1=FAIL=red, 2=STARTED=orange, 3=PROGRESS=yellow, 4=SUCCESS=green, although I change the code words frequently to provide more specific information.
+
+If you wish to extend docdriven to accept more levels or different colors, then that is your perogative -- the code is open source, so fork me on github and go paint the town a couple dozen shades of pink, mauve and lavender if you so desire.
+
+The timestamp is simply a string representing the date and time at which the status report was produced, in ISO format.
+
+The speed is the amount of time, in seconds, that it took for the incident to transpire.
+
+The note is a free-form string field that you can use as you'd like.  Be aware, however, that including notes with hundreds of lines of text in them will present a formatting challenge to the system.
+
+### How does docdriven know how to configure the testing environment just from reading this introduction?
+
+In this particular case we are documenting, and therefore testing, the docdriven package itself.  In order to set up our environment we will need to tell docdriven where to find this docdriven.dd file, then we will
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
