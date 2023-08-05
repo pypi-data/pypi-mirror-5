@@ -1,0 +1,55 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n %}
+{% load admin_urls %}
+{% load static from staticfiles %}
+
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/admin_timeline.css' %}" />
+{% endblock extrastyle %}
+{% block extrahead %}
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+<script src="{% static 'admin/js/core.js' %}"></script>
+<script src="{% static 'admin/js/jquery.js' %}"></script>
+<script src="{% static 'admin/js/jquery.init.js' %}"></script>
+<script src="{% static 'admin/js/admin_timeline.js' %}"></script>
+<script type="text/javascript">
+    //<!--
+    adminTimeline_init("{{ last_date }}", "{{ user_id }}", "{{ start_date }}", "{{ end_date }}", "{% url 'admin_timeline.log' %}");
+    //-->
+</script>
+{% endblock extrahead %}
+{% block coltype %}colMS{% endblock %}
+
+{% block bodyclass %}admin-timeline{% endblock %}
+
+{% block content %}
+<div id="content-main">
+{% if admin_log %}
+<ul id="admin-timeline" class="actionlist">
+    {% include "admin_timeline/timeline_ajax.html" %}
+</ul>
+{% endif %}
+</div>
+
+<div id="content-related">
+    <div class="module filtered" id="admin-timeline-users">
+        <h2>{% trans 'Filter by user' %}</h2>
+        {% if not admin_log_users %}
+        <p>{% trans 'None available' %}</p>
+        {% else %}
+        <div class="changelist-filter">
+            
+            <ul>
+                {% for uid,username in admin_log_users %}
+                <li>
+                   <a href="?user_id={{ uid }}"{% if uid == user_id %} class="selected"{% endif %}>{{ username }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}
+
