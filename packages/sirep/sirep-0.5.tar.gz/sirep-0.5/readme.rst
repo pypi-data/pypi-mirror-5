@@ -1,0 +1,125 @@
+sirep Package
+===================================
+Simple report generation. Can be used to generate any kind of CSV or HTML reports. Instead of binding the complicated
+joins in class it expects a queryset to be provided along with headers (which are basically the text values for the
+first row of the HTML table or CSV file). Further, it requires the redefinition of the ``process_data`` which
+produce a Python list of lists. Each element of the list shall contain exactly the same number of items as the
+headers. There are some filtering options built in (date_upper, date_lower, per_page, page). Refer to the code
+documentation further.
+
+There are some obligatory attributes that should be set in the child class:
+    * ``verbose_name`` (example: verbose_name = 'Article word count')
+    * ``fields`` (example: fields = [u'Article ID', u'Title', u'Slug', u'URL']
+    * ``queryset`` (example: queryset = Article._default_manager.all())
+
+If you want to have the date filtering set, you should provide the following attribute as well:
+    * ``date_field`` (example: date_field = 'date_published')
+
+Installation
+===================================
+1. Latest stable version on PyPI:
+
+    $ pip install sirep
+
+2. Add 'sirep' to your ``INSTALLED_APPS``:
+
+    >>> INSTALLED_APPS = (
+    >>> # ...
+    >>> 'sirep',
+    >>> # ...
+    >>> )
+
+3. Run the following django management command:
+
+    $ ./manage.py collectstatic
+
+4. Add the following lines to the global urls.py file:
+
+    >>> import sirep
+    >>> sirep.autodiscover() # autodiscover sirep in applications
+    >>> urlpatterns = patterns('',
+    >>>    # ... some patterns here
+    >>>    # Sirep URLs
+    >>>    (r'^sirep/', include('sirep.urls')),
+    >>>    # ... some other patterns here
+    >>> )
+
+5. Create a report in the app directory for which you make the report and name the file "report.py" (follow the
+sirep.reports example). In order to see the demo, set the ``SIREP_SHOW_ADMIN_TEST_MODEL_DEMO`` to True in your
+local_settings and visit the "http://localhost:8000/sirep/" URL.
+
+Example app
+===================================
+If you want to have a working example of the app, check the example directory of the source and follow the
+installation instructions described in `example/readme.rst`.
+
+    https://bitbucket.org/barseghyanartur/sirep/src
+
+An automated installer resides in `sirep_install_example.sh`. Download it somewhere, activate your virtual
+environement and run the installer. You will soon be able to see the example report
+http://127.0.0.1:8000/sirep/foo-report/.
+
+Usage examples
+===================================
+Sample model module (file `test_package/models.py`):
+
+    >>> class TestModel(models.Model):
+    >>>     """
+    >>>     Test model for making a report.
+    >>>     """
+    >>>     title = models.CharField(_("Title"), max_length=50, blank=False, null=False)
+    >>>     counter = models.PositiveIntegerField(_("Counter"), blank=True, null=True)
+    >>>     user = models.ForeignKey(User, null=True, blank=True)
+    >>>     date_published = models.DateTimeField(null=True, blank=True)
+    >>>
+    >>>     class Meta:
+    >>>         verbose_name = _("Sirep test model")
+    >>>         verbose_name_plural = _("Sirep test models")
+    >>>
+    >>>     def __unicode__(self):
+    >>>         return self.title
+
+Sample report (file `test_package/reports.py`) module:
+
+    >>> import sirep
+    >>> from test_package.models import TestModel
+    >>>
+    >>> # Define the report class
+    >>> class TestReport(sirep.Report):
+    >>>     verbose_name = 'Test report'
+    >>>     fields = [u'ID', u'Title', u'Counter', u'Username', u'E-mail']
+    >>>     items = []
+    >>>     limit = 200
+    >>>     date_field = 'date_published'
+    >>>     queryset = TestModel._default_manager.filter().select_related('user')
+    >>>
+    >>>     def process_data(self):
+    >>>         queryset = self.get_queryset()
+    >>>
+    >>>         self.items = []
+    >>>         for a in queryset:
+    >>>             self.items.append([
+    >>>                 a.pk,
+    >>>                 a.title,
+    >>>                 a.counter,
+    >>>                 a.user.username if a.user else '',
+    >>>                 a.user.email if a.user else ''
+    >>>                 ])
+    >>>
+    >>> # Register the report
+    >>> sirep.register('test-report', TestReport)
+
+That's all. You may now navigate to your report `http://127.0.0.1:8000/sirep/test-report/`. Note that `test-report`
+is the slug using which we have registered the report (`sirep.register`).
+
+License
+===================================
+GPL 2.0/LGPL 2.1
+
+Support
+===================================
+For any issues contact me at the e-mail given in the `Author` section.
+
+Author
+===================================
+Artur Barseghyan <artur.barseghyan@gmail.com>
