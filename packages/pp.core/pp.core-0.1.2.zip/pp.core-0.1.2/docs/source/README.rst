@@ -1,0 +1,48 @@
+pp.core - Produce & Publish Foundation
+======================================
+
+``pp.core`` implements some core foundation functionalities
+of the Produce & Publish framework.
+
+Provides functionality
+----------------------
+
+- filesystem abstraction
+- integration with Dropbox and other cloud file services
+- resource base
+- resources registry
+- filesystem registry  
+
+Requirements
+------------
+
+- Python 2.7 
+
+Source code
+-----------
+
+https://bitbucket.org/ajung/pp.core
+
+Bug tracker
+-----------
+
+https://bitbucket.org/ajung/pp.core/issues
+
+Support
+-------
+
+Support for Produce & Publish Server is currently only available on a project
+basis.
+
+License
+-------
+``pp.core`` is published under the GNU Public License V2 (GPL 2).
+
+Contact
+-------
+
+| ZOPYX Limited
+| Hundskapfklinge 33
+| D-72074 Tuebingen, Germany
+| info@zopyx.com
+| www.zopyx.com
