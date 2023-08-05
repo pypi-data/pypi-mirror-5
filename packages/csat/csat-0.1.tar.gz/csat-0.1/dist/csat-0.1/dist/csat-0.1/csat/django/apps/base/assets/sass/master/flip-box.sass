@@ -1,0 +1,92 @@
+// {{{ Behavior rules
+.flip-box
+	$hd: $dialogsAnimationDuration/2
+	position: relative
+	display: block
+
+	+perspective(600)
+	+transform-style(preserve-3d)
+
+	.front-panel, .back-panel
+		display: block
+		+backface-visibility(hidden)
+		+transition-property(transform, opacity)
+
+	.back-panel
+		position: absolute
+		top: 0
+		left: 0
+		right: 0
+		bottom: 0
+		overflow: auto
+
+	&:not(.flipped), &:not(:target)
+		z-index: 900
+		.front-panel
+			opacity: 1
+			+transform(rotateY(0deg))
+			+transition-duration($hd, 0s)
+			+transition-delay($hd, $hd)
+			+transition-timing-function(ease-out)
+
+		.back-panel
+			opacity: 0
+			+transform(rotateY(-90deg))
+			+transition-duration($hd, 0s)
+			+transition-delay(0s, $hd)
+			+transition-timing-function(ease-in)
+
+	&.flipped, &:target
+		z-index: 1000
+		.front-panel
+			opacity: 0
+			+transform(rotateY(90deg))
+			+transition-duration($hd, 0s)
+			+transition-delay(0s, $hd)
+			+transition-timing-function(ease-in)
+
+		.back-panel
+			opacity: 1
+			+transform(rotateY(0deg))
+			+transition-duration($hd, 0s)
+			+transition-delay($hd, $hd)
+			+transition-timing-function(ease-out)
+// }}}
+
+// {{{ Basic styling
+.tiled-list
+	margin: -10px -10px 0
+	padding: 0
+	font-size: 0
+
+	> .flip-box
+		float: left
+		display: inline-block
+		padding: 10px
+		+box-sizing(border-box)
+
+		> .front-panel,
+		> .back-panel
+			border: 1px solid #ccc
+			padding: 20px
+			border: 1px solid #ddd
+			background: #fafafa
+			font-size: $baseFontSize
+			display: block
+			+box-shadow(#fff 0px 0px 10px inset)
+			+border-radius($baseBorderRadius)
+			+box-sizing(border-box)
+			+box-shadow(#fff 0px 0px 10px inset)
+
+			> a:only-child
+				display: block
+				margin: -20px
+				padding: 20px
+
+				&:hover
+					text-decoration: none
+
+			//&:hover
+			//	background: #f3f3f3
+			//	+box-shadow(#fff 0px 0px 10px inset, rgba(#000, 0.1) 0px 0px 10px)
+// }}}

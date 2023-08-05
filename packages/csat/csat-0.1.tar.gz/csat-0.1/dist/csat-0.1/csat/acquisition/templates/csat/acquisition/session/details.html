@@ -1,0 +1,84 @@
+{% extends "csat/acquisition/session/base.html" %}
+
+{% block page_title %}"{{ session.name }}" details{% endblock %}
+
+{% block extrahead %}
+	{{ super() }}
+	<script type="text/javascript">
+		var acquisitionServer = "{{ acquisition_server }}"
+	</script>
+{% endblock %}
+
+{% block content %}
+
+<h1><a href="{% url "csat:acquisition:session-index" %}">Acquisition sessions</a> <span class="muted">/</span> {{ session.name }}</h1>
+
+<section id="session-summary">
+<h2>Session summary</h2>
+
+<table class="session-details table" id="session={{ session.id }}-details">
+	<tr>
+		{% if session.thumbnail %}
+		<td rowspan="5" class="thumb"><div><img src="{{ session.thumbnail.url }}"/></div></td>
+		{% endif %}
+
+		<th>Session name</th>
+		<td>{{ session.name }}</td>
+		<th>Status</th>
+		<td>{{ session.STATUSES[session.status] }}</td>
+	</tr>
+	<tr>
+		<th rowspan="2">Description</th>
+		<td rowspan="2">{{ session.description|markdown }}</td>
+		<th>Created</th>
+		<td>{{ session.created|date('Y-m-d, H:i:s')|default('—') }}</td>
+	</tr>
+	<tr>
+		<th>Started</th></th>
+		<td>{{ session.started|date('Y-m-d, H:i:s')|default('—') }}</td>
+	</tr>
+	<tr>
+		<th>Collectors</th>
+		<td>
+			<ul class="inline-list">
+				{% for c in session.collectors.all() %}
+				<li>{{ c.get_collector().name }}</li>
+				{% endfor %}
+			</ul>
+		</td>
+		<th>Completed</th>
+		<td>{{ session.completed|date('Y-m-d, H:i:s')|default('—') }}</td>
+	</tr>
+	<tr class="actions">
+		<th>Available actions</th>
+		<td colspan="3">
+			{% if session.status == session.CONFIGURED %}
+			<a class="btn" href="{% url "csat:acquisition:session-edit" pk=session.pk %}"><i class="icon-edit"></i> Edit</a>
+			{% else %}
+			<button disabled="disabled" class="btn"><i class="icon-edit"></i> Edit</button>
+			{% endif %}
+
+			{% if session.status == session.CONFIGURED and session.collectors.count() %}
+			<form method="post" action="{% url "csat:acquisition:session-run" pk=session.pk %}">
+				{% csrf_token %}
+				<button type="submit" class="btn"><i class="icon-play"></i> Run</button>
+			</form>
+			{% else %}
+			<button disabled="disabled" class="btn"><i class="icon-play"></i> Run</button>
+			{% endif %}
+
+			<a class="btn btn-danger" href="{% url "csat:acquisition:session-delete" pk=session.pk %}?prev={{ request.path }}"><i class="icon-trash"></i> Delete</a>
+
+			<form method="post" action="{% url "csat:acquisition:session-reset" pk=session.pk %}">
+				{% csrf_token %}
+				<button type="submit" class="btn btn-danger"><i class="icon-refresh"></i> Reset</button>
+			</form>
+		</td>
+	</tr>
+</table>
+</section>
+
+{% include "csat/acquisition/session/_tasks.html" %}
+{% include "csat/acquisition/session/_results.html" %}
+
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "csat/visualization/tests/base.html" %}
+
+{% block styles %}
+{{ super() }}
+{% assets filters="compass", output="styles/_algo.css", "sass/visualization/algorithm-config.sass" %}
+<link href="{{ ASSET_URL }}" rel="stylesheet" />
+{% endassets %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% assets filters="coffeescript", output="scripts/_algo.js", "coffeescripts/strategies.coffee", "coffeescripts/algo-config.coffee" %}
+<script src="{{ ASSET_URL }}"></script>
+{% endassets %}
+<script type="text/javascript">
+	$(function () {
+		layoutFactories = [
+			new FRLayoutFactory(),
+			new RandomLayoutFactory(),
+		]
+
+		strategies = [
+			new SingleStrategy(layoutFactories),
+			new DomainStrategy(layoutFactories, [
+				new FRLayoutFactory(),
+			]),
+			//new ExtrudedStrategy(),
+			//new ClusteredStrategy(),
+		]
+
+		config = new StrategyConfigurator(strategies)
+		//new LayoutConfigurator(factories)
+
+		$('#playground')
+			.append(config.getForm())
+			.append(
+				$('<button/>')
+					.addClass('btn btn-primary')
+					.text('Run')
+					.click(function() {
+						console.log(config.getLayout())
+					})
+			)
+	})
+</script>
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}
