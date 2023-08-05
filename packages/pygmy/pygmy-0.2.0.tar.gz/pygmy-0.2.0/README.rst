@@ -1,0 +1,67 @@
+pygmy
+============
+
+.. image:: https://pypip.in/v/pygmy/badge.png
+   :target: https://pypi.python.org/pypi/pygmy
+
+.. image:: https://travis-ci.org/mattack108/pygmy.png
+   :target: https://travis-ci.org/mattack108/pygmy
+
+pygmy is a little app that colorizes source codez in your Python templates.
+Supported template engines: `Django <http://djangoproject.com/>`_ and `Jinja2 <http://jinja.pocoo.org/>`_.
+
+Requirements
+------------
+
+- Python 2.6+ (or Python 3.2+)
+- pygments 1.6+
+
+Requirements for Django
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- Django 1.3+
+
+Requirements for Jinja2
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- Jinja2 2.4+
+
+Installation
+------------
+
+Install using pip: ::
+
+    pip install pygmy
+
+
+Installation for Django
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Add ``pygmy`` to your ``INSTALLED_APPS``: ::
+
+    INSTALLED_APPS = (
+        ...,
+        'pygmy',
+    )
+
+Usage for Django
+----------------
+
+Render the awesomeness in your template: ::
+
+    {% load pygmy %}
+
+    {% pygmy object.code %}
+
+It also takes the same options as `HtmlFormatter <http://pygments.org/docs/formatters/#htmlformatter>`_ class: ::
+
+    {% pygmy object.code nowrap='True' linenos='table' %}
+
+Lexers
+------
+
+By default ``pygmy`` tries to guess which lexer to use based on the provided code.
+
+If you wish you can define any lexer of `Pygments lexers <http://pygments.org/docs/lexers/>`_ like so: ::
+
+    {% pygmy object.code lexer='python' %}
