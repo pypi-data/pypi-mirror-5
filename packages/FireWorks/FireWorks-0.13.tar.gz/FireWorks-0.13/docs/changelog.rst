@@ -1,0 +1,30 @@
+===================
+FireWorks Changelog
+===================
+
+v0.13
+=====
+
+* multiple query and output display options and enhancements added for ``get_fws`` and ``get_wfs``.
+* use FW's name to set more informative PBS job names
+* make sure ping_launch only writes on running jobs (prevent race condition)
+* minor bugfixes
+
+v0.12
+=====
+
+.. caution:: The ``get_fw_id`` and ``get_fw`` LaunchPad commands were merged into ``get_fws``.
+
+* better support for getting states of FireWorks and Workflows
+* minor bugfix for dynamic FireWorks
+
+v0.11
+=====
+
+* rerunning FireWorks
+* misc fixes for categories
+
+v0.1
+====
+
+* initial Release
