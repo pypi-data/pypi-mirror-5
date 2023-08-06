@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta  content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+
+
+<link  href="../01-bootstrap.min.css" type="text/css" rel="StyleSheet"/>
+<link  href="../02-docstyle.css" type="text/css" rel="StyleSheet"/>
+<link  href="../syntax.css" type="text/css" rel="StyleSheet"/>
+<title>mitmproxy 0.9 - Adding new content viewers</title></head><body><div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </a>
+      <a class="brand" href="../index.html">mitmproxy 0.9 docs</a>
+      </div><!--/.nav-collapse -->
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="span3">
+      <div class="well sidebar-nav">
+        <ul class="nav nav-list">
+            <li><a href="../index.html">Introduction</a></li>
+            <li><a href="../install.html">Installation</a></li>
+            <li><a href="../howmitmproxy.html">How mitmproxy works</a></li>
+
+            <li class="nav-header">Tools</li>
+                <li><a href="../mitmproxy.html">mitmproxy</a></li>
+                <li><a href="../mitmdump.html">mitmdump</a></li>
+
+            <li class="nav-header">Features</li>
+                <li><a href="../features/anticache.html">Anticache</a></li>
+                <li><a href="../features/clientreplay.html">Client-side replay</a></li>
+                <li><a href="../features/filters.html">Filter expressions</a></li>
+                <li><a href="../features/proxyauth.html">Proxy Authentication</a></li>
+                <li><a href="../features/replacements.html">Replacements</a></li>
+                <li><a href="../features/serverreplay.html">Server-side replay</a></li>
+                <li><a href="../features/setheaders.html">Set Headers</a></li>
+                <li><a href="../features/sticky.html">Sticky cookies and auth</a></li>
+                <li><a href="../features/reverseproxy.html">Reverse proxy mode</a></li>
+                <li><a href="../features/upstreamcerts.html">Upstream Certs</a></li>
+
+            <li class="nav-header">Installing Certificates</li>
+                <li><a href="../ssl.html">Overview</a></li>
+                <li><a href="../certinstall/firefox.html">Firefox</a></li>
+                <li><a href="../certinstall/osx.html">OSX</a></li>
+                <li><a href="../certinstall/windows7.html">Windows 7</a></li>
+                <li><a href="../certinstall/ios.html">IOS</a></li>
+                <li><a href="../certinstall/ios-simulator.html">IOS Simulator</a></li>
+                <li><a href="../certinstall/android.html">Android</a></li>
+
+            <li class="nav-header">Transparent Proxying</li>
+                <li><a href="../transparent.html">Overview</a></li>
+                <li><a href="../transparent/linux.html">Linux</a></li>
+                <li><a href="../transparent/osx.html">OSX</a></li>
+
+             <li class="nav-header">Tutorials</li>
+                <li><a href="../tutorials/30second.html">Client playback: a 30 second example</a></li>
+                <li><a href="../tutorials/gamecenter.html">Setting highscores on Apple's GameCenter</a></li>
+
+            <li class="nav-header">Scripting mitmproxy</li>
+                <li><a href="inlinescripts.html">Inline Scripts</a></li>
+                <li><a href="libmproxy.html">libmproxy</a></li>
+                <li class="active"><a href="addingviews.html">Adding new content viewers</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="span9">
+        <div class="page-header">
+        <h1>Adding new content viewers</h1>
+        </div>
+        <p>As discussed in <a href="../mitmproxy.html">the Flow View section of the mitmproxy overview</a>, mitmproxy allows you to inspect and manipulate flows.  When inspecting a single flow, mitmproxy uses a number of heuristics to show a friendly view of various content types; if mitmproxy cannot show a friendly view, mitmproxy defaults to a <strong>raw</strong> view.</p>
+
+<p>By default, mitmproxy has support for displaying the following content types in a friendly view:</p>
+
+<ul>
+<li><strong>1</strong>: Hex</li>
+<li><strong>2</strong>: HTML</li>
+<li><strong>3</strong>: Image</li>
+<li><strong>4</strong>: JavaScript</li>
+<li><strong>5</strong>: JSON</li>
+<li><strong>6</strong>: URL-encoded data</li>
+<li><strong>7</strong>: XML</li>
+<li><strong>8</strong>: AMF (requires PyAMF)</li>
+<li><strong>9</strong>: Protobuf (requires protobuf library)</li>
+</ul>
+
+<p>Each content type invokes a different flow viewer to parse the data and display the friendly view.  Users can add custom content viewers by adding a view class to contentview.py, discussed below.</p>
+
+<h2>Adding a new View class to contentview.py</h2>
+
+<p>The content viewers used by mitmproxy to present a friendly view of various content types are stored in contentview.py.  Reviewing this file shows a number of classes named ViewSomeDataType, each with the properties: <strong>name</strong>, <strong>prompt</strong>, and <strong>content_types</strong> and a function named <strong>__call__</strong>.</p>
+
+<p>Adding a new content viewer to parse a data type is as simple as writing a new View class.  Your new content viewer View class should have the same properties as the other View classes: <strong>name</strong>, <strong>prompt</strong>, and <strong>content_types</strong> and a <strong>__call__</strong> function to parse the content of the request/response. </p>
+
+<ul>
+<li>The <strong>name</strong> property should be a string describing the contents and new content viewer; </li>
+<li><p>The <strong>prompt</strong> property should be a two item tuple:</p>
+
+<ul>
+<li><strong>1</strong>: A string that will be used to display the new content viewer's type; and</li>
+<li><strong>2</strong>: A one character string that will be the hotkey used to select the new content viewer from the Flow View screen; </li>
+</ul></li>
+<li><p>The <strong>content_types</strong> property should be a list of strings of HTTP Content-Types that the new content viewer can parse.  </p>
+
+<ul>
+<li>Note that mitmproxy will use the content_types to try and heuristically show a friendly view of content and that you can override the built-in views by populating content_types with values for content_types that are already parsed -- e.g. "image/png".</li>
+</ul></li>
+</ul>
+
+<p>After defining the <strong>name</strong>, <strong>prompt</strong>, and <strong>content_types</strong> properties of the class, you should write the <strong>__call__</strong> function, which will parse the request/response data and provide a friendly view of the data.  The <strong>__call__</strong> function should take the following arguments: <strong>self</strong>, <strong>hdrs</strong>, <strong>content</strong>, <strong>limit</strong>; <strong>hdrs</strong> is a ODictCaseless object containing the headers of the request/response; <strong>content</strong> is the content of the request/response, and <strong>limit</strong> is an integer representing the amount of data to display in the view window.</p>
+
+<p>The <strong>__call__</strong> function returns two values: (1) a string describing the parsed data; and (2) the parsed data for friendly display.  The parsed data to be displayed should be a list of strings formatted for display.  You can use the <strong>_view_text</strong> function in contentview.py to format text for display.  Alternatively, you can display content as a series of key-value pairs; to do so, prepare a list of lists, where each list item is a two item list -- a key that describes the data, and then the data itself; after preparing the list of lists, use the <strong>common.format_keyvals</strong> function on it to prepare it as text for display.  </p>
+
+<p>If the new content viewer fails or throws an exception, mitmproxy will default to a <strong>raw</strong> view.</p>
+
+    </div>
+  </div>
+
+  <hr>
+
+  <footer>
+    <p>© mitmproxy project, 2013</p>
+  </footer>
+</div>
+</body></html>
