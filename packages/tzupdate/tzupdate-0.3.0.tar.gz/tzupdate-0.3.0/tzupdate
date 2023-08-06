@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+
+"""
+Set the system timezone based on IP geolocation.
+"""
+
+from __future__ import print_function
+import argparse
+import errno
+import json
+import os
+import sys
+
+try:
+    from urllib.request import urlopen
+    from urllib.parse import urlencode
+except ImportError:  # Python 2 fallback
+    from urllib import urlopen, urlencode
+
+
+class TimeZoneUpdate(object):
+    def __init__(self):
+        self.auth = {
+            "ipinfodb": {
+                "api_key": "c253fddcfa96b60155aa66fb51b20cba"
+                           "dbcfa2020b2d27a89d4554ac2799b935",
+            },
+            "geonames": {
+                "username": "tzupdate",
+            },
+        }
+        self.path = {
+            "zoneinfo": "/usr/share/zoneinfo",
+            "localtime": "/etc/localtime",
+        }
+
+    def location_from_ip(self, ip=None):
+        """
+        Return location data for an IP using the IPInfoDB API.
+
+        :param ip: an IP address to use to override automatically detecting it
+        :returns: latitude and longitude
+        """
+
+        url = "http://api.ipinfodb.com/v3/ip-city/?"
+        url_params = {
+            "key": self.auth["ipinfodb"]["api_key"],
+            "format": "json",
+        }
+
+        if ip is not None:
+            url_params["ip"] = ip
+
+        res_handle = urlopen(url + urlencode(url_params))
+
+        try:
+            res_encoding = res_handle.headers.get_content_charset()
+        except AttributeError:  # Python 2 fallback
+            res_encoding = res_handle.headers.getparam("charset")
+
+        res_data = json.loads(res_handle.read().decode(res_encoding))
+
+        coords = (
+            res_data["latitude"],
+            res_data["longitude"],
+        )
+
+        return coords
+
+    def timezone_from_location(self, coords):
+        """
+        Return the timezone for a set of coordinates using the GeoNames API.
+
+        :param coords: latitude and longitude
+        :returns: timezone
+        """
+
+        url = "http://api.geonames.org/timezoneJSON?"
+
+        latitude, longitude = coords
+        url_params = {
+            "username": self.auth["geonames"]["username"],
+            "lat": latitude,
+            "lng": longitude,
+        }
+
+        res_handle = urlopen(url + urlencode(url_params))
+
+        try:
+            res_encoding = res_handle.headers.get_content_charset()
+        except AttributeError:  # Python 2 fallback
+            res_encoding = res_handle.headers.getparam("charset")
+
+        res_data = json.loads(res_handle.read().decode(res_encoding))
+
+        timezone = res_data["timezoneId"]
+
+        return timezone
+
+
+if __name__ == "__main__":
+    t = TimeZoneUpdate()
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "-p", "--print-only",
+        action="store_true",
+        help="print the timezone, but don't update " + t.path["localtime"]
+    )
+    parser.add_argument(
+        "-a", "--ip",
+        help="use this IP instead of automatically detecting it"
+    )
+    args = parser.parse_args()
+
+    coords = t.location_from_ip(ip=args.ip)
+    timezone = t.timezone_from_location(coords)
+
+    if not args.print_only:
+        timezone_path = os.path.join(t.path["zoneinfo"], timezone)
+        if not os.path.isfile(timezone_path):
+            print("Unknown timezone: " + timezone_path, file=sys.stderr)
+            sys.exit(1)
+
+        try:
+            os.unlink(t.path["localtime"])
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+
+        os.symlink(timezone_path, t.path["localtime"])
+
+    print(timezone)
