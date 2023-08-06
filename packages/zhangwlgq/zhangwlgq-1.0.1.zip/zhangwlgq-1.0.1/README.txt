@@ -1,0 +1,1 @@
+it is just an exercise program to print lists (the example in the book <head first python>), wish you like it.
