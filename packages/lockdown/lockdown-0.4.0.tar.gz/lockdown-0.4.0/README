@@ -1,0 +1,44 @@
+========
+lockdown
+========
+
+Tool to encrypt local Python source code with AES-256, and dynamically 
+load and run it, and bring it into the Lockdown namespace.
+Uses HMAC for integrity check, AES-256 in counter mode for encryption.
+
+THIS HAS NOT BEEN AUDITED FOR SECURITY HOLES.
+USE AT OWN RISK. I'M NOT RESPONSIBLE FOR YOUR FAILURE TO HEED THAT WARNING.
+
+Example usage::
+
+        #!/bin/bash
+        lockdown lockedfiles.vault secret/creds.py secret/my_funcs.py
+        # Enter and repeat password.
+        # Now would be a good time to delete the files you locked, 
+        # but make sure not to lose that vault file.
+
+In Python::
+
+        #!/usr/bin/env python
+        from lockdown import Lockdown
+        locker = Lockdown('lockedfiles.vault')
+        # Enter password.
+        locker.unlock()
+
+        # Login with encrypted credentials. Python files aren't there!
+        # Note: It collapsed the path.
+        # (so it's locker.creds, not locker.secret.creds)
+        some_login(locker.creds.USERNAME, locker.creds.PASSWORD)
+
+        # Call a function. 
+        # NOTE: These can't import vaulted files within functions. 
+        # Files are lost after unlocking!
+        locker.my_funcs.scoobydoo()
+        
+        # To leave files out, do this instead:
+        locker.unlock(delete=False)
+
+You can see the potential uses, for example locking up a file with secret keys
+and credentials with a master password, or disabling functionality of a script
+and not exposing the source unless the password is available.
+
