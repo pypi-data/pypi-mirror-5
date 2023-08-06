@@ -1,0 +1,32 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      lang="en"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="plone">
+
+  <body>
+
+    <metal:ccore fill-slot="content-core">
+      <tal:aktak define="aktak_dict here/@@aktak_urteka;
+                         urteak python: aktak_dict.keys(); 
+                         dummy python: urteak.sort(); 
+                         dummy python: urteak.reverse()" 
+                 repeat="urtea urteak">
+        <h2 class="urtea" 
+            tal:content="urtea" 
+            tal:condition="python: aktak_dict[urtea]">
+          2010
+        </h2>
+        <ul class="aktak-lista">
+          <li tal:define="aktak python: aktak_dict[urtea]" tal:repeat="akta aktak">
+            <img tal:attributes="src python: akta.getIcon()" />
+            <a tal:attributes="href string: ${akta/absolute_url}" tal:content="akta/Title"></a>
+            <span class="documentByLine">
+              <span tal:content="python: akta.Format().split('/')[1]"></span>
+              (<span tal:content="python: str(akta.size()/1024) + 'KB'"></span>)
+            </span>
+          </li>
+        </ul>
+      </tal:aktak>
+    </metal:ccore>
+  </body>
+</html>
