@@ -1,0 +1,253 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import re
+from fnmatch import fnmatch
+from goodruns.extern import argparse
+import goodruns
+
+try:
+    import ROOT
+    ROOT.PyConfig.IgnoreCommandLineOptions = True
+    ROOT.gErrorIgnoreLevel = ROOT.kFatal
+except ImportError:
+    pass
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--lxml', action='store_true', default=False,
+                    help="Use lxml for XML reading and writing "
+                         "(requires lxml to be installed)")
+subparsers = parser.add_subparsers()
+
+
+def output_arg(parser):
+
+    parser.add_argument('-o', '--output',
+                        help="Output filename (optional)",
+                        default=None)
+    parser.add_argument('-f', '--format',
+                        help="Output format: " +
+                             ', '.join(goodruns.GRL.formats),
+                        default='xml')
+
+
+def input_arg(parser):
+
+    parser.add_argument('--pattern', '-e', default=None,
+                        help="If an argument is a directory, files under this "
+                             "directory matching this pattern will be included")
+    parser.add_argument('--path', '-p', default=None,
+                        help="For each argument that is a ROOT file, this path will "
+                             "specify the location of the GRL fragment within each file") 
+    
+    
+def mult_grl_arg(parser):
+    
+    input_arg(parser)
+    parser.add_argument('grls', nargs='*',
+                        metavar='GRL',
+                        help="GRL filename, URL (must begin with http://) "
+                             "or ROOT file (data.root:/path/to/grl)")
+
+
+def grl_arg(parser):
+    
+    input_arg(parser)
+    parser.add_argument('grl', nargs='?', default=None,
+                        metavar='GRL',
+                        help="GRL filename, URL (must begin with http://) "
+                             "or ROOT file (data.root:/path/to/grl)")
+
+
+parser_and = subparsers.add_parser('and',
+                        description=goodruns.anded.__doc__.split('\n\n')[0])
+output_arg(parser_and)
+mult_grl_arg(parser_and)
+parser_and.set_defaults(op=goodruns.anded)
+
+parser_or = subparsers.add_parser('or',
+                        description=goodruns.ored.__doc__.split('\n\n')[0])
+output_arg(parser_or)
+mult_grl_arg(parser_or)
+parser_or.set_defaults(op=goodruns.ored)
+
+parser_xor = subparsers.add_parser('xor',
+                        description=goodruns.xored.__doc__.split('\n\n')[0])
+output_arg(parser_xor)
+mult_grl_arg(parser_xor)
+parser_xor.set_defaults(op=goodruns.xored)
+
+parser_diff = subparsers.add_parser('diff',
+                        description=goodruns.diffed.__doc__.split('\n\n')[0])
+output_arg(parser_diff)
+mult_grl_arg(parser_diff)
+parser_diff.set_defaults(op=goodruns.diffed)
+
+parser_conv = subparsers.add_parser('convert',
+                        description="Convert a GRL into the desired format.")
+output_arg(parser_conv)
+grl_arg(parser_conv)
+parser_conv.set_defaults(op=None)
+
+parser_clip = subparsers.add_parser('clip',
+                        description=goodruns.clipped.__doc__.split('\n\n')[0])
+output_arg(parser_clip)
+grl_arg(parser_clip)
+parser_clip.add_argument('--startrun', type=int,
+                         help="Start run number", default=None)
+parser_clip.add_argument('--startlb', type=int,
+                         help="Start lumiblock number", default=None)
+parser_clip.add_argument('--endrun', type=int,
+                         help="End run number", default=None)
+parser_clip.add_argument('--endlb', type=int,
+                         help="End lumiblock number", default=None)
+parser_clip.set_defaults(op=goodruns.clipped)
+
+parser_runs = subparsers.add_parser('runs',
+                        description="List the runs contained in a GRL.")
+
+
+def print_runs(grl):
+
+    for run in grl:
+        print run
+
+
+grl_arg(parser_runs)
+parser_runs.set_defaults(op=print_runs)
+
+parser_find = subparsers.add_parser('find',
+                        description="Find the file containing a certain run "
+                                    "and lumiblock number.")
+
+
+def find(filenames, grls, run, lb=None):
+    
+    if lb is not None:
+        for filename, grl in zip(filenames, grls):
+            if (run, lb) in grl:
+                print filename
+    else:
+        for filename, grl in zip(filenames, grls):
+            if grl.has_run(run):
+                print filename
+
+
+mult_grl_arg(parser_find)
+parser_find.add_argument('--run', type=int,
+                         help="Run number", required=True)
+parser_find.add_argument('--lb', type=int,
+                         help="Lumiblock number", default=None)
+parser_find.set_defaults(op=find)
+
+options = parser.parse_args()
+if options.lxml:
+    from goodruns import info
+    info.USE_LXML = True
+
+ROOT_PATTERN = re.compile(r'\.root[^ \t\n\r\f\v:/]*(:/)?')
+
+
+def maybe_root(filename, path=None):
+    if re.search(ROOT_PATTERN, filename):
+        if path is not None:
+            if ':/' not in filename:
+                filename += ':/'
+            filename = os.path.join(filename, path)
+    return filename
+
+
+def collect_grls(grls, pattern=None, path=None):
+    
+    files = []
+    out_grls = []
+    for grl in grls:
+        # is this a pipe?
+        if grl == sys.stdin:
+            # try to read from stdin
+            # protect against fake stdin issue with xargs
+            grl = sys.stdin.read()
+            if grl:
+                out_grls.append(goodruns.GRL(grl, from_string=True))
+                files.append('STDIN')
+        # is this a directory?
+        elif os.path.isdir(grl):
+            for dirpath, dirnames, filenames in os.walk(grl):
+                for filename in sorted(filenames):
+                    if pattern is None or fnmatch(filename, pattern):
+                        fullpath = os.path.join(dirpath, filename)
+                        try:
+                            out_grls.append(goodruns.GRL(maybe_root(fullpath, path=path)))
+                        except Exception, e:
+                            sys.exit("Could not parse GRL %s\n%s" % (fullpath, e))
+                        files.append(fullpath)
+        # this must be a file
+        else:
+            filename = maybe_root(grl, path=path)
+            try:
+                out_grls.append(goodruns.GRL(filename))
+            except Exception, e:
+                sys.exit("Could not parse GRL %s\n%s" % (grl, e))
+            files.append(filename)
+    return files, out_grls
+
+
+if hasattr(options, 'grls'):
+    if not sys.stdin.isatty():
+        options.grls.insert(0, sys.stdin)
+    if options.op != find and len(options.grls) < 2:
+        sys.exit("Need at least two arguments or one pipe "
+                 "and one or more arguments")
+    elif not options.grls:
+        sys.exit("Need at least one argument or one pipe")
+    filenames, grls = collect_grls(options.grls,
+        path=options.path,
+        pattern=options.pattern)
+    if options.op == find:
+        find(filenames, grls, run=options.run, lb=options.lb)
+    else:
+        grl = options.op(*grls)
+
+elif hasattr(options, 'grl'):
+    if not sys.stdin.isatty() and options.grl is None:
+        options.grl = sys.stdin
+    if options.grl is None:
+        sys.exit("Need exactly one argument or one pipe")
+    _, grls = collect_grls([options.grl],
+        path=options.path,
+        pattern=options.pattern)
+    grl = goodruns.ored(*grls)
+    if options.op is not None:
+        kwargs = dict(options._get_kwargs())
+        del kwargs['lxml']
+        del kwargs['grl']
+        del kwargs['op']
+        del kwargs['pattern']
+        del kwargs['path']
+        try:
+            del kwargs['output']
+            del kwargs['format']
+        except KeyError:
+            pass
+        grl = options.op(grl, **kwargs)
+
+if hasattr(options, 'output') and grl is not None:
+    if options.output is None:
+        grl.write(sys.stdout, format=options.format)
+    else:
+        head, tail = os.path.split(options.output)
+        if not tail:
+            sys.exit("Invalid filename")
+        if '.' not in tail:
+            sys.exit("Filename must contain an extension")
+        extension = tail.split('.')[-1]
+        try:
+            try:
+                filehandle = open(options.output, 'w')
+                grl.write(filehandle, format=extension)
+            finally:
+                filehandle.close()
+        except Exception, ex:
+            print ex
