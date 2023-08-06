@@ -1,0 +1,98 @@
+DropTheBeat
+===========
+
+Music sharing using Dropbox.
+
+Features
+--------
+
+-  Recommend songs to friends
+-  Get a list of songs shared by friends
+-  Download the songs to your computer
+
+Getting Started
+===============
+
+Requirements
+------------
+
+-  Python 3
+
+Installation
+------------
+
+DropTheBeat can be installed with ``pip`` or ``easy_install``:
+
+::
+
+    pip install DropTheBeat
+
+Or directly from the source code:
+
+::
+
+    python setup.py install
+
+Initial Setup
+-------------
+
+#. Create a folder named 'DropTheBeat' in your Dropbox
+#. Share this folder with your friends
+
+Graphical Interface
+===================
+
+Start the app:
+
+::
+
+    DropTheBeat
+
+Command-line Inteface
+=====================
+
+Create your user folder:
+
+::
+
+    dtb --new <FirstLast>
+
+Recommend a song to friends:
+
+::
+
+    dtb --share <path/to/a/song>
+    dtb --share <path/to/a/song> --users JohnDoe JaneDoe
+
+Display recommended songs:
+
+::
+
+    dtb --incoming
+    dtb --outoing
+
+Download recommended songs:
+
+::
+
+    dtb
+    dtb --daemon
+
+Launch the GUI:
+
+::
+
+    dtb --gui
+
+For Developers
+==============
+
+Requirements
+------------
+
+-  GNU Make (or Cygwin Make): http://www.gnu.org/software/make/
+-  Pandoc: http://johnmacfarlane.net/pandoc/
+-  virtualenv: https://pypi.python.org/pypi/virtualenv
+
+
+
