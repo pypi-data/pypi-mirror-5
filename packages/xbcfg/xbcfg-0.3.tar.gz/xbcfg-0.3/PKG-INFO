@@ -1,0 +1,124 @@
+Metadata-Version: 1.0
+Name: xbcfg
+Version: 0.3
+Summary: Yet another X-CTU replacement
+Home-page: http://bitbucket.org/lauri.vosandi/xbcfg
+Author: Lauri Võsandi
+Author-email: lauri.vosandi@gmail.com
+License: LICENSE
+Description: 
+        ====
+        xbcfg
+        ====
+        
+        Introduction
+        ============
+        
+        xbcfg is a yet another X-CTU replacement for Linux machines,
+        which currently supports XBee Series 2 modules.
+        The XBeeConfig class wraps AT commands, getting into the bootloader and 
+        flashing the firmware for XBee Series 2 modules.
+        If you're interested in adding support for other similar modules,
+        feel free to mail me a unit.
+        
+        Installing
+        ==========
+        
+        End users should rely on pip::
+        
+            sudo pip install xbcfg
+        
+        Usage
+        =====
+        
+        With the utility you may fetch information about the XBee module::
+        
+            localhost ~ # xbcfg status
+            Module status
+            =============
+            Association indication: Successfully formed or joined a network
+            Channel: 0x10 (2.430 GHz)
+            Supply voltage: 3344 mV (2100-3600mV ok)
+        
+            Module configuration
+            ====================
+            Network idenfitier: 0x3332
+            Node idenfier: XB-0013A2004079C29E
+            Packetization timeout: 3 sec
+            Node discover timeout: 4.00 sec
+            Baud rate: 9600
+            Encryption enabled: False
+            Power level: 2.00 dBm
+            Destination address: 0x0013a200408b1a4a
+        
+            Module information
+            ==================
+            Serial number: 0x0013a2004079c29e
+            Maximum payload: 84 bytes
+            Hardware version: 0x194a
+              Module type: XBee
+              Revision: 74
+            Firmware version: 0x20a7
+              Variant: ZigBee compatible
+              Operation: Coordinator, transparent operation
+              Version: 10
+              Revision: 7
+        
+        Reset configuration::
+        
+            localhost ~ # xbcfg reset --destination-address 0x000000000000ffff
+            Restoring defaults ...
+            Restarting firmware ...
+        
+        The list of available configuratoin options::
+        
+            localhost ~ # xbcfg reset -h
+            usage: xbcfg reset [-h] [--verbosity LEVEL] [--device DEVICE] [--baud BAUD]
+                                  [--destination-address ADDRESS] [--channel CHANNEL]
+                                  [--node-identifier ID] [--network-identifier 0x3332]
+                                  [--enable-encryption] [--encryption-key 0xDEADC0DE]
+                                  [--node-discover-timeout SECONDS]
+        
+            XBee configuration and flashing utility
+        
+            optional arguments:
+              -h, --help            show this help message and exit
+              --verbosity LEVEL, -v LEVEL
+                                    Set verbosity (info, debug)
+              --device DEVICE, -d DEVICE
+                                    Serial port
+              --baud BAUD, -b BAUD  Initial baudrate for serial connection
+              --destination-address ADDRESS, -da ADDRESS
+                                    Destination address (64-bit integer), defaults to
+                                    broadcast
+              --channel CHANNEL, -ch CHANNEL
+                                    Channel (11-26)
+              --node-identifier ID, -ni ID
+                                    Node identifier (20-character ASCII string)
+              --network-identifier 0x3332, -id 0x3332
+                                    Network identifier (16-bit integer)
+              --enable-encryption, -ee
+                                    Enable encryption
+              --encryption-key 0xDEADC0DE, -psk 0xDEADC0DE
+                                    Encryption key (32-bit integer)
+              --node-discover-timeout SECONDS, -nd SECONDS
+        
+        And the final cherry on the top - firmware flashing capability::
+        
+            localhost ~ # xbcfg flash --operation end-device
+            You're about to flash: ~/.xbee/ebl_files/XB24-ZB_28A7.ebl
+            Press Enter to continue or Ctrl-C to bail out like a wimp!
+            Successful flash, restarting firmware
+        
+        Thanks
+        ======
+        
+        Thanks to everyone who made this utility possible:
+        
+        http://ftp1.digi.com/support/documentation/90000866_A.pdf
+        http://examples.digi.com/wp-content/uploads/2012/07/XBee_ZB_ZigBee_AT_Commands.pdf
+        http://www.microchip.com/forums/m304986-print.aspx
+        https://github.com/roysjosh/xbee-comm/
+        http://www.klozoff.ms11.net/maxstream/xbee-bootloader-info.txt
+        
+Platform: UNKNOWN
