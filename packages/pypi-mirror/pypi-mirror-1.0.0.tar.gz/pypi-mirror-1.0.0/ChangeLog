@@ -1,0 +1,2424 @@
+commit 46aca65aee3ddd3a39f8891321541609aa5e6dd8
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Nov 16 04:17:19 2013 -0500
+
+    Replace spaces with -'s
+    
+    On Centos, the lsb_release returns the text on one line. To solve that,
+    we need to replace not just newlines, but also spaces in the output
+    to match what lsb_release -i -r -s | xargs | tr ' ' '-' will do.
+    
+    Change-Id: I5e4ecdb918d1f9e3c225974f89d7ceb4f1abc4f1
+
+commit 71832900081827f6ce370e7d275a2d1ef36e8f1a
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Nov 16 03:49:25 2013 -0500
+
+    Don't use wheel when constructing the base mirror
+    
+    Clients of the mirror may need to fall back on non-wheel files,
+    and if an upstream project has published wheels, then the mirror
+    will be missing those in the non-wheel portion. Additionally,
+    use-wheel given to the wheel command will cause transitive depends
+    to be skipped in the local wheelhouse.
+    
+    The only thing that should be making/injecting wheels is the wheel
+    creation portion of things.
+    
+    Change-Id: I5e3c4754097249e52f013f6122ff86f01568243c
+
+commit d68260a79a8eaa1da76000b98d9f2bf6fd76bc40
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 14 11:11:16 2013 -0500
+
+    Don't upgrade setuptools or distribute
+    
+    It turns out that upgrading setuptools and distribute in the venv
+    we use to build the mirror causes MySQL-python to error out. However,
+    as of virtualenv 1.10.1, there's a new enough version of pip (1.4)
+    so it's actually not necessary for us to explicitly upgrade.
+    
+    Change-Id: Ib08064ad1ce674323cd5dec87b7a9911c723d12a
+
+commit 5dda8efa02d22a474adfbd748d673703be662f94
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Sep 30 01:31:09 2013 -0400
+
+    Add distribute to the pre-install list
+    
+    mysql-python is crapping the fantastic bong because of a continued
+    reliance on distribute. Fine. We'll just make sure we have latest
+    no-op package in our virtualenv so that epic fail stops killing bunnies.
+    
+    Also, when we're running the wheel command in our venvs, we kinda need
+    wheel to be installed in them.
+    
+    Change-Id: I004ca4efdbe5997b4f5f56e71a330ed7354d5cd2
+
+commit 7dfc0142d7902fa92bb242787c35e4b7308ead5e
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Wed Oct 16 19:12:00 2013 +0000
+
+    Install some python with our package
+    
+    * setup.cfg: The files section was missing, causing the sdist
+    package to lack the Python module being packaged. Fix it!
+    
+    Change-Id: I0726708caf949f72e4fc244d746583e826a9bf9d
+
+commit 8774e5557145de3af9965298e4ea33e7f2ab3636
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Aug 10 19:14:34 2013 -0300
+
+    Remove spurious uses of output return values
+    
+    There are several places in the code where out is collected but not
+    used. These make the code harder to reason about. Remove them and
+    only actually get the output if we care.
+    
+    Change-Id: I0280df56538fc7a56ee2d2bb47f05908270a3045
+
+commit c28dde9d68c56926f1ab53c5c77ef45e70b370d5
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Sep 9 13:41:57 2013 -0500
+
+    Strip out the things we don't need from jeepyb
+    
+    Change-Id: I129b6d66840604898592de31df11b3e396cd6048
+
+commit 384c02d41ff292d36f24e9c82fc88a8d1f796878
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Aug 9 19:37:57 2013 -0300
+
+    Start building wheels in the mirror
+    
+    The mirror should build wheels, because they're awesome. However, because
+    the wheel format does not do fine-grained enough selection on
+    things like the high likelihood that Ubuntu precise and Ubuntu raring
+    might have different underlying C libraries for python 2.7, we need to
+    put our built wheels into a structure that allows them to be used
+    safely.
+    
+    lsb_release -r -i is used because Centos lists lsb_release -c as "Final"
+    which is not particularly helpful. This will wind up with identifying
+    strings like Ubuntu-12.04 and Centos-6.4 - which should be good enough
+    for what we need. A call to a shell is used so that the same logic can
+    be easily duplicated in select-mirror, which is shell, to produce the
+    appropriate pip.conf file.
+    
+    Change-Id: Icf360c921dbc357dbeb43386c6e8f51bd5f993ff
+
+commit 92a1f3a57c03b89f97f929c2286515e0ef44775e
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Sep 9 13:34:44 2013 -0500
+
+    Rename jeepyb to pypi-mirror
+    
+    Change-Id: I3f5176f59fd57c7d85211a89edd121092cfef1a9
+
+commit 95398b631cc0b970b79805ded33d88803b736012
+Author: Elizabeth Krumbach <lyz@princessleia.com>
+Date:   Tue Aug 13 13:04:55 2013 -0700
+
+    Add chown of git repo directories
+    
+    When creating git repositories, we want to recursively chown
+    them to the cgit user so the cgit user for replication can
+    write to them.
+    
+    Change-Id: Ib349b4af32090d0fbda933d51ef514cae7033499
+
+commit ce650a4fe2ed3507d1da0e4f77c9e08a874c686a
+Merge: 3d4817c eb3ab9b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Aug 13 18:04:51 2013 +0000
+
+    Merge "Create repo when we create the cgit config file"
+
+commit eb3ab9ba305a4078753c35e851d62a5ef58a1221
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Aug 10 21:10:28 2013 -0300
+
+    Create repo when we create the cgit config file
+    
+    Git repos need to be created locally. Ensure that we create the
+    necessary repos when creating the config file for them.
+    
+    Change-Id: I0b0b8e183049dd9f825224f1657cb88a64edf37b
+
+commit 3d4817c25f9307c6f25ac84559b50e10acc81665
+Author: Emilien Macchi <emilien.macchi@enovance.com>
+Date:   Fri Aug 9 17:50:10 2013 +0200
+
+    Update Launchpad projects for puppet modules
+    
+    Since we've decided to split puppet-openstack launchpad page into
+    several sub-projects, this patch update the configuration to
+    support both blueprints & bugs for all current puppet modules
+    in StackForge.
+    
+    Change-Id: Iaef1de681507e9de9d80d6fecd2e5e56ca960a1a
+
+commit 6a63c1b91a43d570b3e17ca2c88ef8f570f252be
+Merge: ad88b02 db8e707
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Aug 5 22:51:25 2013 +0000
+
+    Merge "Allow hacking 0.6.0 and fix versions"
+
+commit ad88b02851951b8e946c5101e4c73686188069c4
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Aug 3 17:02:06 2013 -0400
+
+    Don't double-include if global-requirements
+    
+    global-requirements is a fully self-contained file, containing both
+    test and normal requirements. In the situation where the target repo
+    has a global-requirements.txt file, it should be treated as the only
+    file that matters- otherwise the mirror builder will hit double include
+    issues.
+    
+    Change-Id: I01fd1e0d7f0923456f35a0f931159850cb52e3e7
+
+commit 38411d4dcb2c5e4147cfd640025366ee1ce173b5
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Aug 2 11:06:36 2013 -0400
+
+    Add global-requirements.txt to the mirror list
+    
+    The openstack/requirements repo is consolidating the requirments lists
+    into a single file. This patch supports that work.
+    
+    Change-Id: Ia2ca88c0cf6c3317911d1d396d3779b3df5216a0
+
+commit fd4fc73453d13b02eea5e2604a64465ff68d3266
+Author: Emilien Macchi <emilien.macchi@enovance.com>
+Date:   Thu Aug 1 11:28:55 2013 +0200
+
+    Add puppet-heat in launchpad project list
+    
+    Fix bug #1207104
+    
+    Change-Id: I9c7ff621c4ff0f29ca4ad9c600bfa643ef8f89a9
+
+commit cbce010c935ae92edebc1e4c50d31f0e7e9ba025
+Merge: 9458f74 1602564
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jul 31 17:23:30 2013 +0000
+
+    Merge "cease docimpact emails, create bugs only"
+
+commit 9458f7413054296d62a4842c5cf8c7421b7e4b6f
+Merge: 3d2d554 6fa38f3
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jul 31 16:04:46 2013 +0000
+
+    Merge "Add .idea to .gitignore"
+
+commit 3d2d554453eba725d01b73e0aa4bd4601af6fb53
+Merge: 22a260d 7500c27
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jul 31 16:03:52 2013 +0000
+
+    Merge "Cause virtualenv to be installed into the mirror"
+
+commit 1602564e687b91d664c1a5eacf06c3771eff004f
+Author: Tom Fifield <tom@openstack.org>
+Date:   Mon Jul 29 09:19:58 2013 -0700
+
+    cease docimpact emails, create bugs only
+    
+    We've been running the DocImpact bug generation code for
+    several weeks now and are happy with the results. We'd now
+    like to cease the emails and only generate bugs from DocImpact
+    strings.
+    
+    This patch updates the logic to never send an email for DocImpact,
+    and changes the docstring to reflect this.
+    
+    This change should not affect any other types of impacts.
+    
+    patchset2 fixes PEP8 issue
+    
+    Change-Id: I5c46f0d540949bc4a5de1e57fcd68c537a54ca15
+
+commit 22a260d7a02431198b38b31cbb813d883b24d8e9
+Merge: aa1ce10 91c791a
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jul 29 18:08:05 2013 +0000
+
+    Merge "Improving Gerrit + commit-log automation."
+
+commit db8e7075802a5b1ecac6dab87b15c9cccd0feb9c
+Author: Sergey Lukjanov <slukjanov@mirantis.com>
+Date:   Mon Jul 22 12:13:35 2013 +0400
+
+    Allow hacking 0.6.0 and fix versions
+    
+    * versions of pep8, pyflakes and hacking are fixed;
+    * hacking updated to 0.6.0, errors fixed.
+    
+    Change-Id: I11eeb234e3079efb3be3162ac8d82196a1bfc722
+
+commit 6fa38f354c2bfc29a8c8ba8ba8f89e8618998f01
+Author: Sergey Lukjanov <slukjanov@mirantis.com>
+Date:   Mon Jul 22 12:29:56 2013 +0400
+
+    Add .idea to .gitignore
+    
+    Change-Id: I961da85ae841645be0bdf1c8760402e05e0194de
+
+commit 7500c276be7011532565dc90b7175b367fa472b2
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Jul 20 10:29:11 2013 -0700
+
+    Cause virtualenv to be installed into the mirror
+    
+    Virtualenv is a key piece of our infrastructure and is essential to the
+    gating work that we do, but because nothing depends on it, it doesn't
+    wind up in our mirror.
+    
+    Change-Id: I23486aed48e367e797beee8e01a6ddee193d4227
+
+commit aa1ce100be533f634a33220c7092693cb8c80b88
+Merge: b0fa6e5 3a9cb8e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sat Jul 20 16:50:44 2013 +0000
+
+    Merge "Use print function for python3"
+
+commit b0fa6e59bce08a26ca854339f1854fe4e101ab2b
+Merge: 35ed3f4 4b127e0
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sat Jul 20 16:50:43 2013 +0000
+
+    Merge "Remove -M from the pip install command"
+
+commit 35ed3f46898e1ada43cd5252a72c4ac4d5a75f1b
+Merge: eeb4fda c20173e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sat Jul 20 16:50:06 2013 +0000
+
+    Merge "Upgrade pip and setuptools in the mirror venv"
+
+commit eeb4fdad9738225cb9e6d60d7223b368933d9799
+Merge: 9a4c548 2cafdd2
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sat Jul 20 16:50:05 2013 +0000
+
+    Merge "Revert "Be more agressive trying to install requirements.""
+
+commit 3a9cb8ec11323d1326f75cbc604981060e1f589b
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Jul 20 08:38:53 2013 -0700
+
+    Use print function for python3
+    
+    Change-Id: Ib7eae9eaed6831fc74b06e02bdd0ca36e2e6c569
+
+commit 4b127e051b46ac6f4c75dd904eb9148687a15e9c
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Jul 20 08:37:14 2013 -0700
+
+    Remove -M from the pip install command
+    
+    dstufft suggests not using the -M command for forcing use of the mirrors
+    since it causes scanning all of the mirrors every time.
+    
+    Change-Id: I3f6ec19f3cbbde14d7b196c19c8b490936b757bc
+
+commit c20173e18d2aca91b5a3c370d63845aaecc42a28
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Jul 19 18:05:32 2013 -0700
+
+    Upgrade pip and setuptools in the mirror venv
+    
+    Older pip does not process transitive dependencies properly. To ensure
+    that 3rd level transitive depends get processed by run-mirror, ensure
+    that we have current pip in our mirror build environment.
+    
+    Without upgrading setuptools, we can hit the transitive depend problem.
+    
+    Change-Id: I4a4611109ed9b35dea2efc00583ab69ebc1a39ba
+
+commit 2cafdd2fe466a059834291e6d8faaf36458dd7aa
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Jul 20 15:06:30 2013 +0000
+
+    Revert "Be more agressive trying to install requirements."
+    
+    This reverts commit f4ed0c3120852c2a59af8ebc4fdf657672787d67
+
+commit 9a4c548d093217c328ea022d97dde2321513f070
+Merge: c11d6b7 f4ed0c3
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sat Jul 20 02:59:14 2013 +0000
+
+    Merge "Be more agressive trying to install requirements."
+
+commit 91c791a580efe76deab0f8d8a54ca8f73a2bb7ba
+Author: Anthony Dodd <adodd@vbridges.com>
+Date:   Fri Jul 12 12:47:40 2013 -0500
+
+    Improving Gerrit + commit-log automation.
+    
+    I've reworked a few items here, so I will describe them in as much a
+    linear fashion as possible. Keep in mind that one of the primary goals
+    for these changes is to allow us to "trigger more magic from Gerrit".
+    And it is to that end that I've implemented these changes.
+    
+    In find_bugs(), I've tightened-up the regular expression being used so
+    that it will parse-out any prefixes associated with the bug reference.
+    I've tested the regular expression against the most common bug
+    references that I've seen in commit logs, as well as against the
+    styles described in our documentation. The sources that I've drawn
+    from are:
+    
+        https://etherpad.openstack.org/drive-automation-from-commitmsg
+        https://wiki.openstack.org/wiki/GitCommitMessages
+        https://wiki.openstack.org/wiki/Gerrit_Workflow
+    
+    Moreover, I'm using re.finditer() which allows for more direct
+    access to the text that was matched. Lastly, I've tried to keep the
+    expression as flexible as possible so that it will match even if the
+    developer references the bug in a funky way.
+    
+    In order to keep the prefix and lp_task associated with each other,
+    I've created a class called "Task" which is simply an interface to
+    determine what sort of automation needs to take place for the given
+    bugtask. This being the case, I've taken the liberty of renaming a few
+    variables to make this more clear.
+    
+    In "Task", a basic level of processing is performed on the prefix to
+    determine what changes need to be made on launchpad. A method called
+    needs_change() returns a boolean indicating if the supplied argument
+    is a change which needs to be made.
+    
+    Lastly, yet most importantly for this bug fix, process_bugtsk() is
+    utilizing needs_change(), as mentioned above, to ensure that the
+    bugtask's status is not erroneously changed in the case of a bug fix
+    which spans multiple commits.
+    
+    Closes-Bug: 1018013
+    Change-Id: Ibd84d3c6edcf104afe3211fb55ea531efa92d20e
+
+commit c11d6b71c40e440872efd457ae410b624e30e89c
+Author: Elizabeth Krumbach <lyz@princessleia.com>
+Date:   Thu Jul 18 12:20:12 2013 -0700
+
+    Add mkdir of git directories to cgit script
+    
+    Add a section of the script to take the "orgs" defined and create
+    those as directories we need in /var/lib/git
+    
+    Change-Id: Id7c4110ab60fca61655bb46a18f161e6eb6ea142
+
+commit 05a47939ff133550d07f64032299b58b1eab7e04
+Merge: 4d8c8fe d8c51c6
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Jul 18 04:41:29 2013 +0000
+
+    Merge "Treat -2 as a negative approval for expirations."
+
+commit 4d8c8fe62a223fe126415eb960fab89544c021fc
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Wed Jul 17 20:34:20 2013 +1200
+
+    Tripleo-incubator is also tripleo on Launchpad.
+    
+    Change-Id: I8af2377a765e63edbaba6b8f235742274caac34a
+
+commit d8c51c683099c6714056c22a51805d0dfc01466b
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Mon Jul 15 14:51:56 2013 +0000
+
+    Treat -2 as a negative approval for expirations.
+    
+    * jeepyb/cmd/expire_old_reviews.py(main): Previously only reviews
+    with a -1 vote were expired, so those with a -2 and no -1 would
+    remain in review indefinitely. This corrects the script to also
+    treat -2 as a negative vote for purposes of auto-expiring a change.
+    
+    Change-Id: Ia447d7b11abafd9b3bb7c7696a7f47ea51bacaa1
+
+commit f4ed0c3120852c2a59af8ebc4fdf657672787d67
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Jun 23 14:43:02 2013 -0400
+
+    Be more agressive trying to install requirements.
+    
+    When -r requirements.txt is used, either then entire file works
+    or the entire file doesn't. This means that if there is a hiccup
+    with any of the files, we lose the entire run instead of just
+    the one file.
+    
+    By iterating over the list and installing as many as we can, then
+    processing the freeze, we get as many of them as we can.
+    
+    This is especially helpful when combined with the upcoming pbr/jeepyb
+    gate, where the lack of a requirement in the gate will show up when
+    the thing that needs it can't install it. If we get everything else,
+    the error message in that case will be much more clear as to why.
+    
+    Change-Id: I27606b92a8be2605fa30362aaab51e65a21770bc
+
+commit e0207dcc4a82e54a941c82947d5256e6317d2801
+Author: Matthew Treinish <treinish@linux.vnet.ibm.com>
+Date:   Fri Jul 12 17:27:46 2013 -0400
+
+    Remove tempest from list of projects that direct release.
+    
+    This commit removes tempest from the list of projects that are
+    direct release. No when a tempest bug's fixing commit gets merged it
+    will be set to fix committed instead of fix released.
+    
+    Change-Id: Iad9f2203e6694a428a7e4ab5be80c74a1fbb2016
+    Reviewed-on: https://review.openstack.org/36908
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit e8d897d329f6def7c231d48cebf4079ea0d4bfb4
+Author: Elizabeth Krumbach <lyz@princessleia.com>
+Date:   Fri Jul 5 11:35:08 2013 -0700
+
+    Add create_cgitrepos.py file
+    
+    The create_cgitrepos.py is used to generate a cgitrepos config file
+    from projects.yaml for cgit to use.
+    
+    Change-Id: I54e09634f1cbb7595d7db629ce7e16a883c5f5b6
+    Reviewed-on: https://review.openstack.org/35856
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 66b6cc63a42ce5499e296a8eb478309787039749
+Author: Mathieu Gagné <mgagne@iweb.com>
+Date:   Sun Jul 7 13:05:59 2013 -0400
+
+    Implement blueprint LP mapping for projects
+    
+    * jeepyb/cmd/update_blueprint.py: Use the same gerrit to Launchpad
+    project name mapping system used by update_bug.py to map blueprints
+    to the corresponding LP projects.
+    * Add puppet projects to the mapping.
+    
+    Change-Id: Ife0b76b80f80d83ecfca5d24e6caf24228e3044d
+    Reviewed-on: https://review.openstack.org/36006
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 10ec3efe72b7fc2e5208547698788d172b971be5
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Jul 5 21:17:39 2013 -0400
+
+    Remove use of distribute.
+    
+    Change-Id: Ie0f23623febb41bfdba181c690cc0df94a39fa5a
+    Reviewed-on: https://review.openstack.org/35916
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 68ce329185a9b7364c49ac03389664622c8f723b
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Mon Jul 1 11:45:46 2013 -0700
+
+    Created Gerrit groups are self owned.
+    
+    * jeepyb/cmd/manage_projects.py: When creating Gerrit groups do not set
+    an explicit owner so that the new groups are self owned.
+    
+    Fixes bug 1178022
+    
+    Change-Id: I343ff5b7a4040149caa13b07bc69f15b3086225f
+    Reviewed-on: https://review.openstack.org/35171
+    Reviewed-by: Elizabeth Krumbach Joseph <lyz@princessleia.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 7d347587167b056f6c56a579c344a62f7765d88f
+Author: Tom Fifield <tom@openstack.org>
+Date:   Fri Jun 28 16:01:52 2013 +1000
+
+    Makes Impact bug creation generic, ceases doc spam
+    
+    This patch moves the bug creation code to its own method, so that it
+    can be used by other kinds of impacts.
+    
+    It also changes the notification logic for DocImpact, so that emails
+    are now only sent if bug creation was not successful.
+    
+    This patch should have no effect on other kinds of impacts.
+    
+    patchset3 fixes use of sys and updated docstring
+    
+    patchset4 rebases to master
+    
+    Change-Id: I6b64beb6e8da45b166d17c9fad0347aa5370e689
+    Reviewed-on: https://review.openstack.org/34842
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 061919f212afd7518b5f790d49b99ac4088ab188
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Jun 2 11:35:42 2013 -0400
+
+    Modernize to curent build standards
+    
+    Migrate to pbr, flake8 and hacking. Clean up hacking warnings. Rename
+    requirements files. Remove cruft from tox.ini.
+    
+    Change-Id: Ide78ad47de7f275240f729a2bc02745063b084ac
+    Reviewed-on: https://review.openstack.org/31439
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit f98a3a42dda40203ecc04fe00f357c5051cdb4d4
+Author: Russell Bryant <rbryant@redhat.com>
+Date:   Tue Jun 25 15:45:52 2013 -0400
+
+    Do not abandon unreviewed changes
+    
+    Change the review expiring logic to stop abandoning changes that have
+    not been reviewed.
+    
+    Change-Id: I5b0a131fb8f3d2a83e71d5bfbb8729db8615db2e
+    Reviewed-on: https://review.openstack.org/31204
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 5d06d19c5262d2250838149d646b3f1d4918d178
+Author: Thierry Carrez <thierry@openstack.org>
+Date:   Wed Jun 26 15:32:47 2013 +0200
+
+    Transition to Neutron project in Launchpad
+    
+    Gracefully handle the Launchpad project rename from Quantum to Neutron,
+    by redirecting changes to not-yet-renamed openstack/quantum repo to the
+    already-renamed "neutron" LP project (same for python-*client projects).
+    
+    This should be accepted once the following LP support request is done:
+    https://answers.launchpad.net/launchpad/+question/231396
+    
+    Change-Id: Ib47970716d6aef54d6a641bb78f966d5feb1e3bb
+    Reviewed-on: https://review.openstack.org/34549
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit a8068d3f5fd7156fd6b721f7c1fbd7b4e2554571
+Author: Jay Pipes <jaypipes@gmail.com>
+Date:   Sat Jun 22 20:33:41 2013 -0400
+
+    Ensure GERRIT_PORT is an integer
+    
+    The Gerrit port configuration option must be an integer
+    otherwise paramiko will complain.
+    
+    Change-Id: I97d79940ceba97b1f4b3d20c4ba93b6fc4394e17
+    Reviewed-on: https://review.openstack.org/34121
+    Reviewed-by: Eric Erfanian <eric.erfanian@gmail.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 94ebc242c5dcb5d16b525a0df45fbfbb158299ab
+Author: Tom Fifield <tom@openstack.org>
+Date:   Sun Jun 23 17:18:50 2013 +1000
+
+    Enhancements to docimpact bug creation code
+    
+    NB: This has not been tested yet, as launchpad staging server is down.
+    
+    These changes:
+    * adds the gerrit review URL to the top of created bugs
+    (so bug assignees/triagers can look at the patch easily)
+    
+    * set the tag of the bug to be the project/repo name, as is the
+    docs triaging standard
+    
+    Change-Id: I1bc6a4081ac16ec2f8cf4cc419cec5b1fb03a6e2
+    Reviewed-on: https://review.openstack.org/34127
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 805a30109c88694138cef10ebb457d6b6d64d5ff
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Jun 21 02:32:08 2013 -0400
+
+    Make gerrit port configurable.
+    
+    Change-Id: Idf87910a9f82556f247e0232468f2f883d718f97
+    Reviewed-on: https://review.openstack.org/33927
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 2f13d563c2db25fad555a41edb0a6ff8b2c92dcb
+Author: Jay Pipes <jaypipes@gmail.com>
+Date:   Sun Jun 16 12:01:09 2013 -0400
+
+    Make Gerrit system user and group configurable
+    
+    The gerrit2 system user and group was hardcoded in
+    manage_projects. This simply allows the values to
+    be overridden by options 'gerrit-system-user' and
+    'gerrit-system-group' in the defaults section of the
+    projects.yml file.
+    
+    fixes lp 1191542
+    
+    Change-Id: Ieb736e08a6f96c10abfabe8b17808681732cb8b6
+    Reviewed-on: https://review.openstack.org/33196
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 1faf327cfbb1a3ee21a77a3d2068e11a7e9b7530
+Author: Tom Fifield <tom@openstack.org>
+Date:   Fri Jun 14 14:40:46 2013 +1000
+
+    Fix docimpact bug generation code
+    
+    My sincere apologies to the infra team.
+    
+    The original code to create bugs from DocImpact itself suffered
+    from a bug - it was trying to refer to an email address rather than
+    an impact line. Luckily, due to the design, this had no impact on
+     sending Impact emails for security or docs.
+    
+    This change correctly checks for docimpact prior to bug creation.
+    
+    Change-Id: I1b8e037cab0a0424c765706f4a7b690ba5bd96d0
+    Reviewed-on: https://review.openstack.org/32994
+    Reviewed-by: Diane Fleming <diane.fleming@rackspace.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Khai Do <zaro0508@gmail.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 6caa2f971561385d7fa92f59486617e3d36fd512
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jun 13 08:16:41 2013 +1200
+
+    Update for tripleo-heat-templates.
+    
+    Change-Id: Iedd869f02ee51f286a91ce5f64a4a826e567ea4f
+    Reviewed-on: https://review.openstack.org/32782
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit d4d83afc82e2c5e636f3f796cc70a79d2d6e2ac0
+Author: Steven Deaton <sdeaton2@gmail.com>
+Date:   Mon Jun 10 11:04:16 2013 +1000
+
+    autogenerate doc bug reports based on DocImpact tag
+    
+    DocImpact has worked well for communicating new features and code
+    changes that impact documentation to the doc team. However, the bulk
+    of the emails received were essentially just turned into bug reports.
+    This change allows the automated creation of those bug reports.
+    
+    The code searches for potential duplicate bugs before creating a bug
+    to avoid creating multiple bugs per review.
+    
+    Note that this is originally the page from
+    https://review.openstack.org/#/c/30718/
+    
+    However, I'm drowning in DocImpact emails and wanted to move things
+    along while the original author (Steven Deaton) is on holiday.
+    
+    There is potential future work here to:
+    1) alter the text on bug update
+    2) close bugs associated with abandoned patch sets
+    3) mark patch-merged bugs as 'confirmed'
+    
+    though, as one of the main benefactors from this code, I am quite
+    happy to put this forward without these extras initially if it is
+    acceptable to our awesome infra team :)
+    
+    patchset 2 updates documentation strings thanks to excellent feedback :)
+    
+    fixes bug 1184845
+    
+    Change-Id: Ia3a8a203314c4e527855df1623491f96da06b882
+    Reviewed-on: https://review.openstack.org/32348
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 9c36efc563a2632655946dd3eeebf2d5b6771947
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Wed Jun 5 20:45:59 2013 +0000
+
+    Infra publications bugs to openstack-ci.
+    
+    Bug reports on the openstack-infra/publications project in Gerrit
+    should map to the openstack-ci project in Launchpad and be marked
+    fix-released on merge.
+    
+    Change-Id: I3caea11c36270db2e5d7587f09cff150b80e8afa
+    Reviewed-on: https://review.openstack.org/31864
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 7260a91bf97d32a0c176b4bd441a961051dccd5b
+Author: Mathieu Gagné <mgagne@iweb.com>
+Date:   Wed May 22 21:16:48 2013 -0400
+
+    Add stackforge/puppet-tempest to git/lp mapping
+    
+    Change-Id: I79a300be354f57d02919121488cf9d5f6add1d2c
+    Reviewed-on: https://review.openstack.org/30197
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 2f3f54445f70799c680f7fa481a9a1cda33dcaa9
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Thu May 23 17:10:56 2013 -0700
+
+    Map tripleo-image-elements to lp tripleo bugs.
+    
+    Change-Id: I539094a6fee562fdfe204c33ade191dbc649c5f7
+    Reviewed-on: https://review.openstack.org/30374
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 4eb5fecd8de94f1a1b80b1c84b500d211b6620e4
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Wed May 22 02:50:11 2013 +0000
+
+    Update bug release mapping.
+    
+    * jeepyb/cmd/update_bug.py(git2lp): Sorted project entries
+    alphabetically for ease of maintenance.
+    (is_direct_release): Updated list of openstack-infra projects which
+    don't tag formal releases, and sorted project entries alphabetically
+    for ease of maintenance.
+    
+    Change-Id: I181a32239db6e6dd247db9670b8735cddc7fb56f
+    Reviewed-on: https://review.openstack.org/30035
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit ffbd815a8b22ee950513f6b48fa4717f59fc35f2
+Author: Jay Pipes <jaypipes@gmail.com>
+Date:   Tue May 21 13:57:17 2013 -0400
+
+    Add mapping to bug tracker for Chef projects
+    
+    Add bug tracking to superproject openstack-chef
+    for all stackforge chef cookbooks and chef-repo.
+    
+    Sets all above repos to be Fix Released, not Fix
+    Committed, when patches received and merged.
+    
+    Change-Id: Idbc234a552ec11b4dad145d867ec60b1a568720f
+    Reviewed-on: https://review.openstack.org/29973
+    Reviewed-by: John Dewey <john@dewey.ws>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 0c1647a6836f0775308a950a1affa1fd9f18375b
+Author: Mathieu Gagné <mgagne@iweb.com>
+Date:   Thu May 16 12:46:09 2013 -0400
+
+    Add stackforge/puppet-* to git/lp project map
+    
+    The puppet-openstack project wishes to manage all puppet modules
+    hosted on stackforge in the same Launchpad project to ease management.
+    
+    This patch adds the required mapping for Gerrit to find and update bugs
+    in the appropriate Launchpad project.
+    
+    Change-Id: I59cf52ba22e0e16fdceb15f790487c62ec77d144
+    Reviewed-on: https://review.openstack.org/29404
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit f57025d5592b223dcc427a0e285d3af10acc2cca
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Mon May 6 20:42:45 2013 +0000
+
+    Allow mirror script to run on a specified branch.
+    
+    * jeepyb/cmd/run_mirror.py(Mirror.__init__,Mirror.build_mirror): Add
+    a -b/--branch option which, if specified, limits the mirror update
+    to only the named branch rather than running for all available
+    branches.
+    
+    Change-Id: I07e5fa98054c8b77bf512166e730d3e73c27286c
+    Reviewed-on: https://review.openstack.org/28346
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 9023a46782563dd75283788fd5757e1148004a66
+Author: Sean Dague <sdague@linux.vnet.ibm.com>
+Date:   Mon May 6 06:53:10 2013 -0400
+
+    factor out gerrit project creator account
+    
+    this lets you set the gerrit project creator account in yaml,
+    instead of it being hardcoded in the script
+    
+    Change-Id: I08870255fd3f44b8e2ed04ed7a7e80a3dfe2dd39
+    Reviewed-on: https://review.openstack.org/28286
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit ac4081fcd51e393f8395793e16737bc1036a26ed
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Sat May 4 23:32:23 2013 +0000
+
+    Update bug LP mapping for all infra projects.
+    
+    * jeepyb/cmd/update_bug.py: Update the gerrit to Launchpad project
+    name mapping for all projects in the openstack-infra org to
+    correspond to openstack-ci bugs, except those which have their own
+    separate LP projects already. Also alphabetize the list for easier
+    maintenance.
+    
+    Change-Id: Ie910068839361b1ebbeb6ef2b530d9d599301694
+    Reviewed-on: https://review.openstack.org/28237
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 433783d710b0e8153cb845324fc5dd58c80b5f43
+Author: Sean Dague <sdague@linux.vnet.ibm.com>
+Date:   Sat May 4 07:47:08 2013 -0400
+
+    fix github support
+    
+    after the method extraction, I missed one change. We aren't in a
+    loop any more, so continue isn't valid in this context. Instead
+    the function should just return to short circuit the rest of the
+    execution.
+    
+    Change-Id: Ia52374da14c6ef4f5495adc1b3e2591ea9f58c85
+    Reviewed-on: https://review.openstack.org/28230
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 5906b8352fc428027474b2f1a97994e1e919481b
+Author: Sean Dague <sdague@linux.vnet.ibm.com>
+Date:   Fri May 3 18:08:26 2013 -0400
+
+    make use of github optional
+    
+    this attempts to pull out all the upstream github creation into a
+    single function, which can be disabled for environments that don't
+    want to do project creation up to github.
+    
+    Change-Id: Ic65eb9c0070c50d0f05305a1c93d31d8afe09c2b
+    Reviewed-on: https://review.openstack.org/28213
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 06efb06f84dfccc1ada734f634731765d4c37e44
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Mon Apr 15 20:18:16 2013 +0000
+
+    Ability to run cmd scripts directly.
+    
+    Add a conditional check to call main() in cmd scripts if they're
+    being invoked directly. Some already had them, but most simply
+    relied on the entrypoints wrappers declared in setup.py. With this
+    change, users can more easily test and debug the various command
+    scripts directly without needing setup magic.
+    
+    Change-Id: I16c26e954687de8af5f971936fb8eee2072c06bc
+    Reviewed-on: https://review.openstack.org/26966
+    Reviewed-by: Paul Belanger <paul.belanger@polybeacon.com>
+    Reviewed-by: Khai Do <zaro0508@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit c8cc7a50910e73b3c5857894f6fdc4fd73801b76
+Author: Anita Kuno <akuno@lavabit.com>
+Date:   Wed Apr 10 21:32:08 2013 -0400
+
+    Edited the parsed url to work.
+    
+    There was duplication in the parsed url, I removed the duplication
+    to get the url to work.
+    
+    I commented out the swift heading in the ini file so that the
+    absence-of-swift conditionals were met in the script.
+    
+    I set the output_mode to multiple since that was the setting that I
+    got to work for me so I thought having a working ini file was a good
+    idea.
+    
+    *jeepyb/cmd/openstackwatch.py
+    *jeepyb/confif/openstackwatch.ini-sample
+    
+    Change-Id: I3e8f8170abd33a99989d96f226562b4c625411fb
+    Reviewed-on: https://review.openstack.org/26699
+    Reviewed-by: Chmouel Boudjnah <chmouel@enovance.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit a87f9fc92ba9fb3496259483a9b56ea35d0692c9
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Thu Apr 11 11:03:02 2013 -0700
+
+    Make pull request closer less OpenStack specific.
+    
+    * jeepyb/cmd/close_pull_requests.py: The pull request closer was
+    thanking people for contributing to OpenStack. This script is also used
+    to close stackforge pull requests. Make the message less OpenStack
+    specific and instead thank the pull requester for contributing to the
+    project they pull requested against.
+    
+    Change-Id: I6bc29401ab72dc452c3c26fc11ffb6314c6bc7bd
+    Reviewed-on: https://review.openstack.org/26771
+    Reviewed-by: Elizabeth Krumbach <lyz@princessleia.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 3235d30c7188939535591a48bfab8ef26a027d76
+Author: Anita Kuno <akuno@lavabit.com>
+Date:   Tue Apr 9 16:45:34 2013 -0400
+
+    Change variable name mode to output_mode.
+    
+     * jeepyb/config/openstackwatch.ini-sample
+    
+    Change-Id: I07a4952db47be100a636486f66811049465b2343
+    Reviewed-on: https://review.openstack.org/26529
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 333f4cb3357f3daa5fe3b467ef19b5669161106a
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Thu Apr 4 16:55:01 2013 -0700
+
+    Use git diff instead of git diff-index.
+    
+    In the manage projects script git will sometimes report that there is a
+    difference between old and new acl files when there isn't one. This
+    causes the script to fail on those files when trying to commit them. Use
+    git diff instead of git diff-index to resolve this problem.
+    
+    Change-Id: I9f2d7b3066a9bfe6e64282e9e7c009d4008e133e
+    Reviewed-on: https://review.openstack.org/26172
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 18e8256ad51473119fa241073c0f8bb68928df09
+Author: James E. Blair <corvus@inaugust.com>
+Date:   Thu Apr 4 16:20:32 2013 +0000
+
+    Revert "Extract projects.yaml loader into a module."
+    
+    This was not ready to be merged.
+    
+    This reverts commit 8b9f93f67ad43e0ac8dd95e02f8269f6d7cae912
+    
+    Change-Id: Icef953ba61959b6b2e7aa18731eb7b953379195b
+    Reviewed-on: https://review.openstack.org/26104
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 8b9f93f67ad43e0ac8dd95e02f8269f6d7cae912
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Mon Jan 21 02:44:21 2013 +0000
+
+    Extract projects.yaml loader into a module.
+    
+    * jeepyb/cmd/close_pull_requests.py, jeepyb/cmd/fetch_remotes.py,
+    jeepyb/cmd/manage_projects.py: Consume the new jeepyb.projects
+    module and stop loading the projects.yaml file directly.
+    
+    * jeepyb/projects.py: New module, extracted from manage_projects.py
+    and refactored to load a somewhat simplified projects.yaml format.
+    This is a step toward further streamlining of the format.
+    
+    Change-Id: I6a05536f016d1327844a652444f89bfde08ac6fa
+    Reviewed-on: https://review.openstack.org/20104
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit e8bb6e447817a4b66afed641f0aa5b97f64f5c2f
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Mar 8 15:01:56 2013 -0500
+
+    Inject project into the acl_parameters.
+    
+    We want parameters to be free-form, but all of them are always for
+    a project and we always know the project, so I think it's a sensible
+    thing to always have available.
+    
+    Change-Id: Id3d963d78b6a734771af0047dd7b260aa8ecb60b
+    Reviewed-on: https://review.openstack.org/23952
+    Reviewed-by: Anita Kuno <akuno@lavabit.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 164c2a7eb39eb123c052f25506866bce04587479
+Author: Anita Kuno <akuno@lavabit.com>
+Date:   Sun Mar 17 15:32:40 2013 -0400
+
+    Added PyRSS2Gen and python-swiftclient to pip-requires to satisfy the openstackwatch dependency.
+    
+    Change-Id: I2780ff3f1392a049342895cd3b07edd5d8e5bff7
+    Reviewed-on: https://review.openstack.org/24605
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 69dd377ae99edb8173a958659c409202bc7aec69
+Author: James E. Blair <jeblair@openstack.org>
+Date:   Wed Mar 20 16:59:35 2013 -0700
+
+    Supress duplicate setup_requires in mirror.
+    
+    Use an unordered set to ensure that when we add setup_requires
+    to the list of frozen requirements we don't have duplicates.
+    
+    Change-Id: I1f11cfe52b6732b5d7dc24b687b6f9f7ba3ffb99
+    Reviewed-on: https://review.openstack.org/24949
+    Reviewed-by: Khai Do <zaro0508@gmail.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 21431707501e9e74b0e50004b9e5dad2fc7ae647
+Author: James E. Blair <jeblair@openstack.org>
+Date:   Tue Mar 19 17:56:36 2013 -0700
+
+    Handle setup_requires in mirror script.
+    
+    Change-Id: Ice9ccad1dc28ecd5a44430839a374632f9912514
+    Reviewed-on: https://review.openstack.org/24862
+    Reviewed-by: Anita Kuno <akuno@lavabit.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 6de5068c764b8396214ae69c66fea65be29b7137
+Author: James E. Blair <jeblair@openstack.org>
+Date:   Wed Mar 6 16:31:00 2013 -0800
+
+    Support building multiple pypi mirrors.
+    
+    Use atomic renames when creating the mirror to avoid races.
+    
+    Change-Id: Id3a75832d2a71a71253470ffae7499a3946e8ee6
+    Reviewed-on: https://review.openstack.org/23771
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 5ca24fe433311a2b3b46de27c6d0cc9a72206457
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Sun Mar 10 14:06:12 2013 +0000
+
+    Cosmetic fixes for mirror script stderr.
+    
+    * jeepyb/cmd/run_mirror.py: Add newlines to a couple write calls
+    which were lacking, and also in places where an extra blank line
+    could provide useful visual separation.
+    
+    Change-Id: I54e38512717864f02bdc21a577498c0422bf5251
+    Reviewed-on: https://review.openstack.org/24015
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 22e1c692c1b4ebd458e3f69043fd57d0981d5209
+Author: James E. Blair <jeblair@openstack.org>
+Date:   Thu Mar 14 11:40:37 2013 -0700
+
+    Fix bug when creating new projects.
+    
+    Change-Id: I6a027a1bee4cf4bda523b3904d527f43a242689a
+    Reviewed-on: https://review.openstack.org/24464
+    Reviewed-by: Anita Kuno <akuno@lavabit.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 1943be9abdcafc280f2ec928de8d226f7ad9c678
+Author: Anita Kuno <akuno@lavabit.com>
+Date:   Wed Mar 13 13:46:36 2013 -0400
+
+    Changed .gitignore to ignore all .egg files, not just .egg-info files.
+    
+    Change-Id: I6b0ca4813af65f6c76da5997121cb2c4d964005d
+    Reviewed-on: https://review.openstack.org/24346
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 96a159da64eb3b811f904fc3a4ef29e77dcf34ea
+Author: Anita Kuno <akuno@lavabit.com>
+Date:   Tue Mar 12 14:14:38 2013 -0400
+
+    Changed parsing for config file to accept configurable location of openstackwatch.ini file.
+    
+    Change-Id: I93771b0abeff2908a586132c58c20fa21a62855b
+    Reviewed-on: https://review.openstack.org/24225
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Elizabeth Krumbach <lyz@princessleia.com>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 863a67146318739e772a88193690a2df10fd095c
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Mar 3 09:52:36 2013 -0500
+
+    Add support for creating a default acl file.
+    
+    If a project wants to follow the core/drivers pattern, create an
+    acl file for it if it doesn't have one. Additionally, allow for
+    the specification of an additional acl file to append to the end
+    of the generated acl file to allow for specialization on top of the
+    general case.
+    
+    Change-Id: I4d5b905befdb8d742dd1aaa148cf4ec1b3355b01
+    Reviewed-on: https://review.openstack.org/23372
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit c68575f9cd7d59cfd707bf39a1623900b22d1891
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Fri Mar 8 23:47:01 2013 +0000
+
+    Don't reuse pip builddir when mirroring.
+    
+    * jeepyb/cmd/run_mirror.py: Instead of reusing the download cache
+    directory as the build directory, let it create a fresh temporary
+    builddir for each pip install command. This will significantly
+    increase run times, but if pip install finds an unpacked package
+    already in its builddir which meets the requirements specified it
+    will get reused even if a newer version is available on pypi.
+    
+    Change-Id: I5f7f988315bef5985cc18ed8ba0f18ea2f4b2921
+    Reviewed-on: https://review.openstack.org/23971
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit bd596ce8ed5c6b907c89dd08c2933b5bd6fc7b0a
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Fri Mar 8 13:21:24 2013 -0800
+
+    Stop using pypi mirrors to build our mirror.
+    
+    Pypi mirrors tend to be out of date which is annoying when we need to
+    updated our mirror to include the latest version of a particular package
+    (eg one of the OpenStack python clients). The pip -M option won't always
+    see the latest version when talking to the pypi mirrors. To avoid this
+    problem don't use pip -M and talk to pypi directly.
+    
+    Change-Id: I6ae8950eba005c020b7d3aae59661abc039a2b40
+    Reviewed-on: https://review.openstack.org/23959
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Anita Kuno <akuno@lavabit.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit ee1b770b35700b393dddbf3af0fe23ff4f3def5d
+Author: James E. Blair <corvus@inaugust.com>
+Date:   Thu Mar 7 08:13:19 2013 -0800
+
+    Change acl_config to acl-config like the docs say.
+    
+    Change-Id: I8d81fae808d52ab347304949b9eb580cc5557fdb
+    Reviewed-on: https://review.openstack.org/23824
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 416cad41c8043d4018d415a9865940bd9f98bdef
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Tue Mar 5 13:14:28 2013 -0800
+
+    Make run_mirror more verbose about failures.
+    
+    When run_mirror fails to run pip install or downloads print the project
+    and branch that failed to make debugging problems easier.
+    
+    Change-Id: I2fec996005010de0e1c6d72b026e09a1e1143acb
+    Reviewed-on: https://review.openstack.org/23614
+    Reviewed-by: Anita Kuno <akuno@lavabit.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit dd575928228aeb92075911913258971b225c9800
+Author: Anita Kuno <akuno@lavabit.com>
+Date:   Tue Mar 5 09:30:59 2013 -0500
+
+    Added openstackwatch to the list of entry_points in setup.py.
+    
+    Change-Id: Ia72deaf0e5024f132094ffc2f485b0b359be3e7a
+    Reviewed-on: https://review.openstack.org/23555
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit d85ad3e3bc01a8c556cc2380f5526700f641ab62
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Tue Mar 5 00:58:13 2013 +0000
+
+    Prune remote branches when mirroring.
+    
+    * jeepyb/cmd/run_mirror.py: Use git fetch -p origin so deleted
+    remote branches will be removed locally before processing. Also deal
+    with pip freeze warnings which might include "==" by skipping lines
+    containing spaces when looking for package versions to download, and
+    make sure to match "-e" lines as well.
+    
+    Change-Id: I646ce937b59da211d03ae2d3b09c9aabd10cb91e
+    Reviewed-on: https://review.openstack.org/23494
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 933e551cbf9a339f43a4b5c84bde6dd20d9e5bbe
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Mon Mar 4 21:45:00 2013 +0000
+
+    Mirror script output parsing fix.
+    
+    * jeepyb/cmd/run_mirror.py: Output parsing for pip install
+    --no-install was looking for "Successfully installed" when it should
+    have been looking for "Successfully downloaded" instead. This fixes.
+    
+    Change-Id: Iaee9e95f8cb035a2c1a398cedb62ab3738c5ef35
+    Reviewed-on: https://review.openstack.org/23469
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit ac137ca35b4724989b1dfa506011e03fe6a5f931
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Mon Mar 4 02:27:32 2013 +0000
+
+    Implement new pypi mirroring algorithm.
+    
+    * jeepyb/cmd/run_mirror.py: Overhauled script, implementing new
+    algorithm to catch transitive dependencies. Additional output is
+    provided to indicate what's being cached for each project, and a
+    debug level has been added as well. Some previously unused codepaths
+    were removed for improved simplicity and clarity.
+    
+    Change-Id: Id4ec4c5eb4420f6db972fcd5b6bbb1a5047e21d2
+    Reviewed-on: https://review.openstack.org/23397
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 25bbcf4b3ac12e777a1ab91cbec97594350ebdd2
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Mar 3 09:13:37 2013 -0500
+
+    Support default acl_dir for acl_files.
+    
+    Just about all of the files are of the form $acl_dir/$project_name. That's
+    a whole load of repitition, when we can provide a sensible overridable default.
+    
+    Change-Id: Ib17e21851978972205bc3342347a72cf9b078c6c
+    Reviewed-on: https://review.openstack.org/23369
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit bf3a97b6d7e394c5fba1d3ec231dc82bd4847a29
+Author: Anita Kuno <akuno@lavabit.com>
+Date:   Thu Feb 28 10:09:46 2013 -0500
+
+    Adding openstackwatch rss functionality to be available to gerrit.
+    
+    Adding openstackwatch.py to the cmd directory.
+    Creating directory jeepyb/config for the openstackwatch.ini file.
+    Adding the openstackwatch.ini-sample file.
+    
+    Fixes bug #1136069
+    
+    Change-Id: Icc5d41d10d893e0b7ed048d99cfcb9c5e7f91f30
+    Reviewed-on: https://review.openstack.org/23176
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit e903d5988c2329f2dfe1bad6edd4a8ace7084dee
+Author: James E. Blair <jeblair@openstack.org>
+Date:   Fri Jan 11 14:31:26 2013 -0800
+
+    Be more selective about openids in bug script.
+    
+    Look for login.launchpad.net openids for the openid->username
+    mapping.  Some users have other openids that won't work.
+    
+    Change-Id: I6201d33e553120548e9d910830dfe23072b65b63
+    Reviewed-on: https://review.openstack.org/19502
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 4d25a7c666f411aaa6f0402371c1235ef2ad8ab6
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Fri Jan 11 22:00:58 2013 +0000
+
+    Check for valid assignee before reassigning.
+    
+    * jeepyb/cmd/update_bug.py(set_in_progress): Check that the value
+    returned by getByOpenIDIdentifier is usable before trying to
+    reassign the bug.
+    
+    Change-Id: Idbc03fdc0663e83d96292171bd93f5e9f4fe1adb
+    Reviewed-on: https://review.openstack.org/19497
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Dolph Mathews <dolph.mathews@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 4e5ca4c743d9a851e0c8ae9cc18ff343a8d515a3
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Fri Dec 21 17:18:34 2012 +0000
+
+    Fix expiration command in expire_old_reviews.
+    
+    * jeepyb/cmd/expire_old_reviews.py(expire_patch_set): The command
+    format string passed to Gerrit's SSH CLI was missing a space between
+    the options. Regression introduced when or before this script was
+    pulled out of opestack-ci-puppet, but fixed now.
+    
+    Change-Id: I96ff9527d635555e1ee2c4110544c266a745f42f
+    Reviewed-on: https://review.openstack.org/18541
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 4f34b77b9706c6eff271b14b72ab6f0a98394063
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Jan 3 08:26:27 2013 -0800
+
+    Add support for requirements.txt.
+    
+    Change-Id: I80874548a5e1391055150752f18ee9f26c8012ed
+    Reviewed-on: https://review.openstack.org/18891
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit a475760a32f5f905d5f0721bf94044b3f8ed3030
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Thu Jan 3 13:46:13 2013 +0000
+
+    Correct .gitreview generation formatting.
+    
+    * jeepyb/cmd/manage_projects.py(main): The .gitreview file contents
+    are written from a multiline format string, and thus the indentation
+    of subsequent lines must reflect what is expected in the file.
+    
+    Change-Id: I904de93a6494dd0aece0e62c3fe2f97d872fe3b6
+    Reviewed-on: https://review.openstack.org/18870
+    Reviewed-by: Ionut Artarisi <iartarisi@suse.cz>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit a4b4465f6946e0f7e0f3064fae1a6d7d4bbb6c2a
+Author: Sean Dague <sdague@linux.vnet.ibm.com>
+Date:   Wed Dec 12 13:11:12 2012 -0500
+
+    update blueprint linking regex
+    
+    make changes to the blueprint regex so that word boundaries
+    are needed so that blueprints doesn't get picked up as the 's'
+    blueprint.
+    
+    Also change the regex so that blueprint at the end of a sentence
+    doesn't pick up the next word in the next paragraph (i.e. the blueprint
+    stanza must all be on the same line)
+    
+    Change-Id: Ic96d784ccfb16565ac61b102e018e663117c638a
+    Reviewed-on: https://review.openstack.org/17957
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit caa847dcdf1d9b3824a08d2ef65ea422f77c0b2e
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Dec 16 10:40:53 2012 -0800
+
+    Updated .gitreview location
+    
+    Change-Id: I68ebbc83e9df5ef42b1844f473333b9d5f17f496
+    Reviewed-on: https://review.openstack.org/18183
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit eb0d69812a908cc855b26e984acdb04c03da61bd
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Tue Dec 4 17:26:28 2012 +0000
+
+    Remove bug assignee dependency on LP E-mail.
+    
+    * jeepyb/cmd/update_bug.py(set_in_progress): Instead of querying
+    Launchpad for E-mail addresses matching the change author, look in
+    Gerrit to find an OpenID and look the user up with the
+    getByOpenIDIdentifier call.
+    
+    Change-Id: Ifb457237cd02f5f3db4e95f26c87c08cf698de9a
+    Reviewed-on: https://review.openstack.org/17488
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit da402e568e4a6c9234bb7749274afc639493057f
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Tue Dec 4 15:23:43 2012 -0800
+
+    In manage_projects find group uuids sanely.
+    
+    manage_projects should use a direct connection to mysql to more safely
+    find group uuids. Add a gerritdb module to jeepyb to handle some of the
+    mysql connection boilerplate, and use that module to talk to mysql
+    directly.
+    
+    Change-Id: If05a60cd7f5e8f6978226c6785792328388469f2
+    Reviewed-on: https://review.openstack.org/17516
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 6e13f9de2344f6ffd9f6ae0044be4a39583f0c78
+Author: annegentle <anne@openstack.org>
+Date:   Tue Dec 4 13:47:37 2012 -0600
+
+    Adds openstack/api-site mapping to openstack-api-site Launchpad project.
+    
+    Adds openstack/api-site to the list of "gets released" projects.
+    
+    Fix bug 1086528
+    
+    Change-Id: I8a6cfbbbb0f77b0f74be74ad647682bbbca89c20
+    Reviewed-on: https://review.openstack.org/17502
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit e0d18ce7aa17abd63ac2f1983fd177c61b856b99
+Author: Thierry Carrez <thierry@openstack.org>
+Date:   Mon Dec 3 12:11:09 2012 +0100
+
+    Add oslo and jeepyb to git/lp project map
+    
+    Adding two entries to the git->lp project map in update_bug.py:
+    openstack/oslo-incubator -> oslo
+    openstack-ci/jeepyb -> openstack-ci
+    
+    Fixes bug 1085864.
+    
+    Change-Id: I9fa2631c363db72a73306ac3bdb1aed8a3beb15d
+    Reviewed-on: https://review.openstack.org/17342
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit e0c725bd58ee6f0da156b27eb450297cf2f3a5aa
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Fri Nov 30 15:15:55 2012 -0800
+
+    Fetch all refs/heads from upstream and push them.
+    
+    Previously we were only fetching and pushing the default upstream branch
+    to the new Gerrit repos. Explicitly fetch all the upstream refs/heads/*
+    and push them to the new Gerrit repo's refs/heads/*.
+    
+    Change-Id: Icd94453c640961e8d759073fb2a2f51163d875e9
+    Reviewed-on: https://review.openstack.org/17262
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Paul Belanger <paul.belanger@polybeacon.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 0f2a440ba04df21f5a67aa27a08748272f8f50af
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Sun Dec 2 10:11:57 2012 -0800
+
+    Set Administrators as new groups' owner.
+    
+    New groups created by manage_projects should be owned by the
+    Administrators group.
+    
+    Change-Id: I8d5eb876c99db0fd1bc7043a1d5e076b69c3d9cf
+    Reviewed-on: https://review.openstack.org/17320
+    Reviewed-by: Paul Belanger <paul.belanger@polybeacon.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit d7b5487680d3f962c5ace7d4f0dab8f3e83162e5
+Author: James E. Blair <corvus@inaugust.com>
+Date:   Fri Nov 30 16:22:57 2012 -0800
+
+    Use octal to get the expected mode on git wrapper.
+    
+    Change-Id: Id1ca7b08f93e24ec80acbef4fc875e94c8a64eee
+    Reviewed-on: https://review.openstack.org/17270
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Paul Belanger <paul.belanger@polybeacon.com>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 8aae7baf450ec739a41fb083cbad4edd90d94215
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Wed Nov 28 09:47:59 2012 -0800
+
+    Let's just file bugs at openstack-ci for now.
+
+commit 674a648fcb2d9df693f64b3e582d9795e140ad5b
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Wed Nov 28 09:39:39 2012 -0800
+
+    Renamed to jeepyb.
+
+commit 7f2b55cbe0a89e33c2acb229e7c26d1240725713
+Author: James E. Blair <corvus@inaugust.com>
+Date:   Wed Nov 28 07:54:06 2012 -0800
+
+    Remove blueprint diversion to openstack-ci.
+    
+    The blueprint script used openstack-ci instead of the actual project
+    for any non-openstack/ project. This is counter-productive now that
+    we have more than one org in gerrit.
+
+commit bb1e6523131ec056da7e644f35ff2daf1afb80e2
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 22 11:07:34 2012 -0800
+
+    Cleaned up pep8 and pyflakes on trivial_rebase.
+
+commit a2b0de65dd3f9936df8df12901c55f6c90abb8c8
+Author: Jeremy Stanley <fungi@yuggoth.org>
+Date:   Thu Nov 22 10:31:13 2012 -0800
+
+    Added trivial_rebase script.
+
+commit a140e1a13e5652119cfc47e1d031171b9f9d9b85
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 22 10:00:22 2012 -0800
+
+    Add process_cache from openstack-ci-puppet.
+
+commit da3bada5340bd3f3fdd2538b3ceddef95ac23ae4
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 22 09:38:22 2012 -0800
+
+    Add gerritx project infrastructure.
+    
+    Add all of the support files needed for this to be a project.
+    Also, fix pep8 and pyflakes errors.
+
+commit 7cd57c29a66cf8ad5dcb2fa644f26bd5b1a4f10d
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 22 08:52:42 2012 -0800
+
+    Create gerritx/cmd dir and move things to it.
+
+commit 911b620ab131dd17a44177aade027ce2103d7a43
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 22 08:50:18 2012 -0800
+
+    Reorg for gerritx split.
+
+commit b47aa506e6b78935036dda8f5466e791a0a8ddb4
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Thu Nov 15 14:25:13 2012 -0800
+
+    Change diff command used by manage_projects.py.
+    
+    manage_projects.py was running `git diff-index --quiet HEAD --`
+    previously to check if project.config had changed. This apparently
+    returns an exit code of 1 in some cases where a diff was not expected.
+    Switch to using `git diff --quiet HEAD` to check if any differences are
+    found. This appears to be more reliable in some manual testing.
+    
+    Change-Id: I253423e41f80d71a5f2389bfc421e799f00f6fd9
+    Reviewed-on: https://review.openstack.org/16236
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Paul Belanger <paul.belanger@polybeacon.com>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 5a22b1995c96f3a4cffa6c93bd0499f343945571
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Thu Oct 25 14:55:32 2012 -0700
+
+    Add security impact email notifications.
+    
+    Fixes bug #1070577
+    
+    Make the notify_impact script generic so that it can handle different
+    types of notifications. Then add a SecurityImpact notification.
+    
+    Change-Id: Id4bbf7db29e36dde783328e31685079e79d0b1e9
+    Reviewed-on: https://review.openstack.org/14856
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 8ea78ac05e2992057e6099eb197f111dfe6a4864
+Author: Thierry Carrez <thierry@openstack.org>
+Date:   Wed Nov 14 15:47:57 2012 +0100
+
+    Do not reopen closed bugs due to bug mentions
+    
+    Do not let update_bug.py reopen a FixCommitted or FixReleased bug just
+    because the bug number was mentioned in a commit message. In most cases
+    that mention is just a simple reference to a closed bug. In the rare
+    cases the committer actually wanted to reopen a closed bug, he should
+    rather have open a specific bug about it anyway.
+    
+    Fixes bug 1078745
+    
+    Change-Id: I513e6fc73d6bab02de21628e55a5d28189834632
+    Reviewed-on: https://review.openstack.org/16080
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 5003e167409436358871753cf20c8d81096dabb8
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 15 11:12:53 2012 -0800
+
+    Push everything - not just master.
+    
+    Change-Id: If10bd25e71f321a7b3ea1cbbe42ab5ec764d62b0
+    Reviewed-on: https://review.openstack.org/16215
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit bfef7006b97fee22535d2f63db41ee9bec038065
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Nov 14 09:11:09 2012 -0800
+
+    Fix fetch remotes script post projects.yaml update
+    
+    The format of the projects.yaml file has been updated and
+    fetch_remotes.py could not parse it. Correct this by making
+    fetch_remotes.py aware of the format changes.
+    
+    Change-Id: Ic0680d02c0e9ce31aae805ac2495957f106acb0a
+    Reviewed-on: https://review.openstack.org/16098
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Paul Belanger <paul.belanger@polybeacon.com>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 5c9670f0e93e3f7e50e30c4e7fa9dd8506451324
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Nov 14 17:48:55 2012 -0800
+
+    Fix manage_projects.py group regex and str format.
+    
+    manage_projects.py was unable to find groups in the ACL files because it
+    was looking for lines that began with tabs but we normalized to lines
+    beginning with 8 spaces. Also the git clone command string formatting
+    was not correct.
+    
+    Change-Id: Ib65d7ad0ca3861d61d7557be72a7c6d6d6e21265
+    Reviewed-on: https://review.openstack.org/16144
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Tested-by: Jenkins
+
+commit 808b513b1f38c61e6bc101844468e371bfaf9cf3
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Nov 14 15:52:02 2012 -0800
+
+    Print git output when git push fails.
+    
+    In the manage_projects.py script print the captured git output when git
+    push fails.
+    
+    Change-Id: I77d8b7e926b6b23b4727a1856a79146daa9d6381
+    Reviewed-on: https://review.openstack.org/16137
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 9eac88132d2e7dfc22df781f38febdeeec949f6a
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Nov 14 09:21:39 2012 -0800
+
+    Ignore projects whose org we do not control.
+    
+    In the manage_projects.py script ignore any project whose Github org we
+    do not control. Do not create a Github project, gerrit project, or
+    manage any ACLs.
+    
+    Change-Id: I0d4595c49ffa7762976a433bf9b16fc6fcaf73e5
+    Reviewed-on: https://review.openstack.org/16102
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Jeremy Stanley <fungi@yuggoth.org>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Tested-by: Jenkins
+
+commit 33c46d411df584f88db222c422d890ccd404a619
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Nov 14 08:53:37 2012 -0800
+
+    Make manage project commit author consistent.
+    
+    Set Openstack Project Creator as the commit author for all commits in
+    the manage_projects.py script.
+    
+    Change-Id: I994ee0a43e783415d0976143509497a71187b9ab
+    Reviewed-on: https://review.openstack.org/16094
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 16390e23d226a791e0f0b226716a2e6dd619d405
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Nov 4 22:20:36 2012 +0100
+
+    Attempt to more fully manage project creation.
+    
+    Manage project creation via yaml files. Also,
+    Modify the manage_projects scripts to configure Gerrit project ACLs.
+    This change expects the project yaml to exist. The change will clone the
+    project for the localhost Gerrit install. It will then checkout the
+    meta/config ref, copy the ACL config file into the repo, commit, and
+    push to the origin. The ACL config location should be specified in the
+    projects.yaml file with the acl_config key.
+    
+    For this to work the ACLs will need to be copied by Puppet from Puppet
+    to the Gerrit host. Add the file resource to do this as well.
+    
+    Change-Id: I15a1ec13b381dce3c115c01c21f404ab79e72cc4
+    Reviewed-on: https://review.openstack.org/15352
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 04d640ed43608343cae31e45d8c1e67b6f5b6c60
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Nov 8 11:51:01 2012 +0100
+
+    Reverse the close-pull logic.
+    
+    We have a huge list of projects with all of them listing "close-pull" as an
+    option. Turns out we want to close pull requests for all of them - so instead,
+    let's only indicate 'has-pull-requests' if there is ever a project for whom
+    we do not want to close pull requests.
+    
+    Change-Id: I4db31d324b7f260ea24f538ac5f5fc8e1feca75d
+    Reviewed-on: https://review.openstack.org/15626
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Paul Belanger <paul.belanger@polybeacon.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit 9aed5ba38bfa1f97d981e6fd4fb5941f66865bc4
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Thu Nov 1 16:43:43 2012 -0700
+
+    Add change number to DocImpact email subject.
+    
+    It is hard to filter the DocImpact emails using the subject as there is
+    little change specific information added to the subject. Correct this by
+    adding the change number to the subject line.
+    
+    Change-Id: I8f852184090a517852d57a2f0db34421f8a7ddb5
+    Reviewed-on: https://review.openstack.org/15246
+    Reviewed-by: Anne Gentle <anne@openstack.org>
+    Reviewed-by: Tom Fifield
+    Reviewed-by: James E. Blair <corvus@inaugust.com>
+    Reviewed-by: Jeremy Stanley <fungi@yuggoth.org>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 101d17e92f8d0995fef71c24427aba2d81218a60
+Author: Thierry Carrez <thierry@openstack.org>
+Date:   Fri Sep 28 11:54:38 2012 +0200
+
+    Add Tempest to directly-released projects
+    
+    Add openstack/tempest to the list of projects where commits directly
+    trigger a Launchpad FixReleased status change.
+    
+    Fixes bug 1058007
+    
+    Change-Id: Id5f5033e37d92efc5e790722cde88c040541f72d
+    Reviewed-on: https://review.openstack.org/13818
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Approved: Clark Boylan <clark.boylan@gmail.com>
+    Reviewed-by: Clark Boylan <clark.boylan@gmail.com>
+    Tested-by: Jenkins
+
+commit 29c6965bb20a0fd7dc2a1a810192cef8d7427226
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Thu Aug 16 14:10:45 2012 -0700
+
+    Use devel version of LP API.
+    
+    For consistency use development version of the LP API in the scripts
+    that query the Launchpad API.
+    
+    Change-Id: I39b145684563738dd5615d863720ec364c4987c3
+    Reviewed-on: https://review.openstack.org/11508
+    Reviewed-by: linuxjedi <andrew@linuxjedi.co.uk>
+    Approved: Monty Taylor <mordred@inaugust.com>
+    Reviewed-by: Monty Taylor <mordred@inaugust.com>
+    Tested-by: Jenkins
+
+commit c0df8b02fcafb920f55a6def3c24469c275cc2f2
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Jul 29 12:54:27 2012 -0500
+
+    Add support for initial project creation.
+    
+    If replicate_local is set, this will ensure that /var/lib/git is created,
+    and that projects listed in the projects.config have repos there.
+    
+    Additionally, it creates a new config file, projects.config which is a
+    yaml file listing all of the projects and various operational semantics about
+    them, such as whether or not they should have pull requests closed and whether
+    or not they track any remotes. This replaces remotes.config and github.config.
+    
+    Moving forward, there is no reason to not have this script be able to
+    do github api calls to create the github repo if it's not there, set the
+    github project description, gerrit api calls to create the project in gerrit,
+    and initial project permissions templates.
+    
+    Change-Id: I1ad803b0aa5f7386206d0c3f4cd858017242fe64
+
+commit 6c9634c502ac0dc10bc19177d51c189f4ce9b2b7
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Jul 28 11:27:47 2012 -0500
+
+    Broke launchpad user sync into its own class.
+    
+    Additionally, the file installation of the scripts wasn't working,
+    so the sync script wasn't actually getting installed. This moves
+    the underlying scripts to be installed by the gerrit module,
+    because it owns /usr/local/gerrit/scripts, and then manages the
+    gerrit hooks which call those scripts in the openstack_project
+    class, since that's where the config choice to enable those
+    functions really should live.
+    
+    Change-Id: I54fb9edd9fb0c634d8d9de4e57f9ddad6af63a99
+
+commit 777524bba0ba48c228a2782d73dfe8e27017a6cb
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Jul 23 11:34:36 2012 -0500
+
+    Move OpenStack branding and launchpad integration.
+    
+    Launchpad integration and the OpenStack branding files are really
+    more about the OpenStack specific install of Gerrit than they are
+    about any installation of gerrit. Both of these are moved to the
+    openstack_project module.
+    
+    Change-Id: I8b281aa5cb751a8023c2101c45146a3aca5f90f3
+
+commit b8c54f46b6b613f094b578d2d559b8159b7dbcca
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Jul 23 10:21:29 2012 -0500
+
+    Split github into its own module.
+    
+    TODO: Add another script that sets the project description. Add the project
+    description to the config hash.
+    
+    Change-Id: If4584b2a1e55e6eb912e1f557e31de216d49a516
+
+commit 5606d2056f68c13daf65d2e052a09c2339602a4d
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Jul 11 16:15:45 2012 -0700
+
+    Update DocImpact notifier with new dest addr.
+    
+    The openstack documentation team has a new mailing list in part to
+    accomodate the DocImpact notifier. Update the destination address in
+    the notify_doc_impact script to send mail to
+    openstack-docs@lists.openstack.org.
+    
+    Change-Id: I041194298a18e5f710c6e3bd7221dee2099733e8
+
+commit 3879ce527d31801b5f013c10a4bd99120f7f2c27
+Author: Thierry Carrez <thierry@openstack.org>
+Date:   Wed Jul 4 12:43:27 2012 +0200
+
+    No longer mark bug fixes in parent project
+    
+    Stop marking python-PROJECT client bug fixes as fixed in PROJECT, by
+    removing the exception mapping. This is due to client projects now
+    having their own Launchpad project.
+    
+    Change-Id: I56471c9efff143f79421729880626c5e78c6200b
+
+commit 34a9626af35663de9f0b8eeebe39819ab92f969d
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Tue Jun 26 15:44:01 2012 -0700
+
+    Add doc impact notifier to Gerrit.
+    
+    Add a doc impact notifier to Gerrit that will email the documentation
+    team whenever changes with "DocImpact" in their commit messages are
+    pushed to Gerrit.
+    
+    Change-Id: Ibbb4ac740efa60ef44fd4753ad8459437d98e592
+
+commit 692ca398dfbfcfe974caba2d2896030daa26476c
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Jun 13 16:58:40 2012 -0700
+
+    Try again to fix the close request script.
+    
+    Fixes bug #1012310
+    
+    Seems github won't let you request an issue if issues are disabled
+    on a repo. So attempt to get around this by creating an Issue object
+    derived from a pull requests URL. Then comment on this issue object.
+    
+    Change-Id: If64640ebc1d86d86360e5657f4245541620fcebb
+
+commit 99999ffd32abd1f2ffbcf84641e5656f45ee7a78
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Jun 13 14:48:28 2012 -0700
+
+    Fix the close pull requests script.
+    
+    Fixes bug #1012310
+    
+    Need to use the .login property on orgs instead of the .name property.
+    
+    Change-Id: I603f9172966fc99c8f49d592ce7a9009084840cd
+
+commit 4d5e6545a35491d60dd81fe258814f605b83c2d4
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Jun 13 12:00:10 2012 -0700
+
+    Fix the close pull requests script.
+    
+    Fixes bug #1012310
+    
+    Old version of script didn't appear able to find repos as part of
+    organizations. Update script to search for the repos under orgs.
+    
+    Change-Id: I04696152bc3b7ecb63a5704768c27ff796d3ffc9
+
+commit cb3b4769a7c79ed62e2c87dc5e21ae337bfcf03e
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Wed Jun 13 10:10:30 2012 -0700
+
+    Update Github request closer script to v3 of API.
+    
+    Fixes bug #1012310
+    
+    Github disabled v1 and v2 of their API permanently, forcing us to
+    update the script that closes Github pull requests to v3 of the API.
+    Update the script using the PyGithub lib.
+    
+    Change-Id: I90c9faacdb7a72a470b8ad6aaea674edd9b8329e
+
+commit 144a72213b4002bbc2ccef0c810f8beb7fca0c67
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Jun 10 15:33:11 2012 -0400
+
+    Add gerrit to the openstack-ci bug projects.
+    
+    Change-Id: I71649621123d0dfa4de3e4445d3eb5cdb7ceac84
+
+commit cc4222ef979dd9c9a6c74a7de7fc49580554a471
+Merge: 3f9a371 73acb4b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun May 27 16:17:34 2012 +0000
+
+    Merge "Revert "Decode key returned from db into unicode.""
+
+commit 73acb4b723828351aad7517887bd493b8e28487a
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun May 27 16:16:55 2012 +0000
+
+    Revert "Decode key returned from db into unicode."
+    
+    This reverts commit 9e63f0b303951da12dd4d96e9842b6c191763522
+
+commit 3f9a371072daeb33244d3ea72154d9d2a7eb2156
+Merge: 7d5eedf f640791
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun May 27 15:41:36 2012 +0000
+
+    Merge "Decode key returned from db into unicode."
+
+commit f640791bba46fa1d39370b9a4e86cc0941627c95
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat May 26 12:00:29 2012 -0400
+
+    Decode key returned from db into unicode.
+    
+    We get this error in cron:
+    
+    /usr/local/gerrit/scripts/update_gerrit_users.py:339: UnicodeWarning:
+    Unicode equal comparison failed to convert both arguments to Unicode -
+    interpreting them as being unequal
+      if key.strip() not in db_keys:
+    
+    The stuff from Launchpad comes back as unicode, but the stuff from MySQL
+    comes back as string, which makes the in comparison wonky.
+    
+    Perhaps we should upgrade the database to unicode properly as well...
+    
+    Change-Id: I5ef66763429ca490d799ebb5b030abdc4d5de67e
+
+commit 7d5eedf66442ad02fccd86b32e08252cf103881c
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat May 26 10:15:27 2012 -0400
+
+    Fix two typos in the remote fetch script.
+    
+    The default values for locations were wrong.
+    The config file name is remotes.config.
+    The git repos are in /home/gerrit2/review_site/git.
+    
+    Change-Id: Ie887b2424e3ee50f802573e147cd4751e390d3e8
+
+commit 067bd7a622e5c5e2d49affcb209bd05892d6d590
+Merge: 7b961cb 16a6c46
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri May 25 16:51:23 2012 +0000
+
+    Merge changes I76ad015e,Iabe17164
+    
+    * changes:
+      Add pyflakes to Jekins slaves
+      Make all Python pass pyflakes
+
+commit 16a6c4613955cecaec1f239013a406e69393bdbc
+Author: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Date:   Fri May 25 14:26:41 2012 +0100
+
+    Make all Python pass pyflakes
+    
+    This found one bug, but will also help us with Jenkins testing of these scripts
+    
+    Change-Id: Iabe171645c06f769957db7cf0def1d10a0e47988
+
+commit 7b961cb7dab0b997b031c726a4d73e20a7d39ba1
+Author: Thierry Carrez <thierry@openstack.org>
+Date:   Wed May 23 16:48:26 2012 +0200
+
+    Update series bugtasks status on stable/* changes
+    
+    Makes update_bug.py Gerrit/LP hook support setting series-specific
+    bug tasks to FixCommitted status on change-merged to stable/*
+    branches. Fixes bug 921588.
+    
+    Also sets "In Progress" on patchset-created to stable/*.
+    
+    Change-Id: I5e3b7c8d249755a71f3425dd33151764be2a1485
+
+commit 617b8d796912b5f2884c7cf2c66a02cc15bd4295
+Author: Thierry Carrez <thierry@openstack.org>
+Date:   Wed May 23 14:18:43 2012 +0200
+
+    Fix typo causing update_bug hook failure
+    
+    A typo in update_bug.py recent changes was causing hook
+    failure. Fixes bug 1003377.
+    
+    Change-Id: Ie86a8431b19cbf1777ec3ca6abaf0df51f7d51f7
+
+commit 6241b032b38c9cbe3dfdb3bf6a9568dbfcbc504c
+Merge: 4f19b31 962d8ea
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue May 22 15:51:44 2012 +0000
+
+    Merge "Skip fix committed for some projects."
+
+commit 4f19b310eff43c1626cf3f1f52a84b3e9ccb98f6
+Merge: c438159 fc29e16
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon May 21 16:47:12 2012 +0000
+
+    Merge "Add SSH key syncing to user sync"
+
+commit c4381598bb2532a09e113e466fceaf295424113d
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat May 19 11:14:27 2012 -0400
+
+    Import pkg_resources before launchpadlib.
+    
+    Fixes bug 1001664. It's a hack, but it's not an evil hack.
+    
+    Change-Id: I6d09cdecc5cae64a21cefad81c75ed1c02c4801c
+
+commit 962d8eaf6e92cda10d825792a26c7ac41dde179b
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat May 19 10:04:01 2012 -0400
+
+    Skip fix committed for some projects.
+    
+    There are a set of projects which release directly from git,
+    so we can just set them directly to fix released.
+    
+    Fixes bug 943413.
+    
+    Change-Id: I0186b67efaa5eee7130ae9d5a677dfb2951a98e8
+
+commit fc29e16de5ff8e9c2e680eca328093ebd059cdd4
+Author: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Date:   Fri May 18 14:33:37 2012 +0100
+
+    Add SSH key syncing to user sync
+    
+    Previously the user update script only synced the SSH keys upon adding a user.
+    This will make it add new keys to gerrit on every run.
+    
+    Fixes bug #1001180
+    
+    Also added a lock file since it is sometimes taking longer than 15 minutes to
+    execute (especially now we are pulling SSH keys) and has jammed up StackForge.
+    
+    Change-Id: I28fd0f557568c20a07e724bcd3d9c789a62fff42
+
+commit 6a1789327d1c4808986aefd148d285bcec07f8ed
+Author: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Date:   Thu May 17 14:53:01 2012 +0100
+
+    Add parameters for scripts that talk to Gerrit
+    
+    Not all gerrit installations are configured the same.  This adds parameters
+    to the gerrit sync script and expire script so that it can work from the
+    command line and cron on all servers.
+    
+    Fixes bug #994201
+    
+    Change-Id: Iac37e18aaf7a10fb5594be233e33b000eabed336
+
+commit 4b733996b23cbbd19a261c6435ad86a8a545fec9
+Author: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Date:   Mon May 14 17:27:50 2012 +0100
+
+    Change expire messages
+    
+    From Jim: "I think the confusion may be coming from people who only see this
+    message via email. In that case, indicating that the button is available in the
+    web UI when visiting the change may be helpful."
+    
+    Done!
+    
+    Change-Id: I1125cfc5040b6351ef956527b90e71f4d33f30a0
+
+commit 5147a4307240bdb576ef7db3dca428dc1d3a12f9
+Author: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Date:   Mon May 14 16:12:18 2012 +0100
+
+    Add restore messages to gerrit auto-expire script
+    
+    Fixes bug #950497
+    
+    Change-Id: Ib7c1eb134d21883c6d02987cceb3823c59f90abe
+
+commit da9ef08eebe5f45ee53cb2a2ff8a12c338d72b36
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu May 10 13:12:31 2012 -0400
+
+    Adds support for tracking an upstream repos.
+    
+    Change-Id: I3c92c19cf2c2fd6a911fbdbf4aeeb66e53cf07e0
+
+commit de5f3f8e4ddf68802bedf2dbb3a98cd6fda743ed
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu May 3 13:11:53 2012 -0700
+
+    Add python-cinderclient support.
+    
+    Add python-cinderclient to pull-requests closing.,
+    Add python-cinderclient jenkins jobs.
+    Re-add cinder and python-openstackclient and python-glanceclient to jenkins.
+    
+    Change-Id: I415a0f6586f6c22036715513c38b5105ff319809
+
+commit 54a63909a5020a5893e8572ccb35bf4ef942bf50
+Author: David Shrewsbury <shrewsbury.dave@gmail.com>
+Date:   Thu May 3 09:27:14 2012 -0400
+
+    Compress database backups.
+    
+    Fixes bug 951600.
+    
+    The update_gerrit_users.py script creates a database backup
+    everytime it runs. This change compresses the backups as they
+    are being made and adds a cron job that will remove backups that
+    are 30 days or older. Current backups will need to be manually
+    compressed.
+    
+    Change-Id: Idb90d4af629892f1bc2e3e98f35f7de2ad58d4be
+
+commit f45f6ca143cb90280519a45f8988bec8ff45e2dd
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Tue May 1 17:11:48 2012 -0400
+
+    Move gerrit scripts to puppet.
+    
+    Take the things from openstack-ci/gerrit and move them directly
+    in to the puppet module. Install them using the model we're using
+    for the jenkins slave scripts.
+    
+    Change-Id: I420b2b895bd57d40232b2cdda437617373a82890
+
+commit 428a734f402160fcd9011cff17d2e2ae6d49b4ab
+Merge: e17aed9 854edda
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 5 20:17:44 2012 +0000
+
+    Merge "Revert "Move gerrit scripts into puppet module""
+
+commit 854edda0203cee0ecf23b084df5744fa72afc72c
+Author: James E. Blair <corvus@inaugust.com>
+Date:   Thu Apr 5 20:15:19 2012 +0000
+
+    Revert "Move gerrit scripts into puppet module"
+    
+    This reverts commit 428ec0b42dd0a33eba9752aa0e5f475044be5508
+
+commit e17aed92e29ee4392688eeb1a494bc3acea35254
+Author: James E. Blair <corvus@inaugust.com>
+Date:   Thu Apr 5 20:15:05 2012 +0000
+
+    Revert "fix NameError in update"
+    
+    This reverts commit 0989956b16450a0e7ea6d6673efda0dc16f363bf
+
+commit e0751e3660298d938a10e61848a9b459d5736e42
+Author: James E. Blair <corvus@inaugust.com>
+Date:   Thu Apr 5 11:19:58 2012 -0700
+
+    fix NameError in update
+    
+    Change-Id: I4b36374fec26d223adadb1f3d543852fcbd55539
+
+commit e7520f95737a9862288baafd5dd11977b8563deb
+Author: Andrew Hutchings <andrew@linuxjedi.co.uk>
+Date:   Thu Mar 29 14:56:04 2012 +0100
+
+    Move gerrit scripts into puppet module
+    
+    Moving the cron executed gerrit scripts into the puppet module.  This is for two reasons:
+    
+    1. Easier/faster to deploy/maintain than having a cron job for a separate git repo
+    2. We can add customisations required for review-dev and stackforge
+    
+    Change-Id: Iaf44e1d57d6ee6ea282575b1b48261f4ccbbaf3f
