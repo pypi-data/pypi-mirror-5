@@ -1,0 +1,596 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="jalon.content">
+
+<body>
+
+<metal:core fill-slot="main">
+
+<div id="portal-breadcrumbs"
+     tal:define="breadcrumbs python:[{'url' : '%s/plone_control_panel' % context.portal_url(), 'titre' : view.traductions_fil('configsite'), 'icone': 'icone_monespace'}, {'titre' : view.traductions_fil('intracursus'), 'icone': ''}]">
+    <span tal:repeat="crumb breadcrumbs"
+          tal:attributes="id string:breadcrumbs-${repeat/crumb/number}">
+        <tal:item tal:define="is_last repeat/crumb/end;
+                              icone crumb/icone | nothing">
+            <tal:block condition="not:is_last">
+                <a href="#"
+                   tal:attributes="href crumb/url; class string:texte_icone ${icone};"
+                   tal:content="crumb/titre"
+                   i18n:translate="">
+                    crumb
+                </a>
+                <span class="breadcrumbSeparator">&rsaquo;</span>
+            </tal:block>
+            <span id="breadcrumbs-current"
+                  tal:attributes="class string:texte_icone ${icone};"
+                  tal:condition="is_last"
+                  tal:content="crumb/titre"
+                  i18n:translate="">
+                    last crumb
+            </span>
+        </tal:item>
+    </span>
+</div>
+
+<h1 i18n:translate="">Gestion de la connexion à Intracursus</h1>
+<div id="connecteur_intracursus">
+    <div class="arrondi">
+        <h2 i18n:translate="">Connexteur à Intracursus</h2>
+        <div tal:define="message request/message | nothing"
+             tal:condition="message"
+             id="message">
+            <div tal:condition="python:view.test(message == '1', 1, 0)" class="success">
+                Modifications enregistrées.
+            </div>
+            <div tal:condition="python:view.test(message == '0', 1, 0)" class="failure">
+                Veuillez renseigner tous les champs.
+            </div>
+            <div tal:condition="python:view.test(message == '2', 1, 0)" class="failure">
+                Connexion invalide.
+            </div>
+            <div tal:condition="python:view.test(message == '3', 1, 0)" class="success">
+                Connexion valide.
+            </div>
+            <div tal:condition="python:view.test(message == '4', 1, 0)" class="success">
+                Liste des séance valide.
+            </div>
+            <div tal:condition="python:view.test(message == '5', 1, 0)" class="failure">
+                Liste des séance invalide.
+            </div>
+            <div tal:condition="python:view.test(message == '6', 1, 0)" class="failure">
+                Veuillez renseigner le champ code matière.
+            </div>
+            <div tal:condition="python:view.test(message == '7', 1, 0)" class="success">
+                Vous avez réussie a créer une séance.
+            </div>
+            <div tal:condition="python:view.test(message == '8', 1, 0)" class="failure">
+                Vous n'avez pas réussie a créer une séance
+            </div> 
+            <div tal:condition="python:view.test(message == '9', 1, 0)" class="success">
+                Vous avez réussie a créer une presence.
+            </div>
+            <div tal:condition="python:view.test(message == '10', 1, 0)" class="failure">
+                Vous n'avez pas réussie a créer une presence
+            </div> 
+            <div tal:condition="python:view.test(message == '11', 1, 0)" class="success">
+                Nombre de séance valide.
+            </div>
+            <div tal:condition="python:view.test(message == '12', 1, 0)" class="failure">
+                Nombre de séance invalide.
+            </div>
+
+            <div tal:condition="python:view.test(message == '13', 1, 0)" class="success">
+                Publication de séance valide.
+            </div>
+            <div tal:condition="python:view.test(message == '14', 1, 0)" class="failure">
+                Publication de séance invalide.
+            </div>
+
+            <div tal:condition="python:view.test(message == '17', 1, 0)" class="success">
+                Modification de séance valide.
+            </div>
+            <div tal:condition="python:view.test(message == '18', 1, 0)" class="failure">
+                Modification de séance invalide.
+            </div>
+            <br/>
+        </div>  
+        <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/saveVariablesIntracursus"
+              method="post"
+              tal:define="intracursus view/getVariablesIntracursus">
+            <div class="field ArchetypesStringWidget">
+                <label for="urlConnexion" i18n:translate="urlConnexion">
+                    URL de connexion à intracursus
+                </label>
+                <br/>
+                <input type="text" name="urlConnexion"
+                       maxlength="255" size="30" class="blurrable"
+                       tal:attributes="value intracursus/urlConnexion | nothing" />
+            </div>
+            <div class="field ArchetypesStringWidget">
+                <label for="loginConnexion" i18n:translate="loginConnexion">
+                    Nom d'utilisateur pour établir la connexion
+                </label>
+                <br/>
+                <input type="text" name="loginConnexion"
+                       maxlength="255" size="30" class="blurrable"
+                       tal:attributes="value intracursus/loginConnexion | nothing" />
+            </div>
+            <div class="field ArchetypesStringWidget">
+                <label for="passwordConnexion" i18n:translate="passwordConnexion">
+                    Mot de passe pour établir la connexion
+                </label>
+                <br/>
+                <input type="password" name="passwordConnexion"
+                       maxlength="255" size="30" class="blurrable"
+                       tal:attributes="value intracursus/passwordConnexion | nothing" />
+            </div>
+            <input type="hidden" name="form.submitted" value="1" />
+            <div class="formControls">
+                <input class="context" type="submit" name="form.button.save" value="Save" i18n:attributes="value label_save;"/>
+                <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+            </div>
+        </form>
+        <a tal:attributes="href string:${context/absolute_url}/portal_jalon_intracursus/testerConnexionIntracursus" class="bouton">
+          Tester la connexion
+        </a>
+
+      <br />
+     <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/listerSeanceIntracursus"
+              method="post">
+      <div class="field ArchetypesStringWidget">
+        <br/>
+                      <label for="title" i18n:translate="title">
+       Lister les seances pour cette matiere
+      </label>
+      <br/><br/>
+      <label for="codeMatiere" i18n:translate="codeMatiere">
+         Code Matière : 
+      </label>
+      <br/>
+      <input type="text" name="codeMatiere"
+            maxlength="255" size="30" class="blurrable"/>
+      </div>
+      <div class="formControls">
+                <input class="context" type="submit" name="form.button.save" value="Lister les séances" i18n:attributes="value label_save;"/>
+                <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+            </div>
+      </form>
+
+
+<script type="text/javascript">
+function grise(checkbox, text) {
+        var avecnote = document.getElementById(checkbox);
+        var coeff = document.getElementById(text);
+        if(avecnote.disabled == true) {
+          coeff.disabled = true;
+        }
+        else {
+          console.log(checkbox, text);
+          coeff.disabled = false;
+                }
+}
+</script>
+
+
+      <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/creationSeanceIntracursus"
+              method="post">
+      <div class="field ArchetypesStringWidget">
+              <label for="title" i18n:translate="title">
+       Créer une seance
+      </label>
+      <br/><br/>
+      <label for="codeMatiere" i18n:translate="codeMatiere">
+         Code Matière : 
+      </label>
+      <br/>
+      <input type="text" name="codeMatiere"
+            maxlength="255" size="30" class="blurrable"/>
+            <br/><br/>
+      <label for="annee" i18n:translate="annee">
+         Annee : 
+      </label>
+      <br/>
+      <input type="text" name="annee"
+            maxlength="255" size="30" class="blurrable"/>
+            <br/><br/>
+
+            <label for="periode" i18n:translate="periode">
+         Periode : 
+      </label>
+        <br/>
+        <input type="text" name="periode"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+            <label for="intitule" i18n:translate="intitule">
+         Intitule : 
+      </label>
+        <br/>
+        <input type="text" name="intitule"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+
+
+            <label for="typeseance" i18n:translate="typeseance">
+         Type Séance : 
+      </label>
+        <br/>
+        <select id="typeseance" name = "typeseance"> 
+             <option value="">A définir</option>
+             <option value="TD">Travaux Dirigés</option> 
+             <option value="TP">Travaux pratiques</option> 
+             <option value="CM">Cours Magistral</option> 
+             <option value="EXAM">Examen</option> 
+             <option value="EVAL">Evaluation</option> 
+             <option value="PART">Partiel</option> 
+             <option value="QCM">QCM</option> 
+             <option value="ORAL">Oral</option>
+             <option value="CCI">CCI</option> 
+             <option value="CCT">CTT</option> 
+             <option value="SOUT">Soutenance</option>
+             <option value="MPART">Moyenne Partielle</option>
+             <option value="CCTEXAM">CCT ou Examen Terminal</option>
+             <option value="EXAMTERM">Examen Terminal</option>
+
+          </select>
+              <br/><br/>
+
+
+            <label for="dateseance" i18n:translate="dateseance">
+         Date Séance : 
+      </label>
+        <br/>
+        <input type="text" name="dateseance"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+
+            <label for="heureseance" i18n:translate="heureseance">
+         Heure Séance : 
+      </label>
+        <br/>
+        <input type="text" name="heureseance"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+
+            <label for="dureeseance" i18n:translate="dureeseance">
+         Durée Séance : 
+      </label>
+        <br/>
+        <select id="dureeseance" name="dureeseance"> 
+           <option value="0h30">0h30</option> 
+           <option value="1h">1h</option> 
+           <option value="1h30">1h30</option> 
+           <option value="2h">2h</option> 
+           <option value="2h30">2h30</option> 
+           <option value="3h">3h</option> 
+           <option value="3h30">3h30</option> 
+           <option value="4h">4h</option> 
+        </select> 
+        <br/><br/>
+
+            <label for="avecnote" i18n:translate="avecnote">
+         Séance Notée : 
+      </label>
+        <br/>
+        <input type="checkbox" name="avecnote" id ="avecnote" onClick="grise('avecnote', 'acacher');"/>
+              <br/><br/>
+        
+          <label for="coefficient" i18n:translate="coefficient">
+         Coefficient : 
+      </label>
+        <br/>
+        <input type="text" name="coefficient" id="acacher"
+              maxlength="255" size="30" class="blurrable" disabled />
+              <br /><br/>
+        
+          <label for="publiable" i18n:translate="publiable">
+         Publiable : 
+      </label>
+        <br/>
+        <input type="checkbox" name="publiable" id ="publiable" checked="on"/>
+              <br />
+      </div>
+
+
+      <div class="formControls">
+                <input class="context" type="submit" name="form.button.save" value="créer les séances" i18n:attributes="value label_save;"/>
+                <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+            </div>
+    </form>
+
+    <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/creationPresenceIntracursus"
+              method="post">
+    <div class="field ArchetypesStringWidget">
+
+    <label for="title" i18n:translate="title">
+       Créer une presence ou ajouter une note d'un étudiant a une séance
+    </label>
+      <br/><br/>
+
+    <label for="numero" i18n:translate="numero">
+         Numero : 
+    </label>
+      <br/>
+    <input type="text" name="numero"
+            maxlength="255" size="30" class="blurrable"/>
+            <br/><br/>
+    <label for="nom" i18n:translate="nom">
+         Nom : 
+    </label>
+      <br/>
+    <input type="text" name="nom"
+            maxlength="255" size="30" class="blurrable"/>
+            <br/><br/>
+
+    <label for="prenom" i18n:translate="prenom">
+         Prenom : 
+    </label>
+        <br/>
+    <input type="text" name="prenom"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+    <label for="idseance" i18n:translate="idseance">
+         Id Seance : 
+    </label>
+        <br/>
+  <input type="text" name="idseance"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+  <label for="statut" i18n:translate="statut">
+         Statut : 
+  </label>
+        <br/>
+  <input type="text" name="statut"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+  <label for="note" i18n:translate="note">
+         Note : 
+  </label>
+    <br/>
+    <input type="text" name="note"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+
+    <label for="appreciation" i18n:translate="appreciation">
+         Appreciation : 
+    </label>
+    <br/>
+    <input type="text" name="appreciation"
+              maxlength="255" size="30" class="blurrable"/>
+              <br/><br/>
+
+
+      <label for="datepresence" i18n:translate="datepresence">
+         Date de presence : 
+      </label>
+        <br/>
+        <input type="text" name="datepresence" maxlength="255" size="30" class="blurrable"/>
+        <br />
+      </div>
+      <div class="formControls">
+      <input class="context" type="submit" name="form.button.save" value="créer les presences" i18n:attributes="value label_save;"/>
+      <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+      </div>
+      </form>
+      <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/nombreSeanceIntracursus" 
+        method="post">
+      <div class="field ArchetypesStringWidget">
+      <br/>
+      <label for="title" i18n:translate="title">
+       nombre de seances pour cette matiere
+      </label>
+      <br/><br/>
+      <label for="codeMatiere" i18n:translate="codeMatiere">
+      Code Matière : 
+      </label>
+      <br/>
+      <input type="text" name="codeMatiere" maxlength="255" size="30" class="blurrable"/>
+      </div>
+      <div class="formControls">
+          <input class="context" type="submit" name="form.button.save" value="Compter les séances" i18n:attributes="value label_save;"/>
+          <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+      </div>
+      </form>
+
+
+
+      <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/publicationSeanceIntracursus" 
+        method="post">
+      <div class="field ArchetypesStringWidget">
+      <br/>
+      <label for="title" i18n:translate="title">
+       publication pour cette matiere
+      </label>
+      <br/><br/>
+      <label for="codematiere" i18n:translate="codematiere">
+      Code Matière : 
+      </label>
+      <br/>
+      <input type="text" name="codematiere" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      <label for="intitule" i18n:translate="intitule">
+      Intitule : 
+      </label>
+      <br/>
+      <input type="text" name="intitule" maxlength="255" size="30" class="blurrable"/>
+
+      <br/><br/>
+      <label for="publiable" i18n:translate="publiable">
+      Publication : 
+      </label>
+      <br/>
+      <input type="radio" name="publiable" value="1">publier<br>
+      <input type="radio" name="publiable" value="0">dépublier
+
+      </div>
+      <div class="formControls">
+          <input class="context" type="submit" name="form.button.save" value="Publéer séances" i18n:attributes="value label_save;"/>
+          <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+      </div>
+      </form>
+
+
+      <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/modificationSeanceIntracursus" 
+        method="post">
+      <div class="field ArchetypesStringWidget">
+      <br/>
+      <label for="title" i18n:translate="title">
+       modification d'une séance
+      </label>
+      <br/><br/>
+      <label for="codeseance" i18n:translate="codeseance">
+      Code Séance : 
+      </label>
+      <br/>
+      <input type="text" name="codeseance" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      <label for="intitule" i18n:translate="intitule">
+      Intitulé : 
+      </label>
+      <br/>
+      <input type="text" name="intitule" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      <label for="typeseance" i18n:translate="typeseance">
+      Type : 
+      </label>
+      <br/>
+      <select id="typeseance" name = "typeseance"> 
+                    <option value="">A définir</option>
+                    <option value="TD">Travaux Dirigés</option> 
+                    <option value="TP">Travaux pratiques</option> 
+                    <option value="CM">Cours Magistral</option> 
+                    <option value="EXAM">Examen</option> 
+                    <option value="EVAL">Evaluation</option> 
+                    <option value="PART">Partiel</option> 
+                    <option value="QCM">QCM</option> 
+                    <option value="ORAL">Oral</option>
+                    <option value="CCI">CCI</option> 
+                    <option value="CCT">CTT</option> 
+                    <option value="SOUT">Soutenance</option>
+                    <option value="MPART">Moyenne Partielle</option>
+                    <option value="CCTEXAM">CCT ou Examen Terminal</option>
+                    <option value="EXAMTERM">Examen Terminal</option>
+      </select>
+      <br/><br/>
+      <label for="semestre" i18n:translate="semestre">
+      Semestre : 
+      </label>
+      <br/>
+      <input type="text" name="periode" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      <label for="date" i18n:translate="date">
+      Date : 
+      </label>
+      <br/>
+      <input type="text" name="dateseance" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      <label for="heure" i18n:translate="heure">
+      Heure : 
+      </label>
+      <br/>
+      <input type="text" name="heureseance" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      <label for="duree" i18n:translate="duree">
+      Durée : 
+      </label>
+      <br/>
+      <select id="dureeseance" name="dureeseance"> 
+          <option value="0h30">0h30</option> 
+          <option value="1h">1h</option> 
+          <option value="1h30">1h30</option> 
+          <option value="2h">2h</option> 
+          <option value="2h30">2h30</option> 
+          <option value="3h">3h</option> 
+          <option value="3h30">3h30</option> 
+          <option value="4h">4h</option> 
+      </select> 
+      <br/><br/>
+      <label for="avecnote" i18n:translate="avecnote">
+      Notée : 
+      </label>
+      <br/>
+      <input type="checkbox" name="avecnote"/>
+      <br/><br/>
+      <label for="coefficient" i18n:translate="coefficient">
+      Coefficient : 
+      </label>
+      <br/>
+      <input type="text" name="coefficient" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      <label for="publiable" i18n:translate="publiable">
+      Publication : 
+      </label>
+      <br/>
+      <input type="radio" name="publiable" value="1">publier<br>
+      <input type="radio" name="publiable" value="0">dépublier
+
+      </div>
+      <div class="formControls">
+          <input class="context" type="submit" name="form.button.save" value="modification séances" i18n:attributes="value label_save;"/>
+          <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+      </div>
+      </form>
+
+
+
+            <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/suppressionSeanceIntracursus" 
+        method="post">
+      <div class="field ArchetypesStringWidget">
+      <br/>
+      <label for="title" i18n:translate="title">
+       suppression d'une séance
+      </label>
+      <br/><br/>
+      <label for="codeseance" i18n:translate="codeseance">
+      Code Séance : 
+      </label>
+      <br/>
+      <input type="text" name="codeseance" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      </div>
+      <div class="formControls">
+          <input class="context" type="submit" name="form.button.save" value="suppression séances" i18n:attributes="value label_save;"/>
+          <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+      </div>
+      </form>
+
+
+
+      <form tal:attributes="action string:${context/absolute_url}/portal_jalon_intracursus/informationSeanceIntracursus" 
+        method="post">
+      <div class="field ArchetypesStringWidget">
+      <br/>
+      <label for="title" i18n:translate="title">
+       Information d'une séance
+      </label>
+      <br/><br/>
+      <label for="codeseance" i18n:translate="codeseance">
+      Code Séance : 
+      </label>
+      <br/>
+      <input type="text" name="codeseance" maxlength="255" size="30" class="blurrable"/>
+      <br/><br/>
+      </div>
+      <div class="formControls">
+          <input class="context" type="submit" name="form.button.save" value="info séances" i18n:attributes="value label_save;"/>
+          <input class="standalone" type="submit" name="form.button.cancel" value="Cancel" i18n:attributes="value label_cancel;"/>
+      </div>
+      </form>
+
+
+</div>
+</div>
+</metal:core>
+</body>
+</html>
