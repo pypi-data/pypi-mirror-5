@@ -1,0 +1,176 @@
+Metadata-Version: 1.0
+Name: blacktie
+Version: 0.2.1.2
+Summary: A python wrapper for analysis of RNA-seq data with the popular tophat/cufflinks pipeline.
+Home-page: https://github.com/xguse/
+Author: Augustine Dunn
+Author-email: wadunn83@gmail.com
+License: GPL 3
+Description: Welcome to Blacktie!
+        ==========================
+        
+        This package is functional but under heavy development so you may want to periodically
+        pull the latest code from the repo at git://github.com/xguse/blacktie.git.
+        
+        For the **LATEST** version pull the 'develop' branch.
+        
+        **I seek collaboration and contributions to improve this tool.**  
+        
+        **PLEASE** take it and run with it, but send me your progress!
+        
+        Its goal is to **simplify the integration of all the
+        input/output streams of the tophat/cufflinks workflow** into a single yaml based config
+        file and automate as much of everything else as possible so that once the config file
+        is filled out, **the entire process of analysing a multi-condition RNA-seq experiment can
+        be run with a single command.**  
+        
+        I have not had time to fill in ALL the doc strings but updating them regularly.
+        
+        (Current version of the docs can be found here: http://xguse.github.com/blacktie/)
+        
+        If you want to use/contribute before the docs are complete, please feel free to contact me at 
+        wadunn83@gmail.com for guidance.
+        
+        Issue tracking
+        --------------
+        If you find issues, bugs, or have feature requests, please go here to submit them: https://github.com/xguse/blacktie/issues
+        
+        
+        Blacktie Poster
+        ------------------------
+        
+        
+        .. raw:: html
+        	<iframe src="http://wl.figshare.com/articles/714149/embed?show_title=1" width="568" height="200" frameborder="0"></iframe>
+        
+        
+        To credit the use of blacktie please cite the poster using the DOI link provided.
+        
+        	*Introducing Blacktie: a simpler way to do RNA-seq using Tophat/Cufflinks/CummeRbund*. Augustine Dunn. figshare.
+        	http://dx.doi.org/10.6084/m9.figshare.714149
+        
+        
+        
+        Usage
+        -----
+        .. code-block:: none
+        
+        	usage: blacktie [-h] [--version]
+        	                [--prog {tophat,cufflinks,cuffmerge,cuffdiff,cummerbund,all}]
+        	                [--hide-logs] [--no-email]
+        	                [--mode {analyze,dry_run,qsub_script}]
+        	                config_file
+        
+        	This script reads options from a yaml formatted file and organizes the
+        	execution of tophat/cufflinks runs for multiple condition sets.
+        
+        	positional arguments:
+        	  config_file           Path to a yaml formatted config file containing setup
+        	                        options for the runs.
+        
+        	optional arguments:
+        	  -h, --help            show this help message and exit
+        	  --version             Print version number.
+        	  --prog {tophat,cufflinks,cuffmerge,cuffdiff,cummerbund,all}
+        	                        Which program do you want to run? (default: tophat)
+        	  --hide-logs           Make your log directories hidden to keep a tidy
+        	                        'looking' base directory. (default: False)
+        	  --no-email            Don't send email notifications. (default: False)
+        	  --mode {analyze,dry_run,qsub_script}
+        	                        1) 'analyze': run the analysis pipeline. 2) 'dry_run':
+        	                        walk through all steps that would be run and print out
+        	                        the command lines; however, do not send the commands
+        	                        to the system to be run. 3) 'qsub_script': generate
+        	                        bash scripts suitable to be sent to a compute
+        	                        cluster's SGE through the qsub command. (default:
+        	                        analyze)	
+        
+        
+        
+        
+        
+        Credits
+        -------
+        
+        - `Distribute`_
+        - `Buildout`_
+        - `modern-package-template`_
+        
+        .. _Buildout: http://www.buildout.org/
+        .. _Distribute: http://pypi.python.org/pypi/distribute
+        .. _`modern-package-template`: http://pypi.python.org/pypi/modern-package-template
+        
+        
+        .. image:: https://d2weczhvl823v0.cloudfront.net/xguse/blacktie/trend.png
+          :alt: Bitdeli badge
+          :target: https://bitdeli.com/free
+        
+        
+        .. This is your project NEWS file which will contain the release notes.
+        .. Example: http://www.python.org/download/releases/2.6/NEWS.txt
+        .. The content of this file, along with README.rst, will appear in your
+        .. project's PyPI page.
+        
+        News
+        ====
+        
+        0.2.1.2
+        -----------
+        *Release date: 2013-07-17*
+        
+        * version number system adopted to conform to PEP386
+        * This is a hot fix to squash a bug described in github issue: https://github.com/xguse/blacktie/issues/10
+            * **in short:** on a Mac ``pprocess`` complained "AttributeError: 'module' object has no attribute 'poll'" when trying to set up a queue.
+            * the quick fix is to look for that exception and continue without ``pprocess`` if encountered to avoid the fatal exception.
+        
+        
+        
+        0.2.1
+        ---------
+        *Release date: 2013-05-15*
+        
+        * git tag: 'v0.2.1'
+        * added new script named blacktie-cummerbund to run cummeRbund
+        * added new class in calls.py CummerbundCall to use blacktie-cummerbund script to add cummeRbund plots to blacktie script
+        * checks for R and rpy2 installations
+        * if cummeRbund R library not found, it walks you through installing it
+        * ``src/blacktie/utils/calls.py``: - fixed _flag_out_dir() so that if the outdir has not been created yet it gracefully moves on
+        * ``examples/blacktie_config_example.yaml``: - added cummerbund_options
+        * ``requirements.txt``: - added rpy2
+        * updated docs
+        
+        0.2.0rc1
+        --------
+        
+        *Release date: 2013-04-19*
+        
+        * git tag: 'v0.2.0rc1'
+        * Added support for handling biological replicates in cuffdiff runs.
+        * Major changes to yaml config:
+            * condition_queue[index].group_id --> condition_queue[index].experiment_id
+            * addition of condition_queue[index].replicate_id to track replicate data
+            * condition_queue[index].name now represents description of an 'experiemental condition' and will be shared by replicates.
+        
+        
+        0.1.1
+        -----
+        
+        *Release date: 2013-03-21*
+        
+        * git commit SHA digest: 9d7c02d5e7f4ec8970bb2291c3eb6ff8f4dbe542
+        * git tag: 'v0.1.1'
+        
+        
+        0.1_dev
+        -------
+        
+        *Release date: 2013-03-20*
+        
+        * git commit SHA digest: 808c11fb396c71af55ff690fa6f2e628e5ffd758
+        * git tag: 'v0.1-dev'
+        * First uploaded to PyPI
+        * This verion is still under active development.
+        
+        
+Keywords: scientific computing RNA-seq tophat cufflinks bowtie CummeRbund
+Platform: UNKNOWN
