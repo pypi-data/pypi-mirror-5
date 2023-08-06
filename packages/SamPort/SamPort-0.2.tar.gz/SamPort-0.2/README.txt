@@ -1,0 +1,4 @@
+This is a port of NREL's System Advisor Model (SAM) to pip. This changes their api into a self-contained module usable without the configuration required for the standard SAM install. Currently support is only for linux, but eventually support for other operating systems will presumably be added.
+
+Find the original project here: https://sam.nrel.gov/
+"The System Advisor Model (SAM) is a performance and financial model designed to facilitate decision making for people involved in the renewable energy industry:"
