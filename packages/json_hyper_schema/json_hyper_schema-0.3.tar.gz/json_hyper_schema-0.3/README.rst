@@ -1,0 +1,48 @@
+.. image:: https://drone.io/bitbucket.org/eodolphi/json-hyper-schema/status.png
+   :target: https://drone.io/bitbucket.org/eodolphi/json-hyper-schema/latest
+
+
+JSON Hyper Schema
+=============
+
+Implementation of json schema draft 03
+
+http://tools.ietf.org/html/draft-zyp-json-schema-03
+
+Installation
+------------
+
+ $ pip install json_hyper_schema
+
+Usage
+------------
+
+JSON Hyper Schema makes it possible to validate arbitrary json objects against a json schema.
+
+>>> form json_hyper_schema import Schema
+
+>>> schema = Schema(
+    {
+        'properties': {
+            'a': {'type': 'string', 'enum': ['a', 'b']},
+            'b': {
+                'type': 'array',
+                'items': {
+                    'properties': {
+                        'b': {'type': 'string', 'enum': ['c', 'd']},
+                        'c': {'uuid': True}
+                        }
+                    }
+                },
+            'c': {'default': 'blabla'}
+            },
+        'links': [
+            {
+                'href': '/id/{a}',
+                'rel': 'self'
+            }]
+        })
+
+>>> schema.validate({'a': 'b', 'b': [{'b': 'c'}, {'b': 'd'}]})
+
+If the data is not valid against the schema a `json_schema.ValidationError` will be raised. This will contain a dictionary of errors. The keys of the dictionary are `json_pointer.Pointer` pointers to the invalid field
