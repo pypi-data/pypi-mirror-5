@@ -1,0 +1,62 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n" lang="en"
+  metal:use-macro="context/main_template/macros/master"
+  i18n:domain="plone">
+
+<head>
+  <metal:js fill-slot="javascript_head_slot">
+	<script type="text/javascript" tal:attributes="src string:${portal_url}/++resource++collective.js.jasmid/js/stream.js"></script>
+	<script type="text/javascript" tal:attributes="src string:${portal_url}/++resource++collective.js.jasmid/js/midifile.js"></script>
+	<script type="text/javascript" tal:attributes="src string:${portal_url}/++resource++collective.js.jasmid/js/replayer.js"></script>
+	<script type="text/javascript" tal:attributes="src string:${portal_url}/++resource++collective.js.jasmid/js/synth.js"></script>
+	<script type="text/javascript" tal:attributes="src string:${portal_url}/++resource++collective.js.jasmid/js/audio.js"></script>
+	<script>
+       function loadRemote(path, callback) {
+               var fetch = new XMLHttpRequest();
+               fetch.open('GET', path);
+               fetch.overrideMimeType("text/plain; charset=x-user-defined");
+               fetch.onreadystatechange = function() {
+                       if(this.readyState == 4 && this.status == 200) {
+                               /* munge response into a binary string */
+                               var t = this.responseText || "" ;
+                               var ff = [];
+                               var mx = t.length;
+                               var scc= String.fromCharCode;
+                               for (var z = 0; z < mx; z++) {
+                                       ff[z] = scc(t.charCodeAt(z) & 255);
+                               }
+                               callback(ff.join(""));
+                       }
+               }
+               fetch.send();
+       }
+       
+       function play(file) {
+               loadRemote(file, function(data) {
+                       midiFile = MidiFile(data);
+                       synth = Synth(44100);
+                       replayer = Replayer(midiFile, synth);
+                       audio = AudioPlayer(replayer);
+               })
+       }
+     </script>
+  </metal:js>
+</head>
+
+<body>
+    <div metal:fill-slot="main">
+    <tal:main-macro metal:define-macro="main">
+        <div tal:replace="structure provider:plone.abovecontenttitle" />
+     	This example comes from the example provided in the package containing
+     	the javascript files of jasmid (index.html).<br />
+     	See :
+     	<a href="https://github.com/gasman/jasmid" target="_blank">https://github.com/gasman/jasmid</a>
+     	<br />
+	    Click on this link to listen the tune : <a href="javascript:void(play('AcrossTheBlackRiver1.mid'))">AcrossTheBlackRiver1.mid</a>
+	    <br />
+    </tal:main-macro>
+    </div>
+</body>
+</html>
