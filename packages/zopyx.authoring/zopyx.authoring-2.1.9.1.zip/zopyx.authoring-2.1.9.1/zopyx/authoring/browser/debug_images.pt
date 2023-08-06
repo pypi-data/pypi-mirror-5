@@ -1,0 +1,160 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="producepublish">
+    <metal:fill fill-slot="main" tal:define="images view/debugImages" >
+        
+        <script type="text/javascript">
+            $j = jQuery.noConflict();
+            $j(document).ready(function() {
+                $j('#toggle-all').click(function(){ 
+                    $j('.checkbox').attr('checked', this.checked);
+                });
+            });
+        </script>
+
+        <h1 i18n:translate="label_debug_images">Images</h1>
+
+        <div class="formHelp" i18n:translate="help_debug_images">
+            The image introspector displays all referenced images and all
+            conversion relevant conversion parameters. Please keep in mind that
+            the description of an image is used for its caption. An image
+            without description will be left out from the image enumeration and
+            marked with an exclamation mark below.
+        </div>
+
+        <div tal:condition="not: images">
+            <span i18n:translate="label_no_images">No images available</span>
+        </div>
+
+
+        <form action="@@update-images" method="post">
+            <table class="listing nosort" id="debug-images" tal:condition="images">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="toggle-all" />
+                        </th>
+                        <th i18n:translate="label_image">Image</th>
+                        <th i18n:translate="label_id_title_description">ID/Title/Description</th>
+                        <th i18n:translate="label_scale_in_pdf">Scale in PDF</th>
+                        <th i18n:translate="label_exclude_from_enumeration">Exclude from enumeration</th>
+                        <th i18n:translate="label_link_to_full_scale">Link to full scale</th>
+                        <th i18n:translate="label_display_inline">Display inline</th>
+                        <th i18n:translate="label_caption_position">Caption position</th>
+                        <th i18n:translate="label_colorspace">Colorspace</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tal:loop repeat="img images">
+                        <tr tal:attributes="class python: repeat['img'].even() and 'even' or 'odd'">
+                            <td>
+                                <input tal:condition="img/uid | nothing" 
+                                       class="checkbox"
+                                       type="checkbox" name="uids:list" tal:attributes="value img/uid" />
+                            </td>
+
+                            <tal:if condition="img/external_image">
+                                <td class="image">
+                                    <a tal:attributes="href img/image_src"
+                                       tal:condition="img/image_exists">
+                                        <img tal:attributes="src string:${img/image_src}" />
+                                    </a>
+                                    <img src="++resource++zopyx.authoring/not_available.png"
+                                         tal:condition="not: img/image_exists" />
+                                </td>
+                                <td>
+                                    <div class="preflightWarning" i18n:translate="label_unresolvable_image">
+                                        External image reference
+                                    </div>
+                                    <div class="src formHelp" tal:content="img/image_src" />
+                                </td>
+                                <td/>
+                                <td/>
+                                <td/>
+                                <td/>
+                                <td/>
+                                <td/>
+                            </tal:if>
+                            <tal:if condition="not: img/external_image" 
+                                    define="supplInfo img/obj/@@supplementaryPDFInformation | nothing">
+                                <td class="image">
+                                    <a tal:attributes="href img/href">
+                                        <img tal:attributes="src string:${img/href}/image_thumb" />
+                                    </a>
+                                </td>
+                                <td>
+                                    <a tal:attributes="href string:${img/href}/view"
+                                       tal:content="img/id" 
+                                    />
+                                    <a tal:attributes="href string:${img/href}/edit">
+                                        <img tal:attributes="src string:$portal_url/edit.gif" />
+                                    </a>
+                                    <div class="title" tal:content="img/title" />
+                                    <div class="description" tal:condition="img/description" class="formHelp" tal:content="img/description" />
+                                    <div tal:condition="img/description" class="preflightOk" />
+                                    <div tal:condition="not: img/description" class="preflightWarning">
+                                        <span i18n:translate="label_image_without_description">Image without description</span>
+                                    </div>
+                                    <div class="src formHelp" tal:content="img/image_src" />
+                                </td>
+                                <td class="center" tal:content="string:${img/pdfScale}%" />
+                                <td class="center" tal:content="img/excludeFromEnumeration | nothing" />
+                                <td class="center" tal:content="img/linkToFullScale | nothing" />
+                                <td class="center" tal:content="img/displayInline | nothing" />
+                                <td class="center" tal:content="img/captionPosition | nothing" />
+                                <td class="center" tal:content="supplInfo/colorspace | nothing" />
+                            </tal:if>
+                        </tr>
+                    </tal:loop>
+                </tbody>
+            </table>
+            <a tal:attributes="href context/absolute_url" i18n:translate="label_back_to_conversion">Back to conversion folder</a>
+            <form method="post" action="@@update-images" tal:condition="images">
+                <fieldset>
+                    <legend i18n:translate="label_update_image_options">Update image options</legend>
+                    <label i18n:translate="label_pdf_scale">PDF Scale</label>
+                    <select name="pdfScale:int:ignore_empty">
+                        <option/>
+                        <option tal:repeat="scale python: range(100, 0, -10)"
+                                tal:attributes="value scale"
+                                tal:content="string:$scale %"/>
+                    </select>
+                    <label i18n:translate="label_exclude_from_image_enumeration">Excl. from enumeration</label>
+                    <select name="excludeFromImageEnumeration:int:ignore_empty">
+                        <option/>
+                        <option value="1" i18n:translate="label_yes">yes</option>
+                        <option value="0" i18n:translate="label_no">no</option>
+                    </select>
+                    <label i18n:translate="label_create_link_to_full_scale">Link full scale</label>
+                    <select name="linkToFullScale:int:ignore_empty">
+                        <option/>
+                        <option value="1" i18n:translate="label_yes">yes</option>
+                        <option value="0" i18n:translate="label_no">no</option>
+                    </select>
+                    <label i18n:translate="label_display_image_inline">Display inline</label>
+                    <select name="displayInline:int:ignore_empty">
+                        <option/>
+                        <option value="1" i18n:translate="label_inline">inline</option>
+                        <option value="0" i18n:translate="label_block">block</option>
+                    </select>
+                    <label i18n:translate="label_image_caption_position">Position caption</label>
+                    <select name="captionPosition">
+                        <option/>
+                        <option value="top" i18n:translate="label_position_top">Top</option>
+                        <option value="bottom" i18n:translate="label_position_bottom">Bottom</option>
+                    </select>
+                    <br/>
+                    <input type="checkbox" name="sync_title_description" value="1" />
+                    <label i18n:translate="label_sync_title_description">Sync title -> description</label>
+                    <br/>
+                    <input type="submit" class="context" value="Update image properties" />
+                </fieldset>
+            </form>
+
+    </metal:fill>
+</html>

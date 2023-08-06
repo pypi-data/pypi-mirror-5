@@ -1,0 +1,269 @@
+Changelog
+=========
+
+2.1.9 (2013/10/02)
+------------------
+- remove uimultiselect.js widget (incompatible
+  with Plone 4.2)
+
+2.1.8 (2013/02/24)
+------------------
+- removed Products.ImageEditor support
+
+2.1.7 (2012/07/04)
+------------------
+- fixed unbound variable problem causing an error when using
+  cover pages
+
+2.1.6 (2012/06/21)
+------------------
+- integrated collective.zipfiletransport
+
+2.1.5 (2012/04/03)
+------------------
+- DOCX import: removing all border*, padding* and margin* CSS properties
+- content aggregator allows now references to AuthoringContentPage instances
+- support for index generation
+
+2.1.4 (2011/12/12)
+------------------
+- support for ZIP archive upload containing the conversion result
+  of a local Open-Office/LibreOffice conversion (HTML + images)
+- improved transformations for office import 
+
+2.1.3 (2011/10/14)
+------------------
+- added fixAmpersand transformation for dealing with solitary 
+  '&' inside HTML content 
+
+2.1.2 (2011/10/12)
+------------------
+- better support for importing footnotes from Word 
+
+2.1.1 (2011/10/06)
+------------------
+- enabled JS for table popups by default
+- fixed link to import form 
+- not archiving default option in import form
+
+2.1.0 (2011/09/22)
+------------------
+- support for uploading the ZIP archive (@@download_all view)
+  to Dropbox 
+
+2.0.9 (2011/09/14)
+------------------
+- integrated ui.multiselect.js for better user experience editing the styles
+
+2.0.8 (2011/09/11)
+------------------
+- removed all BeautifulSoup culprits
+- UI fine-tuning
+
+2.0.7 (2011/09/10)
+------------------
+- fixed ZCML startup failure (under some conditions)
+
+2.0.6 (2011/09/08)
+------------------
+- added a conversion "preflight" for checking consistency of HTML and image
+  export
+- Publish-to-Dropbox functionality
+- added @@pp-demo-content view
+- various fixes
+
+2.0.5 (2011/09/02)
+------------------
+- fixed issues in office import
+- using new transformation machinery in office import browser view
+- more tests
+
+2.0.4 (2011/08/25)
+------------------
+- syncing of a resource from filesystem to Plone is now more accurate
+- better error message if a configured master template (PDF template)
+  could not be found
+- added "My Authoring Projects" portlet
+- fixed issues with calibre default configuration and parameter escaping
+- better support for EPUB coverpages and EPUB author handling
+
+2.0.3 (2011/08/15)
+------------------
+- better checks for Produce & Publish server availability
+- moved office import form (AuthoringContentFolder) to its own 
+  browser view and made it available as "Office Import (DOC)" action
+  (while removing the import form from the viewlet configuration)
+- added (undocumented) cleanup functionality for removing drafts older
+  than N days from all conversion folders (@@cleanup-project-form)
+
+2.0.2 (2011/08/02)
+------------------
+- using new Proxy2 implementation of the zopyx.smartprintng.client API
+
+2.0.1 (2011/08/02)
+------------------
+- removing 0x0b char from conversion input in order to avoid trouble  with
+  content pasted into Plone from Windows applications
+- added description to GS profile registration
+- fixed issue with collapsible table in conversionsfolder_view.pt
+- implemented an experimental table popup/overlay functionality (disabled by default)
+- i18n issues
+
+2.0.0 (2011/07/25)
+---------------------
+- final release
+
+2.0.0rc4 (2011/07/13)
+---------------------
+- fixed conversion folder view template
+
+2.0.0rc3 (2011/07/11)
+---------------------
+- fixed bug in content_type_registry registration code
+
+2.0.0rc2 (2011/07/02)
+---------------------
+- minor whitespace cleanup
+
+2.0.0rc1-1 (2011/07/01)
+-----------------------
+- removed obsolete monkey patch for ATDocument
+
+2.0.0rc1 (2011/07/01)
+---------------------
+- disabled image metadata view outside authoring projects
+- better check for 'tidy' result
+- added support for div.ignore-headings-for-structure
+- disabled support for nested folders inside AuthoringContentFolders
+
+2.0.0b2 (2011/06/16)
+--------------------
+- (temporarily) replace collective.referencedatagrid field with
+  a standard reference field 
+- ippcontent subscriber now limits modification of the HTML 
+  to fields with content-type text/html only
+- (optional) back-to-top functionality through Javascript
+  (zopyxauthoring_backtotop.js must be enabled in portal_javascript - disabled
+  by default))
+
+2.0.0b1 (2011/05/24)
+--------------------
+- improved S5 functionality for aggregated and single-page documents
+- improved office format import
+
+2.0.0a4 (2011/05/20)
+--------------------
+- better S5 functionality
+- first integration of the external office format converter through
+  a web service
+
+2.0.0a3 (2011/05/17)
+--------------------
+- minor fixes
+- improved image detail view (colorspace + EXIF metadata)
+
+2.0.0a2 (2011/05/14)
+--------------------
+- using collective.referencedatagridfield in content aggregator
+- minor fixes in inspectors
+
+2.0.0a1 (2011/05/10)
+--------------------
+- major refactoring 
+- major feature update
+
+1.5.0 (2011/02/12)
+------------------
+- major update
+
+1.0.9 (2010/10/12)
+------------------
+- minor fixes in GS profiles
+- introducing BeforePublishing event
+- introducing AfterPublishing event
+- added AuthoringConversionsCollection type (for better grouping of conversions)
+- a conversion folder can now reference an AuthoringContentFolder or a subfolder
+
+1.0.8 (2010/08/11)
+------------------
+- fixed some i18n issues
+- fixed improper default for contents folder when creating a new authoring
+  project
+
+1.0.7 (2010/08/06)
+------------------
+- added 'comment' functionality: choose 'comment' style in TinyMCE
+  in order to mark a selected piece of text as comment. Comments will removed
+  from the consolidated HTML and PDF.
+- fixed improper image reference in consolidated HTML 
+- requires zopyx.smartprintng.plone==0.6.20
+
+1.0.6 (2010/08/05)
+------------------
+- fixed presets of conversion folder while creating
+  a new authoring project instance
+
+1.0.5 (2010/06/12)
+------------------
+- truncate generate filenames in order to append the date-time string properly
+  because normalizeString() chops off after the 50th character
+- fixes for consolidated HTML generation
+
+1.0.4 (2010/06/10)
+------------------
+- adjusted TinyMCE configuration in order to avoid relative links
+
+1.0.3 (2010/06/07)
+------------------
+- improved german translation and wording
+- minor UI tweaks
+
+1.0.2 (2010/05/25)
+------------------
+- i18n support
+- german translation
+- new conversion option for generation PDF, consolidated HTML and
+  chapter-wise PDF in one run
+- various UI tweaks
+- added (optional) portlet for one-click conversion
+- minor internal cleanup
+
+1.0.1 (2010/05/19)
+------------------
+- switched to convertZIP2() API
+- fixed content settings of the demo pages while creating a new authoring
+  project
+- fixed broken indexing call
+- adjusted ordering of folders during creation of a new authoring project
+
+1.0.0 (2010/05/10)
+------------------
+- first public release
+
+0.9.0 (2010/04/14)
+------------------
+- various changes
+
+0.4.0 (2010/03/28)
+------------------
+- replaced most of the reference fields with paths
+
+0.3.3 (2010/03/27)
+------------------
+- fixed manage_afterAdd() implementation of conversion folder implementation
+
+0.3.2 (2010/03/26)
+------------------
+- fixes for missing 'locales' directory
+
+0.3.0 (2010/03/26)
+-------------------
+- various fixes 
+
+0.2.0 (2010/03/10)
+-------------------
+- various fixes and additions
+
+0.1.0 (2010/02/10)
+-------------------
+- Initial release
