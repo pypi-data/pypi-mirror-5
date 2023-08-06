@@ -1,0 +1,37 @@
+<metal:page define-macro="master">
+  <tal:block metal:use-macro="context/main_template/macros/master">
+
+    <metal:block fill-slot="top_slot">
+        <metal:override define-slot="top_slot">
+            <tal:defines tal:define="dummy python:request.set('disable_border',1);
+                                     disable_column_one python:request.set('disable_plone.leftcolumn', 0);
+                                     disable_column_two python:request.set('disable_plone.rightcolumn',1);"/>
+        </metal:override>
+    </metal:block>
+
+    <metal:override fill-slot="portlets_one_slot">
+      <metal:override define-slot="column_one_slot">
+          <metal:listportlet use-macro="context/listportlet/macros/portlet" />
+      </metal:override>
+    </metal:override>
+
+    <metal:override fill-slot="content">
+        <metal:slot define-slot="hud_panel_wrapper">
+          <metal:slot define-slot="hud_panel_content">
+
+            <a
+              tal:attributes="href view/hud_url"
+              tal:content="view/hud_title"
+              />
+
+            <h1 class="documentFirstHeading"
+                tal:content="view/current_panel/title" />
+
+            <div tal:replace="structure view/panel_view" />
+
+          </metal:slot>
+        </metal:slot>
+    </metal:override>
+
+  </tal:block>
+</metal:page>
