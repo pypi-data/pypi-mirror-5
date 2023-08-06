@@ -1,0 +1,238 @@
+Basic Usage
+===========
+
+This narrative documentation covers the use case of developing an
+application from scratch that uses :mod:`mortar_rdb` to interact with a
+relational database through development and testing.
+
+Development
+-----------
+
+For this narrative, we'll assume we're developing our application in a
+python package called :mod:`sample` that uses the following model:
+
+.. topic:: sample/model.py
+ :class: write-file
+
+ ::
+
+  from mortar_rdb import declarative_base
+  from mortar_rdb.controlled import Config, scan
+  from sqlalchemy import Table, Column, Integer, String
+
+  Base = declarative_base()
+
+  class User(Base):
+    __tablename__ = 'user'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(20))
+
+  source = scan('sample')
+  config = Config(source)
+
+There's nothing particularly special about this model other than that
+we've used :func:`mortar_rdb.declarative_base` to obtain a declarative base rather
+than calling :func:`sqlalchemy.ext.declarative.declarative_base`. This
+means that multiple python packages can all use the same declarative
+base, without having to worry about which package first defines the
+base.
+
+This also means that all tables and models used in our application,
+regardless of the package they are defined in, can refer to each
+other.
+
+To allow us to take advantage of the schema controls provided by
+:mod:`mortar_rdb`, we have also defined a :class:`~mortar_rdb.controlled.Config`
+with a :class:`~mortar_rdb.controlled.Source` returned from a
+:func:`~mortar_rdb.controlled.scan`. The source is defined seperately to
+the configuration for two reasons:
+
+- it allows a configuration in another package to use the source defined
+  here, which encapsulates all the tables managed by this package.
+
+- it makes it easier to write tests for migration scripts for the 
+  tables managed by this package.
+
+.. highlight:: python
+
+To use the above model, we have the following view code:
+
+.. topic:: sample/views.py
+ :class: write-file
+
+ ::
+
+   from mortar_rdb import get_session
+   from sample.model import User
+   
+   def add_user(name):
+       session = get_session()
+       session.add(User(name=name))
+
+   def edit_user(id,name):
+       session = get_session()
+       user = session.query(User).filter(User.id == id).one()
+       user.name = name
+
+When using :mod:`mortar_rdb`, the session is obtained by calling
+:func:`mortar_rdb.get_session`. This allows the provision of the session to
+be independent of its use, which makes testing and deploying to
+different environments easier.
+
+It is also advised that application code does not manage committing or
+rollback of database transactions via the session unless absolutely
+necessary. These actions should be the responsibility of the framework
+running the application.
+
+For the purposes of this narrative, we will use the following micro
+framework:
+
+.. topic:: sample/run.py
+ :class: write-file
+
+ ::
+
+   from mortar_rdb import register_session
+   from sample import views
+   from sample.config import db_url
+   from sample.model import config
+
+   import sys 
+   import transaction
+
+   def main():
+       register_session(db_url)
+       name = sys.argv[1]
+       args = sys.argv[2:]
+       with transaction.manager:
+           getattr(views, name)(*args)
+       print "Ran %r with %r" % (name, args)
+
+   if __name__=='__main__':
+       main()  
+
+Although there's not much to it, the above framework shows the
+elements you will need to plug in to whatever framework you choose to
+use.
+
+The main one of these is the call to :func:`~mortar_rdb.register_session`
+which sets up the components necessary for :func:`~mortar_rdb.get_session` to
+return a :class:`~sqlalchemy.orm.session.Session` object.
+
+The example framework is also shown to manage these sessions using the
+:mod:`transaction` package. Should your framework not use this
+package, you are strongly suggested to read the documentation for
+:func:`~mortar_rdb.register_session` in detail to make sure you pass the
+correct parameters to get the behaviour required by your framework.
+
+Testing
+-------
+
+It's alway a good idea to write automated tests, preferably before
+writing the code under test. :mod:`mortar_rdb` aids this by providing the
+:mod:`mortar_rdb.testing` module.
+
+The following example shows how to provides minimal coverage using
+:func:`mortar_rdb.testing.register_session` and illustrates how the
+abstraction of configuring a session from obtaining a session in
+:mod:`mortar_rdb` makes testing easier:
+
+.. topic:: sample/tests.py
+ :class: write-file
+
+ ::
+
+  from mortar_rdb import get_session
+  from mortar_rdb.testing import register_session
+  from sample.model import User, config
+  from sample.views import add_user, edit_user
+  from unittest import TestCase
+
+  class Tests(TestCase):
+
+       def setUp(self):
+           self.session = register_session(config=config)
+
+       def tearDown(self):
+           self.session.rollback()
+
+       def test_add_user(self):
+           # code under test
+           add_user('Mr Test')
+           # checks
+           user = self.session.query(User).one()
+           self.assertEqual('Mr Test', user.name)
+
+       def test_edit_user(self):
+           # setup
+           self.session.add(User(id=1, name='Mr Chips'))
+           # code under test
+           edit_user('1', 'Mr Fish')
+           # checks
+           user = self.session.query(User).one()
+           self.assertEqual('Mr Fish', user.name)
+
+If you wish to run these tests against a particular database, rather
+than using the default in-memory SQLite database, then set the
+``DB_URL`` enviroment variable to the SQLAlchemy url of the database
+you'd like to use. For example, if you run your tests with `nose`__
+and are developing in a unix-like environment against a MySQL
+database, you could do::
+
+  $ DB_URL=mysql://scott:tiger@localhost/test nosetests
+
+
+__ http://somethingaboutorange.com/mrl/projects/nose
+
+Release
+-------
+
+With the application developed and tested, it is now time to release
+and deploy it. Users of :mod:`mortar_rdb` are encouraged to create a small
+database management script making use of
+:class:`mortar_rdb.controlled.Scripts`.
+
+Here's is an example for the above model:
+
+.. topic:: sample/db.py
+ :class: write-file
+
+ ::
+
+   from mortar_rdb.controlled import Scripts
+   from sample.config import db_url, is_production
+   from sample.model import config
+   
+   scripts = Scripts(db_url, config, not is_production)
+
+   if __name__=='__main__':
+       scripts()
+
+.. invisible-code-block: python
+
+  # now that we've got all files on disk, run the tests
+  from sample.tests import Tests
+  run_tests(Tests, 2)
+
+.. highlight:: bash
+
+This script can be used to create all tables required by the
+applications :class:`~mortar_rdb.controlled.Config` as follows::
+
+  $ bin/db create
+  For database at sqlite:////test.db:
+
+  Creating the following tables:
+  user
+
+Other commands are are provided by :class:`~mortar_rdb.controlled.Scripts`
+and both the command line help, obtained with the ``--help`` option to
+either the script or any of its commands, and documentation are well
+worth a read.
+
+So, the view code, database model, tests and framework are all now
+ready and the database has been created. The framework is now ready to
+use::
+
+  $ bin/run add_user test
+  Ran 'add_user' with ['test']
