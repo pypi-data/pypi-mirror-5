@@ -1,0 +1,34 @@
+dtk Package
+===========
+
+:mod:`bicycle` Module
+---------------------
+
+.. automodule:: dtk.bicycle
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`inertia` Module
+---------------------
+
+.. automodule:: dtk.inertia
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`process` Module
+---------------------
+
+.. automodule:: dtk.process
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`walk` Module
+---------------------
+
+.. automodule:: dtk.walk
+    :members:
+    :undoc-members:
+    :show-inheritance:
