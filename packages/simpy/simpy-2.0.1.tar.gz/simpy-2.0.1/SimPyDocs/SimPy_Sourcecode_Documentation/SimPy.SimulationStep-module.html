@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>SimPy.SimulationStep</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="SimPy-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="SimPy-module.html">Package&nbsp;SimPy</a> ::
+        Module&nbsp;SimulationStep
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="SimPy.SimulationStep-module.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== MODULE DESCRIPTION ==================== -->
+<h1 class="epydoc">Module SimulationStep</h1><p class="nomargin-top"><span class="codelink"><a href="SimPy.SimulationStep-pysrc.html">source&nbsp;code</a></span></p>
+<pre class="literalblock">
+SimulationStep 2.0 Supports stepping through SimPy simulation event - by - event.
+Based on generators (Python 2.3 and later; not 3.0)
+
+LICENSE:
+Copyright (C) 2002, 2005, 2006, 2007, 2008  Klaus G. Muller, Tony Vignaux
+mailto: kgmuller@xs4all.nl and Tony.Vignaux@vuw.ac.nz
+
+    This library is free software; you can redistribute it and / or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111 - 1307  USA
+END OF LICENSE
+
+**Change history:**
+
+    Started out as SiPy 0.9
+    
+    5 / 9/2002: SiPy 0.9.1
+    
+        - Addition of '_cancel' method in class Process and supporting '_unpost' method in 
+          class __Evlist.
+        
+        - Removal of redundant 'Action' method in class Process.
+        
+    12 / 9/2002:
+    
+        - Addition of resource class
+        
+        - Addition of '_request' and '_release' coroutine calls
+        
+    15 / 9/2002: moved into SimPy package
+    
+    16 / 9/2002:
+        - Resource attributes fully implemented (resources can now have more
+          than 1 shareable resource units)
+        
+    17 / 9/2002:
+    
+        - corrected removal from waitQ (Vignaux)
+        
+    17 / 9/2002:
+    
+        - added test for queue discipline in 'test_demo()'. Must be FIFO
+        
+    26 / 9/02: Version 0.2.0
+    
+        - cleaned up code; more consistent naming
+        
+        - prefixed all Simulation - private variable names with '_'.
+        
+        - prefixed all class - private variable names with '__'.
+        
+        - made normal exit quiet (but return message from scheduler()
+        
+    28 / 9/02:
+    
+        - included stopSimulation()
+        
+    15 / 10 / 02: Simulation version 0.3
+    
+        - Version printout now only if __TESTING
+        
+        - '_stop' initialized to True by module load, and set to False in 
+      initialize()
+        
+        - Introduced 'simulate(until = 0)' instead of 'scheduler(till = 0)'. 
+      Left 'scheduler()' in for backward compatibility, but marked
+      as deprecated.
+        
+        - Added attribute 'name' to class Process; default == 'a_process'
+        
+        - Changed Resource constructor to 
+      'def __init__(self, capacity = 1, name = 'a_resource', unitName = 'units''.
+        
+    13 / 11 / 02: Simulation version 0.6
+    
+        - Major changes to class Resource:
+        
+            - Added two queue types for resources, FIFO (default) and PriorityQ
+            
+            - Changed constructor to allow selection of queue type.
+            
+            - Introduced preemption of resources (to be used with PriorityQ
+              queue type)
+            
+            - Changed constructor of class Resource to allow selection of preemption
+            
+            - Changes to class Process to support preemption of service
+            
+            - Cleaned up 'simulate' by replacing series of if - statements by dispatch table.
+
+    19 / 11 / 02: Simulation version 0.6.1
+        - Changed priority schemes so that higher values of Process 
+          attribute 'priority' represent higher priority.
+
+    20 / 11 / 02: Simulation version 0.7
+        - Major change of priority approach:
+
+            - Priority set by 'yield request, self, res, priority'
+
+            - Priority of a Process instance associated with a specific 
+              resource
+
+    25 / 11 / 02: Simulation version 0.7.1
+
+        - Code cleanup and optimization
+
+        - Made process attributes remainService and preempted private 
+         (_remainService and _preempted)
+
+    11 / 12 / 2002: First process interrupt implementation
+
+        - Addition of user methods 'interrupt' and 'resume'
+
+        - Significant code cleanup to maintain process state
+
+    20 / 12 / 2002: Changes to 'interrupt'; addition of boolean methods to show
+                     process states
+
+    16 / 3/2003: Changed hold (allowing posting events past _endtime)
+    
+    18 / 3/2003: Changed _nextev to prevent _t going past _endtime
+
+    23 / 3/2003: Introduced new interrupt construct; deleted 'resume' method
+    
+    25 / 3/2003: Expanded interrupt construct:
+    
+        - Made 'interrupt' a method  of Process
+
+        - Added 'interruptCause' as an attribute of an interrupted process
+
+        - Changed definition of 'active' to 
+         'self._nextTime &lt;&gt; None and not self._inInterrupt'
+
+        - Cleaned up test_interrupt function
+
+    30 / 3/2003: Modification of 'simulate':
+
+        - error message if 'initialize' not called (fatal)
+
+        - error message if no process scheduled (warning)
+
+        - Ensured that upon exit from 'simulate', now() == _endtime is 
+          always valid
+
+    2 / 04 / 2003:
+
+        - Modification of 'simulate': leave _endtime alone (undid change
+          of 30 Mar 03)
+
+        - faster '_unpost'
+
+    3 / 04 / 2003: Made 'priority' private ('_priority')
+
+    4 / 04 / 2003: Catch activation of non - generator error
+
+    5 / 04 / 2003: Added 'interruptReset()' function to Process.
+
+    7 / 04 / 2003: Changed '_unpost' to ensure that process has
+                   _nextTime == None (is passive) afterwards.
+
+    8 / 04 / 2003: Changed _hold to allow for 'yield hold, self' 
+                   (equiv to 'yield hold, self, 0')
+
+    10 / 04 / 2003: Changed 'cancel' syntax to 'Process().cancel(victim)'
+
+    12 / 5/2003: Changed eventlist handling from dictionary to bisect
+    
+    9 / 6/2003: - Changed eventlist handling from pure dictionary to bisect-
+                sorted 'timestamps' list of keys, resulting in greatly 
+                improved performance for models with large
+                numbers of event notices with differing event times.
+                =========================================================
+                This great change was suggested by Prof. Simon Frost. 
+                Thank you, Simon! This version 1.3 is dedicated to you!
+                =========================================================
+              - Added import of Lister which supports well - structured 
+                printing of all attributes of Process and Resource instances.
+
+    Oct 2003: Added monitored Resource instances (Monitors for activeQ and waitQ)
+
+    13 Dec 2003: Merged in Monitor and Histogram
+
+    27 Feb 2004: Repaired bug in activeQ monitor of class Resource. Now actMon
+                 correctly records departures from activeQ.
+                 
+    19 May 2004: Added erroneously omitted Histogram class.
+
+    5 Sep 2004: Added SimEvents synchronization constructs
+    
+    17 Sep 2004: Added waituntil synchronization construct
+    
+    01 Dec 2004: SimPy version 1.5
+                 Changes in this module: Repaired SimEvents bug re proc.eventsFired
+                 
+    12 Jan 2005: SimPy version 1.5.1
+                 Changes in this module: Monitor objects now have a default name
+                                         'a_Monitor'
+                                         
+    29 Mar 2005: Start SimPy 1.6: compound 'yield request' statements
+    
+    05 Jun 2005: Fixed bug in _request method -- waitMon did not work properly in
+                 preemption case
+                 
+    09 Jun 2005: Added test in 'activate' to see whether 'initialize()' was called first.
+    
+    23 Aug 2005: - Added Tally data collection class
+                 - Adjusted Resource to work with Tally
+                 - Redid function allEventNotices() (returns prettyprinted string with event
+                   times and names of process instances
+                 - Added function allEventTimes (returns event times of all scheduled events)
+                 
+    16 Mar 2006: - Added Store and Level classes
+                 - Added 'yield get' and 'yield put'
+                 
+    10 May 2006: - Repaired bug in Store._get method
+                 - Repaired Level to allow initialBuffered have float value
+                 - Added type test for Level get parameter 'nrToGet'
+                 
+    06 Jun 2006: - To improve pretty - printed output of 'Level' objects, changed attribute
+                   _nrBuffered to nrBuffered (synonym for amount property)
+                 - To improve pretty - printed output of 'Store' objects, added attribute
+                   buffered (which refers to _theBuffer)
+                   
+    25 Aug 2006: - Start of version 1.8
+                 - made 'version' public
+                 - corrected condQ initialization bug
+                 
+    30 Sep 2006: - Introduced checks to ensure capacity of a Buffer &gt; 0
+                 - Removed from __future__ import (so Python 2.3 or later needed)
+                
+    15 Oct 2006: - Added code to register all Monitors and all Tallies in variables
+                   'allMonitors' and 'allTallies'
+                 - Added function 'startCollection' to activate Monitors and Tallies at a
+                   specified time (e.g. after warmup period)
+                 - Moved all test / demo programs to after 'if __name__ == '__main__':'.
+                
+    17 Oct 2006: - Added compound 'put' and 'get' statements for Level and Store.
+    
+    18 Oct 2006: - Repaired bug: self.eventsFired now gets set after an event fires
+                   in a compound yield get / put with a waitevent clause (reneging case).
+                   
+    21 Oct 2006: - Introduced Store 'yield get' with a filter function.
+                
+    22 Oct 2006: - Repaired bug in prettyprinting of Store objects (the buffer 
+                   content==._theBuffer was not shown) by changing ._theBuffer 
+                   to .theBuffer.
+                
+    04 Dec 2006: - Added printHistogram method to Tally and Monitor (generates
+                   table - form histogram)
+                    
+    07 Dec 2006: - Changed the __str__ method of Histogram to print a table 
+                   (like printHistogram).
+    
+    18 Dec 2006: - Added trace printing of Buffers' 'unitName' for yield get and put.
+    
+    09 Jun 2007: - Cleaned out all uses of 'object' to prevent name clash.
+    
+    18 Nov 2007: - Start of 1.9 development
+                 - Added 'start' method (alternative to activate) to Process
+                 
+    22 Nov 2007: - Major change to event list handling to speed up larger models:
+                    * Drop dictionary
+                    * Replace bisect by heapq
+                    * Mark cancelled event notices in unpost and skip them in
+                      nextev (great idea of Tony Vignaux))
+                      
+    4 Dec 2007: - Added twVariance calculation for both Monitor and Tally (gav)
+    
+    5 Dec 2007: - Changed name back to timeVariance (gav)
+    
+    1 Mar 2008: - Start of 1.9.1 bugfix release
+                - Delete circular reference in Process instances when event 
+                  notice has been processed (caused much circular garbage)
+                - Added capability for multiple preempts of a process
+                
+    10 Aug 2008: - Removed most classes / methods and imported them from
+                   Simulation.py instead (Stefan Scherfke)
+                 - Moved remaining functions to SimulationStep and added some
+                   methods for backward compatibility
+    
+
+</pre>
+
+<hr />
+<div class="fields">      <p><strong>Version:</strong>
+        2.0 $Revision: 163 $ $Date: 2008-12-15 12:47:44 +0100 (Mo, 15 Dez 
+        2008) $
+      </p>
+</div><!-- ==================== CLASSES ==================== -->
+<a name="section-Classes"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Classes"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="SimPy.SimulationStep.SimulationStep-class.html" class="summary-name">SimulationStep</a>
+    </td>
+  </tr>
+</table>
+<!-- ==================== FUNCTIONS ==================== -->
+<a name="section-Functions"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Functions</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Functions"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="startStepping"></a><span class="summary-sig-name">startStepping</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="SimPy.SimulationStep-pysrc.html#startStepping">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="stopStepping"></a><span class="summary-sig-name">stopStepping</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="SimPy.SimulationStep-pysrc.html#stopStepping">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="simulate"></a><span class="summary-sig-name">simulate</span>(<span class="summary-sig-arg">callback</span>=<span class="summary-sig-default">&lt;function &lt;lambda&gt; at 0x02DC0930&gt;</span>,
+        <span class="summary-sig-arg">until</span>=<span class="summary-sig-default">0</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="SimPy.SimulationStep-pysrc.html#simulate">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="simulateStep"></a><span class="summary-sig-name">simulateStep</span>(<span class="summary-sig-arg">callback</span>=<span class="summary-sig-default">&lt;function &lt;lambda&gt; at 0x02DC09B0&gt;</span>,
+        <span class="summary-sig-arg">until</span>=<span class="summary-sig-default">0</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="SimPy.SimulationStep-pysrc.html#simulateStep">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES ==================== -->
+<a name="section-Variables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Variables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="__TESTING"></a><span class="summary-name">__TESTING</span> = <code title="False">False</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="SimPy.SimulationStep-module.html#version" class="summary-name">version</a> = <code title="'2.0 $Revision: 163 $ $Date: 2008-12-15 12:47:44 +0100 (Mo, 15 Dez 200\
+8) $'"><code class="variable-quote">'</code><code class="variable-string">2.0 $Revision: 163 $ $Date: 2008-12-15 12:47:44 +01</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_step"></a><span class="summary-name">_step</span> = <code title="False">False</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="__package__"></a><span class="summary-name">__package__</span> = <code title="'SimPy'"><code class="variable-quote">'</code><code class="variable-string">SimPy</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== VARIABLES DETAILS ==================== -->
+<a name="section-VariablesDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Variables Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-VariablesDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="version"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">version</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-quote">'</code><code class="variable-string">2.0 $Revision: 163 $ $Date: 2008-12-15 12:47:44 +0100 (Mo, 15 Dez 200</code><span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+<code class="variable-string">8) $</code><code class="variable-quote">'</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="SimPy-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Thu Apr 02 06:43:19 2009
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
