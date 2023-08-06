@@ -1,0 +1,152 @@
+Minos: A Lightweight Validation Framework
+=========================================
+`Minos` is a library that you can use in your code to create a simple validation
+framework. Its aim is to provide a lightweight interface of functions that make it
+simple to quickly build and manipulate models.
+
+.. toctree::
+   :maxdepth: 2
+
+Installation
+============
+
+To install Minos locally:
+
+::
+
+    $ python setup.py develop
+
+
+Minos will soon be on PyPi.
+
+.. _Quickstart:
+
+Quickstart
+==========
+
+There are a few patterns Minos was designed to support; class validation with validators declared as
+part of the class definition, class validation where the validators are declared seperately, and as
+totally independant object validators. See below for a few examples of each pattern.
+
+Class Validators in Class Definition
+------------------------------------
+
+To declare validators inside of a class, the class needs to inherit from the Minos Mixin, and the
+validation arguments are passed to each validator on instantiation.
+
+For example, given a class definition like so:
+
+.. sourcecode:: python
+
+      import minos
+      import pytz
+
+      from datetime import datetime
+      from minos.validators import DatetimeValidator, NumericalityValidator, PresenceValidator
+
+
+      class Toaster(minos.Mixin):
+
+          #Attributes
+
+          created_at = None
+          num_slots = None
+
+          #Validators
+
+          validators = [
+              DatetimeValidator('created_at'),
+              PresenceValidator('num_slots'),  # every toaster needs to have its number of slots specified
+              #Toasters can only have an integer number of slots between 2-8
+              NumericalityValidator(
+                  'num_slots',
+                  integer_only=True,
+                  greater_than_or_equal_to=2,
+                  less_than_or_equal_to=8
+              )
+          ]
+
+
+          def __init__(self, bread):
+              self.bread = bread
+              self.created_at = datetime.now(pytz.utc)
+
+          #...class definition continues...
+
+
+When using the ToasterClass in code, you can do stuff like this:
+
+.. sourcecode:: python
+
+      def toast_bread(bread):
+          toaster = Toaster(num_slots=4)
+          try:
+              toaster.validate()  # Validates that toaster's attributes are valid
+          except minos.errors.FormValidationError:
+              raise ToastError("can't toast bread, toasters busted.")
+
+          toasted_bread = toaster.toast(bread)
+
+          return toasted_bread
+
+Class Validators Outside Class Definition
+-----------------------------------------
+
+Similarly, You can also create a validator that validates a single attribute of a python object,
+and pass objects to be validated to it using the Validator's *.validate_wrapper()* call.
+
+
+.. sourcecode:: python
+
+      import minos
+      from minos.validators import NumericalityValidator
+
+      #Create a validator that for a toaster's slots ahead of time
+      slot_validator = NumericalityValidator(
+          'num_slots',
+          integer_only=True,
+          greater_than_or_equal_to=2,
+          less_than_or_equal_to=8
+      )
+
+      #Given a list of toasters, validate them all
+      for toaster in [dorm_toaster, kitchen_toaster, fancy_toaster]:
+          try:
+              #Check this toaster using the parameters specified earlier
+              slot_validator.validate_wrapper(toaster)
+          except minos.errors.FormValidationError:
+              print "{} doesn't have the right number of slots.".format(toaster.name)
+
+Single\-Use Validation
+----------------------
+
+You can also create validators without configuration, and specify the configuration inline using the *.validate()* call:
+
+
+.. sourcecode:: python
+
+      from minos.validators import NumericalityValidator
+      from minos.errors import ValidationError
+
+      #Make a validator that checks numeric qualities of objects
+      accountant = NumericalityValidator()
+
+
+      #Check a bunch of stuff
+
+      try:
+          accountant.validate(bank_account, greater_than=0)
+      except ValidationError:
+          print "You're broke!"
+
+      try:
+          accountant.validate(tax_payment, greater_than=0, less_than=5000.00)
+      except ValidationError:
+          print "You're tax payment doesn't seem right..."
+
+      try:
+          accountant.validate(num_deductions, integer_only=True)
+      except ValidationError:
+          print "Your number of deductions doesn't make sense."
+
+
