@@ -1,0 +1,242 @@
+<html>
+<head>
+<title>{{ test_title }} test</title>
+<script src="{{ goog_base_js }}"></script>
+<script src="{{ test_deps_js }}"></script>
+<script>
+    goog.require('goog.testing.TestCase');
+    goog.require('goog.testing.TestRunner');
+    goog.require('goog.debug.Logger'); 
+    goog.require('goog.debug.Console'); 
+    goog.require('goog.testing.AsyncTestCase');
+</script>
+<script>
+// REGISTER A TEST RUNNER
+// Store a reference to the window's timeout so that it can't be overridden
+// by tests.
+/** @type {!Function} */
+var realTimeout = window.setTimeout;
+
+var TEST_RUNNER = null;
+
+var TEST_RESULT = {
+    'success': false,
+    'totalCount': 0,
+    'tests': [],
+    'errors': [],
+    'log': [],
+    'messages': []
+};
+
+var RUNTESTS_CALLBACK=null;
+
+function RUNTESTS(callback){
+    RUNTESTS_CALLBACK = callback;
+
+    if (!TEST_RUNNER.initialized) {
+        var test = new goog.testing.TestCase(document.title);
+        test.autoDiscoverTests();
+        TEST_RUNNER.initialize(test);
+    }
+    
+    TEST_RUNNER.execute();
+}
+        
+// Increases the maximum number of stack frames in Google Chrome from the
+// default 10 to 50 to get more useful stack traces.
+Error.stackTraceLimit = 50;
+
+// Create a test runner.
+TEST_RUNNER = new goog.testing.TestRunner();
+
+// Export it so that it can be queried by Selenium and tests that use a
+// compiled test runner.
+goog.exportSymbol('G_testRunner', TEST_RUNNER);
+goog.exportSymbol('G_testRunner.initialize', TEST_RUNNER.initialize);
+goog.exportSymbol('G_testRunner.isInitialized', TEST_RUNNER.isInitialized);
+goog.exportSymbol('G_testRunner.isFinished', TEST_RUNNER.isFinished);
+goog.exportSymbol('G_testRunner.isSuccess', TEST_RUNNER.isSuccess);
+goog.exportSymbol('G_testRunner.getReport', TEST_RUNNER.getReport);
+goog.exportSymbol('G_testRunner.getRunTime', TEST_RUNNER.getRunTime);
+goog.exportSymbol('G_testRunner.getNumFilesLoaded', TEST_RUNNER.getNumFilesLoaded);
+goog.exportSymbol('G_testRunner.setStrict', TEST_RUNNER.setStrict);
+goog.exportSymbol('G_testRunner.logTestFailure', TEST_RUNNER.logTestFailure);
+
+// Export debug as a global function for JSUnit compatibility.  This just
+// calls log on the current test case.
+if (!goog.global['debug']) {
+  goog.exportSymbol('debug', goog.bind(TEST_RUNNER.log, TEST_RUNNER));
+}
+
+// If the application has defined a global error filter, set it now.  This
+// allows users who use a base test include to set the error filter before
+// the testing code is loaded.
+if (goog.global['G_errorFilter']) {
+  TEST_RUNNER.setErrorFilter(goog.global['G_errorFilter']);
+}
+
+// Add an error handler to report errors that may occur during
+// initialization of the page.
+var onerror = window.onerror;
+window.onerror = function(error, url, line) {
+  // Call any existing onerror handlers.
+  if (onerror) {
+    onerror(error, url, line);
+  }
+  if (typeof error == 'object') {
+    // Webkit started passing an event object as the only argument to
+    // window.onerror.  It doesn't contain an error message, url or line
+    // number.  We therefore log as much info as we can.
+    if (error.target && error.target.tagName == 'SCRIPT') {
+      TEST_RUNNER.logError('UNKNOWN ERROR: Script ' + error.target.src);
+    } else {
+      TEST_RUNNER.logError('UNKNOWN ERROR: No error information available.');
+    }
+  } else {
+    TEST_RUNNER.logError('JS ERROR: ' + error + '\nURL: ' + url + '\nLine: ' + line);
+  }
+};
+</script>
+<script>
+        
+var global = goog.global;
+    
+
+/** @override */
+//global.goog.testing.TestCase.prototype.log = goog.nullFunction;
+
+/** @override */
+//global.goog.testing.TestCase.prototype.runTests = function() {
+//    var data = {
+//      name: this.name_,
+//      num: this.getCount()
+//    };
+//    sendToPhantomJS('head', data);
+    
+//    try {
+//      this.setUpPage();
+//    } catch (e) {
+//      this.exceptionBeforeTest = e;
+ //   }
+//    this.execute();
+//};
+
+/** @override */
+global.goog.testing.TestCase.prototype.doSuccess = function(test) {
+    this.result_.successCount++;
+    
+    TEST_RESULT['log'].push({
+      success: true,
+      name: test.name,
+      time: test.runTime || 0
+    })
+
+};
+
+/** @override */
+global.goog.testing.TestCase.prototype.doError = function(test, opt_e) {
+    var err = this.logError(test.name, opt_e);
+    this.result_.errors.push(err);
+    
+    TEST_RESULT['log'].push({
+      success: false,
+      name: test.name,
+      time: test.runTime || 0,
+      error: err  
+    })
+};
+
+/** @override */
+global.goog.testing.TestCase.Test.prototype.execute = function() {
+    var startTime = new Date().getTime();
+    this.ref.call(this.scope);
+    this.runTime = (new Date().getTime()) - startTime;
+};
+    
+/**
+* @override
+*/
+goog.testing.TestRunner.prototype.execute = function() {
+    if (!this.testCase) {
+      throw Error('The test runner must be initialized ' +
+                  'with a test case before ' +
+                  'execute can be called.');
+    }
+    this.testCase.setCompletedCallback(goog.bind(this.handleTestCompletion, this));
+    this.testCase.runTests();
+};
+
+goog.testing.TestRunner.prototype.handleTestCompletion = function() {
+    
+    var result = this.testCase.result_;
+    console.log('Result', result);
+    
+    for(var i=0; i<this.testCase.tests_.length; i++){
+        var test = this.testCase.tests_[i];
+        var testData = {};
+        testData['name'] = test.name;
+        TEST_RESULT['tests'].push(testData);
+    }
+    
+    for(var i=0; i<result.errors.length; i++){
+        var error = result.errors[i];
+        var errorData = {};
+        errorData ['source'] = error.source;
+        errorData ['stack'] = error.stack;
+        errorData ['message'] = error.message;
+        TEST_RESULT['errors'].push(errorData);
+    }
+    
+    
+    for(var i=0; i<result.messages.length; i++){
+        var message = result.messages[i];
+        TEST_RESULT['messages'].push(message);
+    }
+    
+    //console.log(TEST_RESULT);
+    
+    TESTS_HAVE_RUN = true;
+    
+    if(RUNTESTS_CALLBACK){
+        // send the result back to selenium
+        RUNTESTS_CALLBACK(TEST_RESULT)  
+    }
+}
+  
+goog.provide('CLOVER_TESTRUNNER')
+
+CLOVER_TESTRUNNER = function(){
+    
+    
+}
+
+    
+CLOVER_TESTRUNNER.prototype.callback = null;
+
+
+CLOVER_TESTRUNNER.prototype.overrideTestCase = function(){
+    
+};
+
+CLOVER_TESTRUNNER.prototype.handleTestCompletion = function(){
+    
+};
+
+    
+</script>
+    
+<script src="{{ test_js_url }}"></script>
+    
+</head>
+<body>
+
+<script>
+goog.debug.Console.autoInstall();
+goog.debug.Console.instance.setCapturing(true);
+
+var logger = new goog.debug.LogManager.getRoot();
+logger.setLevel(goog.debug.Logger.Level.FINEST);
+
+</script>
+</body>
+</html>
