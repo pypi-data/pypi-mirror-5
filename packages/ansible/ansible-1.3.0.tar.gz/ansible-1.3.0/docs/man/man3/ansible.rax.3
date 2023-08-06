@@ -1,0 +1,89 @@
+.TH ANSIBLE.RAX 3 "2013-09-13" "1.3.0" "ANSIBLE MODULES"
+." generated from library/cloud/rax
+.SH NAME
+rax \- create / delete an instance in Rackspace Public Cloud
+." ------ DESCRIPTION
+.SH DESCRIPTION
+.PP
+creates / deletes a Rackspace Public Cloud instance and optionally waits for it to be 'running'. 
+." ------ OPTIONS
+."
+."
+.SH OPTIONS
+   
+.IP api_key
+Rackspace API key (overrides \fCcredentials\fR)   
+.IP credentials
+File to find the Rackspace credentials in (ignored if \fCapi_key\fR and \fCusername\fR are provided)   
+.IP files
+Files to insert into the instance. remotefilename:localcontent   
+.IP flavor
+flavor to use for the instance   
+.IP image
+image to use for the instance   
+.IP key_name
+key pair to use on the instance   
+.IP meta
+A hash of metadata to associate with the instance   
+.IP name
+Name to give the instance   
+.IP region
+Region to create an instance in (default: DFW)   
+.IP service
+Cloud service to interact with
+.IR Choices :
+cloudservers. (default: cloudservers)   
+.IP state
+Indicate desired state of the resource
+.IR Choices :
+present,active,absent,deleted. (default: present)   
+.IP username
+Rackspace username (overrides \fCcredentials\fR)   
+.IP wait
+wait for the instance to be in state 'running' before returning
+.IR Choices :
+yes,no. (default: no)   
+.IP wait_timeout
+how long before wait gives up, in seconds (default: 300)."
+."
+." ------ NOTES
+.SH NOTES
+.PP
+The following environment variables can be used, \fCRAX_USERNAME\fR, \fCRAX_API_KEY\fR, \fCRAX_CREDS\fR, \fCRAX_CREDENTIALS\fR, \fCRAX_REGION\fR. 
+.PP
+\fCRAX_CREDENTIALS\fR and \fCRAX_CREDS\fR points to a credentials file appropriate for pyrax 
+.PP
+\fCRAX_USERNAME\fR and \fCRAX_API_KEY\fR obviate the use of a credentials file 
+.PP
+\fCRAX_REGION\fR defines a Rackspace Public Cloud region (DFW, ORD, LON, ...) 
+."
+."
+." ------ EXAMPLES
+." ------ PLAINEXAMPLES
+.nf
+- name: Build a Cloud Server
+  gather_facts: False
+
+  tasks:
+    - name: Server build request
+      local_action:
+        module: rax
+        credentials: ~/.raxpub
+        service: cloudservers
+        name: rax-test1
+        flavor: 5
+        image: b11d9567-e412-4255-96b9-bd63ab23bcfe
+        files:
+          /root/.ssh/authorized_keys: /home/localuser/.ssh/id_rsa.pub
+          /root/test.txt: /home/localuser/test.txt
+        wait: yes
+        state: present
+
+.fi
+
+." ------- AUTHOR
+.SH AUTHOR
+Jesse Keating
+.SH SEE ALSO
+.IR ansible (1),
+.I http://ansible.github.com/modules.html#rax
