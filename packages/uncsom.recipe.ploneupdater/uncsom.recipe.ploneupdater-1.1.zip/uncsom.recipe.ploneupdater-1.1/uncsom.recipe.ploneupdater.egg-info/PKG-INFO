@@ -1,0 +1,99 @@
+Metadata-Version: 1.1
+Name: uncsom.recipe.ploneupdater
+Version: 1.1
+Summary: A buildout recipe to update plone sites
+Home-page: https://github.com/ianderso/uncsom.recipe.ploneupdater
+Author: Ian Anderson
+Author-email: ianderso@med.unc.edu
+License: GPL
+Description: uncsom.recipe.ploneupdater
+        ==========================
+        
+        - Code repository: https://github.com/ianderso/uncsom.recipe.ploneupdater
+        
+        Problem
+        ===========
+        
+        After executing your buildout to deploy your Plone project you have to start
+        the zope instance and then go on the ZMI to update the plone sites. This is
+        boring!
+        
+        
+        Solution
+        ========
+        
+        uncsom.recipe.ploneupdater is a buildout recipe that you can use to update
+        plone sites. It automatizes the following tasks:
+        
+         * Backup database
+         * pack database
+         * reinstall products with the quickinstaller
+         * run GS profiles
+         * run Plone migration (portal_migration.upgrade)
+        
+        Detailed Documentation
+        **********************
+        
+        Supported options
+        =================
+        
+        The recipe supports the following option:
+        
+        admin-name
+            The name of the zope instance admin. The same as defined in the ``user``
+            option of your zope instance. Defaults to 'admin'
+        
+        
+        Example usage
+        =============
+        
+        We'll start by creating a buildout that uses the recipe. Let's create
+        a freash zope instance and create 2 plone sites inside it. We will also
+        install RichDocument and NuPlone into these sites::
+        
+            >>> write(sample_buildout, 'buildout.cfg', """
+            ... [buildout]
+            ... parts =
+            ...     instance
+            ...     update-plone
+            ... index = http://pypi.python.org/simple
+            ... find-links =
+            ...     http://download.zope.org/distribution/
+            ...     http://effbot.org/downloads
+            ... eggs =
+            ...     Plone
+            ...     Pillow
+            ...
+            ... [instance]
+            ... recipe = plone.recipe.zope2instance
+            ... user = admin:admin
+            ... eggs = ${buildout:eggs}
+            ...
+            ... [update-plone]
+            ... recipe = collective.recipe.updateplone
+            ... """)
+        
+        Contributors
+        ************
+        
+        - Ian Anderson (Author)
+        
+        Change history
+        **************
+        
+        0.1 (2013-11-07)
+        ================
+        
+          - Initial Import
+        
+        Download
+        ********
+        
+Keywords: buildout recipe update plone
+Platform: UNKNOWN
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Plone
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
