@@ -1,0 +1,262 @@
+Metadata-Version: 1.1
+Name: BaseHash
+Version: 2.1.0
+Summary: Reversible obfuscated identifier hashes.
+Home-page: http://bnlucas.github.io/python-basehash
+Author: Nathan Lucas
+Author-email: nathan@bnlucas.com
+License: Copyright 2013 Nathan Lucas
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+Download-URL: https://github.com/bnlucas/python-basehash/archive/master.zip
+Description: BaseHash
+        ========
+        
+        [![Build Status](https://travis-ci.org/bnlucas/python-basehash.png?branch=master)](https://travis-ci.org/bnlucas/python-basehash)
+        
+        BaseHash is a small library for creating reversible obfuscated identifier hashes
+        to a given base and length. The project is based on the GO library, [PseudoCrypt][pc]
+        by [Kevin Burns][kb]. The library is extendible to use custom alphabets and other
+        bases.
+        
+        The library uses golden primes and the [Baillie-PSW][bp] primality test for hashing 
+        to `n` length. From testing, I have gotten `base62` up to `171` in length.
+        
+        ```
+        Maximum number is Base^Length - 1.
+        -> 62^171 - 1 or 315485137315301582773830923281251564555089304044116975095028710
+                         008180170985809814948409129256031320171601473029340987051144213
+                         425607224233134700199050224309707192084206558324823774511143549
+                         765069844412467187455459156942237963528166277256376429656681225
+                         8180788198965409784329587392583208081351811265973977087
+        ```
+        
+        
+        Install
+        -------
+        
+        ```
+        pip install basehash
+        ```
+        
+        Testing
+        -------
+        
+        ```
+        nosetests tests/
+        ```
+        
+        Encode
+        ------
+        ```python
+        import basehash
+        
+        base62 = basehash.base62()
+        
+        encoded = base62.encode(2013)
+        decoded = base62.decode('WT')
+        
+        print encoded, decoded
+        ```
+        ```
+        WT 2013
+        ```
+        
+        Hash
+        ----
+        ```python
+        import basehash
+        
+        base62 = basehash.base62()
+        
+        hashed   = base62.hash(2013, 8)
+        unhashed = base62.unhash('6LhOma5b')
+        
+        print hashed, unhashed
+        ```
+        ```
+        6LhOma5b 2013
+        ```
+        
+        Generating your own primes
+        --------------------------
+        The `GENERATOR` variable uses the golden ratio, `1.618033988749894848`, to get
+        the next highest prime of `base ** number * generator`. This can be overridden
+        within the base classes.
+        
+        ```python
+        import basehash
+        
+        base62 = basehash.base62(1.75) # base62(generator=1.75)
+        ```
+        
+        Generating your own alphabets
+        -----------------------------
+        
+        ```python
+        import basehash
+        
+        alphabet = basehash.generate_alphabet(basehash.BASE36, randomize=20)
+        # runs random.shuffle on basehash.BASE36 (randomize)=20 times.
+        # produces something like: L0RJBY2HQ7MSGXPE6NCUW38KAFVDO51IZ94T
+        # save this alphabet to use for hasher.unhash()
+        
+        hasher = basehash.base(alphabet, length=10)
+        ```
+        
+        Maximum number while hashing
+        ----------------------------
+        There is a maximum number while hashing with any given base. To find out what
+        this number is, we use the `Base^Length - 1`.
+        
+        ```python
+        import basehash
+        
+        base36 = basehash.base36()
+        
+        print base36.maximum_value(12) # or base36.maximum(length)
+        ```
+        ```
+        4738381338321616895
+        ```
+        
+        So with the max number for `base36` at length `12` as `4738381338321616895` we
+        get the following:
+        
+        ```python
+        import basehash
+        
+        base36 = basehash.base36()
+        
+        hash = base36.hash(4738381338321616895, 12)
+        # 'DR10828P4CZP'
+        
+        hash = base36.hash(4738381338321616896, 12)
+        # ValueError: Number is too large for given length. Maximum is 36^12 - 1.
+        ```
+        
+        Extending
+        ---------
+        Extending is made easy with some time spent determining the next highest prime
+        dynamically, the fastest possible that I have been able to make it so far.
+        
+        ```python
+        import basehash
+        
+        custom = basehash.base('24680ACEGIKMOQSUWYbdfhjlnprtvxz')
+        
+        print custom.encode(2013)       # 66x
+        print custom.decode('66x')      # 2013
+        print custom.hash(2013, 8)      # 8AQAQdYd
+        print custom.unhash('8AQAQdYd') # 2013
+        print custom.maximum_value(12)  # 787662783788549760
+        ```
+        
+        [pc]: https://github.com/KevBurnsJr/pseudocrypt
+        [kb]: https://github.com/KevBurnsJr
+        [bp]: http://en.wikipedia.org/wiki/Baillie-PSW_primality_test
+        
+        
+        2.1.0 (2013-07-24)
+        ==================
+        
+        - Create custom random alphabets using `basehash.generate_alphabet(alphabet)`.
+        
+        - BaseHash.base now checks `alphabet` for duplicates using `set`.
+        
+        2.0.2 (2013-07-10)
+        ==================
+        
+        - base and baseN now accept a length parameter, defaulted to HASH_LENGTH so that
+          baseN.hash(num, length) is set globally, not locally.
+        
+        2.0.0 (2013-07-07)
+        ==================
+        
+        - Moved everything to an object. Removed baseN.py files, allows for easier
+          configuration of `GENERATOR` and for extending to a custom alphabet.
+        
+        1.0.7 (2013-07-06)
+        ==================
+        
+        - There was an issue with hashes sometimes being returned one to two charcters
+          shorter than `length`, causing `base.base_unhash` to not function properly. To
+          fix this, the hashes are right-padded with `alphabet[0]`.
+        
+        - Since `0` raises an error inside `primes.invmul`, `base.base_unhash` is unable
+          to unhash it. To allow the start of your number sequence to be `0` instead of
+          `1`, if needed, hashing `base.base_hash(0, length=6)` will return
+          `''.rjust(length, alphabet[0])`.
+        
+        1.0.6 (2013-06-29)
+        ==================
+        
+        - Fixed issues with setup.py. First time using a setup.py within a package,
+          first time publishing the library outside of GitHub.
+        
+        1.0.5 (2013-06-28)
+        ==================
+        
+        - Added nose unittests.
+        
+        1.0.4 (2013-06-28)
+        ==================
+        
+        - Added setup.py, LICENSE, HISTORY.rst, and .travis.yaml.
+        
+        1.0.3 (2013-06-27)
+        ==================
+        
+        - Added a simple test for `prime < 31` to reduce calculation time.
+        
+        - Fixed issue of `strong_pseudoprime(n, 3)` giving false results.
+        
+        1.0.2 (2013-06-27)
+        ==================
+        
+        - Changed primality test from Miller-Rabin to Baillie-PSW. This algorithm is
+          significantly faster.
+        
+        - Changed determination to use `sqrt(n)` or `isqrt(n)` to an improved version of
+          `isqrt(n)`.
+        
+        - BaseHash is now PEP compliant.
+        
+        1.0.1 (2013-06-25)
+        ==================
+        
+        - Changed primality test from Fermat to Miller-Rabin. Improved accuracy on false
+          results when it comes to pseudoprimes.
+        
+        1.0.0 (2013-06-24)
+        ==================
+        
+        - Released code to GitHub repository python-basehash
+          https://github.com/bnlucas/python-basehash
+        
+        0.0.1 (2013-06-23)
+        ==================
+        
+        - Initialization
+        
+Keywords: base,encoding,hash,hashing,security
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Programming Language :: Python
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Security
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Utilities
