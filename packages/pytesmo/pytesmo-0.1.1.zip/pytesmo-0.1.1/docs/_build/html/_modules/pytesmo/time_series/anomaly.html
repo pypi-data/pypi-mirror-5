@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pytesmo.time_series.anomaly &mdash; pytesmo 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pytesmo 0.1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytesmo 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pytesmo.time_series.anomaly</h1><div class="highlight"><pre>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on June 20, 2013</span>
+
+<span class="sd">@author: Alexander Gruber Alexander.Gruber@geo.tuwien.ac.at</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">pytesmo.timedate.julian</span> <span class="kn">import</span> <span class="n">doy</span><span class="p">,</span> <span class="n">julian2date</span>
+<span class="kn">from</span> <span class="nn">pytesmo.time_series.filtering</span> <span class="kn">import</span> <span class="n">moving_average</span>
+
+<div class="viewcode-block" id="calc_anomaly"><a class="viewcode-back" href="../../../pytesmo.time_series.html#pytesmo.time_series.anomaly.calc_anomaly">[docs]</a><span class="k">def</span> <span class="nf">calc_anomaly</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span>
+                 <span class="n">window_size</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span>
+                 <span class="n">climatology</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calculates the anomaly of a time series (Pandas series).</span>
+<span class="sd">    Both, climatology based, or moving-average based anomalies can be </span>
+<span class="sd">    calculated</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Ser : pandas.Series (index must be a DateTimeIndex)</span>
+<span class="sd">    </span>
+<span class="sd">    window_size : float, optional</span>
+<span class="sd">        The window-size [days] of the moving-average window to calculate the</span>
+<span class="sd">        anomaly reference (only used if climatology is not provided)</span>
+<span class="sd">        Default: 35 (days)</span>
+<span class="sd">    </span>
+<span class="sd">    climatology : pandas.Series (index: 1-366), optional</span>
+<span class="sd">        if provided, anomalies will be based on the climatology</span>
+<span class="sd">    </span>
+<span class="sd">    timespann : [timespan_from, timespan_to], datetime.datetime(y,m,d), optional</span>
+<span class="sd">        If set, only a subset</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    anomaly : pandas.Series</span>
+<span class="sd">        Series containing the calculated anomalies</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="k">if</span> <span class="n">climatology</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">:</span>
+        
+            <span class="n">doys</span> <span class="o">=</span> <span class="n">doy</span><span class="p">(</span><span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span> <span class="o">=</span> <span class="n">julian2date</span><span class="p">(</span><span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">doys</span> <span class="o">=</span> <span class="n">doy</span><span class="p">(</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">)</span>
+        
+        <span class="n">Ser</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;absolute&#39;</span><span class="p">])</span>
+        <span class="n">Ser</span><span class="p">[</span><span class="s">&#39;doy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">doys</span>
+        
+        <span class="n">clim</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">climatology</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;climatology&#39;</span><span class="p">])</span>
+        
+        <span class="n">Ser</span> <span class="o">=</span> <span class="n">Ser</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">clim</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s">&#39;doy&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
+        
+        <span class="n">anomaly</span> <span class="o">=</span> <span class="n">Ser</span><span class="p">[</span><span class="s">&#39;absolute&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">Ser</span><span class="p">[</span><span class="s">&#39;climatology&#39;</span><span class="p">]</span>
+        <span class="n">anomaly</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">Ser</span><span class="o">.</span><span class="n">index</span>
+        
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">moving_average</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">window_size</span><span class="p">)</span>
+        <span class="n">anomaly</span> <span class="o">=</span> <span class="n">Ser</span> <span class="o">-</span> <span class="n">reference</span>
+    
+    <span class="k">return</span> <span class="n">anomaly</span>
+        
+        </div>
+<div class="viewcode-block" id="calc_climatology"><a class="viewcode-back" href="../../../pytesmo.time_series.html#pytesmo.time_series.anomaly.calc_climatology">[docs]</a><span class="k">def</span> <span class="nf">calc_climatology</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span>
+                     <span class="n">moving_avg_orig</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                     <span class="n">moving_avg_clim</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                     <span class="n">median</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                     <span class="n">timespan</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calculates the climatology of a data set</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Ser : pandas.Series (index must be a DateTimeIndex or julian date)</span>
+<span class="sd">    </span>
+<span class="sd">    moving_avg_orig : float, optional</span>
+<span class="sd">        The size of the moving_average window [days] that will be applied on the </span>
+<span class="sd">        input Series (gap filling, short-term rainfall correction)</span>
+<span class="sd">        Default: 5</span>
+<span class="sd">    </span>
+<span class="sd">    moving_avg_clim : float, optional</span>
+<span class="sd">        The size of the moving_average window [days] that will be applied on the </span>
+<span class="sd">        calculated climatology (long-term event correction)</span>
+<span class="sd">        Default: 35</span>
+<span class="sd">        </span>
+<span class="sd">    median : boolean, optional</span>
+<span class="sd">        if set to True, the climatology will be based on the median conditions</span>
+<span class="sd">    </span>
+<span class="sd">    timespan : [timespan_from, timespan_to], datetime.datetime(y,m,d), optional</span>
+<span class="sd">        Set this to calculate the climatology based on a subset of the input</span>
+<span class="sd">        Series</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    climatology : pandas.Series</span>
+<span class="sd">        Series containing the calculated climatology</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+                     
+    <span class="k">if</span> <span class="n">timespan</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">Ser</span> <span class="o">=</span> <span class="n">Ser</span><span class="o">.</span><span class="n">truncate</span><span class="p">(</span><span class="n">before</span><span class="o">=</span><span class="n">timespan</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">timespan</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    
+    <span class="n">Ser</span> <span class="o">=</span> <span class="n">moving_average</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">moving_avg_orig</span><span class="p">)</span>
+    
+    <span class="n">Ser</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">Ser</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">:</span>
+        
+        <span class="n">doys</span> <span class="o">=</span> <span class="n">doy</span><span class="p">(</span><span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span> <span class="o">=</span> <span class="n">julian2date</span><span class="p">(</span><span class="n">Ser</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">doys</span> <span class="o">=</span> <span class="n">doy</span><span class="p">(</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">)</span>
+    
+    
+    <span class="n">Ser</span><span class="p">[</span><span class="s">&#39;doy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">doys</span>
+       
+        
+    <span class="k">if</span> <span class="n">median</span><span class="p">:</span>
+        <span class="n">clim</span> <span class="o">=</span> <span class="n">Ser</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s">&#39;doy&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">clim</span> <span class="o">=</span> <span class="n">Ser</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s">&#39;doy&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        
+    <span class="k">return</span> <span class="n">moving_average</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">clim</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">index</span><span class="o">=</span><span class="n">clim</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">window_size</span><span class="o">=</span><span class="n">moving_avg_clim</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytesmo 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Vienna University of Technology, Department of Geodesy and Geoinformation.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>&lt;no title&gt; &mdash; pytesmo 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pytesmo 0.1.1 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">pytesmo 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <p>In[1]:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pytesmo.io.sat.ascat</span> <span class="kn">as</span> <span class="nn">ascat</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">ascat_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;R:</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">,</span><span class="s">&#39;Datapool_processed&#39;</span><span class="p">,</span><span class="s">&#39;WARP&#39;</span><span class="p">,</span><span class="s">&#39;WARP5.5&#39;</span><span class="p">,</span>
+                                         <span class="s">&#39;ASCAT_WARP5.5_R1.2&#39;</span><span class="p">,</span><span class="s">&#39;080_ssm&#39;</span><span class="p">,</span><span class="s">&#39;netcdf&#39;</span><span class="p">)</span>
+<span class="n">ascat_grid_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;R:</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">,</span><span class="s">&#39;Datapool_processed&#39;</span><span class="p">,</span><span class="s">&#39;WARP&#39;</span><span class="p">,</span><span class="s">&#39;ancillary&#39;</span><span class="p">,</span><span class="s">&#39;warp5_grid&#39;</span><span class="p">)</span>
+<span class="c">#init the ASCAT_SSM reader with the paths</span>
+
+<span class="c">#let&#39;s not include the orbit direction since it is saved as &#39;A&#39;</span>
+<span class="c">#or &#39;D&#39; it can not be plotted</span>
+<span class="n">ascat_SSM_reader</span> <span class="o">=</span> <span class="n">ascat</span><span class="o">.</span><span class="n">AscatH25_SSM</span><span class="p">(</span><span class="n">ascat_folder</span><span class="p">,</span><span class="n">ascat_grid_folder</span><span class="p">,</span>
+                                      <span class="n">include_in_df</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;sm&#39;</span><span class="p">,</span> <span class="s">&#39;sm_noise&#39;</span><span class="p">,</span> <span class="s">&#39;ssf&#39;</span><span class="p">,</span> <span class="s">&#39;proc_flag&#39;</span><span class="p">])</span>
+
+<span class="n">gpi</span> <span class="o">=</span> <span class="mi">2329253</span>
+<span class="n">ascat_ts</span> <span class="o">=</span> <span class="n">ascat_SSM_reader</span><span class="o">.</span><span class="n">read_ssm</span><span class="p">(</span><span class="n">gpi</span><span class="p">)</span>
+
+<span class="n">ascat_ts</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/read_ASCAT_H25_0_0.png" src="_images/read_ASCAT_H25_0_0.png" />
+<p>In[2]:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#the ASCATTimeSeries object also contains metadata</span>
+
+<span class="k">print</span> <span class="s">&quot;Topographic complexity&quot;</span><span class="p">,</span> <span class="n">ascat_ts</span><span class="o">.</span><span class="n">topo_complex</span>
+<span class="k">print</span> <span class="s">&quot;Wetland fraction&quot;</span><span class="p">,</span> <span class="n">ascat_ts</span><span class="o">.</span><span class="n">wetland_frac</span>
+<span class="k">print</span> <span class="s">&quot;Porosity from GLDAS model&quot;</span><span class="p">,</span> <span class="n">ascat_ts</span><span class="o">.</span><span class="n">porosity_gldas</span>
+<span class="k">print</span> <span class="s">&quot;Porosity from Harmonized World Soil Database&quot;</span><span class="p">,</span> <span class="n">ascat_ts</span><span class="o">.</span><span class="n">porosity_hwsd</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>Topographic complexity 14
+Wetland fraction 0
+Porosity from GLDAS model 0.542222
+Porosity from Harmonized World Soil Database 0.430234</pre>
+</div>
+<p>In[3]:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#It is also possible to automatically convert the soil moisture to absolute values using</span>
+
+<span class="n">ascat_ts_absolute</span> <span class="o">=</span> <span class="n">ascat_SSM_reader</span><span class="o">.</span><span class="n">read_ssm</span><span class="p">(</span><span class="n">gpi</span><span class="p">,</span> <span class="n">absolute_values</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="c">#this introduces 4 new columns in the returned data</span>
+<span class="c">#scaled sm and sm_noise with porosity_gldas</span>
+<span class="c">#scaled sm and sm_noise with porosity_hwsd</span>
+<span class="k">print</span> <span class="n">ascat_ts_absolute</span><span class="o">.</span><span class="n">data</span>
+
+<span class="c">#select relevant columns and plot</span>
+<span class="n">ascat_ts_absolute</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ascat_ts_absolute</span><span class="o">.</span><span class="n">data</span><span class="p">[[</span><span class="s">&#39;sm_por_gldas&#39;</span><span class="p">,</span><span class="s">&#39;sm_por_hwsd&#39;</span><span class="p">]]</span>
+<span class="n">ascat_ts_absolute</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>&lt;class 'pandas.core.frame.DataFrame'&gt;
+DatetimeIndex: 2292 entries, 2007-01-01 09:39:39 to 2013-07-12 20:39:08
+Data columns (total 10 columns):
+proc_flag             2292  non-null values
+sm                    2285  non-null values
+sm_noise              2285  non-null values
+ssf                   2292  non-null values
+sm_por_gldas          2285  non-null values
+sm_noise_por_gldas    2285  non-null values
+sm_por_hwsd           2285  non-null values
+sm_noise_por_hwsd     2285  non-null values
+frozen_prob           2285  non-null values
+snow_prob             2285  non-null values
+dtypes: float64(8), int16(1), int8(1)</pre>
+</div>
+<img alt="_images/read_ASCAT_H25_2_1.png" src="_images/read_ASCAT_H25_2_1.png" />
+<p>In[4]:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#We can also automatically mask the data during reading</span>
+<span class="c">#In this example all measurements where the Surface State Flag</span>
+<span class="c">#shows frozen or where the frozen or snow probabilities are more</span>
+<span class="c">#than 10 percent are removed from the time series</span>
+<span class="n">ascat_ts</span> <span class="o">=</span> <span class="n">ascat_SSM_reader</span><span class="o">.</span><span class="n">read_ssm</span><span class="p">(</span><span class="n">gpi</span><span class="p">,</span> <span class="n">mask_ssf</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                     <span class="n">mask_frozen_prob</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                     <span class="n">mask_snow_pro</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">ascat_ts</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/read_ASCAT_H25_3_0.png" src="_images/read_ASCAT_H25_3_0.png" />
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/read_ASCAT_H25.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">pytesmo 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Vienna University of Technology, Department of Geodesy and Geoinformation.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>
