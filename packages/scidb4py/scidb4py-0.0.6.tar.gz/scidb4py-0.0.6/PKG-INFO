@@ -1,0 +1,98 @@
+Metadata-Version: 1.1
+Name: scidb4py
+Version: 0.0.6
+Summary: Pure python SciDB client library implementation
+Home-page: https://github.com/artyom-smirnov/scidb4py
+Author: Artyom Smirnov
+Author-email: artyom_smirnov@icloud.com
+License: GPLv3
+Description: scidb4py — SciDB for Python
+        ===========================
+        
+        Pure python SciDB client library.
+        
+        This library aims to provide access to SciDB server through native network protocol based on protobuf. It still on early
+        stages of development, so do not expect complete features support and stable work :)
+        
+        Any feedback and patches are welcome: https://github.com/artyom-smirnov/scidb4py/
+        
+        Runtime dependencies
+        --------------------
+        * python >= 2.7 or pypy >= 1.8 (python 3 not supported yet)
+        * python-protobuf >= 2.4
+        * bitstring
+        
+        Build dependencies
+        ------------------
+        * protobuf-compiler >= 2.4
+        
+        Installation
+        ------------
+        ::
+        
+            sudo pip install scidb4py
+        
+        or
+        
+        ::
+        
+            sudo python setup.py install
+        
+        Examples
+        --------
+        Iterating through array item-by-item
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ::
+        
+            from scidb4py import Connection
+            conn = Connection('localhost', 1239)
+            conn.open()
+            array = conn.execute("select * from array(<a:int32>[x=0:3,2,0], '[0,1,2,3]')")
+            for pos, val in array:
+                print '%d - %d' % (pos['x'], val['a'])
+            conn.close()
+        
+        
+        Iterating through array chunk-by-chunk, item-by-item
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ::
+        
+            from scidb4py import Connection
+            conn = Connection('localhost', 1239)
+            conn.open()
+            array = conn.execute("select * from array(<a:int32 null>[x=0:2,3,0, y=0:2,3,0], '[[1,2,3][4,5,6][7,8,9]]')")
+            while not array.end:
+                while not array.chunk_end:
+                    print '%s - %s' % (array.get_coordinates(), array.get_item("a"))
+                    array.next_item()
+                array.next_chunk()
+            conn.close()
+        
+        
+        Changelog
+        ---------
+        
+        0.0.6
+        ~~~~~
+        * Fixed bug #15 (Large chunk can not fit single network message)
+        * Fixed reading strings greater than 8 bytes from RLE chunks
+        * Added 'active' property to Connection which indicate active query
+        * Basic query autocomplete and autocancel. Complete by default.
+        
+        0.0.5
+        ~~~~~
+        * Fixed bug #14 (Strange bzipped chunk issue)
+        * Fixed bug #5 (Compressed chunk support)
+        * scidb4py now provide __version__ string
+        
+Platform: any
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python
+Requires: protobuf
+Requires: bitstring
