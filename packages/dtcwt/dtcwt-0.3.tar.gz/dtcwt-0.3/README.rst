@@ -1,0 +1,44 @@
+Dual-Tree Complex Wavelet Transform library for Python
+======================================================
+
+This library provides support for computing 1D and 2D dual-tree complex wavelet
+transforms and their inverse in Python.
+
+.. image:: https://travis-ci.org/rjw57/dtcwt.png?branch=master
+    :target: https://travis-ci.org/rjw57/dtcwt
+
+Installation
+````````````
+
+Installation is based on setuptools and follows the usual conventions for a
+Python project::
+
+    $ python setup.py install
+
+A minimal test suite is provided so that you may verify the code works on your
+system::
+
+    $ python setup.py nosetests
+
+This will also write test-coverage information to the ``cover/`` directory.
+
+Further documentation
+`````````````````````
+
+There is `more documentation <https://dtcwt.readthedocs.org/en/latest/>`_
+available online and you can build your own copy via the Sphinx documentation
+system::
+
+    $ python setup.py build_sphinx
+
+Compiled documentation may be found in ``build/docs/html/``.
+
+Provenance
+``````````
+
+Based on the Dual-Tree Complex Wavelet Transform Pack for MATLAB by Nick
+Kingsbury, Cambridge University. The original README can be found in
+ORIGINAL_README.txt.  This file outlines the conditions of use of the original
+MATLAB toolbox.
+
+.. vim:sw=4:sts=4:et
