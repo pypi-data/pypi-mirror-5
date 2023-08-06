@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CNC Cut Outline &mdash; Cnc25D 0.1.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Cnc25D 0.1.3 documentation" href="index.html" />
+    <link rel="next" title="Plank Positioning" href="place_plank.html" />
+    <link rel="prev" title="Cnc25D Internals" href="cnc25d_internals.html" /> 
+  </head>
+  <body>
+      <div class="header"><h1 class="heading"><a href="index.html">
+          <span>Cnc25D 0.1.3 documentation</span></a></h1>
+        <h2 class="heading"><span>CNC Cut Outline</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="cnc25d_internals.html">Cnc25D Internals</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="place_plank.html">Plank Positioning</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="cnc-cut-outline">
+<h1>CNC Cut Outline<a class="headerlink" href="#cnc-cut-outline" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction-to-the-automated-cutting-technology">
+<h2>1. Introduction to the automated cutting technology<a class="headerlink" href="#introduction-to-the-automated-cutting-technology" title="Permalink to this headline">¶</a></h2>
+<p>Computer numerical control (a.k.a. CNC) lets cut material directly from computer design file (dxf, stl, g-code ...). This ensures precision, reproducibility, shape-complexity and automation.</p>
+<img alt="_images/3_axis_cnc.png" src="_images/3_axis_cnc.png" />
+<dl class="docutils">
+<dt>The 3-axis CNC can process:</dt>
+<dd><ul class="first last simple">
+<li>2.5D : xy-path at z constant</li>
+<li>3D: xyz-path in case of well adapted router_bit and path</li>
+</ul>
+</dd>
+<dt>Cutting technology:</dt>
+<dd><ul class="first last simple">
+<li>laser cutter (Only 2D: cutting and engraving)</li>
+<li>water jet (Only 2D with a 3-axis machine)</li>
+<li>mechanical router_bit (2.5D and 3D depending on shape and router_bit shape)</li>
+<li>electrical discharge machining</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="d-path-constraints">
+<h2>2. 2D path constraints<a class="headerlink" href="#d-path-constraints" title="Permalink to this headline">¶</a></h2>
+<img alt="_images/2d_path.png" src="_images/2d_path.png" />
+<dl class="docutils">
+<dt>Minimal curve radius constraint:</dt>
+<dd><ul class="first last simple">
+<li>laser and water-jet requests no specific constraint</li>
+<li>For mechanical router_bit, inner curve must have a curve radius bigger than the router_bit radius.</li>
+</ul>
+</dd>
+</dl>
+<img alt="_images/osculating_circle.png" src="_images/osculating_circle.png" />
+<p>So inner corner can not be cut with router_bit. They must be replaced by inner curve. Tight inner curve must be smoothed to respect the minimal curve radius constraint.</p>
+<img alt="_images/possible_2d_shape_with_a_router_bit_of_radius_r.png" src="_images/possible_2d_shape_with_a_router_bit_of_radius_r.png" />
+<div class="section" id="coplanar-fitting">
+<h3>2.1. Coplanar fitting<a class="headerlink" href="#coplanar-fitting" title="Permalink to this headline">¶</a></h3>
+<p>If you want a perfect fitting between two coplanar shapes, then outer corners and outer curves must be rounded to get a minimum curve radius bigger than the router_bit radius. For a perfect fitting, two coplanar shapes must be complementary.</p>
+<img alt="_images/coplanar_fitting.png" src="_images/coplanar_fitting.png" />
+</div>
+<div class="section" id="incoplanar-fitting">
+<h3>2.2. Incoplanar fitting<a class="headerlink" href="#incoplanar-fitting" title="Permalink to this headline">¶</a></h3>
+<img alt="_images/not_coplanar_shape.png" src="_images/not_coplanar_shape.png" />
+<p>If two parts, made out of 2D shape cut in a plan, are not coplanar, then rounding corner doesn&#8217;t help the fitting of the two parts.</p>
+<p>For fitting not coplanar shapes, we need to enlarge inner corners.</p>
+<img alt="_images/not_coplanar_fitting.png" src="_images/not_coplanar_fitting.png" />
+</div>
+</div>
+<div class="section" id="coplanar-fitting-details">
+<h2>3. Coplanar fitting details<a class="headerlink" href="#coplanar-fitting-details" title="Permalink to this headline">¶</a></h2>
+<p>For fitting two coplanar shapes, the inner and outer corners must be smoothed.</p>
+<p>This section details the calculation related to <em>smoothed line-line corner</em>. To get the calculation related to <em>smoothed line-arc corner</em> and <em>smoothed arc-arc corner</em>, check the <em>SVG</em> files <em>docs/smooth_corner_line_arc.svg</em> and <em>docs/smooth_corner_arc_arc.svg</em>.</p>
+<img alt="_images/detailed_coplanar_fitting.png" src="_images/detailed_coplanar_fitting.png" />
+<div class="highlight-python"><pre>(D1), (D2) : two straight lines
+A : intersection of (D1) and (D2)
+(C) : circle or radius (r) tangent to (D1) and (D2)
+E : intersection of (C) and (D1)
+F : intersection of (C) and (D2)
+O : the center of (C)
+(EAF)=a is the angle between (D1) and (D2)
+
+(C) is tangent to (D1), so (D1) is perpendicular to (EO)
+(C) is tangent to (D2), so (D2) is perpendicular to (FO)
+FO=EO=r, so O belongs to the bisector of (EAF)
+We have AF=AE and (FA0)=(EAO)=a/2
+AEO is right triangle in E
+tan(EAO) = OE/AE
+AE = r/tan(a/2)
+sin(EAO) = OE/AO
+AO = r/sin(a/2)
+
+Knowing Gx,Gy,Ax,Ay,Hx,Hy, we want to calculate: a
+(xAG) = atan((Gy-Ay)/(Gx-Ax))
+(xAH) = atan((Hy-Ay)/(Hx-Ax))
+a=(EAF)=(GAH)=(xAH)-(aAG)
+a=atan((Hy-Ay)/(Hx-Ax))-atan((Gy-Ay)/(Gx-Ax))</pre>
+</div>
+<p>Other method with the law of cosines c²=a²+b²-2*a*b*cos(C)</p>
+<div class="highlight-python"><pre>In the triangle GHA:
+h=AG=sqrt((Gx-Ax)²+(Gy-Ay)²)
+g=AH=sqrt((Hx-Ax)²+(Hy-Ay)²)
+a=GH=sqrt((Hx-Gx)²+(Hy-Gy)²)
+a=(GAH)=acos((h²+g²-a²)/(2*g*h))
+
+Knowing Gx,Gy,Ax,Ay,Hx,Hy,a we want to calculate: Ex,Ey,Fx,Fy
+Ex=Ax+(Gx-Ax)*AE/AG
+=Ax+(Gx-Ax)*r/(tan(a/2)*sqrt((Gx-Ax)²+(Gy-Ay)²))</pre>
+</div>
+<img alt="_images/arc_third_point_for_coplanar_fitting.png" src="_images/arc_third_point_for_coplanar_fitting.png" />
+<div class="highlight-python"><pre>I is the intersection of (C) and (AO)
+(D3) is the straight line perpendicular to (AO) and including I
+K is the intersection of (D3) and (D1)
+L is the intersection of (D3) and (D1)
+
+
+The triangles KAI and IAL are similar so AL=AK
+(LAI)=(IAK)=a/2
+AI=AO-IO=r/sin(a/2)-r=r*(1-sin(a/2))/sin(a/2)
+AK=AI/cos(a/2)=r*(1-sin(a/2))/(sin(a/2)*cos(a/2))=r*(1-sin(a/2))*2/sin(a)
+AJ=AK+AL=(AI+IL)+(AI+IK)=2*AI
+AI=(AK+AL)/2
+Kx=Ax+(Gx-Ax)*AK/AG</pre>
+</div>
+<img alt="_images/detailed_arc_third_point_for_coplanar_fitting.png" src="_images/detailed_arc_third_point_for_coplanar_fitting.png" />
+<div class="highlight-python"><pre>Knowing Gx,Gy,Ax,Ay,Hx,Hy,a we want to calculate: Ix, Iy
+With E,I and F, we define the arc than can be build with a router_bit of radius r.</pre>
+</div>
+</div>
+<div class="section" id="incoplanar-fitting-details">
+<h2>4. Incoplanar fitting details<a class="headerlink" href="#incoplanar-fitting-details" title="Permalink to this headline">¶</a></h2>
+<p>For fitting two not-coplanar shapes, the inner corners must be enlarged.</p>
+<p>This section details the calculation related to <em>enlarged line-line corner</em>. To get the calculation related to <em>enlarged line-arc corner</em> and <em>enlarged arc-arc corner</em>, check the <em>SVG</em> file <em>docs/enlarge_corner_arc_arc.svg</em>.</p>
+<div class="section" id="case-of-an-inner-obtuse-angle">
+<h3>4.1.1. Case of an inner obtuse angle<a class="headerlink" href="#case-of-an-inner-obtuse-angle" title="Permalink to this headline">¶</a></h3>
+<img alt="_images/not_coplanar_fitting_with_obtuse_angle.png" src="_images/not_coplanar_fitting_with_obtuse_angle.png" />
+</div>
+<div class="section" id="border-case-of-an-inner-right-angle">
+<h3>4.1.2. Border case of an inner right angle<a class="headerlink" href="#border-case-of-an-inner-right-angle" title="Permalink to this headline">¶</a></h3>
+<img alt="_images/not_coplanar_fitting_with_right_angle.png" src="_images/not_coplanar_fitting_with_right_angle.png" />
+</div>
+<div class="section" id="case-of-an-inner-acute-angle">
+<h3>4.1.3. Case of an inner acute angle<a class="headerlink" href="#case-of-an-inner-acute-angle" title="Permalink to this headline">¶</a></h3>
+<img alt="_images/not_coplanar_fitting_with_acute_angle.png" src="_images/not_coplanar_fitting_with_acute_angle.png" />
+</div>
+<div class="section" id="calculation">
+<h3>4.2. Calculation<a class="headerlink" href="#calculation" title="Permalink to this headline">¶</a></h3>
+<img alt="_images/not_coplanar_fitting_with_obtuse_angle.png" src="_images/not_coplanar_fitting_with_obtuse_angle.png" />
+<div class="highlight-python"><pre>Let's consider three points A, G and H.
+(D1) is the bisector of (GAH).
+O is a point of (D1) such as AO=r
+(C1) is the circle of center O and radius r
+E is the intersection of (C1) and (AG)
+F is the intersection of (C1) and (AH)
+(D2) is the straight line perpendicular to (D1) and including O
+K and L are the intersection of (D2) with (C1)
+
+
+Let's calculate AE:
+OA=OE=r
+We define I, the orthogonal projection of O on (AE)
+AI=EI because AEO is isosceles in O
+AI=AO/cos(a/2)=r*cos(a/2)
+AE=2*r*cos(a/2)</pre>
+</div>
+<img alt="_images/detailed_not_coplanar_fitting_with_acute_angle.png" src="_images/detailed_not_coplanar_fitting_with_acute_angle.png" />
+<div class="highlight-python"><pre>(D3) is the straight line perpendicular to (D1) and such that the length MN is equal to 2*r with M the intersection of (D3) and (AG) and N the intersection of (D3) and (AH).
+P is the intersection of (D3) and (D1).
+AM=r/sin(a/2)
+
+R is the middle of [AM]
+S is the middle of [AN]
+V is the intersection of (D2) and (AH)
+W is the intersection of (D) and (AG)
+AK=AR-AS+(AV+AW)/2
+AR=AS=r/(2*sin(a/2))
+AV=AW=r/cos(a/2)</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      
+        <p>
+        «&#160;&#160;<a href="cnc25d_internals.html">Cnc25D Internals</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="place_plank.html">Plank Positioning</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2013, charlyoleg.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
