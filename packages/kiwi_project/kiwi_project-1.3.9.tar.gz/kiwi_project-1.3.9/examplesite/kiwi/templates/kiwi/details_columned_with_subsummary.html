@@ -1,0 +1,41 @@
+{% extends "kiwi/subbase.html" %}
+{% load kiwimarkup %}
+{% load kiwiwiki %}
+{% block head_title %}{{ block.super }} - {{ wikipageObject.title }}{% endblock %}
+{% block header_pathline_content %}
+    {% pathline wikipageAll wikipageObject.id %}
+{% endblock %}
+
+{% block content %}
+    {% wiki2xhtml_render wikipageObject.text wikipageAllPub attachment_items %}
+    <div class="columned">
+    
+        <div id="submenu">
+            <div class="container">
+                {% if W2X_Summary %}
+                <h2>Sommaire</h2>
+                <div class="summary">
+                    {{ W2X_Summary }}
+                </div>
+                {% endif %}
+                
+                <h2>Sous-pages</h2>
+                <div class="summary">
+                    {% treeview wikipageAll None wikipageObject.id %}
+                </div>
+                        
+                {% include "kiwi/credits_widget.html" %}
+            </div>
+        </div>
+        
+        <div class="content_container">
+            <h2>{{ wikipageObject.title }}</h2>
+            
+            <div class="wiki2xhtml">
+                {{ W2X_Xhtml }}
+                {% attached_files_widget wikipageObject %}
+            </div>
+        </div>
+        
+    </div>
+{% endblock %}
