@@ -1,0 +1,49 @@
+{% extends "conntrackt/base.html" %}
+
+{# For html_link #}
+{% load conntrackt_tags %}
+
+{% block content %}
+<div class="row">
+  <h1 class="span12">{{project.name}}</h1>
+</div>
+<hr>
+
+{% if project.description %}
+<div class="row">
+  <div class="span12">
+    {{project.description}}
+  </div>
+</div>
+<hr>
+{% endif %}
+
+<div class="row">
+  <div class="span12">
+    {% html_link "Edit" "project_update" project.id class="btn btn-primary" %}
+    {% html_link "Remove" "project_delete" project.id class="btn btn-primary" %}
+    {% with project_id=project.id|slugify %}
+    {% html_link "Add entity" "entity_create" class="btn btn-primary" get="project="|add:project_id|add:"&next="|add:request.path %}
+    {% html_link "Add communication" "communication_create" class="btn btn-primary" get="project="|add:project_id|add:"&next="|add:request.path %}
+    {% endwith %}
+    {% html_link "Get Iptables" 'project_iptables' project.id class="btn btn-primary" %}
+  </div>
+</div>
+<hr>
+{% if location_entities %}
+<div class="row">
+  {% for location, entities in location_entities %}
+  <div class="span4">
+    <div class="well">{% include "conntrackt/location_widget.html" with location=location entities=entities %}</div>
+  </div>
+  {% endfor %}
+</div>
+<div class="row">
+  <div class="span12">
+    <h2>Communications diagram</h2>
+    <img src="{% url "project_diagram" project.id %}" width="100%">
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+

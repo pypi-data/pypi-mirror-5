@@ -1,0 +1,66 @@
+{% load conntrackt_tags %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>{% block title %}Conntrackt{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="/static/bootstrap/css/bootstrap.css" />
+    <style>
+    body {
+      padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+    }
+    </style>
+    <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/static/custom.css" rel="stylesheet">
+  </head>
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          {% block header_title %}{% html_link 'Conntrackt' 'index' class="brand" %}{% endblock %}
+          <div class="nav-collapse collapse">
+              {% block header %}
+            <ul class="nav">
+              <li class="{% active_link 'index' %}"><a href="{% url "index" %}"><i class="icon-home icon-white"></i> Main Page</a></li>
+              <li class="{% active_link 'admin' %}"><a href="{% url "admin:app_list" "conntrackt" %}"><i class="icon-wrench icon-white"></i> Administration</a></li>
+            </ul>
+            <ul class="nav pull-right">
+              {% if user.is_anonymous %}
+              <li>{% html_link '<i class="icon-user icon-white"></i> Log-in' 'login' get="next="|add:request.path %}</li>
+              {% else %}
+              <li><a href=""><i class="icon-user icon-white"></i> {{user}}</a></li>
+              <li>{% html_link '<i class="icon-off icon-white"></i> Log-out' "logout" get="next="|add:request.path %}</li>
+              {% endif %}
+            </ul>
+              {% endblock %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div id="content" class="block">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="{{message.tags}}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+        {% block content %}
+        {% endblock %}
+      </div>
+    </div>
+
+    <script src="/static/jquery-min.js"></script>
+    <script src="/static/bootstrap/js/bootstrap.js"></script>
+  </body>
+</html>
+

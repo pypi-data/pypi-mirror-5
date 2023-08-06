@@ -1,0 +1,69 @@
+.. Copyright (C) 2013 Branko Majic
+
+   This file is part of Django Conntrackt documentation.
+
+   This work is licensed under the Creative Commons Attribution-ShareAlike 3.0
+   Unported License. To view a copy of this license, visit
+   http://creativecommons.org/licenses/by-sa/3.0/ or send a letter to Creative
+   Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+
+
+Conntrackt
+==========
+
+Conntrackt (Connection Tracker) is a simple Django application for tracking
+connection requirements between different entities in a network.
+
+The application was written with intention to be used by system adminstrators
+and integrators that deploy servers on customer premises, and need to keep tight
+track of possible communication links between different entities in the
+project.
+
+In addition to keeping track of connections, the application has the ability to
+generate simple *iptables* rules based on the connections specified. The
+generated rules can be easily applied using the *iptables-restore* utility.
+
+
+Features
+========
+
+In short, Conntrackt provides support for the following:
+
+* Multiple independent projects
+* Grouping entities inside of project by location
+* Entities can be individual devices or networks
+* Entities can have multiple network interfaces
+* *iptables* rule generation (per-entity/location/project)
+
+For more information, please have a look at full documentation at one of the
+following websites:
+
+* https://rtd.majic.rs/
+* http://django-conntrackt.readthedocs.org/
+
+
+License
+=======
+
+Django Conntrackt *application* is licensed under the terms of GPLv3, or (at
+your option) any later version. You should have received the full copy of the
+GPLv3 license in the local file **LICENSE-GPLv3**, or you may read the full text
+of the license at:
+
+* http://www.gnu.org/licenses/gpl-3.0.txt
+
+Django Conntrackt *documentation* is licensed under the terms of CC-BY-SA 3.0
+Unported license. You should have received the full copy of the CC-BY-SA 3.0
+Unported in the local file **LICENSE-CC-BY-SA-3.0-Unported**, or you may read
+the full text of the license at:
+
+http://creativecommons.org/licenses/by-sa/3.0/
+
+The following third-party libraries are included as part of Django Conntrackt,
+but are distributed under their own license:
+
+Bootstrap (sub-directory **conntrackt/static/bootstrap**)
+  Apache License v2.0
+jQuery (file **conntrackt/static/jquery-min.js**)
+  MIT License
+
