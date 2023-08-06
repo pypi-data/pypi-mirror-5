@@ -1,0 +1,29 @@
+{% spaceless %}
+
+{% load i18n %}
+
+<tbody>
+    {% for obj in page.object_list %}
+        <tr {% for attr_name, attr_value in obj.computed_values.tr_tag_attrs.items %}{{ attr_name }}='{{ attr_value }}' {% endfor %}>
+            {% for field in obj.computed_values.fields_values %}
+                <td {% for attr_name, attr_value in field.td_tag_attrs.items %}{{ attr_name }}='{{ attr_value }}' {% endfor %}>
+                    {% if obj.computed_values.url and field.link %}
+                        <a href='{{ obj.computed_values.url }}' {% if new_tab %}target='_blank'{% endif %}>
+                    {% endif %}
+                    <span>{% if field.escape_display %}{{ field.display_value }}{% else %}{{ field.display_value|safe }}{% endif %}</span>
+                    {% if obj.computed_values.url and field.link %}
+                        </a>
+                    {% endif %}
+                </td>
+            {% endfor %}
+        </tr>
+    {% empty %}
+        <tr class='empty_result_row'>
+            <td class='empty_result_cell' colspan='{{ fields|length }}'>
+                <span class='empty_result_message'>{% trans "No records found." %}</span>
+            </td>
+        </tr>
+    {% endfor %}
+</tbody>
+
+{% endspaceless %}
