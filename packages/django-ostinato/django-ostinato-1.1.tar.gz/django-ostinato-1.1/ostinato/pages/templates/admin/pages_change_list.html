@@ -1,0 +1,41 @@
+{% extends "admin/change_list.html" %}
+{% load admin_list i18n %}
+{% load url from future %}
+
+
+{% block extrahead %}
+    {# The following global variable will assist us in our javascript #}
+    <script type="text/javascript">
+        var STATIC_URL = "{{ STATIC_URL }}";
+        var page_action_urls = {
+            move: '{% url "ostinato_page_reorder" %}',
+            duplicate: '{% url "ostinato_page_duplicate" %}'
+        };
+    </script>
+    {{ block.super }}
+{% endblock %}
+
+
+{% block object-tools %}
+    {% comment %}
+        We want to add a cutom form here so that we can implement the page
+        movement correctly. Maybe use backbone instead.
+    {% endcomment %}
+
+    {{ block.super }}
+    <form id="ostinato_page_action_form" action="{% url 'ostinato_page_reorder' %}" method="post" accept-charset="utf-8">{% csrf_token %}
+        <input type="hidden" name="node" />
+        <input type="hidden" name="target" />
+        <input type="hidden" name="position" />
+    </form>
+
+{% endblock %}
+
+
+{% block result_list %}
+    {% if action_form and actions_on_top and cl.full_result_count %}{% admin_actions %}{% endif %}
+
+    {% result_list cl %}
+
+    {% if action_form and actions_on_bottom and cl.full_result_count %}{% admin_actions %}{% endif %}
+{% endblock %}
