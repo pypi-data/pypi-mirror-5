@@ -1,0 +1,51 @@
+PNW
+===
+
+pnw is a text processing tool with a wide range of applications. It can
+be used to compile chunks of text from various sources into a new text
+file. The advantage over cut-and-paste techniques is that changes in the
+source file are automatically followed. Secondly, we provide a thin
+wrapper around the pandoc document converter. Therefore, chunks of text
+can be converted from and to a wide range of lightweight markup
+languages as well as html and tex/latex. Although literate programming
+has become a little out of fashion, pnw can be used as a literate
+programming tool, too. Not surprisingly, pnw itself and its
+documentation is written using pnw. pnw is remotely inspired by noweb
+and heavily inspired by (even borrowing part of the syntax from)
+`antiweb <https://pypi.python.org/pypi/antiweb/0.2.2>`_. An important
+feature of pnw, which is not present in antiweb, is the support of
+namespaces. This allows to create reusable *block libraries* which can
+be imported and addressed in a *dot-notation syntax* similar to python
+modules.
+
+A pnw file is a text file with tags defining named blocks of text. In a
+way this is similar to an xml file. Tags may be hidden behind comment
+characters, such that the file remains processable by another program.
+The blocks of text from various pnw files can be processed and rendered
+by another pnw file.
+
+
+Nutshell
+--------
+
+Here is a brief example of a pnw file::
+
+    
+    $@path(../..)
+    $@path(..)
+    $@import(latex-blocks.tex)
+    $@import(md-blocks)
+    $@import(pnw.pnw)
+    $@include(ltxheader)
+    $@chunk(test,format=md)
+    
+       A block of text
+    $@end
+
+    $@chunk(pnw,format=rst)
+    PNW
+    ===
+
+    $@include(moduledoc)
+    $@include(test)
+    $@end
