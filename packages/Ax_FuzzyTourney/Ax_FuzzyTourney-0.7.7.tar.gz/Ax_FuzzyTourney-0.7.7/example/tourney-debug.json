@@ -1,0 +1,57 @@
+{
+    "tournament": {
+        "name": "Test/demo debug and development techniques",
+        "desc": "Shows how to inline data, load interactive lens data, ...",
+        "input": {
+            "fn": "Inline",
+            "config": { "data": ["Alice", "Bob"] }
+        },
+        "output": {
+            "fn": "Text_CSV",
+            "config": { "csv_header": "ids", "dest": "-" },
+            "fields": [
+                {"fn": "Entrant", "config": {"id": "name", "name": "Name"}},
+                {"fn": "Criterion", "config": {"criterion": "score_test"}}
+            ]
+        },
+        "select": {
+            "fn": "TopNCriteria",
+            "config": { "n": 3, "sort": "desc", "criteria": ["score_test"] }
+        },
+        "criteria": [
+            {
+                "id": "score_test", "name": "Test Score", 
+                "init": 0,
+                "desc": ""
+            }
+        ],
+        "judges": [
+            {
+                "name": "Test Judge 1",
+                "desc": "",
+                "heuristics": [
+                    {
+                        "name": "Test Inline Lens Data",
+                        "desc": "",
+                        "lens": { "fn": "Inline", "config": { "data": [10, null, 30] } },
+                        "maps": [
+                            { "fn": "Add", "config": { "offset": 1 } }
+                        ],
+                        "reduce": "Max",
+                        "criterion": "score_test"
+                    },
+                    {
+                        "name": "Test Interactive JSON Lens Data",
+                        "desc": "",
+                        "lens": { "fn": "Interactive_JSON", "config": { } },
+                        "maps": [
+                            { "fn": "Add", "config": { "offset": 1 } }
+                        ],
+                        "reduce": "Max",
+                        "criterion": "score_test"
+                    }
+                ]
+            }
+        ]
+    }
+}

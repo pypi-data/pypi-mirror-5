@@ -1,0 +1,61 @@
+{
+    "tournament": {
+        "name": "Basic dice tournament",
+        "desc": "Several people roll dice and compete for highest score.",
+        "input": {
+            "fn": "Text_Lines",
+            "config": { "src": "example/names.txt" }
+        },
+        "output": {
+            "fn": "Text_CSV",
+            "config": { "csv_header": "ids", "dest": "-" },
+            "fields": [
+                {"fn": "Entrant", "config": {"id": "name", "name": "Name"}},
+                {"fn": "Criterion", "config": {"criterion": "score_dice"}}
+            ]
+        },
+        "select": {
+            "fn": "TopNCriteria",
+            "config": { "n": 3, "sort": "desc", "criteria": ["score_dice"] }
+        },
+        "criteria": [
+            {
+                "id": "score_dice", "name": "Best Dice Score", 
+                "init": 0,
+                "desc": "Total dice score"
+            }
+        ],
+        "judges": [
+            {
+                "name": "Dice Rolling Judge",
+                "desc": "Adds rolls of two dice (2d6) but for each die takes best of 3 rolls",
+                "heuristics": [
+                    {
+                        "name": "Best of 3 dice",
+                        "desc": "Chooses best value (1-6) of 3 random dice rolls",
+                        "lens": { "fn": "Random", "config": { "count": 3 }},
+                        "maps": [
+                            { "fn": "Scale", "config": { "factor": 6 } },
+                            { "fn": "Round", "config": { "mode": "floor" } },
+                            { "fn": "Add", "config": { "offset": 1 } }
+                        ],
+                        "reduce": { "fn": "Max", "config": {} },
+                        "criterion": "score_dice"
+                    },
+                    {
+                        "name": "Best of 3 dice",
+                        "desc": "Chooses best value (1-6) of 3 random dice rolls",
+                        "lens": { "fn": "Random", "config": { "count": 3 }},
+                        "maps": [
+                            { "fn": "Scale", "config": { "factor": 6 } },
+                            { "fn": "Round", "config": { "mode": "floor" } },
+                            { "fn": "Add", "config": { "offset": 1 } }
+                        ],
+                        "reduce": { "fn": "Max", "config": {} },
+                        "criterion": "score_dice"
+                    }
+                ]
+            }
+        ]
+    }
+}

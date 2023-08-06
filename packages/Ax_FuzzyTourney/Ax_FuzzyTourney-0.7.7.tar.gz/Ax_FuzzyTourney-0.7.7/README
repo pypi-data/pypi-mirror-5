@@ -1,0 +1,313 @@
+**Ax_FuzzyTourney:
+Fuzzy Tournament BETA - 
+Big Data Heuristic Programmable Reducing Miner**
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+==============================================================================
+Overview
+==============================================================================
+
+------------------------------------------------------------------------------
+Official Links
+------------------------------------------------------------------------------
+
+Python Package Index:
+    http://pypi.python.org/pypi/Ax_FuzzyTourney/
+
+Source Repository & Issue Tracker:
+    https://bitbucket.org/dkamins/ax_fuzzytourney/
+
+
+------------------------------------------------------------------------------
+About This Package
+------------------------------------------------------------------------------
+
+Ax_FuzzyTourney (AxonChisel Fuzzy Tournament) is a
+"Big Data Heuristic Programmable Reducing Miner".
+
+Purpose:
+Allow input of large amounts of proprietary and custom data, analysis,
+and distillation down into smaller sets of more useful and manageable
+information.
+
+Complex large scale data analysis and reduction is performed by the
+included library and command line tool (pending), customized by 
+easy-to-write (JSON) tournament scripts.
+
+In addition to a treasure trove of built in components for data input,
+output, selection, and analytics, the underlying "tournament" abstraction
+is revealed and documented to allow end users to easily extend and include
+their own custom components in their tournaments simply by referencing
+their full classpath in custom tournament scripts.
+
+
+------------------------------------------------------------------------------
+About The Name
+------------------------------------------------------------------------------
+
+The name "Fuzzy Tourney" comes from "fuzzy" (short for fuzzy logic, see below)
+and "tourney" (short for "tournament", or a type of competition in which 
+winners emerge).
+
+From http://en.wikipedia.org/wiki/Fuzzy_logic :
+Fuzzy logic is a form of many-valued logic or probabilistic logic; it deals with reasoning that is approximate rather than fixed and exact. Compared to traditional binary sets (where variables may take on true or false values) fuzzy logic variables may have a truth value that ranges in degree between 0 and 1. Fuzzy logic has been extended to handle the concept of partial truth, where the truth value may range between completely true and completely false
+
+
+------------------------------------------------------------------------------
+Status
+------------------------------------------------------------------------------
+
+(beta)
+
+
+------------------------------------------------------------------------------
+Examples of Use
+------------------------------------------------------------------------------
+
+- Analyze large scale multi-dimensional system monitor data for anomalies.
+
+- Analyze full customer usage records for fraud detection.
+
+- Analyze perimeter defense logs for suspicious activity.
+
+- Analyze commodity price history for trading strategy.
+
+
+------------------------------------------------------------------------------
+How it Works
+------------------------------------------------------------------------------
+
+(pending)
+
+
+------------------------------------------------------------------------------
+Installation
+------------------------------------------------------------------------------
+
+The recommended way of installing this package is with "pip"::
+
+    $ pip install Ax_FuzzyTourney
+
+That's it.
+
+If you don't have/want/like pip or that seems too easy for you,
+then download this (``Ax_FuzzyTourney``) package source and either
+copy/symlink the ``axonchisel`` directory from this package
+into your Python path or run::
+
+    $ python setup.py install
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+==============================================================================
+Conceptual Model and Abstractions
+==============================================================================
+
+
+
+------------------------------------------------------------------------------
+Tournament
+------------------------------------------------------------------------------
+
+Tournament
+----------
+
+A tournament is a single run through the tool, inputting and processing a large list of "entrants" and finally outputting results.  Tournaments are typically defined in JSON script.
+
+
+Entrants
+--------
+
+An entrant is a single piece of input fed into the tournament to be compared with all others.  Within the tournament, additional data is typically loaded for each entrant.  Entrants come from the input source.
+
+
+------------------------------------------------------------------------------
+Input & Output
+------------------------------------------------------------------------------
+
+Input
+-----
+
+The input provides entrants to the tournament.  One built in input format reads numbers from a text stream (including STDIN) and feeds them to the tournament, one per line.  Another parses CSV input and feeds dicts (key/value sets) to the tournament as entrants.  Users may create their own custom input formats, such as to query a databases through configurable filters and produce domain-specific entrants.
+
+
+Output
+------
+
+When the tournament has chosen which entrants to pass through, it feeds them through an output format abstraction.  Built in are CSV outputs, JSON outputs, and more.  Users may also create their own output formats, such as to write results to a database or call a remote API with results.
+
+
+Fields
+------
+
+In the tournament, entrants may pick up large amounts of additional data during judging.  But only fields configured in the tournament script to will be output.  Fields can reference original entrant data, scoring criteria, or can be customized to output even further processed or subsequently loaded data.
+
+
+
+------------------------------------------------------------------------------
+Choosing Winners
+------------------------------------------------------------------------------
+ 
+Select
+------
+
+A tournament that judges, processes, and outputs annotated records for all entrants can be useful (and is supported by the "All" selector).  But often the desired result is a smaller set of chosen entrants.  The selector can be used narrow down the winning entrant set, often by choosing the highest scoring set using a specified metric.  The most common built in "Top N Criteria" selector will serve most needs, but users may further create their own selectors.
+
+
+Criteria
+--------
+
+Criteria are the categories that entrants are judged on and typically the means by which selectors choose winners.  Each tournament defines its own criteria.
+ 
+
+------------------------------------------------------------------------------
+Programmable Judges
+------------------------------------------------------------------------------
+
+
+Judge
+-----
+
+Judges process each entrant in a tournament independently of all others, applying a series of customizable heuristics defined in the tournament script to build the final data set used for selection and output.  A tournament can have any number of judges as well.
+
+
+Heuristic
+---------
+
+The heuristics used by each judge are programmed in the tournament script and determine exactly how the judging process operates on each entrant.  A heuristic will:
+
+- first apply a lens to the entrant to obtain an array of data
+- then apply a series of map operations, executing the defined functions on each element of the list
+- then apply a reduce function to convert the array into a single value
+- then apply another series of post-reduce maps on the reduce value itself
+- finally apply the resulting value toward one of the tournament's criteria
+
+
+
+
+------------------------------------------------------------------------------
+Heuristic Stages
+------------------------------------------------------------------------------
+
+ 
+Lens
+----
+
+The lens takes as input an entrant and returns a list of data.  Lenses may do internal math or logic or load additional data from external systems such as databases or APIs.  Lenses are specified and customized in the tournament script for each specified heuristic.
+
+
+Map
+---
+
+Map functions are applied to the resulting lens data to scale it, clip it, convert it, or otherwise manipulate it in any particular way.  Maps are specified and customized in the tournament script for each specified heuristic.
+
+Reduce
+------
+
+The final mapped data is fed to a reducer to distill it down into a single value.  The reducer is specified and customized in the tournament script for each specified heuristic.
+
+
+
+Reduced Maps
+------------
+
+Like regular map functions (and in fact using the same ones, but applied to a list of one), reduced map functions process the final reduced value into its ultimate form, which is then typically applied directly to one of the criteria.  Reduced maps are specified and customized in the tournament script for each specified heuristic.
+
+
+
+------------------------------------------------------------------------------
+Functions
+------------------------------------------------------------------------------
+
+ 
+Functions
+---------
+
+A "function" abstraction is used to model almost all of the previously mentioned abstractions: inputs, outputs, fields, selectors, lenses, maps, and reducers.  These are similarly configured in the tournament script, referencing the short name (for built in functions) or the full classpath for user additions.  Additionally a "config" key/value set is passed through to provide tournament-specific customization.  User extensions are implementations of functions derived from one of the standard object superclasses.
+
+
+------------------------------------------------------------------------------
+Extensibility
+------------------------------------------------------------------------------
+
+While the built in comonents are sufficient to serve a wide variety of analytics projects, most complex domain-specific analyses will require domain-secific code.  The Ax_FuzzyTourney library is designed to stand on its own and be extensible through calls into user code specified in the tournament script.  All of the functions listed above, representing most of the abstractions of the system, can be provided and included by users to create and run extremely customized tournaments within the framework.
+
+ 
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+==============================================================================
+Details, Details
+==============================================================================
+
+------------------------------------------------------------------------------
+Requirements
+------------------------------------------------------------------------------
+
+- Python 2.6 is required.
+
+
+
+------------------------------------------------------------------------------
+License
+------------------------------------------------------------------------------
+
+This open-source software is offered for free under standard MIT license
+as contained in the LICENSE.txt file and described here:
+See: http://www.opensource.org/licenses/mit-license.php
+
+
+
+------------------------------------------------------------------------------
+History
+------------------------------------------------------------------------------
+
+
+0.7.7 (2013-07-19)
+------------------
+
+- Cleanup.
+- Many new built-in functions.
+
+0.7.6 (2013-07-14)
+------------------
+
+- First beta release.
+
+
+
+
+------------------------------------------------------------------------------
+Bugs, Requests, Feedback, and Contributions
+------------------------------------------------------------------------------
+
+If you find any bugs or have feedback, please use our issue tracker:
+
+    https://bitbucket.org/dkamins/ax_fuzzytourney/issues
+
+You may also e-mail the author directly:
+
+  Dan Kamins <dos at axonchisel dot net>
+
+While you're free to fork this project, 
+if you'd like to contribute, please send an e-mail first to one of the 
+authors.
+If you have patches, let us know and we'll roll them into the next release.
+Our source repository is at:
+
+    https://bitbucket.org/dkamins/ax_fuzzytourney/
+
+Lastly, if you use this code for something interesting, drop us a line too!
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+Copyright (c) 2013 Dan Kamins, AxonChisel.net
