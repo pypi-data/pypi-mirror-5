@@ -1,0 +1,78 @@
+Introduction
+============
+
+This library provides a Python wrapper for Veracity's command-line interface.
+It includes objects for repositories, working copies, and other commonly-used
+items. The library also provides command-line tools to work with Veracity's
+distributed build tracking features.
+
+
+
+Getting Started
+===============
+
+Requirements
+------------
+
+* Python 2.7
+
+* Veracity 2.5: http://veracity-scm.com
+
+
+Dependencies
+------------
+
+* sh: https://pypi.python.org/pypi/sh (Linux only)
+
+* pbs: https://pypi.python.org/pypi/pbs (Window only)
+
+* virtualenv: https://pypi.python.org/pypi/virtualenv
+
+
+Installation
+------------
+
+python-veracity can be installed with ``pip`` or ``easy_install``::
+
+    pip install python-veracity
+
+or directly from source::
+
+    python setup.py install
+
+After installation, the package is available under the name ``veracity``::
+
+    python
+    >>> import veracity
+
+
+
+Basic Usage
+===========
+
+A sample script might look like this::
+
+    #!/usr/bin/env python
+
+    from veracity import Repository, WorkingCopy
+
+    # Clone a repo
+    repo = Repository('veracity', remote='http://public.veracity-scm.com/repos/veracity')
+
+    # Check out a working copy (from repo)
+    work = repo.checkout("v/veracity")
+
+    # Check out a working copy (by repo)
+    work2 = WorkingCopy("v/veracity2", repo='veracity')
+    work2.update(branch='onveracity')
+
+    # TODO: add more examples...
+
+
+
+Unit and Integration Tests
+==========================
+
+To run the unit and integration tests for the ``veracity`` package::
+
+    python setup.py test
