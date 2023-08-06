@@ -1,0 +1,175 @@
+distcontrib
+===========
+
+| Code_ | Bugs_ | Forums_ | License_ | Contact_
+
+.. _Code : http://code.launchpad.net/distcontrib
+.. _Bugs : http://bugs.launchpad.net/distcontrib
+.. _Forums : http://answers.launchpad.net/distcontrib
+.. _License : http://opensource.org/licenses/BSD-3-Clause
+.. _Contact : http://launchpad.net/~frgomes
+
+Python package ``distcontrib`` contributes utility functions to Distutils, extending its
+functionalities, like integration with Cython build and a launcher for doctest. 
+
+The primary reason for the existence of ``distcontrib`` is making life a lot easier
+when you write ``setup.py`` for your projects. You can create a template ``setup.py``
+file and simply copy it to all new or existing projects you have, without any 
+modification, in most situations. Under the covers, ``distcontrib`` finds several 
+bits and pieces about your project and *automagically* configures itself
+so that you don't have to adjust your setup.py file every time you create a new
+project.
+
+
+See also: `distcontrib-migrate`_
+
+Usage
+-----
+
+This is an example of how your ``setup.py`` would look like::
+
+    #!/usr/bin/env python
+        
+    from setuptools import find_packages
+    from distutils.core import setup
+    from Cython.Distutils import build_ext as cython_build
+    import distcontrib as du
+
+     ##
+    # This block contains settings you will eventually need to change
+    ###
+    
+    import myapp as myapp   #--- adjust to your package name
+
+    PACKAGE      = myapp.pkg_name
+    VERSION      = myapp.pkg_version
+    DESCRIPTION  = myapp.pkg_description
+    LICENSE      = myapp.pkg_license
+    URL          = myapp.pkg_url
+    AUTHOR       = myapp.pkg_author
+    AUTHOR_EMAIL = myapp.pkg_email
+    KEYWORDS     = myapp.pkg_keywords
+    REQUIREMENTS = myapp.pkg_requirements
+    LONG_DESCRIPTION = du.tools.read('README')
+    CLASSIFIERS      = [ 'License :: ' + LICENSE,
+                         'Operating System :: OS Independent',
+                         'Programming Language :: Python',
+                         'Programming Language :: Cython',
+                         'Development Status :: 3 - Alpha',
+                         'Intended Audience :: Developers',
+                         'Environment :: Console' ]
+    
+     ##
+    # From this point on, it's unlikely you will be changing anything.
+    ###
+    
+    PACKAGES      = find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"])
+    PACKAGES_DATA = du.tools.findall_package_data(PACKAGES)
+    EXT_MODULES   = du.tools.find_ext_modules(PACKAGES)
+    
+    setup(
+        name=PACKAGE,
+        version=VERSION,
+        description=DESCRIPTION,
+        url=URL,
+        author=AUTHOR,
+        author_email=AUTHOR_EMAIL,
+        long_description=LONG_DESCRIPTION,
+        license=LICENSE,
+        keywords=KEYWORDS,
+        classifiers=CLASSIFIERS,
+        packages=PACKAGES,
+        package_data=PACKAGES_DATA,
+        cmdclass={ 'build_ext' : cython_build,
+                   'doctest'   : du.doctest,
+                   'zap'       : du.zap, },
+        ext_modules=EXT_MODULES,
+        install_requires=REQUIREMENTS
+    )
+
+Then create under your ``myapp/__init__.py`` file something like this::
+
+    #!/usr/bin/env python
+    
+    pkg_name         = __name__ if __package__ is None else __package__
+    pkg_description  = 'This application does everything you can imagine'
+    pkg_version      = '0.1.0'
+    pkg_license      = 'OSI Approved :: BSD License'
+    pkg_url          = 'http://' + pkg_name + '.readthedocs.org/'
+    pkg_author       = 'Richard Gomes http://rgomes-info.blogspot.com'
+    pkg_email        = 'rgomes.info@gmail.com'
+    pkg_keywords     = [ 'artificial','intelligence','magic','sorcery','voodoo' ]
+    pkg_requirements = [ 'lxml', 'sqlalchemy' ]
+
+Then you can do enter from command line::
+
+    $ python setup.py zap        # clean on steroids
+    $ python setup.py doctest    # run your doctests
+    $ python setup.py build_ext  # build with Cython
+
+
+Command *zap* cleans a lot more stuff than command *clean* does, being ideal as a step before committing changes to the source control or creating a backup copy of your working folder.
+
+Command *doctest* runs all doctests, from all your packages. If you find that thre are doctests not being run, please make sure you have created ``__init__.py`` files in all packages.
+
+Special cases
+^^^^^^^^^^^^^
+
+In certain circumstances, you may have to guarantee that your ``setup.py`` installs a minumun set of essential requirements which, if not installed, may prevent your ``setup.py`` from running properly. By borrowing function ``install_requirements`` from package ``distcontrib.bootstrap`` and calling it on the top of your ``setup.py``, you can install these essential requirements, as shown below::
+
+    #!/usr/bin/env python
+     
+    ESSENTIAL = [ 'distribute', 'version', 'Cython', 'distcontrib', 'distcontrib-migrate' ]
+
+    # This function was copied verbatim from distcontrib.bootstrap
+    # In certain situations, you are not sure if distcontrib is installed, then
+    # makes sense to have this function straight on the top of your setup.py
+    def install_requirements(requirements, verbose=True):
+        import os, pip
+        pip_args = list()
+        if verbose:
+            print('Installing requirements: ' + str(requirements))
+            pip_args.append( '--verbose' )
+        proxy = os.environ['http_proxy']
+        if proxy:
+            pip_args.append('--proxy')
+            pip_args.append(proxy)
+            if verbose:
+                print('http_proxy=' + proxy)
+        pip_args.append('install')
+        for req in requirements:
+            pip_args.append( req )
+        pip.main(initial_args = pip_args)
+
+
+    try:
+        from setuptools import find_packages
+        from distutils.core import setup
+        from Cython.Distutils import build_ext as cython_build
+        import distcontrib as du
+        import distcontrib_migrate as dm
+    except:
+        #-- import distcontrib.bootstrap
+        #-- distcontrib.bootstrap.install_requirements( ESSENTIAL )
+        install_requirements( ESSENTIAL )
+ 
+        # do it again
+        from setuptools import find_packages
+        from distutils.core import setup
+        from Cython.Distutils import build_ext as cython_build
+        import distcontrib as du
+        import distcontrib_migrate as dm
+
+    ... the rest of your setup.py comes here
+
+
+Support
+-------
+
+  - Bugs: https://bugs.launchpad.net/distcontrib
+  - Forums : https://answers.launchpad.net/distcontrib
+  - Sources: https://code.launchpad.net/distcontrib
+
+
+.. _`distcontrib-migrate`: http://distcontrib-migrate.readthedocs.org/
+
