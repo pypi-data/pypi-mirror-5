@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+
+__appname__ = "pysub-dl"
+__version__ = "0.2.1"
+__author__ = "iamsudip <iamsudip@programmer.net>"
+__license__ = "MIT"
+
+import argparse
+import sys
+import requests
+from BeautifulSoup import BeautifulSoup
+from download_it import download_file
+from prompt_user import prompt1, prompt2
+
+parser = argparse.ArgumentParser(description = 'Searches and downloads subtitle for your movie')
+parser.add_argument("movie", type = str,
+                    help = "Name of the movie")
+parser.add_argument("language", type = str, nargs='?',
+                    default='', help = "Subtitle language")
+args = parser.parse_args()
+
+data = {}           # Dictionary to keep all data including links and name of the subtitle.
+movie_list = {}     # Dictionary to keep all movie names and corresponding urls in case of wrong movie input.
+temp = {}           # Temporary dictionary to parse movie_list url correctly
+
+def handle_choice1(choice):
+    ''' Error handling due to wrong user input
+    '''
+    try:
+        search_sub(movie_list[temp[int(choice)]])
+        choice = prompt1()
+        down_link(data[int(choice)])
+    except (KeyError, ValueError) as errors:
+        print "Use the index number respective to your desired subtitle. You entered wrong choice."
+        choice = prompt2()
+        handle_choice1(choice)
+
+def handle_choice(choice):
+    ''' Error handling due to wrong user input
+    '''
+    try:
+        down_link(data[int(choice)])
+    except (KeyError, ValueError) as errors:
+        print "Use the index number respective to your desired subtitle. You entered wrong choice."
+        choice = prompt1()
+        handle_choice(choice)
+
+def alternate_search():
+    ''' Returns probable movie names corresponding to the user input.
+    '''
+    url = 'http://subscene.com/subtitles/title.aspx?q=' + args.movie
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text)
+    del response
+    counter = 1
+    for popular in soup.findAll('div', attrs={'class' : 'title'}):
+        for link in popular.findAll('a'):
+            movie_list[link.text] = 'http://subscene.com' + link.get('href') + '/' + args.language
+    for key in movie_list.keys():
+        print str(counter) + ". " + key
+        temp[counter] = key
+        counter += 1
+    choice = prompt2()
+    handle_choice1(choice)
+
+def down_link(link):
+    ''' Downloads the subtitle & prompts if it is ok or not.
+    '''
+    response = requests.get(link)
+    soup = BeautifulSoup(response.text)
+    del response
+    for subs in soup.findAll('div', attrs={'class' : 'download'}):
+        for link in subs.findAll('a'):
+            user_response = download_file('http://subscene.com' + link.get('href'))
+    if 'y' in user_response:
+        print "Cool. Enjoy the movie!"
+        sys.exit(0)
+    else:
+        print "Choose another one subtitle"
+        choice = prompt1()
+        handle_choice(choice)
+
+def make_link(movie_name, lang):
+    ''' Returns url which contains all subtitles of a particular movie.
+    '''
+    link = 'http://subscene.com/subtitles/%s/%s' %(movie_name, lang)
+    response = requests.get(link)
+    if response.status_code == 200:
+        return link
+    else:
+        print "Wrong language input, Showing result for all available language"
+        return 'http://subscene.com/subtitles/%s/' %(movie_name)
+
+def search_sub(link):
+    ''' After searching shows the subtitle list.
+    '''
+    response = requests.get(link)
+    if not response.status_code == 200:
+        print "Sorry! Please choose movie name from the list and enter the corresponding index number."
+        alternate_search()
+    soup = BeautifulSoup(response.text)
+    del response
+    counter1 = 1
+    counter2 = 1
+    for subs in soup.findAll('td', attrs={'class' : 'a1'}):
+        for link in subs.findAll('a'):
+            data[counter1] = 'http://subscene.com' + link.get('href')
+            counter1 += 1
+    print "List of subtitles available at subscene.com"
+    for subs in soup.findAll('td', attrs={'class' : 'a1'}):
+        print str(counter2) + ". Language:",
+        for movie_name in subs.findAll('span'):
+            print movie_name.text
+        counter2 += 1
+
+if __name__ == '__main__':
+    try:
+        link = make_link(args.movie, args.language)
+        search_sub(link)
+        choice = prompt1()
+        handle_choice(choice)
+    except (KeyboardInterrupt, EOFError) as errors:
+        print '\nExit'
+        sys.exit(0)
