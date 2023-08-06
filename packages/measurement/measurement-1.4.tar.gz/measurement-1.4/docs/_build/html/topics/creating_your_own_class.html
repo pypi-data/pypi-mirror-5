@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Creating your own Measure Class &mdash; python-measurement 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="python-measurement 1.0 documentation" href="../index.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="python-measurement" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="python-measurement"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python-measurement 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="creating-your-own-measure-class">
+<h1>Creating your own Measure Class<a class="headerlink" href="#creating-your-own-measure-class" title="Permalink to this headline">¶</a></h1>
+<p>You can create your own measures easily by subclassing either
+<tt class="docutils literal"><span class="pre">measurement.base.MeasureBase</span></tt> or <tt class="docutils literal"><span class="pre">measurement.base.BidimensionalMeasure</span></tt>.</p>
+<div class="section" id="normal-measures">
+<h2>Normal Measures<a class="headerlink" href="#normal-measures" title="Permalink to this headline">¶</a></h2>
+<p>If your measure is not a measure dependent upon another measure (e.g speed,
+distance/time) you can create new measurement by creating a subclass of
+<tt class="docutils literal"><span class="pre">measurement.base.MeasureBase</span></tt>.</p>
+<p>A simple example is Weight:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">measurement.base</span> <span class="kn">import</span> <span class="n">MeasureBase</span>
+
+<span class="k">class</span> <span class="nc">Weight</span><span class="p">(</span><span class="n">MeasureBase</span><span class="p">):</span>
+    <span class="n">STANDARD_UNIT</span> <span class="o">=</span> <span class="s">&#39;g&#39;</span>
+    <span class="n">UNITS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;g&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s">&#39;tonne&#39;</span><span class="p">:</span> <span class="mf">1000000.0</span><span class="p">,</span>
+        <span class="s">&#39;oz&#39;</span><span class="p">:</span> <span class="mf">28.3495</span><span class="p">,</span>
+        <span class="s">&#39;lb&#39;</span><span class="p">:</span> <span class="mf">453.592</span><span class="p">,</span>
+        <span class="s">&#39;stone&#39;</span><span class="p">:</span> <span class="mf">6350.29</span><span class="p">,</span>
+        <span class="s">&#39;short_ton&#39;</span><span class="p">:</span> <span class="mf">907185.0</span><span class="p">,</span>
+        <span class="s">&#39;long_ton&#39;</span><span class="p">:</span> <span class="mf">1016000.0</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">ALIAS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;gram&#39;</span><span class="p">:</span> <span class="s">&#39;g&#39;</span><span class="p">,</span>
+        <span class="s">&#39;ton&#39;</span><span class="p">:</span> <span class="s">&#39;short_ton&#39;</span><span class="p">,</span>
+        <span class="s">&#39;metric tonne&#39;</span><span class="p">:</span> <span class="s">&#39;tonne&#39;</span><span class="p">,</span>
+        <span class="s">&#39;metric ton&#39;</span><span class="p">:</span> <span class="s">&#39;tonne&#39;</span><span class="p">,</span>
+        <span class="s">&#39;ounce&#39;</span><span class="p">:</span> <span class="s">&#39;oz&#39;</span><span class="p">,</span>
+        <span class="s">&#39;pound&#39;</span><span class="p">:</span> <span class="s">&#39;lb&#39;</span><span class="p">,</span>
+        <span class="s">&#39;short ton&#39;</span><span class="p">:</span> <span class="s">&#39;short_ton&#39;</span><span class="p">,</span>
+        <span class="s">&#39;long ton&#39;</span><span class="p">:</span> <span class="s">&#39;long_ton&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">SI_UNITS</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;g&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Important details:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">STANDARD_UNIT</span></tt> defines what unit will be used internally by the library
+for storing the value of this measurement.</li>
+<li><tt class="docutils literal"><span class="pre">UNITS</span></tt> provides a mapping relating a unit of your <tt class="docutils literal"><span class="pre">STANDRD_UNIT</span></tt> to
+any number of defined units.  In the example above, you will see that
+we&#8217;ve established <tt class="docutils literal"><span class="pre">28.3495</span> <span class="pre">g</span></tt> to be equal to <tt class="docutils literal"><span class="pre">1</span> <span class="pre">oz</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">ALIAS</span></tt> provides a list of aliases mapping keyword arguments to <tt class="docutils literal"><span class="pre">UNITS</span></tt>.
+these values are allowed to be used as keyword arguments when either creating
+a new unit or guessing a measurement using <tt class="docutils literal"><span class="pre">measurement.utils.guess</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">SI_UNITS</span></tt> provides a list of units that are SI Units.  Units in this list
+will automatically have new units and aliases created for each of the main
+SI magnitudes.  In the above example, this causes the list of <tt class="docutils literal"><span class="pre">UNITS</span></tt>
+and <tt class="docutils literal"><span class="pre">ALIAS</span></tt> es to be extended to include the following units (aliases):
+<tt class="docutils literal"><span class="pre">yg</span></tt> (yottagrams), <tt class="docutils literal"><span class="pre">zg</span></tt> (zeptograms), <tt class="docutils literal"><span class="pre">ag</span></tt> (attograms),
+<tt class="docutils literal"><span class="pre">fg</span></tt> (femtograms), <tt class="docutils literal"><span class="pre">pg</span></tt> (picograms), <tt class="docutils literal"><span class="pre">ng</span></tt> (nanograms),
+<tt class="docutils literal"><span class="pre">ug</span></tt> (micrograms), <tt class="docutils literal"><span class="pre">mg</span></tt> (milligrams), <tt class="docutils literal"><span class="pre">kg</span></tt> (kilograms),
+<tt class="docutils literal"><span class="pre">Mg</span></tt> (megagrams), <tt class="docutils literal"><span class="pre">Gg</span></tt> (gigagrams), <tt class="docutils literal"><span class="pre">Tg</span></tt> (teragrams),
+<tt class="docutils literal"><span class="pre">Pg</span></tt> (petagrams), <tt class="docutils literal"><span class="pre">Eg</span></tt> (exagrams), <tt class="docutils literal"><span class="pre">Zg</span></tt> (zetagrams),
+<tt class="docutils literal"><span class="pre">Yg</span></tt> (yottagrams).</li>
+</ul>
+<p>In some situations, your conversions between units may not be simple enough
+to be accomplished by using simple conversions (e.g. temperature); for
+situations like that, you should use <tt class="docutils literal"><span class="pre">sympy</span></tt> to create expressions relating
+your measure&#8217;s standard unit and the unit you&#8217;re defining:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">S</span><span class="p">,</span> <span class="n">Symbol</span>
+<span class="kn">from</span> <span class="nn">measurement.base</span> <span class="kn">import</span> <span class="n">MeasureBase</span>
+
+<span class="k">class</span> <span class="nc">Tempoerature</span><span class="p">(</span><span class="n">MeasureBase</span><span class="p">):</span>
+    <span class="n">SU</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s">&#39;kelvin&#39;</span><span class="p">)</span>
+    <span class="n">STANDARD_UNIT</span> <span class="o">=</span> <span class="s">&#39;k&#39;</span>
+    <span class="n">UNITS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;c&#39;</span><span class="p">:</span> <span class="n">SU</span> <span class="o">-</span> <span class="n">S</span><span class="p">(</span><span class="mf">273.15</span><span class="p">),</span>
+        <span class="s">&#39;f&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">SU</span> <span class="o">-</span> <span class="n">S</span><span class="p">(</span><span class="mf">273.15</span><span class="p">))</span> <span class="o">*</span> <span class="n">S</span><span class="p">(</span><span class="s">&#39;9/5&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="s">&#39;k&#39;</span><span class="p">:</span> <span class="mf">1.0</span>
+    <span class="p">}</span>
+    <span class="n">ALIAS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;celsius&#39;</span><span class="p">:</span> <span class="s">&#39;c&#39;</span><span class="p">,</span>
+        <span class="s">&#39;fahrenheit&#39;</span><span class="p">:</span> <span class="s">&#39;f&#39;</span><span class="p">,</span>
+        <span class="s">&#39;kelvin&#39;</span><span class="p">:</span> <span class="s">&#39;k&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>Important details:</p>
+<ul class="simple">
+<li>See above &#8216;Important Details&#8217; under <cite>Normal Measures</cite>.</li>
+<li><tt class="docutils literal"><span class="pre">SU</span></tt> must define the symbol used in expressions relating your measure&#8217;s
+<tt class="docutils literal"><span class="pre">STANDARD_UNIT</span></tt> to the unit you&#8217;re defining.</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Creating your own Measure Class</a><ul>
+<li><a class="reference internal" href="#normal-measures">Normal Measures</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">python-measurement</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="next chapter">Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/topics/creating_your_own_class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="python-measurement"
+             >previous</a> |</li>
+        <li><a href="../index.html">python-measurement 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Adam Coddington.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
