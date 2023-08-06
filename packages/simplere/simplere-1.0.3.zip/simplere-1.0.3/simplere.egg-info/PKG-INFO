@@ -1,0 +1,203 @@
+Metadata-Version: 1.0
+Name: simplere
+Version: 1.0.3
+Summary: Simpler, cleaner access to regular expressions. Globs too.
+Home-page: https://bitbucket.org/jeunice/simplere
+Author: Jonathan Eunice
+Author-email: jonathan.eunice@gmail.com
+License: UNKNOWN
+Description: .. image:: https://travis-ci.org/jonathaneunice/simplere.png?branch=master
+            :target: https://travis-ci.org/jonathaneunice/simplere
+        
+        .. image:: https://pypip.in/d/simplere/badge.png
+            :target: https://crate.io/packages/simplere/
+        
+        A simplified interface to Python's regular expression (``re``)
+        string search that tries to eliminate steps and provide
+        simpler access to results. As a bonus, also provides compatible way to
+        access Unix glob searches.
+        
+        Usage
+        =====
+        
+        Python regular expressions are powerful, but the language's lack
+        of an *en passant* (in passing) assignment requires a preparatory
+        motion and then a test::
+        
+            import re
+            
+            match = re.search(pattern, some_string)
+            if match:
+                print match.group(1)
+        
+        With ``simplere``, you can do it in fewer steps::
+        
+            from simplere import *
+        
+            if match / re.search(pattern, some_string):
+                print match[1]
+        
+        Or with an object-orented style:
+        
+            if some_string in Re(pattern):
+                print Re._[1]
+        
+        
+        Re Objects
+        ==========
+        
+        ``Re`` objects are `memoized
+        <http://en.wikipedia.org/wiki/Memoization>`_ for efficiency, so they compile their
+        pattern just once, regardless of how many times they're mentioned in a
+        program.
+        
+        Note that the ``in`` test turns the sense of the matching around (compared to
+        the standard ``re`` module). It asks "is the given string *in*
+        the set of items this pattern describes?" To be fancy, the
+        ``Re`` pattern is an intensionally
+        defined set (namely "all strings matching the pattern"). This order often makes
+        excellent sense whey you have a clear intent for the test. For example, "is the
+        given string within the set of *all legitimate commands*?"
+        
+        Second, the ``in`` test had the side effect of setting the underscore
+        name ``_`` to the result. Python doesn't support *en passant* assignment--apparently,
+        no matter how hard you try, or how much introspection you use. This makes it
+        harder to both test and collect results in the same motion, even though that's
+        often exactly appropriate. Collecting them in a class variable is a fallback
+        strategy (see the *En Passant* section below for a slicker one).
+        
+        If you prefer the more traditional ``re`` calls::
+        
+            if Re(pattern).search(some_string):
+                print Re._[1]
+        
+        ``Re`` works even better with named pattern components, which are exposed
+        as attributes of the returned object::
+        
+            person = 'John Smith 48'
+            if person in Re(r'(?P<name>[\w\s]*)\s+(?P<age>\d+)'):
+                print Re._.name, "is", Re._.age, "years old"
+            else:
+                print "don't understand '{}'".format(person)
+                
+        One trick being used here is that the returned object is not a pure
+        ``_sre.SRE_Match`` that Python's ``re`` module returns. Nor is it a subclass.
+        (That class `appears to be unsubclassable
+        <http://stackoverflow.com/questions/4835352/subclassing-matchobject-in-python>`_.)
+        Thus, regular expression matches return a proxy object that
+        exposes the match object's numeric (positional) and
+        named groups through indices and attributes. If a named group has the same
+        name as a match object method or property, it takes precedence. Either
+        change the name of the match group or access the underlying property thus:
+        ``x._match.property``
+                
+        It's possible also to loop over the results::
+        
+            for found in Re('pattern (\w+)').finditer('pattern is as pattern does'):
+                print found[1]
+                
+        Or collect them all in one fell swoop::
+        
+            found = Re('pattern (\w+)').findall('pattern is as pattern does')
+            
+        Pretty much all of the methods and properties one can access from the standard
+        ``re`` module are available.
+        
+        Bonus: Globs
+        ============
+        
+        Regular expressions are wonderfuly powerful, but sometimes the simpler `Unix glob
+        <http://en.wikipedia.org/wiki/Glob_(programming)>`_ is works just fine. As a bonus,
+        ``simplere`` also provides simple glob access.::
+        
+            if 'globtastic' in Glob('glob*'):
+                print "Yes! It is!"
+            else:
+                raise ValueError('YES IT IS')
+        
+        En Passant
+        ==========
+        
+        If you have existing code that already uses ``re`` regular expressions
+        and you want to ease into using ``simplere``, ``ReMatch`` objects can
+        simply wrap Python's native``_sre.SRE_Match`` objects (the things that ``re``
+        method calls return).::
+        
+            match = re.match(r'(?P<word>th.s)', 'this is a string')
+            match = ReMatch(match)
+            if match:
+                print match.group(1)    # still works
+                print match[1]          # same thing
+                print match.word        # same thing, with logical name
+                
+        But that's a huge amount of boiler plate for a simple test, right? So ``simplere``
+        also uses an *en passant* trick of redefining the division operation::
+            
+            if match / re.search(r'(?P<word>th.s)', 'this is a string'):
+                assert match[1] == 'this'
+                assert match.word == 'this'
+                assert match.group(1) == 'this'
+        
+        This uses the pre-delcared ``match`` object and the division operator (``/``)
+        to quickly funnel
+        the result of the search. 
+        If the ``re`` operation fails, the resulting object is guaranteed to have
+        a ``False``-like boolean value, so that it will fall through conditional tests. 
+        
+        If you prefer the look of the less-than (``<``) or less-than-or-equal (``<=``),
+        as indicators that ``match`` takes the value of the following function call, they
+        are supported as aliases of the division operation (``/``). You may define your
+        own match objects, and can use them on memoized ``Re`` objects too. Putting
+        a few of these optional things together::
+        
+            answer = Match()   # need to do this just once
+            
+            if answer < Re(r'(?P<word>th..)').search('and that goes there'):
+                assert answer.word == 'that'
+        
+        Notes
+        =====
+           
+         *  Automated multi-version testing is managed with the wonderful
+            `pytest <http://pypi.python.org/pypi/pytest>`_
+            and `tox <http://pypi.python.org/pypi/tox>`_. ``simplere`` is
+            successfully packaged for, and tested against, all late-model verions of
+            Python: 2.6, 2.7, 3.2, and 3.3, as well as PyPy 1.9 (based on 2.7.2).
+         
+         *  ``simplere`` is one part of a larger effort to add intensional sets
+            to Python. The `intensional <http://pypi.python.org/pypi/intensional>`_
+            package contains a parallel implementation of ``Re``, among many other
+            things.
+         
+         *  The author, `Jonathan Eunice <mailto:jonathan.eunice@gmail.com>`_ or
+            `@jeunice on Twitter <http://twitter.com/jeunice>`_
+            welcomes your comments and suggestions.
+        
+        Installation
+        ============
+        
+        To install the latest version::
+        
+            pip install -U simplere
+        
+        To ``easy_install`` under a specific Python version (3.3 in this example)::
+        
+            python3.3 -m easy_install --upgrade simplere
+            
+        (You may need to prefix these with "sudo " to authorize installation.)
+        
+Keywords: re regex regular expression glob
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Operating System :: OS Independent
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
