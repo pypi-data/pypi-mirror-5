@@ -1,0 +1,90 @@
+Installation
+=================
+
+::
+
+ pip install logmongo
+ easy_install logmongo
+
+What does it do?
+=====================
+
+* Gracefully creates capped collections.
+* Auto expires oldest records first and solves log rotation.
+* Writes complex (dicts and kwargs) log records.
+* Logs asynchronously.
+* Collects logs locally or remotely or in a central location.
+* Allows access to logs via MongoDB queries and APIs. 
+* Logs newline separated STDIN JSON strings to MongoDB
+
+Why should I use Logmongo instead of just pymongo?
+=====================================================
+
+Logmongo subclasses the pymongo Collection object and 
+provides the following additions -
+
+By default a new Logmongo object will create a 512M named capped collection
+
+write method which:
+
+* logs all passed keywords
+* if 'when' is not in record, add 'when' timestamp to log record
+* if 'source' is not in record, add 'source' add FQDN to log record
+
+query method which:
+
+* allows keywords (kwargs) querying for example::
+
+   log.query( tags='finance' )
+
+tail method which:
+
+* prints all records to standard out which match the given query until killed
+
+How does it work?
+=====================
+
+Example::
+
+ from logmongo import Logmongo
+
+ log = Logmongo('logs')
+
+ log.write( message='No required kwargs or fields!' )
+
+ entry = {
+   'tags':['but','we','like','tags'],
+   'level':'info'
+ }
+ log.write( entry )
+
+ # for more help check out  
+ help( logmongo )
+
+STDIN JSON to MongoDB
+======================
+
+Example::
+
+ # tail the log collection
+ ./logmongo --tail
+
+ # in another shell echo a JSON string into logmongo
+ echo '{"test":[143,435,432]}' | ./logmongo
+
+ # for more information
+ ./logmongo --help
+
+
+License
+===========
+
+Public Domain
+
+
+How do I thank you?
+=======================
+
+Write me an email!  I always respond back!
+
+

@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+from json import loads
+from argparse import ArgumentParser
+
+from logmongo import Logmongo 
+
+def get_args():
+    """Return parsed args from CLI"""
+    p = ArgumentParser(description='Log JSON to MongoDB.')
+    p.add_argument('--host', dest='host', type=str, help='host', default='127.0.0.1')
+    p.add_argument('--port', dest='port', type=int, help='port', default=27017)
+    p.add_argument('--db', dest='db', type=str, help='db', default='logs')
+    p.add_argument('--collection', dest='collection', type=str, help='collection', default='logs')
+    p.add_argument('--size', dest='size', type=int, help='collection size', default=524288000)
+    p.add_argument('--not-capped', dest='capped', help='capped collection', action='store_false', default=True)
+    p.add_argument('--tail', dest='tail', help='tail the collection', action='store_true', default=False)
+    return p.parse_args()
+
+if __name__ == '__main__':
+
+    a = get_args()
+
+    log = Logmongo(
+        a.collection, 
+        db=a.db, 
+        size=a.size,
+        capped=a.capped,
+        host=a.host,
+        port=a.port
+    )
+  
+    if a.tail:
+        log.tail()
+    else:
+        while True:
+            try:
+                # get message from standard in and convert JSON 
+                # to a dictionary named record 
+                record = loads(raw_input())
+                # send record to MongoDB
+                log.write(record)
+
+            except ValueError:
+                # No JSON object could be decoded
+                pass
+
+            except EOFError:
+                # raw_input() blocks till newline
+                # EOF causes an EOFError which we gracefully break on
+                break
+
