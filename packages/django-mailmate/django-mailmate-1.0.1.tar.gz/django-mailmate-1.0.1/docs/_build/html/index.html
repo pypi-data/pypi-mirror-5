@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>django-mailmate &mdash; django-mailmate 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/flasky.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="django-mailmate 1.0.0 documentation" href="#" /> 
+  </head>
+  <body>
+  
+  
+  <div class=indexwrapper>
+  
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="django-mailmate">
+<h1>django-mailmate<a class="headerlink" href="#django-mailmate" title="Permalink to this headline">¶</a></h1>
+<p>Mailmate is a Django app comprised of tools to make dealing with emails easier.
+Its main feature is a simple, class-based way to define email messages using
+Django templates. Here&#8217;s a quick sales pitch:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mailmate</span> <span class="kn">import</span> <span class="n">TemplatedEmailMessage</span>
+
+<span class="k">class</span> <span class="nc">MyEmail</span><span class="p">(</span><span class="n">TemplatedEmailMessage</span><span class="p">):</span>
+    <span class="n">to</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;some-user@some-email.com&#39;</span><span class="p">]</span>
+    <span class="n">from_email</span> <span class="o">=</span> <span class="s">&#39;no-reply@some-email.com&#39;</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="s">&#39;Hello, {{ name }}!&#39;</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="s">&#39;emails/template.txt&#39;</span>
+
+<span class="n">MyEmail</span><span class="p">(</span><span class="n">extra_context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;Jerry&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">send</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">django-mailmate</span></tt></p>
+</div>
+<div class="section" id="templatedemailmessage">
+<h2>TemplatedEmailMessage<a class="headerlink" href="#templatedemailmessage" title="Permalink to this headline">¶</a></h2>
+<p>Extend <tt class="docutils literal"><span class="pre">TemplatedEmailMessage</span></tt>, and set class attributes. You can override
+any of those attributes by passing keyword arguments to the constructor.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mailmate</span> <span class="kn">import</span> <span class="n">TemplatedEmailMessage</span>
+
+<span class="k">class</span> <span class="nc">MyEmail</span><span class="p">(</span><span class="n">TemplatedEmailMessage</span><span class="p">):</span>
+    <span class="n">to</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;some-user@some-email.com&#39;</span><span class="p">]</span>
+    <span class="n">from_email</span> <span class="o">=</span> <span class="s">&#39;no-reply@some-email.com&#39;</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="s">&#39;Hello!&#39;</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="s">&#39;emails/template.txt&#39;</span>
+
+<span class="n">MyEmail</span><span class="p">(</span><span class="n">to</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;somebodyelse@somewhereelse.com&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">send</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You can use a template to define your email body (like in the above example), or
+define it as a string:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mailmate</span> <span class="kn">import</span> <span class="n">TemplatedEmailMessage</span>
+
+<span class="k">class</span> <span class="nc">MyEmail</span><span class="p">(</span><span class="n">TemplatedEmailMessage</span><span class="p">):</span>
+    <span class="n">to</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;some-user@some-email.com&#39;</span><span class="p">]</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="s">&quot;The subject is parsed as a {{ what }}&quot;</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="s">&quot;The body&#39;s also parsed as a {{ what }}.&quot;</span>
+
+<span class="n">MyEmail</span><span class="p">(</span><span class="n">extra_context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;what&#39;</span><span class="p">:</span> <span class="s">&#39;Django template!&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">send</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">TemplatedEmailMessage</span></tt> also makes it simple to create HTML emails. Simply add
+an <tt class="docutils literal"><span class="pre">html_template_name</span></tt> attribute to your class (or pass it to the
+constructor):</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mailmate</span> <span class="kn">import</span> <span class="n">TemplatedEmailMessage</span>
+
+<span class="k">class</span> <span class="nc">MyEmail</span><span class="p">(</span><span class="n">TemplatedEmailMessage</span><span class="p">):</span>
+    <span class="n">to</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;some-user@some-email.com&#39;</span><span class="p">]</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="s">&quot;The subject is parsed as a {{ what }}&quot;</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="s">&quot;The body&#39;s also parsed as a {{ what }}.&quot;</span>
+    <span class="n">html_template_name</span> <span class="o">=</span> <span class="s">&#39;emails/my_email.html&#39;</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">TemplatedEmailMessage</span></tt> class extends
+<tt class="docutils literal"><span class="pre">django.core.mail.EmailMultiAlternatives</span></tt>, so you don&#8217;t have to do anything
+special to use it with your favorite backend.</p>
+</div>
+<div class="section" id="cleanemailbackend">
+<h2>CleanEmailBackend<a class="headerlink" href="#cleanemailbackend" title="Permalink to this headline">¶</a></h2>
+<p>Mailmate also includes a special backend to help you debug your emails. It&#8217;s
+like Django&#8217;s <tt class="docutils literal"><span class="pre">django.core.mail.backends.filebased.EmailBackend</span></tt>, but in
+addition to the *.log file, it will also save files containing the message body
+for each version of the message. For example, if you send an email that has both
+a plaintext and HTML version, it will save a *.log file (with the entire
+message), a *.txt file (with the plaintext body) and a *.html file (with the
+body of the HTML alternative).</p>
+<p>To use it, set your <tt class="docutils literal"><span class="pre">EMAIL_BACKEND</span></tt> and <tt class="docutils literal"><span class="pre">EMAIL_FILE_PATH</span></tt> settings in
+settings.py:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">EMAIL_BACKEND</span> <span class="o">=</span> <span class="s">&#39;mailmate.backends.CleanEmailBackend&#39;</span>
+<span class="n">EMAIL_FILE_PATH</span> <span class="o">=</span> <span class="s">&#39;/path/to/messages/&#39;</span>
+</pre></div>
+</div>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  
+    <a href="http://github.com/hzdg/django-mailmate"><img style="position: fixed; top: 0; right: 0; border: 0;"
+    src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+  
+
+  
+  </div>
+  
+
+  </body>
+</html>
