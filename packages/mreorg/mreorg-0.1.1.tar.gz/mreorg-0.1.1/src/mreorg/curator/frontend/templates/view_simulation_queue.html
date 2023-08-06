@@ -1,0 +1,107 @@
+
+{% extends "base.html" %}
+{% block contents %}
+<META HTTP-EQUIV="REFRESH" CONTENT="10">
+
+<div class="section">
+
+<div class='sectionheader'> 
+    <h2><a>Recently Completed Runs</a></h2> </div>
+
+<table class='std'>
+
+
+<tr>
+  <th> File </th>
+  <th> RunConfig </th>
+  <th> Last Run </th>
+  <th> Result </th>
+  <th> DocString </th>
+</tr>
+{% for latest_run in latest_runs %}
+<tr class="{{ latest_run.get_status}}">
+    <td> <a href="/simfiles/{{latest_run.simfile.id}}"> {{latest_run.simfile.get_short_filename }} </a> </td>
+    <td>  {{latest_run.runconfig.name}} </td>
+    <td> <a href="/simfileruns/{{latest_run.id}}">
+            <div>{{latest_run.execution_date}}</div>
+            <div>({{latest_run.execution_date|timesince}} ago)</div>
+        </a>
+        </td>
+        <td> 
+            <div> {{latest_run.get_status}} </div>
+            <div> in {{latest_run.execution_time}} seconds </div>
+        </td>
+    <td> {{latest_run.simfile.get_docstring}} </td>
+</tr>
+
+{% endfor %}
+
+
+</table>
+</div>
+
+
+
+
+
+
+
+<div class="section">
+<div class='sectionheader'> 
+    <h2><a>Simulations Currently Running</a></h2> </div>
+<table class='std'>
+  <tr>
+    <th>  </th>
+    <th> Filename </th>
+    <th> RunConfiguration </th>
+    <th> Simulation Time </th>
+    <th> Time Since last Heartbeat </th>
+  </tr>
+
+  {% for queuedsim in simulation_queue_executing %}
+  <tr>
+    <td> {{queuedsim.simfile.get_last_executiontime }} </td>
+    <td> {{queuedsim.simfile.get_short_filename}} </td>
+    <td>  {{queuedsim.runconfig.name}} </td>
+    <td> {{queuedsim.get_simulation_time}} </td>
+    <td> {{queuedsim.time_since_last_heartbeat_in_s}} </td>
+  </tr>
+  {%endfor %}
+</table>
+
+
+</div>
+
+
+
+
+<div class="section">
+
+<div class='sectionheader'> 
+    <h2><a>Simulations in Queue</a></h2> </div>
+
+<form action="/do/removesimulationsfromqueue" method="post">
+{% csrf_token %}
+
+<table class='std'>
+  <tr>
+    <th>  </th>
+    <th>  </th>
+    <th> Filename </th>
+    <th> RunConfiguration </th>
+  </tr>
+
+  {% for queuedsim in simulation_queue %}
+  <tr>
+    <td> <input type="checkbox" name="queuedsimid_{{queuedsim.id}}"> </td>
+    <td> {{queuedsim.simfile.get_last_executiontime }} </td>
+    <td> {{queuedsim.simfile.get_short_filename}} </td>
+    <td> {{queuedsim.runconfig.name}} </td>
+  </tr>
+  {%endfor %}
+</table>
+<input type="submit" value="Remove from queue"/>
+</form>
+
+</div>
+{% endblock %}
