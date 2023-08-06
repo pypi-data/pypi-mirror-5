@@ -1,0 +1,398 @@
+Metadata-Version: 1.1
+Name: Products.PloneHelpCenter
+Version: 4.0
+Summary: A simple help-desk style documentation product for Plone.
+Home-page: https://github.com/collective/Products.PloneHelpCenter
+Author: Israel Saeta Pérez
+Author-email: dukebody@gmail.com
+License: GPL
+Description: ========================
+        Products.PloneHelpCenter
+        ========================
+        
+        If you are upgrading an existing PHC installation, you *must* read
+        INSTALL.txt.
+        
+        Overview
+        ========
+        
+        Plone Help Center is an application designed to aid the documentation of
+        Plone, and is used on plone.org to categorize and keep documentation up to
+        date. It should be usable for documenting other open source products
+        (such as Plone Product add-ons) or even for other documentation projects.
+        
+        Usage
+        =====
+        
+        Plone Help Center has inline documentation, just add a help center.
+        
+        What's New in 3.0
+        =================
+        
+        The underlying architecture of previous versions of PHC was basically
+        Plone 2.0. It was built on Archetypes without ATContentTypes. Features
+        like next/previous navigation and automatic tables of contents were all
+        built in. In many way, PHC was a test center for new Plone features.
+        
+        However, Plone advanced and PHC did not.
+        
+        PHC 3 is much less ambitious. Rather than trying to add new features
+        to Plone, this version seeks to inherit Plone 3 features by reimplementing
+        most of the PHC content types as ATCT-derived classes that automatically
+        implement Plone 3 behavior. PHC-specific features are added via sub-classing
+        or interfaces/adapters.
+        
+        Requirements
+        ------------
+        
+        PloneHelpCenter requires:
+        
+        * Plone 3.0 or later
+        
+        
+        Installation
+        ============
+        
+        See the `Installing an Add-on Product`_ tutorial for more detailed product installation instructions.
+        
+        .. _Installing an Add-on Product: http://plone.org/documentation/tutorial/third-party-products/installing
+        
+        Upgrades
+        --------
+        
+        If you are upgrading a Plone site with an existing help center from a
+        version prior to 3.0, you *must* run the upgrade profile. 
+        
+        Step by step follow this order
+        ................................
+        
+        Do not upgrade from PHC 1.6.x on Plone 3.x to PHC 4.x in Plone 4.x in one step.
+        
+        Update first to Plone 3.3.5+ with::
+        
+            Products.PloneHelpCenter = 1.6.2 
+            Products.AddRemoveWidget = 1.4.2
+        
+        Check if example content is present!
+        Then update buildout to::
+        
+            Products.PloneHelpCenter = 3.0b3
+        
+        run::
+            
+            bin/buildout -v 
+        
+            * restart instance and 
+        
+            * deinstall Products.PloneHelpCenter 3.0b3
+        
+            * install Products.PloneHelpCenter 3.0b3
+        
+            * in the ZMI go to:  Generic Setup Tool at  /acsr/portal_setup  Tab "Upgrades"
+            
+            * after selecting: "Products.PloneHelpCenter:default" and clicking "Choose Profile" you get first::
+            
+                Upgrades
+        
+                The profile "Products.PloneHelpCenter:default" is currently upgraded to version 3.0b3.
+        
+                The filesystem version for the "Products.PloneHelpCenter:default" profile is currently 3.0b3.
+                
+                No upgrade available.
+        
+            * Now click at -> Show old upgrades: "show" an see::
+                
+                Available upgrades:
+                Upgrade Step Group
+                -> 		Upgrading the types 	
+                (0.0 → 3.0)
+            
+            * select the item and run the upgrade
+            
+            * you get::
+            
+                Upgrades
+        
+                The profile "Products.PloneHelpCenter:default" is currently upgraded to version 3.0.
+                
+                The filesystem version for the "Products.PloneHelpCenter:default" profile is currently 3.0b3.
+                
+                No upgrade available.
+        
+        Content should be back again!
+        
+        Optional
+        --------
+        
+        AddRemoveWidget -- PLEASE NOTE: if AddRemoveWidget is installed
+        as a Zope product, you *must* also install it in Plone. If it is
+        present without being installed, errors will occur.
+        
+        
+        Installing with buildout
+        ------------------------
+        
+        If you are using `buildout`_ to manage your instance installing Plone
+        Help Center is very simple. You can install it by adding it to the
+        eggs line for your instance::
+        
+          [instance]
+          eggs = Products.PloneHelpCenter
+        
+        
+        If another egg package depends on Products.PloneHelpCenter you do not need
+        to specify anything in the buildout configuration: buildout will detect this
+        automatically.
+        
+        After updating the configuration you need to run the ''bin/buildout'', which
+        will take care of updating your system.
+        
+        .. _buildout: http://pypi.python.org/pypi/zc.buildout
+        
+        Installing without buildout
+        ---------------------------
+        
+        Move (or symlink) the ``PloneHelpCenter`` folder of this project
+        (``Products.PloneHelpCenter/Products/PloneHelpCenter``) into the ``Products`` directory of
+        the Zope instance it has to be installed for, and restart the server.
+        
+        You may also download a traditional tarball that you unpack into Products
+        from http://plone.org/products/PloneHelpCenter .
+        
+        HISTORY
+        =======
+        
+        4.0 (2013-09-21)
+        ----------------
+        
+        - Compatible with Plone 4.2 and 4.3.  Should still work on 4.0 and
+          4.1.
+          [maurits]
+        
+        - Types: switch from content_icon to icon_expr.
+          [maurits]
+        
+        - Switch the sample manual text to html.  This way you can edit it
+          properly with TinyMCE.  It used to be structured text, which is
+          not accepted as mimetext by default, so you would actually lose
+          the layout when you edit it.
+          [maurits]
+        
+        - Register png icons from standard Plone for HelpCenterHowToFolder
+          and HelpCenterLinkFolder.  Add upgrade step to apply the
+          typeinfo and recatalog these two portal_types.  Otherwise on
+          Plone 4.3 these items miss icons in listings.
+          [maurits]
+        
+        - Fixed faqfolder_view error by checking if item brain returns a value 
+          when asking for getSections
+          [ichim-david]
+        
+        - Removed ancient patch for CMFCore 1.4.7 or lower, which was last
+          used in Plone 2.0.5.
+          [maurits]
+        
+        - Fix test for knowledge base type not globally addable.
+          [ale-rt]
+        
+        - Replace rss.gif with rss.png
+          [ale-rt]
+        
+        - Removed unused to remove dependency from zope.app.publisher.
+          [ale-rt]
+        
+        - Make ManualPage addable through tempfolder
+          [tiberiuichim]
+        
+        - Make the knowledge base type not globally addable.
+          [davisagli]
+        
+        - Make it possible to filter phc_search by getVersions
+          [davisagli @ cioppino]
+        
+        - Improved styling of portlet_phc_about
+          [davisagli, hennaheto @ cioppino]
+        
+        
+        PloneHelpCenter 4.0b3 (2011-05-12)
+        ----------------------------------
+        
+        - Clean up package and release
+          [aclark]
+        
+        - Update discussion_reply.cpy to keep in sync with Plone.
+          [davisagli]
+        
+        - Add subnavigation to most templates.
+          [smcmahon]
+        
+        - Revamp helpcenter_topicview_main to show start-here items,
+          topic counts.
+          [davisagli]
+        
+        - Add getPHCSubNav method for PloneHelpCenter to create subnavigation.
+          [stevem]
+        
+        - Added metadata.xml file, used by QuickInstaller when upgrading
+          [afd]
+        
+        
+        PloneHelpCenter 4.0b2 (2010-12-28)
+        ----------------------------------
+        
+        - Fix phc_stats template in Plone 4.
+          [davisagli]
+        
+        - Fix import error in Plone 3.
+          [miohtama]
+        
+        - Use the containment acquisition chain to get the parent
+          attributes in ReferenceManualSection type.
+          [dukebody]
+        
+        - Make listings respect the subtopics order set in the HelpCenter
+          or type folders, instead of sorting alphabetically.
+          Fixes http://plone.org/products/plonehelpcenter/issues/127.
+          [dukebody]
+        
+        
+        PloneHelpCenter 4.0b1 (2010-12-09)
+        ----------------------------------
+        
+        - Use ordering adapters in Plone 4 to sort items in sections.
+          [dukebody]
+        
+        - Make the default view for PHC folders obey the items ordering
+          set using the Contents tab. Formerly, they were sorted
+          alphabetically by title.
+          Fixes http://plone.org/products/plonehelpcenter/issues/121.
+          [dukebody]
+        
+        - Allow all site-enabled markup types for PHC content, instead of
+          a fixed list.
+          Fixes http://plone.org/products/plonehelpcenter/issues/117.
+          [dukebody]
+        
+        - Modify workflow definitions to disallow Anonymous users to see
+          content inside hidden Help Centers.
+          Fixes http://plone.org/products/plonehelpcenter/issues/118.
+          [dukebody]
+        
+        - Remove the "Properties" tab for content-types, that was
+          duplicating the Metadata schemata already present in the edit
+          view in Plone 3.
+          Fixes http://plone.org/products/plonehelpcenter/issues/119.
+          [dukebody]
+        
+        - Make mail sending code compatible with Plone 3. PHC 4 is now
+          compatible with both Plone 3 and 4.
+          [dukebody]
+        
+        
+        PloneHelpCenter 4.0a1 (2010-12-07)
+        ----------------------------------
+        
+        - Use lxml to turn image relative links into absolute for the
+          one-page version of manuals. This introduces a new install
+          dependency on lxml.
+          Fixes http://plone.org/products/plonehelpcenter/issues/136.
+          [dukebody]
+        
+        - Include numbering in the section title.
+          Fixes http://plone.org/products/plonehelpcenter/issues/137.
+          [dukebody]
+        
+        - Rename type titles: "Page" to "Tutorial Page" and "Link" to
+          "Help Center Link".
+          Fixes http://plone.org/products/plonehelpcenter/issues/140.
+          [dukebody]
+        
+        - Made it possible to query contentIds via XML-RPC for 
+          collective.developermanual uploads [miohtama]
+        
+        - Use the aq_parent function instead of the attribute to avoid
+          AttributeErrors when not using an acquisition wrapper (newer
+          Zope versions).
+          [dukebody]
+        
+        - Fix next/previous custom adapter to visit the same items as appear in
+          the navigation dropdown. Also make sure this adapter is used for legacy
+          ReferenceManuals. This fixes
+          http://plone.org/products/plonehelpcenter/issues/152/.
+          [dukebody, davisagli]
+        
+        - Don't fail when trying to acquire getCurrentVersions if not in
+          a container that includes currentVersions in its schema. [davisagli]
+        
+        - Fix the imports to use always Zope 3 style interfaces, making
+          the code work both in Plone 3 and 4 simultaneuslly.
+          [dukebody, thanks davisagli]
+        
+        - Merge relevant changes from the Plone 4 migration branch from
+          Fabio Rizzo. [dukebody]
+        
+        - Reverted obsolete code from the referencemanual_view.pt fix. [acsr]
+        
+        - Updated INSTALL.txt with step by step upgrade guide related to
+          issue #142 "upgrade steps order unclear" and issue #132 "errata
+          mentioning Ploneboard". [acsr]
+        
+        - Fixed an issue with failure to display referencemanual_view when
+          files are present in the reference manual. [acsr, thanks dukebody]
+        
+        - Update the whole product to work with Plone 4.0a2. [dukebody]
+        
+        - Removed "global allow" for Reference Manual. This closes 
+          http://plone.org/products/plonehelpcenter/issues/150.
+          [keul]
+        
+        - updated INSTALL.txt with step by step upgrade guide related to 
+          issue #142 "upgrade steps order unclear" and issue #132 "errata 
+          mentioning Ploneboard". [acsr]
+        
+        - Respect exclude_from_nav setting in the reference manual
+          table of contents generation [miohtama]
+        
+        For older history, see ``docs/HISTORY.txt``.
+        
+        Credits
+        =======
+        
+        Project Architecture, Development, Content Types, Archetypes, Workflow: Joel Burton
+        
+        Development, User Interface, Project Architecture, Quality Assurance:  Alexander Limi
+          
+        Development, persistence and all-round brilliance: Martin "optilude" Aspeli
+        
+        Development, Assistance: Christian "Tiran" Heimes
+        
+        Original FAQ code: Tim Terlegard, Edward Muller - further enhancements by Jean-Paul Ladage and Ahmad Hadi from Zest Software
+        
+        Fixing various stuff, documentation: The Sprinters: Christian Heimes, Dorneles Treméa, Daniel Nouri, Nate Aune
+        
+        Added optional "see also" references to other Archetypes based types: Jens "jensens" Klein
+        
+        i18n improvements: And general fixes in some templates and brazilian translations by Jean Ferri
+        
+        Bugfixes and occasional Quality Assurance: Geir Baekholt
+        
+        Topic, start-here, and 1.0 search options: The 2007 documentation
+        sprint participants, particularly aclark, joelburton, magnon and stevem.
+        Plone.Org view skin by vedawms.
+          
+        Numerous 1.0 presentation fixes: Servilio Afre Puentes.
+        
+        Version 3.0 refactoring: Steve McMahon
+        
+        Migration for Plone 4.0: Fabio Rizzo from Liberiun.com and Israel
+        Saeta Pérez.
+        
+Keywords: Zope CMF Plone help documentation
+Platform: UNKNOWN
+Classifier: Framework :: Plone
+Classifier: Framework :: Plone :: 4.2
+Classifier: Framework :: Plone :: 4.3
+Classifier: Framework :: Zope2
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7

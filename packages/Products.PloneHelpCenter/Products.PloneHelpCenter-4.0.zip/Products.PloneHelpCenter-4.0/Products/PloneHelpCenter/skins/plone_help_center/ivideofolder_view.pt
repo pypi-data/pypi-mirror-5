@@ -1,0 +1,91 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+  lang="en"
+  metal:use-macro="here/main_template/macros/master"
+  i18n:domain="plonehelpcenter">
+
+  <body>
+    <div metal:fill-slot="main"
+         tal:define="view here/@@hcf_view;
+                     sections view/getItemsBySections;
+                     noSections python:len(sections) &lt;= 1;
+                     global getInfoFor nocall:here/portal_workflow/getInfoFor;">
+
+    <dl class="portlet" style="float: right" tal:condition="not:noSections">
+        <dt class="portletHeader"
+            i18n:translate="phc_index_sections">Sections</dt>
+        <dd class="portletItem">
+            <ul>
+            <li tal:repeat="section sections">
+            <a tal:attributes="href python:'%s#%s'% (here.absolute_url(), section['id'],)"
+               tal:content="section/section" i18n:translate="">Section</a>
+            </li>
+            </ul>
+        </dd>
+    </dl>
+
+    <h1 tal:content="here/Title" class="documentFirstHeading">
+      Folder Title
+    </h1>
+
+    <p class="documentDescription"
+         tal:content="here/Description">
+      Description.
+    </p>
+
+    <div tal:repeat="section sections">
+
+        <h2>
+          <a class="link-anchor"
+              tal:content="section/section"
+              i18n:translate=""
+              tal:attributes="name section/id;
+                              href string:${here/absolute_url}#${section/id};">
+              Section Heading
+            </a>
+        </h2>
+
+        <dl>
+            <tal:video tal:repeat="video python:section['items']">
+            <dt>
+                <div style="float:right; text-align: center; margin: 1em 0 1em 1em;"
+                     tal:condition="video/screenshot_thumb | nothing">
+                    <a class="discreet"
+                       tal:attributes="href string:${video/absolute_url}/screenshot/image_view_fullscreen">
+                        <img tal:replace="structure video/screenshot_thumb" />
+                        <br />
+                        <img tal:replace="structure here/search_icon.gif" />
+                        <span i18n:translate="label_click_to_enlarge">
+                            Click to enlarge
+                        </span>
+                    </a>
+                </div>
+                <a href="" tal:content="video/Title"
+                   tal:attributes="href video/getURL;
+                                   class string:state-${video/review_state}">Video</a>
+                <img src="error_icon.gif" alt="!" class="outdatedMarker"
+                     tal:condition="video/isOutdated"
+                     title="This video applies to a previous version"
+                     i18n:attributes="title"/>
+            </dt>
+
+            <dd tal:content="video/Description">Description</dd>
+            <div class="discreet" tal:define="getObjSize nocall:context/getObjSize">
+                <strong i18n:translate="">Duration:</strong>
+                <span tal:content="video/duration" tal:condition="video/duration | nothing">
+                      Duration
+                </span> <span i18n:translate="" tal:omit-tag="">minutes</span>
+                <br />
+                <strong i18n:translate="">Size:</strong>
+                <span tal:content="python:getObjSize(video)" tal:condition="video/video_file | nothing">
+                      Size
+                </span>
+            </div>
+          </tal:video>
+        </dl>
+
+    </div>
+
+    </div>
+  </body>
+
+</html>
