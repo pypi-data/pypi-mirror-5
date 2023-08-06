@@ -1,0 +1,194 @@
+This file contains a description of the major changes to the easybuild-easyblocks EasyBuild package.
+For more detailed information, please see the git log.
+
+The latest version of easybuild-easyblocks provides 113 software-specific easyblocks and 15 generic easyblocks.
+
+v1.5.0 (May 31st 2013)
+---------------------
+
+feature + bugfix release
+- added one new generic easyblock: MakeCp (#208)
+- added support for 5 new software packages that require customized support:
+    - CBLAS (#192), FreeSurfer (#194), Mothur (#206), OpenIFS (#200), PSI (#191)
+- various enhancements, including:
+    - add support for building ScaLAPACK 2.x on top of QLogic MPI (#195)
+    - support newer BWA versions (#199)
+    - explicitly list license server type in ABAQUS install options, required for correct installation of v6.12 (#198)
+    - update SCOTCH and OpenFOAM easyblock for recent versions (#201)
+- various bug fixes:
+    - fix numpy easyblock to get an optimal build (w.r.t. numpy.dot performance) (#192)
+    - correct build procedure for MUMmer to yield a complete installation (#196, #197)
+    - make unit tests clean up after themselves more thoroughly (#203, #204)
+    - fix getting Perl version for extensions (#205)
+
+v1.4.0 (May 2nd 2013)
+---------------------
+
+feature + bugfix release
+- added a unit test suite for easyblocks (#175, #177, #178)
+    - every easyblock is parsed and instantiated as a sanity check
+- added one new generic easyblock: PerlModule (#183)
+- added support for 8 new software packages that require customized support:
+    ABAQUS (#179), Bowtie (#174, #185, #186), Clang (#151), DL_POLY Classic (#118), ESMF (#171), Perl (#183),
+    Intel VTune and Intel Inspector (#180)
+- the CMakeMake.configure_step() parameter 'builddir' was renamed to 'srcdir', because the name 'builddir' is incorrect (#151)
+    - 'builddir' will remain supported for legacy purposes up until v2.0
+- various enhancements, including:
+    - reverted back to hardcoding Python library path, since it's hardcoded by setuptools too (#184)
+    - added MPICH support in ScaLAPACK easyblock (#172)
+    - enhanced NCL easyblock: add support UDUNITS and ESMF dependencies (#171)
+    - enhanced MATLAB easyblock: avoid hardcoding Java options, make sure $DISPLAY is unset, extend list of sanity check paths (#181)
+    - enhanced TotalView easyblock: add support for license file (#146)
+
+v1.3.0 (April 1st 2013)
+-----------------------
+
+feature + bugfix release
+- added support for 2 new software packages that require customized support:
+    - CUDA (#145), Ferret (#160, #163)
+- remove 'license' easyconfig parameter from IntelBase, since it clashes with generic 'license' parameter (#153, #158)
+    - 'license_file' should be used instead (see https://github.com/hpcugent/easybuild-framework/pull/569/files)
+    - using 'license' instead of 'license_file' will be supported until v2.x for legacy purposes
+- various enhancements, including:
+    - stop hardcoding Python site-packages library dir, obtain it via distutils.sysconfig instead (#141, #156, #159, #161)
+    - stop hardcoding list of libraries for BLAS libs, ask toolchain modules or use LIBBLAS instead (#150, #155)
+    - enhanced CP2K easyblock, following Intel guidelines for ictce builds (#138)
+    - added setup.cfg for setup.py to allow creating RPMs (#140)
+    - clean up specifying BLAS/LAPACK libs for building numpy, check whether requires patch is being used for IMKL builds (refs #155, #161)
+- various bug fixes, including:
+    - added zip_safe flag to setup.py, to silence multitude of warnings (#135)
+    - install EasyBuild packages in reversed order to avoid funky setuptools issues (#139)
+    - fixed a typo in the ScaLAPACK easyblock, and set CCFLAGS and FCFLAGS for v2.x (#149, #162)
+    - fix sanity check for python-meep (#159)
+    - exclude Python tests from DOLFIN sanity check, since they hang sometimes (#161)
+    - add support in ALADIN easyblock for answering question on location of libgrib_api.a (#165)
+
+v1.2.0 (February 28th 2013)
+---------------------------
+
+feature + bugfix release
+- added 1 new generic easyblock: Rpm
+- added support for 6 new software packages that require customized support:
+    - EasyBuild, EPD (Enthought Python Distribution), freetype, MATLAB, QLogic MPI (RPM), TotalView
+    - support for installing EasyBuild with EasyBuild enables bootstrapping an EasyBuild installation!
+- various enhancements, including:
+    - corrections in WRF/WPS to also enable building with iqacml toolchain
+        - use mpi_cmd_for instead of hardcoding test commands, using correct Fortran compilers (F90)
+    - fix NCL easyblock to also support v6.1.x
+        - use correct Fortran compiler (F90), set correct lib/include paths for dependencies (netCDF-Fortran, GDAL)
+    - cleanup sweep of license headers and authors list in easyblock module docstrings
+    - use new 'ext_name' template name in 'exts_filter' in Python and R easyblocks
+- various bug fixes, including:
+    - general code cleanup
+        - don't set sanityCheckOK in Toolchain easyblock
+        - get rid of using os.putenv
+    - NEURON easyblock: don't hardcode number of processes used in test cases
+    - make sure easybuild.easyblocks.generic namespace is extendable
+
+v1.1.0 (January 27th 2013)
+--------------------------
+
+feature + bugfix release
+- added 3 new generic easyblocks: CMakePythonPackage, JAR, RPackage
+- added support for 23 new software packages that require customized support:
+    - ACML, ALADIN, ant, Bioconductor (R packages), Chapel, Cufflinks, ESPResSo, FLUENT, Geant4, GHC, Java, NEURON,
+      NWChem, PyZMQ, QuantumESPRESSO, R, Rmpi, ROOT, Rserve, SCOOP, Trinity, VSC-tools, XML
+- various enhancements, including:
+    - clean up of python.py module:
+        - merge EB_DefaultPythonPackage and PythonPackage easyblocks into generic easyblock PythonPackage, which derives from ExtensionEasyblock
+        - move EB_FortranPythonPackage into dedicated generic FortranPythonPackage easyblock module
+        - split off support for building/installing nose, numpy, scipy into dedicated EB_* easyblock modules,
+          which allows them to be built as stand-alone modules as well
+    - clean up testing of Python packages (PythonPackage easyblock)
+    - make sure there is no site.cfg in home dir when building Python packages, because e.g. scipy will pick it up
+    - added support for building Intel MKL wrappers with OpenMPI toolchain
+    - cleaning up of fake module that was loaded for running tests
+    - move calls to functions that rely on environment up in the chain of steps (mostly for cleanup reasons)
+    - use better module name for UFC sanity check, minor change to sanity check paths for UFC
+- various bug fixes, including:
+    - only call 'make ptcheck' for ATLAS when multi-threading support is enabled
+    - use a symbolic link for $HOME/intel instead of a randomly suffixed subdirectory in home + patching of Intel install scripts
+        - latter does not work anymore with recent versions of Intel tools (2013.x)
+
+v1.0.2 (December 8th 2012)
+--------------------------
+
+bugfix release
+- fix typos in WIEN2k easyblock (missing commas after list elements)
+
+v1.0.1 (November 24th 2012)
+---------------------------
+
+bugfix release
+- fix support for installing easybuild-easyblocks with distutils (broken import in setup.py)
+- only build GMP/CLooG/PPL libraries during GCC build in parallel, don't install in parallel
+    - 'make -j N install' doesn't work consistently for GMP
+- fix GCC build on OS X
+    - location of libraries is slightly different (lib vs lib64 dir)
+- add support to ConfigureMake easyblock for pre-passing tar options to configure
+    - see tar_config_opts easyconfig parameter
+    - workaround for issue with pax hanging configure with an interactive prompt
+- enhance Q&A for WRF and WIEN2k by adding entries to qa dict and no_qa list
+- use rmtree2 from tools/filetools.py as more (NFS) robust replacement for shutil.rmtree
+
+v1.0 (November 13th 2012)
+-------------------------
+
+- split up EasyBuild across three repositories: framework, easyblocks and easyconfigs
+- packaged EasyBuild, different parts can now be installed easily using easy_install
+- implement class name encoding scheme, see wiki http://github.com/hpcugent/easybuild/wiki/Encode-class-names
+    - (non-generic) easyblock class names are now prefixed with EB and non-alphanumeric characters are escaped
+- split off generic easyblocks into separate package easyblocks.generic
+- added custom support for 39 software packages:
+    Armadillo, BiSearch, Boost, Bowtie2, BWA, bzip2, CGAL, CPLEX, DOLFIN, Eigen, flex, FSL, Hypre, libxml2, MetaVelvet,
+    METIS, MTL4, MUMmer, ncurses, OpenFOAM, OpenSSL, ParMETIS, Pasha, PETSc, Primer3, python-meep, SAMtools, SCOTCH,
+    SHRiMP, SLEPc, SOAPdenovo, SuiteSparse, SWIG, Tornado, Trilinos, UFC, Velvet, WIEN2k, XCrySDen
+- various enhancements and bug fixes to existing easyblocks
+
+v0.8 (June 29th 2012)
+---------------------
+
+- added support for building/installing 17 additional software packages:
+    - BEAGLE, Doxygen, g2clib, g2lib, HDF, HDF5, JasPer, libpng, Maple, 
+      MrBayes, NCL, netCDF, netCDF-Fortran, Szip, WPS, WRF, zlib
+- the build procedure for WRF and WPS includes running the tests available for these packages
+- various bug fixes and enhancements:
+    - made support for interactive installers (run_cmd_qa) more robust
+    - fixed Python git package check
+    - implemented toolkit functions for determine compiler family, MPI type, MPI run command, ...
+
+v0.7 (June 18th 2012)
+---------------------
+
+- fixed BLACS build
+    - diagnostic tools to determine INTERFACE and TRANSCOMM values are now used
+- added support for building Bison, CP2K, flex
+    - with regression test enabled for CP2K as part of build process
+    - note: BLACS built with EasyBuild prior to v0.7 needs to be rebuilt for CP2K to work correctly
+- added --enable-mpi-threads to OpenMPI example easyconfigs
+    - required for correct CP2K psmp build
+- adjusted libsmm example easyconfig for lower build time
+    - to make the full regression test finish in a reasonable amount of time
+- added script to make porting of easyblocks from old to new EasyBuild codebase easier
+    - takes care of refactoring, checks for PyLint warnings/errors, ...
+- fixed several small bugs
+- prefixed EasyBuild messages with "=="
+- full regression test passed (58 easyconfigs tested)
+
+v0.6 (May 11th 2012)
+---------------------
+
+- added support for Intel compiler toolkit (ictce)
+    - which included the Intel compilers, Intel Math Kernel Library (imkl) and Intel MPI library (impi)
+- added support for building Python with nose/numpy/scipy packages
+- added simple regression test
+- this version is able to build all supplied example easyconfigs
+
+v0.5 (April 6th 2012)
+----------------------
+
+- first public release of EasyBuild
+    - after a thorough cleanup of the EasyBuild framework of the in-house version
+- supports building HPL with goalf compiler toolkit
+    - the goalf toolkit consists of the GCC compilers, and the OpenMPI, ATLAS, LAPACK, FFTW and ScaLAPACK libraries
+- also support build and installation of MVAPICH2
