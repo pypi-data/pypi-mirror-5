@@ -1,0 +1,182 @@
+Metadata-Version: 1.1
+Name: seawater
+Version: 3.3
+Summary: Seawater Libray for Python
+Home-page: http://pypi.python.org/pypi/seawater/
+Author: Filipe Fernandes
+Author-email: ocefpaf@gmail.com
+License: The MIT License (MIT)
+
+Copyright (c) 2013 Filipe
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Download-URL: http://pypi.python.org/packages/source/s/seawater/seawater-3.3.tar.gz
+Description: Python Seawater
+        ===============
+        
+        The CSIRO seawater toolbox ([SEAWATER-3.3](http://www.cmar.csiro.au/datacentre/ext_docs/seawater.htm))
+        for calculating the properties of sea water.  The package uses the formulas
+        from Unesco's joint panel on oceanographic tables and standards, UNESCO 1981
+        and UNESCO 1983 (EOS-80) .
+        
+        The EOS-80 library is considered now obsolete;  it is provided here for
+        compatibility with old scripts, and to allow a smooth transition to the new
+        TEOS-10.
+        
+        gibbs vs. csiro
+        ---------------
+        
+        This table shows some function names in the gibbs library and the corresponding
+        function names in the csiro library.
+        
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | **Variable**                          | **SeaWater & ESO‐80**         | **Gibbs‐SeaWater (GSW) & TEOS‐10**                    |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | Absolute Salinity                     |          NA                   | gsw.SA_from_SP(SP,p,long,lat)                         |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | Conservative Temperature              |          NA                   | gsw.CT_from_t(SA,t,p)                                 |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | density (i.e. in situ density)        |  sw.dens(SP,t,p)              | gsw.rho_CT(SA,CT,p), or gsw.rho(SA,t,p), or           |
+        |                                       |                               | gsw.rho_CT25(SA,CT,p)                                 |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | potential density                     |  sw.pden(SP,t,p,pr)           | gsw.rho_CT(SA,CT,pr), or                              |
+        |                                       |                               | gsw.rho_CT25(SA,CT,pr)                                |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | potential temperature                 |  sw.ptmp(SP,t,p,pr)           | gsw.pt_from_t(SA,t,p,pr)                              |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | $\sigma_0$, using                     |  sw.dens(SP, $\theta_o$, 0)   | gsw.sigma0_CT(SA,CT)                                  |
+        |  $\theta_o$ = sw.ptmp(SP,t,p,0)       |  -1000 kg m $^{-3}$           |                                                       |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | $\sigma_2$, using                     |  sw.dens(SP,$\theta_2$, 2000) | gsw.sigma2_CT(SA,CT)                                  |
+        |  $\theta_2$ = sw.ptmp(SP,t,p,2000)    |  -1000 kg m $^{-3}$           |                                                       |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | $\sigma_4$, using                     |  sw.dens(SP,$\theta_4$, 4000) | gsw.sigma2_CT(SA,CT)                                  |
+        |  $\theta_4$ = sw.ptmp(SP,t,p,2000)    |  -1000 kg m $^{-3}$           |                                                       |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | specific volume anomaly               |  sw.svan(SP,t,p)              | gsw.specvol_anom_CT(SA,CT,p)  or                      |
+        |                                       |                               | gsw.specvol_anom_CT25(SA,CT,p)                        |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | dynamic height anomaly                | -sw.gpan(SP,t,p)              | gsw.geo_strf_dyn_height(SA,CT,p,delta_p,interp_style) |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | geostrophic velocity                  |  sw.gvel(ga,lat,long)         | gsw.geostrophic_velocity(geo_str,long,lat,p)          |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | N $^2$                                |  sw.bfrq(SP,t,p,lat)          | gsw.Nsquared_CT25(SA,CT,p,lat)                        |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | pressure from height                  |  sw.pres(-z,lat)              | gsw.p_from_z(z,lat)                                   |
+        | (SW uses depth, not height)           |                               |                                                       |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | height from pressure                  |  z =  -sw.dpth(p,lat)         | gsw.z_from_p(p,lat)                                   |
+        | (SW outputs depth, not height)        |                               |                                                       |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | in situ temperature from pt           |  sw.temp(SP,pt,p,pr)          | gsw.pt_from_t(SA,pt,pr,p)                             |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | sound speed                           |  sw.svel(SP,t,p)              | gsw.sound_speed(SA,t,p)                               |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | isobaric heat capacity                |  sw.cp(SP,t,p)                | gsw.cp(SA,t,p)                                        |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | adiabatic lapse rate*                 |  sw.adtg(SP,t,p)              | gsw.adiabatic_lapse_rate(SA,t,p)                      |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | SP from cndr,  (PSS‐78)               |  sw.salt(cndr,t,p)            | gsw.SP_from_cndr(cndr,t,p)                            |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | cndr from SP,  (PSS‐78)               |  sw.cndr(SP,t,p)              | gsw.cndr_from_SP(SP,t,p)                              |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | distance                              |  sw.dist(lat,long,units)      | gsw.distance(long,lat,p)                              |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | gravitational acceleration            |  sw.g(lat,z)                  | gsw.grav(lat,p)                                       |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | Coriolis parameter                    |  sw.f(lat)                    | gsw.f(lat)                                            |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        | testing of all functions              |  sw.test()                    | gsw.test()                                            |
+        +---------------------------------------+-------------------------------+-------------------------------------------------------+
+        
+        \* The sw and gsw functions output the adiabatic lapse rate in different units
+        being  K (dbar) $^{-1}$  and  K Pa $^{-1}$  respectively.
+        
+        
+        More information:
+            http://pypi.python.org/pypi/seawater/
+        
+        
+        What's new in this version of seawater
+        ======================================
+        
+        19 April 2006  release 3.2
+        --------------------------
+        Corrected sign of potential vorticity in `bfrq`.
+        
+        24 November 2005  release 3.1
+        -----------------------------
+        Added `swvel` to compute surface wave velocity.
+        
+        12 December 2003  release 3.0
+        -----------------------------
+        Converted code so that temperature is now ITS-90 throughout.
+        
+        25 June 1999  release 2.0.2
+        ---------------------------
+        Coding changes to enable functions to return the same shape vector as
+        the input arguments.  In previous releases, some functions returned
+        column vectors for row vector input.  Also some other tidying up.
+        
+        22 April 1998  release 2.0.1
+        ----------------------------
+        `satAr`    New routine.  Solubility of Ar in seawater
+        `satN2`    New routine.  Solubility of N2 in seawater
+        `satO2`    New routine.  Solubility of O2 in seawater
+        `test`     Updated to include tests for above
+        
+        April 1998  release 1.2e
+        ------------------------
+        `alpha`    Fixed bug where temp used in calculations regardless of the keyword.
+        
+        15 November 1994 release 1.2d
+        -----------------------------
+        `bfrq`   Now also returns potential vorticity.  Thanks to Greg Johnson
+                 (gjohnson@pmel.noaa.gov)
+        
+        `gvel`   OMEGA=7.29e-5 changed to OMEGA=7.292e-5 to be consistent with `f`
+        
+        IMPORTANT API CHANGE: The usage of `alpha`, `beta` and `aonb` routines has
+        changed!  All these routines expect (S,T,P) to be passed instead of (S,PTMP,P)
+        as in previous releases of seawater.  Fast execution can still be obtained by
+        passing ptmp=True see help.
+        
+        19 October 1994 release 1.2c
+        ----------------------------
+        `bfrq`   Fixed bug where LAT = [] was needed as argument when no latitude
+                 values are being passed.  Now pass PRESSURE instead of DEPTH ->
+                 more consistent though only a negligible change is answers.
+        
+        12 October 1994 release 1.2b
+        ----------------------------
+        First official release and announcement on the networks.
+        
+Keywords: oceanography,seawater
+Platform: any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Education
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
