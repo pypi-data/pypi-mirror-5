@@ -1,0 +1,56 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2009 Martin Owens
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+
+import sys
+import os
+from cheerled import SlcDevice
+import getopt
+
+def usage():
+    """Print the usage of the tool"""
+    return """
+Usage:
+
+  %s [DEVICE] timer_id files start_time end_time [weekdays(default all)]
+
+  timer_id   - Timer id an int to save this timer to
+  files      - A list of files to display, (comma seperated)
+  start_time - HH:MM time to start displaying these files
+  end_time   - HH:MM time to stop displaying these files
+  weekdays   - A list of weekdays to apply this timer, comma seperated)
+
+""" % sys.argv[0]
+
+
+def set_timer(device, inputs):
+    """Sets messages to the device"""
+    opts, args = getopt.getopt(inputs, '')
+    if len(args) < 5:
+        args.append('all')
+    device.set_timer(args[0], args[2], args[3], args[1], args[4])
+
+
+if len(sys.argv) < 3:
+    print usage()
+else:
+    device = SlcDevice( sys.argv[1] )
+    if device:
+        set_timer(device, sys.argv[2:])
+
+
