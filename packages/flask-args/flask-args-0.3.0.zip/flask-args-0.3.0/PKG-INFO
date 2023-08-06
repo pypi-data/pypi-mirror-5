@@ -1,0 +1,44 @@
+Metadata-Version: 1.0
+Name: flask-args
+Version: 0.3.0
+Summary: auto type convertion for flask.request.form/args/values
+Home-page: UNKNOWN
+Author: UNKNOWN
+Author-email: UNKNOWN
+License: MIT
+Description: import json
+        
+        from flask import Flask, jsonify
+        
+        from flask_args import args
+        
+        
+        app = Flask(__name__)
+        app.debug = True
+        
+        
+        @app.route('/foo', methods=['POST'])
+        @args('form', bar=int)
+        @args('args', baz=float, spam=str)
+        def foo(bar, baz, spam):
+            return jsonify({'bar': bar, 'baz': baz, 'spam': spam})
+        
+        
+        @app.route('/echo', methods=['GET', 'POST'])
+        @args('values', msg=str)
+        def echo(msg):
+            return msg
+        
+        if __name__ == '__main__':
+            with app.test_client() as client:
+                r = client.post('/foo?baz=3.14&spam=spam', data={'bar': 2718281828})
+                assert json.loads(r.data) == {
+                    'baz': 3.14, 'bar': 2718281828, 'spam': 'spam'}
+        
+                r = client.get('/echo?msg=hello')
+                assert r.data == 'hello'
+        
+                r = client.post('/echo', data={'msg': 'hello'})
+                assert r.data == 'hello'
+        
+Platform: UNKNOWN
