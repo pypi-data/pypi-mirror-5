@@ -1,0 +1,102 @@
+<!doctype html>
+<title>Discontinuous parsing</title>
+<script src="static/main.js"></script>
+<style>
+body { font-family: Helvetica, Arial, sans-serif; }
+blockquote { width: 600px; /* text-align: justify; */ }
+span.r { color: red; }
+span.tt { font-family: monospace; }
+</style>
+
+<body onLoad="placeFocus();" >
+<h1>Discontinuous parsing</h1>
+
+<blockquote><p>
+Enter a sentence in Dutch, English, or German (auto-detected).
+The sentence will be parsed and the most probable parse tree will be shown
+(<a href="javascript: togglelink('tech'); " id=linktech>show technical details</a>).</p>
+
+<div id=tech style="display: none; "><p>
+	Linear Context-Free Rewriting Systems (LCFRS) allow for parsing with
+	discontinuous constituents. The Data-Oriented Parsing (DOP) framework
+	entails constructing analyses from fragments of past experience.
+	Double-DOP operationalizes this as the set of fragments that occur at least twice
+	in the training data.
+	For efficiency, sentences are parsed with the following coarse-to-fine
+	pipeline: </p>
+	<ol>
+	<li> Split-PCFG (prune items with posterior probability &lt; 1e-5)
+	<li> PLCFRS (prune items not in 50-best derivations)
+	<li> Discontinuous Double-DOP (use 1000-best derivations to approximate most probable parse)
+	</ol>
+
+	Training data:
+	<ul>
+	<li>English: WSJ section of Penn treebank
+	<li>German: Negra treebank
+	<li>Dutch: Alpino treebank
+	</ul>
+
+	Objective functions:
+	<ul>
+	<li>MPP: most probable parse
+	<li>MPD: most probable derivation
+	<li>MPSD: most probable shortest derivation
+	<li>SL-DOP: shortest derivation among n most probable parse trees (n=7)
+	<li>SL-DOP: shortest derivation among derivations of n most probable parse trees (n=7; approximation)
+	</ul>
+
+	Estimators:
+	<ul>
+	<li>RFE: Relative Frequency Estimate
+	<li>EWE: Equal Weights Estimate
+	</ul>
+
+	Marginalization:
+	<ul>
+	<li>n-best: find the n most probable derivations.
+	<li>sample: sample derivations according to their probability distribution
+	</ul>
+
+	Coarse stage parser:
+	<ul>
+	<li>CKY: Standard CKY parser
+	<li>posterior: Prune with posterior probabilities
+	<li>bitpar: Use the bitpar parser (max 1000 derivations)
+	</ul>
+</div>
+</blockquote>
+
+<div id=result>
+{{ result }}
+</div>
+
+<form name=queryform onSubmit="event.preventDefault(); ajaxFunction(); return false; ">
+Sentence:
+<input type=text size=80 name=sent autofocus />
+<select name=objfun>
+	<option value=mpp>MPP</option>
+	<option value=mpd>MPD</option>
+	<option value=shortest>MPSD</option>
+	<option value=sl-dop>SL-DOP</option>
+	<option value=sl-dop-simple>SL-DOP-simple</option>
+</select>
+<select name=est>
+	<option value=dop1>RFE</option>
+	<option value=ewe>EWE</option>
+</select>
+<select name=marg>
+	<option value=nbest>n-best</option>
+	<option value=sample>sample</option>
+	<option value=both>both</option>
+</select>
+<select name=coarse>
+	<option value=pcfg>CKY</option>
+	<option value=pcfg-posterior>posterior</option>
+	<option value=pcfg-bitpar>bitpar</option>
+</select>
+<input type=hidden name=html value=1 />
+<input type=submit value=Parse />
+</form>
+
+</body>
