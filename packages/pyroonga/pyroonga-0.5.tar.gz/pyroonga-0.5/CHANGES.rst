@@ -1,0 +1,31 @@
+Changelog
+---------
+
+v0.5 (2013-07-30)
+^^^^^^^^^^^^^^^^^
+
+- Change package name from `pyroonga.orm` to `pyroonga.odm` (**Note that incompatible with old releases**)
+- Add `match_columns` and `query` API
+- Change license to MIT
+- Fix `issues#2 <https://github.com/naoina/pyroonga/issues/2>`_
+
+v0.4 (2012-03-28)
+^^^^^^^^^^^^^^^^^
+
+- Add suggest
+
+v0.3 (2012-02-17)
+^^^^^^^^^^^^^^^^^
+
+- Add load the data to groonga
+
+v0.2 (2012-02-17)
+^^^^^^^^^^^^^^^^^
+
+- Add ORM
+- Add documentation of basic usage
+
+v0.1 (2012-02-05)
+^^^^^^^^^^^^^^^^^
+
+- First release
