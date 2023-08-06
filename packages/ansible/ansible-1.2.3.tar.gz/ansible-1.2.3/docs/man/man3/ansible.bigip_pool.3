@@ -1,0 +1,75 @@
+.TH ANSIBLE.BIGIP_POOL 3 "2013-08-21" "1.2.3" "ANSIBLE MODULES"
+." generated from library/net_infrastructure/bigip_pool
+.SH NAME
+bigip_pool \- Manages F5 BIG-IP LTM pool members
+." ------ DESCRIPTION
+.SH DESCRIPTION
+.PP
+Manages F5 BIG-IP LTM pool members via iControl SOAP API 
+." ------ OPTIONS
+."
+."
+.SH OPTIONS
+   
+.IP host
+BIG-IP pool member(required)   
+.IP name
+BIG-IP pool name(required)   
+.IP partition
+BIG-IP partition (default: Common)   
+.IP password
+BIG-IP password(required)   
+.IP port
+BIG-IP pool member port(required)   
+.IP server
+BIG-IP host(required)   
+.IP state
+Pool member state
+.IR Choices :
+present,absent. (default: present)   
+.IP user
+BIG-IP username(required)."
+."
+." ------ NOTES
+.SH NOTES
+.PP
+Requires BIG-IP software version >= 11 
+.PP
+F5 developed module 'bigsuds' required (see http://devcentral.f5.com) 
+.PP
+Best run as a local_action in your playbook 
+.PP
+If pool member IP address is no longer referenced by another pool when running with state=absent, the node IP will also be deleted from the F5 configuration. 
+."
+."
+." ------ EXAMPLES
+." ------ PLAINEXAMPLES
+.nf
+
+### Examples assume [localhost] is defined in inventory file
+
+## ad-hoc ansible CLI example
+
+# ensures 1.1.1.1:80 is present in pool /matthite/matthite-pool on load balancer lb.mydomain.com
+ansible -c local localhost -m bigip_pool -a "server=lb.mydomain.com user=admin password=mysecret state=present name=matthite-pool partition=matthite host=1.1.1.1 port=80"
+
+# ensures 1.1.1.1:80 is absent from pool /matthite/matthite-pool on load balancer lb.mydomain.com
+ansible -c local localhost -m bigip_pool -a "server=lb.mydomain.com user=admin password=mysecret state=absent name=matthite-pool partition=matthite host=1.1.1.1 port=80"
+
+## playbook task example:
+
+---
+# file bigip-test.yml
+# ...
+  tasks:
+  - name: Register current node to load balancer pool
+    local_action: bigip_pool server=lb.mydomain.com user=admin password=mysecret state=present name=matthite-pool partition=matthite host={{ ansible_default_ipv4.address }} port=80
+
+.fi
+
+." ------- AUTHOR
+.SH AUTHOR
+Matt Hite
+.SH SEE ALSO
+.IR ansible (1),
+.I http://ansible.github.com/modules.html#bigip-pool
