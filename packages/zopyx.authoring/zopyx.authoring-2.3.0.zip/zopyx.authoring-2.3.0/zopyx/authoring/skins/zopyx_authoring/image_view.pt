@@ -1,0 +1,113 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="plone">
+
+<body>
+    <metal:content-core fill-slot="content-core">
+        <metal:block define-macro="content-core"
+                     tal:define="kssClassesView context/@@kss_field_decorator_view;
+                                 getKssClasses nocall:kssClassesView/getKssClassesInlineEditable;
+                                 size context/size">
+
+            <div class="image-view" style="float: left; margin-right: 3em;">
+                <a href=""
+                   class="discreet"
+                   tal:attributes="href string:${context/@@plone_context_state/object_url}/image_view_fullscreen">
+                    <tal:block condition="size" replace="structure python:context.tag(scale='preview')" />
+                    <br />
+                    <span class="visualNoPrint">
+                        <img src="" alt="" tal:replace="structure context/search_icon.png" />
+                        <span i18n:translate="label_click_to_view_full_image">Click to view full-size image&hellip;</span>
+                    </span>
+                </a>
+
+                <span class="discreet visualNoPrint">
+                &mdash;
+                    <span i18n:translate="label_size">Size</span>:
+
+                    <span tal:define="size python:context.getObjSize(here)"
+                          tal:content="size">
+                        File size
+                    </span>
+
+                    <span tal:condition="python:test(size, 0, 1)"
+                          i18n:translate="no_image_uploaded">
+                        (No image has been uploaded yet)
+                    </span>
+                </span>
+            </div>
+
+            <tal:def condition="context/getAuthoringProject | nothing">
+                <div id="image-metadata" 
+                     style="float: left"
+                     tal:define="metadata context/getEXIF;
+                                 supplInfo context/@@supplementaryPDFInformation">
+                    <div id="supplementary-information">                            
+                        <label i18n:translate="label_colorspace">Colorspace</label>:
+                        <span tal:replace="supplInfo/colorspace" />
+                        <br/>
+                        <label i18n:translate="label_pdf_scale">PDF scale</label>:
+                        <span tal:replace="supplInfo/pdfScale" />%
+                        <br/>
+                        <label i18n:translate="label_caption_position">Caption position</label>:
+                        <span tal:replace="supplInfo/captionPosition" />
+                        <br/>
+                        <label i18n:translate="label_display_inline">Display inline</label>:
+                        <span tal:replace="supplInfo/displayInline" />
+                        <br/>
+                        <label i18n:translate="label_exclude_enumeration">Exclude from image enumeration</label>:
+                        <span tal:replace="supplInfo/excludeFromEnumeration" />
+                        <br/>
+                        <label i18n:translate="label_display_inline">Display inline</label>:
+                        <span tal:replace="supplInfo/displayInline" />
+                    </div>
+
+                    <div class="field image-collapsible" tal:condition="metadata">
+                        <label for="metadata"
+                               class="collapser"
+                               i18n:translate="label_exif_metadata">EXIF metadata</label>
+
+                        <div class="collapse"
+                              tal:define="metadata context/getEXIF;
+                                keys metadata/keys;
+                                dummy keys/sort" >
+
+                            <div class="warning" 
+                                 tal:condition="not: keys"
+                                 i18n:translate="label_no_exif_metadata">
+                                 No EXIF metadata available
+                             </div>
+                             <table class="listing" id="exif-metadata" tal:condition="keys">
+                                <caption i18n:translate="label_exif_metadata">EXIF metadata</caption>
+                                <thead>
+                                    <tr>
+                                        <th i18n:translate="label_key">Key</th>
+                                        <th i18n:translate="label_value">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tal:loop repeat="k keys">
+                                        <tr tal:attributes="class python: repeat['k'].even() and 'even' or 'odd'">
+                                            <td tal:content="k" />
+                                            <td tal:content="metadata/?k" />
+                                        </tr>
+                                    </tal:loop>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </tal:def>
+            <script type="text/javascript">
+                    jq('.image-collapsible').do_search_collapse()
+            </script>
+        </metal:block>
+    </metal:content-core>
+</body>
+
+</html>
+

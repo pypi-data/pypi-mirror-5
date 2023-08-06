@@ -1,0 +1,49 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="producepublish">
+
+    <metal:fill fill-slot="main">
+
+        <div class="warning" tal:condition="context/getResourceOnFilesystem" i18n:translate="warning_template_no_import">
+            This template uses a file-system based registered resource directory (<span tal:replace="context/getResourceOnFilesystem" />).
+            <br/>
+            Import is disabled.
+        </div>
+
+        <fieldset tal:condition="not: context/getResourceOnFilesystem"> 
+            <legend i18n:translate="legend_resource_import_form">Theme/resources import from file-system package</legend>
+
+            <div class="formHelp" i18n:translate="help_resource_import_form">This form allows you to import a Produce &amp; Publish resource directory  registered using ZCML into Plone in order 
+                                  edit the resources through the Plone UI
+            </div>                                    
+
+            <form tal:attributes="action string:${context/absolute_url}/@@import_resource">
+                <label for="resource" i18n:translate="label_resource">Resource</label>
+                <select name="resource">
+                    <option tal:repeat="r view/available_resources" 
+                            tal:attributes="value r"
+                            tal:content="r"
+                            />
+                </select>
+                <br/><br/>                                
+
+                <label for="clear" i18n:translate="label_handling_of_existing_resources">Handling of existing resources</label>
+                <select name="import_mode">
+                    <option value="" i18n:translate="label_keep_resources_untouched">Keep resources untouched</option>
+                    <option value="incremental" i18n:translate="label_overwrite_existing_resources">Overwrite existing resources during import</option>
+                    <option value="clear" i18n:translate="label_clear_resources">Clear all resources before import</option>
+                </select>
+
+                <br/><br/>                                
+                <input type="submit" name="import" class="context" value="Import resource" i18n:attributes="value label_import_resource"/> &nbsp;
+                
+            </form>
+        </fieldset>
+
+    </metal:fill>
+</html>
