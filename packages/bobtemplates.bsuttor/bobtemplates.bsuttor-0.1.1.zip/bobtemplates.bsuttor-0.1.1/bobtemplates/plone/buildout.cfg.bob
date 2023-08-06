@@ -1,0 +1,43 @@
+[buildout]
+extends =
+    https://raw.github.com/collective/buildout.plonetest/master/test-{{{ plone.version }}}.cfg
+
+
+package-name = {{{ package.namespace }}}.{{{ package.name }}}
+package-extras = [test]
+
+parts += 
+    robot
+    omelette
+    plonesite
+    translation
+
+[instance]
+eggs += 
+    Pillow
+zcml +=
+    {{{ package.namespace }}}.{{{ package.name }}}:testing.zcml
+
+[plonesite]
+recipe = collective.recipe.plonesite
+site-replace = True
+site-id = Plone
+profiles = {{{ package.namespace }}}.{{{ package.name }}}:testing
+
+[translation]
+recipe = infrae.i18nextract
+packages  = {{{ package.namespace }}}.{{{ package.name }}}
+output = ${buildout:directory}/src/{{{ package.namespace }}}/{{{ package.name }}}/locales
+output-package = {{{ package.namespace }}}.{{{ package.name }}}
+domain = {{{ package.namespace }}}.{{{ package.name }}}
+
+[robot]
+recipe = zc.recipe.egg
+eggs =
+    Pillow
+    ${test:eggs}
+    plone.app.robotframework[reload]
+
+[omelette]
+recipe = collective.recipe.omelette
+eggs = ${test:eggs}
