@@ -1,0 +1,169 @@
+<html>
+<head>
+<title>{{ test_title }} test</title>
+{# NO_DEPS because we are including our own #}
+<script>var CLOSURE_NO_DEPS = true</script>
+<script src="{{ goog_base_js }}"></script>
+<script src="{{ test_deps_js }}"></script>
+{# include common test requirements #}
+<script>
+goog.require('goog.debug.Logger');
+goog.require('goog.debug.Console');
+goog.require('goog.testing.TestCase');
+goog.require('goog.testing.TestRunner');
+goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.DeferredTestCase');
+{# TODO: include matchers/xhrio/common stuff from testing.*.. ie  goog.labs.testing.GreaterThanMatcher (greaterThan) #}
+{# TODO: this list should be customizable? #}
+</script>
+{# Pull in all of the tests requirements before the file is loaded. #}
+<script>
+{% for requirement in test_requires -%}
+goog.require('{{ requirement }}');
+{% endfor %}
+</script>#}
+
+    
+<script>
+var CLOVER_TEST_TITLE = "{{ test_js_url }}";
+    
+// provide a common AsyncTestCase like js-test-driver
+var TestCase = AsyncTestCase = DeferredTestCase = new goog.testing.DeferredTestCase(CLOVER_TEST_TITLE);
+
+// allow longer timeouts
+AsyncTestCase.stepTimeout = 4000;
+
+
+var AUTO_RUN_ONLOAD = true;
+
+// code from http://docs.closure-library.googlecode.com/git/closure_goog_testing_jsunit.js.source.html so 
+// its clear whats going on here.
+        
+// Increases the maximum number of stack frames in Google Chrome from the
+// default 10 to 50 to get more useful stack traces.
+Error.stackTraceLimit = 50;
+
+// Store a reference to the window's timeout so that it can't be overridden
+// by tests.
+/** @type {!Function} */
+var realTimeout = window.setTimeout;
+
+
+// Create a test runner.
+var tr = new goog.testing.TestRunner();
+
+// Export it so that it can be queried by Selenium and tests that use a
+// compiled test runner.
+goog.exportSymbol('G_testRunner', tr);
+goog.exportSymbol('G_testRunner.initialize', tr.initialize);
+goog.exportSymbol('G_testRunner.isInitialized', tr.isInitialized);
+goog.exportSymbol('G_testRunner.isFinished', tr.isFinished);
+goog.exportSymbol('G_testRunner.isSuccess', tr.isSuccess);
+goog.exportSymbol('G_testRunner.getReport', tr.getReport);
+goog.exportSymbol('G_testRunner.getRunTime', tr.getRunTime);
+goog.exportSymbol('G_testRunner.getNumFilesLoaded', tr.getNumFilesLoaded);
+goog.exportSymbol('G_testRunner.setStrict', tr.setStrict);
+goog.exportSymbol('G_testRunner.logTestFailure', tr.logTestFailure);
+
+// Export debug as a global function for JSUnit compatibility.  This just
+// calls log on the current test case.
+if (!goog.global['debug']) {
+  goog.exportSymbol('debug', goog.bind(tr.log, tr));
+}
+
+// If the application has defined a global error filter, set it now.  This
+// allows users who use a base test include to set the error filter before
+// the testing code is loaded.
+if (goog.global['G_errorFilter']) {
+  tr.setErrorFilter(goog.global['G_errorFilter']);
+}
+
+// override log to change how errors are displayed
+goog.testing.TestCase.prototype.log = function(val) {
+  if (!this.isInsideMultiTestRunner() && goog.global.console) {
+    if (typeof val == 'string') {
+      val = this.getTimeStamp_() + ' : ' + val;
+    }
+    if (val instanceof Error && val.stack) {
+      // Chrome does console.log asynchronously in a different process
+      // (http://code.google.com/p/chromium/issues/detail?id=50316).
+      // This is an acute problem for Errors, which almost never survive.
+      // Grab references to the immutable strings so they survive.
+      goog.global.console.error(val.message);
+      goog.global.console.error(val.stack);
+      // TODO(gboyer): Consider for Chrome cloning any object if we can ensure
+      // there are no circular references.
+    } else {
+      goog.global.console.log(val);
+    }
+  }
+};
+
+// Add an error handler to report errors that may occur during
+// initialization of the page.
+var onerror = window.onerror;
+window.onerror = function(error, url, line) {
+  // Call any existing onerror handlers.
+  if (onerror) {
+    onerror(error, url, line);
+  }
+    
+  if (typeof error == 'object') {
+    // Webkit started passing an event object as the only argument to
+    // window.onerror.  It doesn't contain an error message, url or line
+    // number.  We therefore log as much info as we can.
+    console.error(error.message)
+    console.error(error.stack)
+      
+    if (error.target && error.target.tagName == 'SCRIPT') {
+      tr.logError('UNKNOWN ERROR: Script ' + error.target.src);
+    } else {
+      tr.logError('UNKNOWN ERROR: No error information available.');
+    }
+  } else {
+    tr.logError('JS ERROR: ' + error + '\nURL: ' + url + '\nLine: ' + line);
+  }
+};
+
+(function(){
+// Create an onload handler, if the test runner hasn't been initialized then
+// no test has been registered with the test runner by the test file.  We
+// then create a new test case and auto discover any tests in the global
+// scope. If this code is being parsed by JsTestC, we let it disable the
+// onload handler to avoid running the test in JsTestC.
+if (AUTO_RUN_ONLOAD) {
+  var onload = window.onload;
+    
+  window.onload = function(e) {
+    // Call any existing onload handlers.
+    if (onload) {
+      onload(e);
+    }
+    // Wait 500ms longer so that we don't interfere with Selenium.
+    realTimeout(function() {
+      if (!tr.initialized) {
+        //var test = new goog.testing.TestCase(document.title);
+          
+        // discover tests in the global namespace
+        AsyncTestCase.autoDiscoverTests();
+        tr.initialize(AsyncTestCase);
+      }
+      tr.execute();
+    }, 500);
+    window.onload = null;
+  };
+}
+})();
+
+{# install logging and set the root level. #}
+{# TODO: customizable level (test-logger-level?) #}
+goog.debug.Console.autoInstall();
+goog.debug.Console.instance.setCapturing(true);
+var logger = new goog.debug.LogManager.getRoot();
+logger.setLevel(goog.debug.Logger.Level.FINEST);
+</script>
+    
+<script src="{{ test_js_url }}"></script>
+</head>
+<body></body>
+</html>
