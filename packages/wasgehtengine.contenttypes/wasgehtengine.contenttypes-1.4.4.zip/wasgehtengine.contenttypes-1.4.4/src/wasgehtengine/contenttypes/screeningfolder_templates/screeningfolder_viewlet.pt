@@ -1,0 +1,49 @@
+<section id="screeningfolder-viewlet" i18n:domain="wasgehtengine.contenttypes">
+
+	<header>
+		<h1>Kinoprogramm für Bonn</h1>
+		<div class="date-nav">
+			<div>
+				<h2 tal:content="python:view.datestring()" />
+			</div>
+			<div>
+				<a id="time-previous" tal:attributes="href view/previous">Früher</a>
+			</div>
+			<div>
+				<a id="time-next" tal:attributes="href view/next">Später</a>
+			</div>
+		</div>
+	</header>
+	<ul id="movieList" class="itemList" tal:define="screenings view/screenings">
+		<li tal:repeat="movie_title screenings">
+			<article class="movie hide-group" tal:define="movie_group python: screenings[movie_title]">
+				<header>
+					<h2 tal:content="movie_title" class="movie-title">Movie title</h2>
+					<section class="screenings">
+						<ul class="screeningList">
+							<li tal:repeat="starttime python: sorted(movie_group.keys())"
+								tal:attributes="class python: 'past-screening' if starttime < starttime.now() else 'upcoming-screening'">
+								<time tal:content="python: starttime.strftime('%H:%M') + ' Uhr'"
+									tal:attributes="datetime python:starttime.isoformat()">20:15</time>
+								<ul class="venueList" tal:define="starttime_group python: movie_group[starttime]">
+									<li tal:repeat="screening starttime_group">
+										<a tal:attributes="href screening/absolute_url" tal:content="screening/venue/to_object/title" />
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</section>
+				</header>
+				<div class="clear hide-button-anchor-trailer" />
+				<section class="movie-trailer hideable">
+
+				</section>
+				<section class="description hideable"
+					tal:define="first_screening python:movie_group[movie_group.keys()[0]][0]"
+					tal:content="first_screening/description">
+					Beschreibung des Films.
+				</section>
+			</article>
+		</li>
+	</ul>
+</section>

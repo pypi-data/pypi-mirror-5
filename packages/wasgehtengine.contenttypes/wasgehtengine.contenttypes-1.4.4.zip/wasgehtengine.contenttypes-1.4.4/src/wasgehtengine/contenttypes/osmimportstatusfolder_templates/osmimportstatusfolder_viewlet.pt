@@ -1,0 +1,51 @@
+<section id="osmimportstatusfolder-viewlet" i18n:domain="wasgehtengine.contenttypes" tal:define="items view/children">
+
+	<header>
+		<h2>OpenStreetMap import status</h2>
+	</header>
+	
+	<p>
+		<span tal:content="python: len(items)" /> OpenStreetMap imports.
+	</p>
+
+	<div id="osmimportstatus-list">
+
+		<table>
+			<thead>
+				<tr>
+					<th>Predicates</th>
+					<th>Last run</th>
+					<th>Last successful run</th>
+					<th>Last run with venues</th>
+					<th>#venues</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr tal:repeat="item items">
+					<td>
+						<a tal:content="python: item.query_params[:10] + (item.query_params[10:] and '...')" tal:attributes="href item/absolute_url; title item/query_params"></a>
+					</td>
+					<td>
+						<time tal:condition="item/last_run" tal:attributes="datetime item/last_run/isoformat"
+							tal:content="python:item.last_run.strftime('%x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(item.last_run)">Never</span>
+					</td>
+					<td>
+						<time tal:condition="item/last_successful_run"
+							tal:attributes="datetime item/last_successful_run/isoformat; class python:'status-error' if item.last_successful_run != item.last_run else ''"
+							tal:content="python:item.last_successful_run.strftime('%x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(item.last_successful_run)">Never</span>
+					</td>
+					<td>
+						<time tal:condition="item/last_run_with_venues_imported"
+							tal:attributes="datetime item/last_run_with_venues_imported/isoformat; class python:'status-warning' if item.last_run_with_venues_imported != item.last_run else ''"
+							tal:content="python:item.last_run_with_venues_imported.strftime('%x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(item.last_run_with_venues_imported)">Never</span>
+					</td>
+					<td tal:content="item/imported_venues_count">
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</section>
