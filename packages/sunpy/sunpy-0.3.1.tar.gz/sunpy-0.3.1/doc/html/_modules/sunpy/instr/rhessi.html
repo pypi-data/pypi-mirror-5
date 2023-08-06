@@ -1,0 +1,533 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sunpy.instr.rhessi &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="sunpy" href="../../sunpy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../sunpy.html" accesskey="U">sunpy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for sunpy.instr.rhessi</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c"># &lt;License info will go here...&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides programs to process and analyze RHESSI data.</span>
+
+<span class="sd">    .. warning:: This module is still in development!</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pyfits</span>
+<span class="kn">import</span> <span class="nn">sunpy</span>
+<span class="kn">from</span> <span class="nn">sunpy.time</span> <span class="kn">import</span> <span class="n">TimeRange</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.dates</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">sunpy.sun.constants</span> <span class="kn">as</span> <span class="nn">sun</span>
+<span class="kn">from</span> <span class="nn">sunpy.sun.sun</span> <span class="kn">import</span> <span class="n">angular_size</span>
+<span class="kn">from</span> <span class="nn">sunpy.sun.sun</span> <span class="kn">import</span> <span class="n">sunearth_distance</span>
+
+<span class="c"># Measured fixed grid parameters</span>
+<span class="n">grid_pitch</span> <span class="o">=</span> <span class="p">(</span><span class="mf">4.52467</span><span class="p">,</span> <span class="mf">7.85160</span><span class="p">,</span> <span class="mf">13.5751</span><span class="p">,</span> <span class="mf">23.5542</span><span class="p">,</span> <span class="mf">40.7241</span><span class="p">,</span> <span class="mf">70.5309</span><span class="p">,</span> <span class="mf">122.164</span><span class="p">,</span> 
+              <span class="mf">211.609</span><span class="p">,</span> <span class="mf">366.646</span><span class="p">)</span>
+<span class="n">grid_orientation</span> <span class="o">=</span> <span class="p">(</span><span class="mf">3.53547</span><span class="p">,</span> <span class="mf">2.75007</span><span class="p">,</span> <span class="mf">3.53569</span><span class="p">,</span> <span class="mf">2.74962</span><span class="p">,</span> <span class="mf">3.92596</span><span class="p">,</span> <span class="mf">2.35647</span><span class="p">,</span> 
+                    <span class="mf">0.786083</span><span class="p">,</span> <span class="mf">0.00140674</span><span class="p">,</span> <span class="mf">1.57147</span><span class="p">)</span>
+
+<span class="n">data_servers</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;http://hesperia.gsfc.nasa.gov/hessidata/&#39;</span><span class="p">,</span> 
+                <span class="s">&#39;http://hessi.ssl.berkeley.edu/hessidata/&#39;</span><span class="p">,</span>
+                <span class="s">&#39;http://soleil.i4ds.ch/hessidata/&#39;</span><span class="p">)</span>
+
+<span class="n">lc_linecolors</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;black&#39;</span><span class="p">,</span> <span class="s">&#39;pink&#39;</span><span class="p">,</span> <span class="s">&#39;green&#39;</span><span class="p">,</span> <span class="s">&#39;blue&#39;</span><span class="p">,</span> <span class="s">&#39;brown&#39;</span><span class="p">,</span> <span class="s">&#39;red&#39;</span><span class="p">,</span> 
+                     <span class="s">&#39;navy&#39;</span><span class="p">,</span> <span class="s">&#39;orange&#39;</span><span class="p">,</span> <span class="s">&#39;green&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_obssumm_dbase_file"><a class="viewcode-back" href="../../../reference/rhessi.html#sunpy.instr.rhessi.get_obssumm_dbase_file">[docs]</a><span class="k">def</span> <span class="nf">get_obssumm_dbase_file</span><span class="p">(</span><span class="n">time_range</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Download the RHESSI observing summary database file. This file lists the </span>
+<span class="sd">    name of observing summary files for specific time ranges. </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_range : str, TimeRange</span>
+<span class="sd">        A TimeRange or time range compatible string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value : tuple</span>
+<span class="sd">        Return a tuple (filename, headers) where filename is the local file </span>
+<span class="sd">        name under which the object can be found, and headers is </span>
+<span class="sd">        whatever the info() method of the object returned by urlopen.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy.instr.rhessi as rhessi</span>
+<span class="sd">    &gt;&gt;&gt; rhessi.get_obssumm_dbase_file((&#39;2011/04/04&#39;, &#39;2011/04/05&#39;))</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    | http://hesperia.gsfc.nasa.gov/ssw/hessi/doc/guides/hessi_data_access.htm#Observing Summary Data</span>
+
+<span class="sd">    .. note:: This API is currently limited to providing data from </span>
+<span class="sd">    whole days only.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c">#    http://hesperia.gsfc.nasa.gov/hessidata/dbase/hsi_obssumm_filedb_200311.txt</span>
+    
+    <span class="n">_time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">(</span><span class="n">time_range</span><span class="p">)</span>
+    <span class="n">data_location</span> <span class="o">=</span> <span class="s">&#39;dbase/&#39;</span>
+    
+    <span class="n">url_root</span> <span class="o">=</span> <span class="n">data_servers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">data_location</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">url_root</span> <span class="o">+</span> <span class="n">_time_range</span><span class="o">.</span><span class="n">t1</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;hsi_obssumm_filedb_%Y%m.txt&quot;</span><span class="p">)</span>
+    
+    <span class="n">f</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Downloading file: &#39;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">f</span>
+      </div>
+<div class="viewcode-block" id="parse_obssumm_dbase_file"><a class="viewcode-back" href="../../../reference/rhessi.html#sunpy.instr.rhessi.parse_obssumm_dbase_file">[docs]</a><span class="k">def</span> <span class="nf">parse_obssumm_dbase_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parse the RHESSI observing summary database file. This file lists the </span>
+<span class="sd">    name of observing summary files for specific time ranges along with other </span>
+<span class="sd">    info</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        The filename of the obssumm dbase file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : dict</span>
+<span class="sd">        Return a dict containing the parsed data in the dbase file</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy.instr.rhessi as rhessi</span>
+<span class="sd">    &gt;&gt;&gt; f = rhessi.get_obssumm_dbase_file((&#39;2011/04/04&#39;, &#39;2011/04/05&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; rhessi.parse_obssumm_dbase_file(f[0])</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    | http://hesperia.gsfc.nasa.gov/ssw/hessi/doc/guides/hessi_data_access.htm#Observing Summary Data</span>
+
+<span class="sd">    .. note:: This API is currently limited to providing data from </span>
+<span class="sd">    whole days only.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="n">skipinitialspace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">headerline</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="n">headerline</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="n">headerline</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="n">headerline</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        
+        <span class="n">obssumm_filename</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">orbit_start</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">orbit_end</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">status_flag</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">number_of_packets</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">obssumm_filename</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">orbit_start</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">orbit_end</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="n">start_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;</span><span class="si">%d</span><span class="s">-%b-%y&#39;</span><span class="p">))</span>
+            <span class="n">end_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="s">&#39;</span><span class="si">%d</span><span class="s">-%b-%y&#39;</span><span class="p">))</span>
+            <span class="n">status_flag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">7</span><span class="p">]))</span>
+            <span class="n">number_of_packets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">8</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">headerline</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">obssumm_filename</span><span class="p">,</span>
+            <span class="n">headerline</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">orbit_start</span><span class="p">,</span>
+            <span class="n">headerline</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">orbit_end</span><span class="p">,</span>
+            <span class="n">headerline</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">start_time</span><span class="p">,</span>
+            <span class="n">headerline</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">end_time</span><span class="p">,</span>
+            <span class="n">headerline</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">status_flag</span><span class="p">,</span>
+            <span class="n">headerline</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">number_of_packets</span>
+        <span class="p">}</span>
+</div>
+<div class="viewcode-block" id="get_obssum_filename"><a class="viewcode-back" href="../../../reference/rhessi.html#sunpy.instr.rhessi.get_obssum_filename">[docs]</a><span class="k">def</span> <span class="nf">get_obssum_filename</span><span class="p">(</span><span class="n">time_range</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Download the RHESSI observing summary data from one of the RHESSI </span>
+<span class="sd">    servers, parses it, and returns the name of the obssumm file relevant for</span>
+<span class="sd">    the time range</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_range : str, TimeRange </span>
+<span class="sd">        A TimeRange or time range compatible string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : string</span>
+<span class="sd">        Returns the filename of the observation summary file</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy.instr.rhessi as rhessi</span>
+<span class="sd">    &gt;&gt;&gt; rhessi.get_obssumm_filename((&#39;2011/04/04&#39;, &#39;2011/04/05&#39;))</span>
+
+<span class="sd">    .. note:: This API is currently limited to providing data from </span>
+<span class="sd">    whole days only.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># need to download and inspect the dbase file to determine the filename</span>
+    <span class="c"># for the observing summary data</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">get_obssumm_dbase_file</span><span class="p">(</span><span class="n">time_range</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">parse_obssumm_dbase_file</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">_time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">(</span><span class="n">time_range</span><span class="p">)</span>
+   
+    <span class="n">index_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">_time_range</span><span class="o">.</span><span class="n">t1</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+    
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;filename&#39;</span><span class="p">)[</span><span class="n">index_number</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="get_obssumm_file"><a class="viewcode-back" href="../../../reference/rhessi.html#sunpy.instr.rhessi.get_obssumm_file">[docs]</a><span class="k">def</span> <span class="nf">get_obssumm_file</span><span class="p">(</span><span class="n">time_range</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Download the RHESSI observing summary data from one of the RHESSI </span>
+<span class="sd">    servers. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_range : str, TimeRange</span>
+<span class="sd">        A TimeRange or time range compatible string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : tuple</span>
+<span class="sd">        Return a tuple (filename, headers) where filename is the local file </span>
+<span class="sd">        name under which the object can be found, and headers is </span>
+<span class="sd">        whatever the info() method of the object returned by urlopen.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy.instr.rhessi as rhessi</span>
+<span class="sd">    &gt;&gt;&gt; rhessi.get_obssumm_file((&#39;2011/04/04&#39;, &#39;2011/04/05&#39;))</span>
+
+<span class="sd">    .. note:: This API is currently limited to providing data from </span>
+<span class="sd">    whole days only.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">_time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">(</span><span class="n">time_range</span><span class="p">)</span>
+    <span class="n">data_location</span> <span class="o">=</span> <span class="s">&#39;metadata/catalog/&#39;</span>
+    
+    <span class="c">#TODO need to check which is the closest servers</span>
+    <span class="n">url_root</span> <span class="o">=</span> <span class="n">data_servers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">data_location</span>
+        
+    <span class="n">url</span> <span class="o">=</span> <span class="n">url_root</span> <span class="o">+</span> <span class="n">get_obssum_filename</span><span class="p">(</span><span class="n">time_range</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;s&#39;</span>
+    
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Downloading file: &#39;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">f</span>
+</div>
+<div class="viewcode-block" id="parse_obssumm_file"><a class="viewcode-back" href="../../../reference/rhessi.html#sunpy.instr.rhessi.parse_obssumm_file">[docs]</a><span class="k">def</span> <span class="nf">parse_obssumm_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parse a RHESSI observation summary file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        The filename of a RHESSI fits file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : dict</span>
+<span class="sd">        Returns a dictionary.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy.instr.rhessi as rhessi</span>
+<span class="sd">    &gt;&gt;&gt; f = rhessi.get_obssumm_file((&#39;2011/04/04&#39;, &#39;2011/04/05&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; data = rhessi.parse_obssumm_file(f[0])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fits</span> <span class="o">=</span> <span class="n">pyfits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    
+    <span class="n">reference_time_ut</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">parse_time</span><span class="p">(</span><span class="n">fits</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;UT_REF&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">time_interval_sec</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;TIME_INTV&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c"># label_unit = fits[5].data.field(&#39;DIM1_UNIT&#39;)[0]</span>
+    <span class="c"># labels = fits[5].data.field(&#39;DIM1_IDS&#39;)</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;3 - 6 keV&#39;</span><span class="p">,</span> <span class="s">&#39;6 - 12 keV&#39;</span><span class="p">,</span> <span class="s">&#39;12 - 25 keV&#39;</span><span class="p">,</span> <span class="s">&#39;25 - 50 keV&#39;</span><span class="p">,</span> 
+              <span class="s">&#39;50 - 100 keV&#39;</span><span class="p">,</span> <span class="s">&#39;100 - 300 keV&#39;</span><span class="p">,</span> <span class="s">&#39;300 - 800 keV&#39;</span><span class="p">,</span> <span class="s">&#39;800 - 7000 keV&#39;</span><span class="p">,</span>
+              <span class="s">&#39;7000 - 20000 keV&#39;</span><span class="p">]</span>
+
+    <span class="n">lightcurve_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fits</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;countrate&#39;</span><span class="p">))</span>
+
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lightcurve_data</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">size</span>
+ 
+    <span class="n">time_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">reference_time_ut</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">time_interval_sec</span><span class="o">*</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">dim</span><span class="p">)]</span>
+
+    <span class="c">#TODO generate the labels for the dict automatically from labels</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;time&#39;</span><span class="p">:</span> <span class="n">time_array</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">:</span> <span class="n">lightcurve_data</span><span class="p">,</span> <span class="s">&#39;labels&#39;</span><span class="p">:</span> <span class="n">labels</span><span class="p">}</span>
+       
+    <span class="k">return</span> <span class="n">result</span>
+</div>
+<div class="viewcode-block" id="show_obssumm"><a class="viewcode-back" href="../../../reference/rhessi.html#sunpy.instr.rhessi.show_obssumm">[docs]</a><span class="k">def</span> <span class="nf">show_obssumm</span><span class="p">(</span><span class="n">data_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;show_obssum&quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">)</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;labels&#39;</span><span class="p">)</span>
+    
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+    <span class="n">dates</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">date2num</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">4</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">5</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">6</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">7</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_date</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">8</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="n">lc_linecolors</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s">&quot;log&quot;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s">&#39;RHESSI Observing Summary Count Rates, Corrected&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;Corrected Count Rates s$^{-1}$ detector$^{-1}$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+        
+    <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="s">&#39;major&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="bp">False</span><span class="p">,</span> <span class="s">&#39;major&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s">&#39;%H:%M&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    
+    <span class="n">ax</span><span class="o">.</span><span class="n">fmt_xdata</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s">&#39;%H:%M&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">autofmt_xdate</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</div>
+<span class="k">def</span> <span class="nf">_backproject</span><span class="p">(</span><span class="n">calibrated_event_list</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">pixel_size</span><span class="o">=</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">),</span> <span class="n">image_dim</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Given a stacked calibrated event list fits file create a back </span>
+<span class="sd">    projection image for an individual detectors. This function is used by</span>
+<span class="sd">    backprojection.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibrated_event_list : string</span>
+<span class="sd">        filename of a RHESSI calibrated event list</span>
+<span class="sd">    detector : int</span>
+<span class="sd">        the detector number</span>
+<span class="sd">    pixel_size : 2-tuple</span>
+<span class="sd">        the size of the pixels in arcseconds. Default is (1,1).</span>
+<span class="sd">    image_dim : 2-tuple</span>
+<span class="sd">        the size of the output image in number of pixels</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : ndarray</span>
+<span class="sd">        Return a backprojection image.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy.instr.rhessi as rhessi</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fits</span> <span class="o">=</span> <span class="n">pyfits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">calibrated_event_list</span><span class="p">)</span>
+    
+    <span class="c">#info_parameters = fits[2]    </span>
+    <span class="c">#detector_efficiency = info_parameters.data.field(&#39;cbe_det_eff$$REL&#39;)</span>
+    
+    <span class="n">fits</span> <span class="o">=</span> <span class="n">pyfits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">calibrated_event_list</span><span class="p">)</span>
+
+    <span class="n">fits_detector_index</span> <span class="o">=</span> <span class="n">detector</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="n">detector_index</span> <span class="o">=</span> <span class="n">detector</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">grid_angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="n">grid_orientation</span><span class="p">[</span><span class="n">detector_index</span><span class="p">]</span>
+    <span class="n">harm_ang_pitch</span> <span class="o">=</span> <span class="n">grid_pitch</span><span class="p">[</span><span class="n">detector_index</span><span class="p">]</span><span class="o">/</span><span class="mi">1</span>
+
+    <span class="n">phase_map_center</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="n">fits_detector_index</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;phase_map_ctr&#39;</span><span class="p">)</span>
+    <span class="n">this_roll_angle</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="n">fits_detector_index</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;roll_angle&#39;</span><span class="p">)</span>
+    <span class="n">modamp</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="n">fits_detector_index</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;modamp&#39;</span><span class="p">)</span>
+    <span class="n">grid_transmission</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="n">fits_detector_index</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;gridtran&#39;</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="n">fits_detector_index</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;count&#39;</span><span class="p">)</span>
+
+    <span class="n">tempa</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">image_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">%</span>  <span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="p">(</span><span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">tempb</span> <span class="o">=</span> <span class="n">tempa</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">image_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">image_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">pixel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">tempa</span><span class="p">,</span><span class="n">tempb</span><span class="p">))</span><span class="o">*</span><span class="n">pixel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">phase_pixel</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="n">harm_ang_pitch</span><span class="p">)</span><span class="o">*</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">pixel</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">this_roll_angle</span> <span class="o">-</span> <span class="n">grid_angle</span><span class="p">))</span> <span class="o">-</span> 
+                                              <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">pixel</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">this_roll_angle</span> <span class="o">-</span> <span class="n">grid_angle</span><span class="p">)))</span> <span class="o">+</span> <span class="n">phase_map_center</span>
+    <span class="n">phase_modulation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phase_pixel</span><span class="p">)</span>    
+    <span class="n">gridmod</span> <span class="o">=</span> <span class="n">modamp</span> <span class="o">*</span> <span class="n">grid_transmission</span>
+    <span class="n">probability_of_transmission</span> <span class="o">=</span> <span class="n">gridmod</span><span class="o">*</span><span class="n">phase_modulation</span> <span class="o">+</span> <span class="n">grid_transmission</span>
+    <span class="n">bproj_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">probability_of_transmission</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image_dim</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">bproj_image</span>
+
+<div class="viewcode-block" id="backprojection"><a class="viewcode-back" href="../../../reference/rhessi.html#sunpy.instr.rhessi.backprojection">[docs]</a><span class="k">def</span> <span class="nf">backprojection</span><span class="p">(</span><span class="n">calibrated_event_list</span><span class="p">,</span> <span class="n">pixel_size</span><span class="o">=</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">),</span> <span class="n">image_dim</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Given a stacked calibrated event list fits file create a back </span>
+<span class="sd">    projection image.</span>
+<span class="sd">    </span>
+<span class="sd">    .. warning:: The image is not in the right orientation!</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibrated_event_list : string</span>
+<span class="sd">        filename of a RHESSI calibrated event list</span>
+<span class="sd">    detector : int</span>
+<span class="sd">        the detector number</span>
+<span class="sd">    pixel_size : 2-tuple</span>
+<span class="sd">        the size of the pixels in arcseconds. Default is (1,1).</span>
+<span class="sd">    image_dim : 2-tuple</span>
+<span class="sd">        the size of the output image in number of pixels</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : RHESSImap</span>
+<span class="sd">        Return a backprojection map.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy.instr.rhessi as rhessi</span>
+<span class="sd">    &gt;&gt;&gt; map = rhessi.backprojection(sunpy.RHESSI_EVENT_LIST)</span>
+<span class="sd">    &gt;&gt;&gt; map.show()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">calibrated_event_list</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">RHESSI_EVENT_LIST</span>
+    <span class="n">fits</span> <span class="o">=</span> <span class="n">pyfits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">calibrated_event_list</span><span class="p">)</span>
+    <span class="n">info_parameters</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">xyoffset</span> <span class="o">=</span> <span class="n">info_parameters</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;USED_XYOFFSET&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">(</span><span class="n">info_parameters</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;ABSOLUTE_TIME_RANGE&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    
+    <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">image_dim</span><span class="p">)</span>
+    
+    <span class="c">#find out what detectors were used</span>
+    <span class="n">det_index_mask</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s">&#39;det_index_mask&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>    
+    <span class="n">detector_list</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">det_index_mask</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">detector</span> <span class="ow">in</span> <span class="n">detector_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">image</span> <span class="o">+</span> <span class="n">_backproject</span><span class="p">(</span><span class="n">calibrated_event_list</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">,</span> <span class="n">pixel_size</span><span class="o">=</span><span class="n">pixel_size</span><span class="p">,</span> <span class="n">image_dim</span><span class="o">=</span><span class="n">image_dim</span><span class="p">)</span>
+    
+    <span class="n">dict_header</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;DATE-OBS&quot;</span><span class="p">:</span> <span class="n">time_range</span><span class="o">.</span><span class="n">center</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s"> %H:%M:%S&quot;</span><span class="p">),</span> 
+        <span class="s">&quot;CDELT1&quot;</span><span class="p">:</span> <span class="n">pixel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&quot;NAXIS1&quot;</span><span class="p">:</span> <span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&quot;CRVAL1&quot;</span><span class="p">:</span> <span class="n">xyoffset</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&quot;CRPIX1&quot;</span><span class="p">:</span> <span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> 
+        <span class="s">&quot;CUNIT1&quot;</span><span class="p">:</span> <span class="s">&quot;arcsec&quot;</span><span class="p">,</span>
+        <span class="s">&quot;CTYPE1&quot;</span><span class="p">:</span> <span class="s">&quot;HPLN-TAN&quot;</span><span class="p">,</span>
+        <span class="s">&quot;CDELT2&quot;</span><span class="p">:</span> <span class="n">pixel_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s">&quot;NAXIS2&quot;</span><span class="p">:</span> <span class="n">image_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s">&quot;CRVAL2&quot;</span><span class="p">:</span> <span class="n">xyoffset</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s">&quot;CRPIX2&quot;</span><span class="p">:</span> <span class="n">image_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="s">&quot;CUNIT2&quot;</span><span class="p">:</span> <span class="s">&quot;arcsec&quot;</span><span class="p">,</span>
+        <span class="s">&quot;CTYPE2&quot;</span><span class="p">:</span> <span class="s">&quot;HPLT-TAN&quot;</span><span class="p">,</span>
+        <span class="s">&quot;HGLT_OBS&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s">&quot;HGLN_OBS&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s">&quot;RSUN_OBS&quot;</span><span class="p">:</span> <span class="n">angular_size</span><span class="p">(</span><span class="n">time_range</span><span class="o">.</span><span class="n">center</span><span class="p">()),</span>
+        <span class="s">&quot;RSUN_REF&quot;</span><span class="p">:</span> <span class="n">sun</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span>
+        <span class="s">&quot;DSUN_OBS&quot;</span><span class="p">:</span> <span class="n">sunearth_distance</span><span class="p">(</span><span class="n">time_range</span><span class="o">.</span><span class="n">center</span><span class="p">())</span> <span class="o">*</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">sun</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">au</span>
+    <span class="p">}</span>
+    
+    <span class="n">header</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">MapHeader</span><span class="p">(</span><span class="n">dict_header</span><span class="p">)</span>
+    <span class="n">result_map</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">Map</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+            
+    <span class="k">return</span> <span class="n">result_map</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../sunpy.html" >sunpy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

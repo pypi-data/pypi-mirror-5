@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sunpy.net.hek &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="sunpy" href="../../sunpy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../sunpy.html" accesskey="U">sunpy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for sunpy.net.hek</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Author: Florian Mayer &lt;florian.mayer@bitsrc.org&gt;</span>
+<span class="c">#</span>
+<span class="c"># This module was developed with funding provided by</span>
+<span class="c"># the ESA Summer of Code (2011).</span>
+<span class="c">#</span>
+<span class="c"># pylint: disable=C0103,R0903</span>
+
+<span class="sd">&quot;&quot;&quot; Facilities to interface with the HEK. &quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">urllib2</span> <span class="kn">import</span> <span class="n">urlopen</span>
+<span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">urlencode</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">sunpy.net</span> <span class="kn">import</span> <span class="n">attr</span>
+<span class="kn">from</span> <span class="nn">sunpy.net.hek</span> <span class="kn">import</span> <span class="n">attrs</span>
+<span class="kn">from</span> <span class="nn">sunpy.net.vso</span> <span class="kn">import</span> <span class="n">attrs</span> <span class="k">as</span> <span class="n">v_attrs</span>
+<span class="kn">from</span> <span class="nn">sunpy.util.util</span> <span class="kn">import</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">sunpy.util.xml</span> <span class="kn">import</span> <span class="n">xml_to_dict</span>
+
+<span class="n">DEFAULT_URL</span> <span class="o">=</span> <span class="s">&#39;http://www.lmsal.com/hek/her&#39;</span>
+
+<span class="k">def</span> <span class="nf">_freeze</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create hashable representation of result dict. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">_freeze</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_freeze</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">obj</span>
+
+
+<div class="viewcode-block" id="HEKClient"><a class="viewcode-back" href="../../../reference/hek.html#sunpy.net.hek.HEKClient">[docs]</a><span class="k">class</span> <span class="nc">HEKClient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Client to interact with the HEK. &quot;&quot;&quot;</span>
+    <span class="c"># FIXME: Expose fields in .attrs with the right types</span>
+    <span class="c"># that is, not all StringParamWrapper!</span>
+    
+    <span class="n">default</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;cosec&#39;</span><span class="p">:</span> <span class="s">&#39;2&#39;</span><span class="p">,</span>
+        <span class="s">&#39;cmd&#39;</span><span class="p">:</span> <span class="s">&#39;search&#39;</span><span class="p">,</span>
+        <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;column&#39;</span><span class="p">,</span>
+        <span class="s">&#39;event_type&#39;</span><span class="p">:</span> <span class="s">&#39;**&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="c"># Default to full disk.</span>
+    <span class="n">attrs</span><span class="o">.</span><span class="n">walker</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">SpatialRegion</span><span class="p">(),</span> <span class="p">{},</span> <span class="n">default</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">DEFAULT_URL</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+    
+    <span class="k">def</span> <span class="nf">_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Implementation detail. &quot;&quot;&quot;</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>        
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;page&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">page</span>
+            <span class="n">fd</span> <span class="o">=</span> <span class="n">urlopen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">urlencode</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">fd</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s">&#39;result&#39;</span><span class="p">])</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">[</span><span class="s">&#39;overmax&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="n">Response</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+            <span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+<div class="viewcode-block" id="HEKClient.query"><a class="viewcode-back" href="../../../reference/hek.html#sunpy.net.hek.HEKClient.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">query</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Retrieve information about records matching the criteria</span>
+<span class="sd">        given in the query expression. If multiple arguments are passed,</span>
+<span class="sd">        they are connected with AND. &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">query</span><span class="p">)</span>
+        
+        <span class="n">data</span> <span class="o">=</span> <span class="n">attrs</span><span class="o">.</span><span class="n">walker</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">ndata</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">new</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+            <span class="n">ndata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ndata</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">ndata</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">ndata</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">_merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Implementation detail. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">unique</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">responses</span><span class="p">),</span> <span class="n">_freeze</span><span class="p">))</span>
+
+</div>
+<span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vso_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v_attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s">&#39;event_starttime&#39;</span><span class="p">],</span> <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">T%H:%M:%S&quot;</span><span class="p">),</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s">&#39;event_endtime&#39;</span><span class="p">],</span> <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">T%H:%M:%S&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vso_instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="p">[</span><span class="s">&#39;obs_instrument&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HEK&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No instrument contained.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v_attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s">&#39;obs_instrument&#39;</span><span class="p">])</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vso_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">attr</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vso_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vso_instrument</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">get_voevent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">as_dict</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> 
+                    <span class="n">base_url</span><span class="o">=</span><span class="s">&quot;http://www.lmsal.com/hek/her?&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the VOEvent object associated with a given event and</span>
+<span class="sd">        returns it as either a Python dictionary or an XML string.&quot;&quot;&quot;</span>
+
+        <span class="c"># Build URL</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>                                                      
+            <span class="s">&quot;cmd&quot;</span><span class="p">:</span> <span class="s">&quot;export-voevent&quot;</span><span class="p">,</span>
+            <span class="s">&quot;cosec&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s">&quot;ivorn&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="p">[</span><span class="s">&#39;kb_archivid&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="o">+</span> <span class="n">urlencode</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        
+        <span class="c"># Query and read response</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="c"># Return a string or dict</span>
+        <span class="k">if</span> <span class="n">as_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">xml_to_dict</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pprint</span>
+    <span class="kn">from</span> <span class="nn">sunpy.net.hek</span> <span class="kn">import</span> <span class="n">attrs</span> <span class="k">as</span> <span class="n">a</span>
+
+    <span class="n">c</span> <span class="o">=</span> <span class="n">HEKClient</span><span class="p">()</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">Time</span><span class="p">((</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">|</span> <span class="n">a</span><span class="o">.</span><span class="n">Time</span><span class="p">((</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">AR</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">FL</span>
+    <span class="p">)</span>
+    <span class="k">print</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">vso_all</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../sunpy.html" >sunpy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

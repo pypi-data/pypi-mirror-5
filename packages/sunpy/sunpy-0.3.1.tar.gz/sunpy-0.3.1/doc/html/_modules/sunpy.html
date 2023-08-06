@@ -1,0 +1,166 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sunpy &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for sunpy</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">SunPy</span>
+<span class="sd">=====</span>
+
+<span class="sd">An open-source Python library for Solar Physics data analysis.</span>
+
+<span class="sd">Web Links</span>
+<span class="sd">---------</span>
+<span class="sd">Homepage: http://www.sunpy.org</span>
+<span class="sd">Documentation: http://sunpy.readthedocs.org/en/latest/index.html</span>
+
+<span class="sd">Available subpackages</span>
+<span class="sd">---------------------</span>
+<span class="sd">cm</span>
+<span class="sd">    Solar Physics specific color maps.</span>
+<span class="sd">image</span>
+<span class="sd">    Generic methods to work with image data or maps.</span>
+<span class="sd">instr</span>
+<span class="sd">    subpackages spcific to missions or instruments.</span>
+<span class="sd">lightcurve</span>
+<span class="sd">    subpackage for working with 1D data sets like lightcurves.</span>
+<span class="sd">map</span>
+<span class="sd">    subpackage for working with 2D and 3D data sets of images or sequences of </span>
+<span class="sd">    images.</span>
+<span class="sd">net</span>
+<span class="sd">    Routines for obtaining data from the internet.</span>
+<span class="sd">spectra</span>
+<span class="sd">    subpackage for working with 2D spectra datatypes</span>
+<span class="sd">sun</span>
+<span class="sd">    Contains astronomical and physical constants.</span>
+<span class="sd">time</span>
+<span class="sd">    Contains time related constants and methods.</span>
+<span class="sd">wcs</span>
+<span class="sd">     The WCS package provides functions to parse a World Coordinate System(WCS)</span>
+<span class="sd">coordinates for solar images as well as convert between various solar</span>
+<span class="sd">coordinate systems.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="mf">0.2</span>
+
+<span class="kn">import</span> <span class="nn">sunpy.map</span>
+<span class="kn">import</span> <span class="nn">sunpy.sun</span>
+<span class="kn">import</span> <span class="nn">sunpy.lightcurve</span>
+<span class="kn">from</span> <span class="nn">sunpy.map</span> <span class="kn">import</span> <span class="n">make_map</span>
+<span class="kn">from</span> <span class="nn">sunpy.map</span> <span class="kn">import</span> <span class="n">read_header</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.map</span> <span class="kn">import</span> <span class="n">Map</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.header</span> <span class="kn">import</span> <span class="n">MapHeader</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.mapcube</span> <span class="kn">import</span> <span class="n">MapCube</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.compositemap</span> <span class="kn">import</span> <span class="n">CompositeMap</span>
+<span class="kn">from</span> <span class="nn">sunpy.util.config</span> <span class="kn">import</span> <span class="n">load_config</span><span class="p">,</span> <span class="n">print_config</span>
+<span class="kn">from</span> <span class="nn">sunpy.cm</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c"># Sample data</span>
+<span class="kn">from</span> <span class="nn">sunpy.data.sample</span> <span class="kn">import</span> <span class="p">(</span><span class="n">AIA_171_IMAGE</span><span class="p">,</span> <span class="n">RHESSI_IMAGE</span><span class="p">,</span> <span class="n">EIT_195_IMAGE</span><span class="p">,</span> 
+                               <span class="n">RHESSI_EVENT_LIST</span><span class="p">,</span> <span class="n">CALLISTO_IMAGE</span><span class="p">)</span>
+
+<span class="c"># Load user configuration</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

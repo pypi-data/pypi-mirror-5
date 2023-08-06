@@ -1,0 +1,207 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Time in SunPy &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="SunPy User Guide" href="index.html" />
+    <link rel="next" title="Using SunPy’s VSO module" href="vso.html" />
+    <link rel="prev" title="Plotting in SunPy" href="plotting.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vso.html" title="Using SunPy’s VSO module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="plotting.html" title="Plotting in SunPy"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="time-in-sunpy">
+<h1>Time in SunPy<a class="headerlink" href="#time-in-sunpy" title="Permalink to this headline">¶</a></h1>
+<p>Working with times and time ranges is a standard task in solar data analysis as such
+SunPy strives to provide convenient and easy methods to do the simple stuff. Python
+already provides an object for a time or date through the <a class="reference external" href="http://docs.python.org/2/library/datetime.html">datetime object</a>. SunPy builds upon its functionality.</p>
+<div class="section" id="parsing-times">
+<h2>1. Parsing Times<a class="headerlink" href="#parsing-times" title="Permalink to this headline">¶</a></h2>
+<p>Solar data is associated with a number of different time formats. SunPy provides a simple
+parsing function which can deal with most every format that a user may encounter. Called
+parse_time(), this function takes a string as input and returns a datetime object.
+Here are few examples of formats which parse_time() accepts:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sunpy.time</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">parse_time</span><span class="p">(</span><span class="s">&#39;2007-05-04T21:08:12&#39;</span><span class="p">)</span>
+<span class="n">parse_time</span><span class="p">(</span><span class="s">&#39;2007/05/04T21:08:12&#39;</span><span class="p">)</span>
+<span class="n">parse_time</span><span class="p">(</span><span class="s">&#39;20070504T210812&#39;</span><span class="p">)</span>
+<span class="n">parse_time</span><span class="p">(</span><span class="s">&#39;2007-May-04 21:08:12&#39;</span><span class="p">)</span>
+<span class="n">parse_time</span><span class="p">(</span><span class="s">&#39;20070504_210812&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Each of the above returns the same datetime object. All SunPy functions which require
+time as an input sanitize the input using parse_time. You can also pass it a datetime
+object directly and it will simply hand it right back to you. For users of IDL,
+this function is meant to the be the equivalent to SSW&#8217;s anytim().</p>
+</div>
+<div class="section" id="time-ranges">
+<h2>2. Time Ranges<a class="headerlink" href="#time-ranges" title="Permalink to this headline">¶</a></h2>
+<p>A very standard task in data analysis is to have to deal with pairs of times or time
+ranges. This occurs very often with plotting or when searching for data. To deal with
+time ranges SunPy provides the TimeRange object. A time range object can be created
+very easily by providing it with two time strings, a start time and an end time:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">(</span><span class="s">&#39;2010/03/04 00:10&#39;</span><span class="p">,</span> <span class="s">&#39;2010/03/04 00:20&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also pass the start and end times as a tuple:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">((</span><span class="s">&#39;2010/03/04 00:10&#39;</span><span class="p">,</span> <span class="s">&#39;2010/03/04 00:20&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This object makes use of parse_time() so it can accept a wide variety of time formats.
+A time range object can also be created by providing a start time and a duration.
+The duration must be provided as a <a class="reference external" href="http://docs.python.org/2/library/datetime.html#datetime.timedelta">timedelta</a> object or as a number of seconds so for
+example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">(</span><span class="s">&#39;2010/03/04 00:10&#39;</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="n">time_range</span> <span class="o">=</span> <span class="n">TimeRange</span><span class="p">(</span><span class="s">&#39;2010/03/04 00:10&#39;</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">400</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The time range objects provides a number of useful functions. For example, you can easily
+get the time at the center of your interval or the length of your interval in minutes
+or days or seconds:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">time_range</span><span class="o">.</span><span class="n">center</span><span class="p">()</span>
+<span class="n">time_range</span><span class="o">.</span><span class="n">minutes</span><span class="p">()</span>
+<span class="n">time_range</span><span class="o">.</span><span class="n">days</span><span class="p">()</span>
+<span class="n">time_range</span><span class="o">.</span><span class="n">seconds</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>It also makes it easy to create new time ranges. The functions next() and previous()
+do an inplace update to the object by either adding or subtracting the same time interval
+. This could be useful if you need to step through a number of time ranges. For example,
+if you needed time ranges that spanned 30 minutes over a period of 4 hours you could do:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span> <span class="k">print</span><span class="p">(</span><span class="n">time_range</span><span class="o">.</span><span class="n">next</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Check out the code reference for the time range object for more information.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Time in SunPy</a><ul>
+<li><a class="reference internal" href="#parsing-times">1. Parsing Times</a></li>
+<li><a class="reference internal" href="#time-ranges">2. Time Ranges</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plotting.html"
+                        title="previous chapter">Plotting in SunPy</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vso.html"
+                        title="next chapter">Using SunPy&#8217;s VSO module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/guide/time.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vso.html" title="Using SunPy’s VSO module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="plotting.html" title="Plotting in SunPy"
+             >previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

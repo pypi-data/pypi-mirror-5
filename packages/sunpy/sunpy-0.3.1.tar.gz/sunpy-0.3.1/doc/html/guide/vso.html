@@ -1,0 +1,312 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using SunPy’s VSO module &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="SunPy User Guide" href="index.html" />
+    <link rel="next" title="Querying Helioviewer.org with SunPy" href="helioviewer.html" />
+    <link rel="prev" title="Time in SunPy" href="time.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="helioviewer.html" title="Querying Helioviewer.org with SunPy"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="time.html" title="Time in SunPy"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-sunpy-s-vso-module">
+<h1>Using SunPy&#8217;s VSO module<a class="headerlink" href="#using-sunpy-s-vso-module" title="Permalink to this headline">¶</a></h1>
+<p>The Virtual Solar Observatory (VSO) is a service which presents a
+homogenoeous interface to heterogeneous data-sets and services.  Using
+the VSO, a user can query multiple data providers simultaneously, and
+then download the relevant data.  SunPy uses the VSO through the &#8216;vso&#8217;
+module, which was developed through support from the European Space
+Agency Summer of Code in Space (ESA-SOCIS) 2011.</p>
+<div class="section" id="setting-up-the-vso-interaction">
+<h2>1. Setting up the VSO interaction<a class="headerlink" href="#setting-up-the-vso-interaction" title="Permalink to this headline">¶</a></h2>
+<p>SunPy&#8217;s VSO module is in sunpy.net.  It can be imported into your
+IPython session as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sunpy.net</span> <span class="kn">import</span> <span class="n">vso</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="a-simple-query-using-the-legacy-query">
+<h2>2. A simple query - using the legacy query<a class="headerlink" href="#a-simple-query-using-the-legacy-query" title="Permalink to this headline">¶</a></h2>
+<p>Obtaining data via the VSO is essentially a two-stage process.  In the
+first stage, you ask the VSO to find the data you want.  The VSO
+queries various data-providers looking for your data.  In the second
+stage, you download the data, if there is any data that matches your
+request.  The VSO client handles the particulars of how the data from
+the data provider is downloaded to your computer.</p>
+<p>Let&#8217;s start with a very simple query.  To search the VSO, you need a
+start time, an end time, and an instrument. We have provided two
+different syntaxes for doing this search.  The first query syntax
+basically copies what you already may be used to from Solarsoft/IDL&#8217;s
+VSO query client, VSO_SEARCH.pro.  This is known as a &#8216;legacy&#8217; query,
+purely because the syntax is based on the legacy of Solarsoft/IDL&#8217;s
+VSO query client.  The second query syntax is much more powerful, but
+slightly less familiar to Solarsoft/IDL users (which is why we have
+two different syntaxes).</p>
+<p>Let&#8217;s say I want all the EIT data between 2001/01/01 and 2001/01/02
+(note that you can use any format understood by the parse_time
+function to specify the date and times you want).  Using the legacy
+query syntax, this is simply</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">client</span><span class="o">=</span><span class="n">vso</span><span class="o">.</span><span class="n">VSOClient</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">query_legacy</span><span class="p">(</span><span class="n">tstart</span><span class="o">=</span><span class="s">&#39;2001/01/01&#39;</span><span class="p">,</span> <span class="n">tend</span><span class="o">=</span><span class="s">&#39;2001/01/02&#39;</span><span class="p">,</span> <span class="n">instrument</span><span class="o">=</span><span class="s">&#39;EIT&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>which is almost identical to what you would type in a Solarsoft/IDL
+session.  So, what&#8217;s happening with this command?  The client is going
+out to the web to query the VSO to ask how many files EIT images are
+in the archive between the start of 2001/01/01 and the start of
+2001/01/02.  The same query can also be performed using a slightly different
+syntax.  For example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">query_legacy</span><span class="p">(</span><span class="s">&#39;2001/1/1&#39;</span><span class="p">,</span> <span class="s">&#39;2001/1/2&#39;</span><span class="p">,</span> <span class="n">instrument</span><span class="o">=</span><span class="s">&#39;EIT&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>both gives the same result. The variable &#8220;qr&#8221; is a Python list of
+response objects, each one of which is a record found by the VSO. How
+many records have been found?  You can find that out be typing</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">.</span><span class="n">num_records</span><span class="p">()</span>
+<span class="go">122</span>
+</pre></div>
+</div>
+<p>To get a little bit more information, try</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The Solarsoft legacy query has more keywords available: to find out
+more about the legacy query, type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">query_legacy</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>As an example, let&#8217;s say you just want the EIT 171 Angstrom files for
+that data.  These files can be found by</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">query_legacy</span><span class="p">(</span><span class="n">tstart</span><span class="o">=</span><span class="s">&#39;2001/01/01&#39;</span><span class="p">,</span> <span class="n">tend</span><span class="o">=</span><span class="s">&#39;2001/01/02&#39;</span><span class="p">,</span> <span class="n">instrument</span><span class="o">=</span><span class="s">&#39;EIT&#39;</span><span class="p">,</span> <span class="n">min_wave</span><span class="o">=</span><span class="s">&#39;171&#39;</span><span class="p">,</span> <span class="n">max_wave</span><span class="o">=</span><span class="s">&#39;171&#39;</span><span class="p">,</span> <span class="n">unit_wave</span><span class="o">=</span><span class="s">&#39;Angstrom&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>which yields four results, the same as the VSO IDL client.</p>
+</div>
+<div class="section" id="downloading-the-data">
+<h2>3. Downloading the data<a class="headerlink" href="#downloading-the-data" title="Permalink to this headline">¶</a></h2>
+<p>Having located the data you want, you can download it using the
+following command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">res</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">qr</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s">&#39;/Users/ireland/Desktop/Data/{file}.fits&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This downloads the query results into the directory
+/Users/ireland/Dekstop/Data naming each downloaded file with the
+filename &#8216;{file}&#8217; obtained from the VSO , and appended with the suffix
+&#8216;.fits&#8217;.  The &#8216;{file}&#8217; option uses the file name obtained by the VSO
+for each file.  You can also use other properties of the query return
+to define the path where the data is saved.  For example, to save the
+data to a subdirectory named after the instrument, use</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">res</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">qr</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s">&#39;/Users/ireland/Desktop/Data/{instrument}/{file}.fits&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that the download process is spawned in parallel to your existing
+Python session.  This means that the remainder of your Python script
+will continue as the download proceeds.  This may cause a problem if
+the remainder of your script relies on the presence of the downloaded
+data.  If you want to resume your script after all the data has been
+downloaded then append &#8216;.wait()&#8217; to the &#8216;get&#8217; command above, i.e.,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">res</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">qr</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s">&#39;/Users/ireland/Desktop/Data/{instrument}/{file}.fits&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>More information on the options available can be found through the
+standard Python &#8216;help&#8217; command.</p>
+<p>Using the legacy query keywords it is very easy to translate a
+Solarsoft/IDL VSO command into the equivalent SunPy VSO legacy query.
+However, more powerful queries are possible with the new query style,
+which is described below.</p>
+</div>
+<div class="section" id="the-new-query-style">
+<h2>4. The new query style<a class="headerlink" href="#the-new-query-style" title="Permalink to this headline">¶</a></h2>
+<p>The new query style makes more complex queries possible.  Let&#8217;s start
+with translating the above legacy query into the syntax of the new
+query:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="s">&#39;2001/1/1&#39;</span><span class="p">,</span> <span class="s">&#39;2001/1/2&#39;</span><span class="p">),</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;eit&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Let&#8217;s break down the arguments of client.query.  The first argument:</p>
+<blockquote>
+<div>vso.attrs.Time(&#8216;2001/1/1&#8217;, &#8216;2001/1/2&#8217;)</div></blockquote>
+<p>sets the start and end times for the query (as with the legacy query,
+any date/time format understood by SunPy&#8217;s &#8216;parse_time&#8217; function can
+be used to specify dates and time).  The second argument:</p>
+<blockquote>
+<div>vso.attrs.Instrument(&#8216;eit&#8217;)</div></blockquote>
+<p>sets the instrument we are looking for.  So what is going on here?
+The notion is that a VSO query has a set of attribute objects -
+described in &#8216;vso.attrs&#8217; - that are specifed to construct the query.
+For the full list of vso attributes, use</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that due to quirks at the VSO, we do not recommend that the
+extent object &#8216;vso.attrs.Extent&#8217; be in your query.  Instead, we
+recommend that any extent filtering you need to do be done on the
+queries made without setting a value to the vso.attrs.Extent object.
+As we will see, the new-style query can take more than two arguments,
+each argument separated from the other by a comma.  Each of those
+arguments are chained together using a logical &#8220;AND&#8221;.</p>
+<p>The new-style query allows you to combine these VSO attribute objects
+in complex ways that are not possible with the legacy query style.</p>
+<p>So, let&#8217;s look for the EIT and MDI data on the same day:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="s">&#39;2001/1/1&#39;</span><span class="p">,</span> <span class="s">&#39;2001/1/2&#39;</span><span class="p">),</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;eit&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;mdi&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">.</span><span class="n">num_records</span><span class="p">()</span>
+<span class="go">233</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The two instrument types are joined together by the operator &#8216;|&#8217;.
+This is the &#8216;or&#8217; operator.  Think of the above query as setting a set
+of conditions which get passed to the VSO.  Let&#8217;s say you want all the
+EIT data from two separate days:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="s">&#39;2001/1/1&#39;</span><span class="p">,</span> <span class="s">&#39;2001/1/2&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="s">&#39;2007/8/9&#39;</span><span class="p">,</span> <span class="s">&#39;2007/8/10&#39;</span><span class="p">),</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;eit&#39;</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">.</span><span class="n">num_records</span><span class="p">()</span>
+<span class="go">227</span>
+</pre></div>
+</div>
+<p>Each of the arguments in the new-style query can be thought of as
+setting conditions that the returned records must satisfy.  You can
+set the wavelength; for example, to return the 171 Angstrom EIT results</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="s">&#39;2001/1/1&#39;</span><span class="p">,</span> <span class="s">&#39;2001/1/2&#39;</span><span class="p">),</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;eit&#39;</span><span class="p">),</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Wave</span><span class="p">(</span><span class="mi">171</span><span class="p">,</span><span class="mi">171</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span><span class="o">.</span><span class="n">num_records</span><span class="p">()</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<p>The new-style query returns the same type of response as the legacy
+query.  This means you can use the same command and syntax as shown
+above to download your data.</p>
+<p>Finally, please let us know if you encounter a bug while using the VSO
+capabilities of SunPy.  Bugs are best reported via the issue tracking
+system on GitHub - go to <a class="reference external" href="https://github.com/sunpy/sunpy/issues">https://github.com/sunpy/sunpy/issues</a> and
+click on the &#8220;New Issue&#8221; button.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using SunPy&#8217;s VSO module</a><ul>
+<li><a class="reference internal" href="#setting-up-the-vso-interaction">1. Setting up the VSO interaction</a></li>
+<li><a class="reference internal" href="#a-simple-query-using-the-legacy-query">2. A simple query - using the legacy query</a></li>
+<li><a class="reference internal" href="#downloading-the-data">3. Downloading the data</a></li>
+<li><a class="reference internal" href="#the-new-query-style">4. The new query style</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="time.html"
+                        title="previous chapter">Time in SunPy</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="helioviewer.html"
+                        title="next chapter">Querying Helioviewer.org with SunPy</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/guide/vso.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="helioviewer.html" title="Querying Helioviewer.org with SunPy"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="time.html" title="Time in SunPy"
+             >previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

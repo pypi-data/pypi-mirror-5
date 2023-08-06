@@ -1,0 +1,185 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>VSO &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="SunPy Code Reference" href="index.html" />
+    <link rel="next" title="WCS" href="wcs.html" />
+    <link rel="prev" title="Time" href="time.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="wcs.html" title="WCS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="time.html" title="Time"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">SunPy Code Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="vso">
+<span id="id1"></span><h1>VSO<a class="headerlink" href="#vso" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The VSO can be queried in two different ways: the legacy or the standard
+API. The legacy API tries to mimic the IDL vso_search as closely as
+possible (and sane for Python), the standard API takes a new approach
+and allows complex queries to be easily created.</p>
+<p>There also exist two different clients for the VSO. The <em class="xref py py-obj">VSOClient</em> is designed
+for computer programs while <em class="xref py py-obj">InteractiveVSOClient</em> is designed for use in the
+REPL. <em class="xref py py-obj">InteractiveVSOClient</em> queries the user to provide missing information
+using the keyboard while <em class="xref py py-obj">VSOClient</em> can be programmed to supply missing
+information by subclassing and overriding methods.</p>
+<p><em class="xref py py-obj">InteractiveVSOClient</em> also offeres a search method that can be used to do both
+legacy and standard queries with one method.</p>
+<p>A global <em class="xref py py-obj">search</em> and <em class="xref py py-obj">get</em> method is exposed on module level that operate on
+a default <em class="xref py py-obj">InteractiveVSOClient</em>.</p>
+</div>
+<div class="section" id="standard-queries">
+<h2>Standard Queries<a class="headerlink" href="#standard-queries" title="Permalink to this headline">¶</a></h2>
+<p><em class="xref py py-obj">VSOClient.query</em> takes an arbitrary amount of Attrs which are automatically
+ANDed together for convenience, <em class="xref py py-obj">a | b</em> can be used for OR:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">client</span> <span class="o">=</span> <span class="n">vso</span><span class="o">.</span><span class="n">VSOClient</span><span class="p">()</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+   <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">((</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+   <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;eit&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;sot&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="available-attributes">
+<h3>Available attributes<a class="headerlink" href="#available-attributes" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="legacy-queries">
+<h2>Legacy Queries<a class="headerlink" href="#legacy-queries" title="Permalink to this headline">¶</a></h2>
+<p>See <em class="xref py py-obj">VSOClient.query_legacy</em></p>
+</div>
+<div class="section" id="module-documentation">
+<h2>Module documentation<a class="headerlink" href="#module-documentation" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">VSO</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#standard-queries">Standard Queries</a><ul>
+<li><a class="reference internal" href="#available-attributes">Available attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#legacy-queries">Legacy Queries</a></li>
+<li><a class="reference internal" href="#module-documentation">Module documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="time.html"
+                        title="previous chapter">Time</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="wcs.html"
+                        title="next chapter">WCS</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/vso.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="wcs.html" title="WCS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="time.html" title="Time"
+             >previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >SunPy Code Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

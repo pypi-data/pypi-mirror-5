@@ -1,0 +1,168 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Lightcurves &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="lightcurves">
+<h1>Lightcurves<a class="headerlink" href="#lightcurves" title="Permalink to this headline">¶</a></h1>
+<p>Time series data are a fundamental part of many data analysis projects as much in
+heliophysics as other areas. SunPy therefore provides a lightcurve object to deal
+with this data type. Thankfully most of the heavy lifting in this area has already been
+done for us. The lightcurve object makes use of the <a href="#id1"><span class="problematic" id="id2">`pandas &lt;http://pandas.pydata.org/`_</span></a>
+python module. Pandas is a high-quality and optimized module which is in use in a wide
+variety of academic and commercial fields, including Finance, Neuroscience, Economics,
+Statistics, Advertising, and Web Analytics. The lightcurve object is essentially a wrapper
+around a pandas dataframe object which holds some of the meta-data from the original
+data source. In this tutorial we provide a quick introduction to
+the lightcurve object and pandas. We highly recommend any user of the lightcurve object
+take a look at the great <a href="#id3"><span class="problematic" id="id4">`pandas documentation &lt;http://pandas.pydata.org/pandas-docs/stable/`_</span></a>.
+for more information.</p>
+</div>
+<div class="section" id="data-support">
+<h1>Data Support<a class="headerlink" href="#data-support" title="Permalink to this headline">¶</a></h1>
+<p>The lightcurve object currently supports the following data sources</p>
+<ul class="simple">
+<li>SDO/EVE</li>
+<li>GOES XRS</li>
+<li>PROBA2/LYRA</li>
+</ul>
+<div class="section" id="creating-a-lightcurve">
+<h2>1. Creating a Lightcurve<a class="headerlink" href="#creating-a-lightcurve" title="Permalink to this headline">¶</a></h2>
+<p>A LightCurve object consists of two parts - times, and measurements which were taken at
+those times.</p>
+<p>A LightCurve object must be supplied with some data when it is created.  The data
+can either be in your current Python session, in a local file, or in a remote file.
+Let&#8217;s create some fake data and pass it into a LightCurve object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sunpy.lightcurve</span> <span class="kn">import</span> <span class="n">LightCurve</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">light_curve</span> <span class="o">=</span> <span class="n">LightCurve</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s">&quot;param1&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)})</span>
+</pre></div>
+</div>
+<p>The first line imports the lightcurve object.  Let&#8217;s look at the argument in LightCurve.create.
+The argument is a dictionary that contains a single entry with key &#8220;param1&#8221; with a value
+of a list of 1440 entries (from 0 to 1439) - these are our &#8216;fake data&#8217; measurements.  Since
+no other times are provided, a default set of times are provided.  You can provide your own times
+very simply using the &#8216;index&#8217; keyword, as is shown below.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dates</span> <span class="o">=</span> <span class="p">[</span><span class="n">base</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">light_curve</span> <span class="o">=</span> <span class="n">LightCurve</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s">&quot;param1&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)},</span> <span class="n">index</span><span class="o">=</span><span class="n">dates</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This gives the measurements &#8220;param1&#8221; a set of times, in this case, 1440 minutes beginning at the
+current local time.</p>
+<p>The LightCurve object contains two basic attributes, &#8216;data&#8217; and &#8216;header&#8217;.  The &#8216;data&#8217; attribute
+is either a pandas TimeSeries object or a pandas DataFrame (a generalization of the TimeSeries
+object).  These data objects have very powerful methods for handling data based on times.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Lightcurves</a></li>
+<li><a class="reference internal" href="#data-support">Data Support</a><ul>
+<li><a class="reference internal" href="#creating-a-lightcurve">1. Creating a Lightcurve</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/guide/lightcurve.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

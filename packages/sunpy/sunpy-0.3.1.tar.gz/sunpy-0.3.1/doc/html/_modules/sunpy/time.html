@@ -1,0 +1,339 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sunpy.time &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../../index.html" />
+    <link rel="up" title="sunpy" href="../sunpy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../sunpy.html" accesskey="U">sunpy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for sunpy.time</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Time related functionality&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">julian</span>
+<span class="kn">import</span> <span class="nn">timerange</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">sunpy.time.timerange</span> <span class="kn">import</span> <span class="n">TimeRange</span>
+<span class="kn">from</span> <span class="nn">sunpy.time.julian</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;parse_time&quot;</span><span class="p">,</span> <span class="s">&quot;day_of_year&quot;</span><span class="p">,</span> <span class="s">&quot;break_time&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">+=</span> <span class="n">julian</span><span class="o">.</span><span class="n">__all__</span>
+<span class="n">__all__</span> <span class="o">+=</span> <span class="n">timerange</span><span class="o">.</span><span class="n">__all__</span>
+
+
+<span class="c"># Mapping of time format codes to regular expressions.</span>
+<span class="n">REGEX</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;%Y&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;year&gt;\d{4})&#39;</span><span class="p">,</span>
+    <span class="s">&#39;%m&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;month&gt;\d{1,2})&#39;</span><span class="p">,</span>
+    <span class="s">&#39;</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;day&gt;\d{1,2})&#39;</span><span class="p">,</span>
+    <span class="s">&#39;%H&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;hour&gt;\d{1,2})&#39;</span><span class="p">,</span>
+    <span class="s">&#39;%M&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;minute&gt;\d{1,2})&#39;</span><span class="p">,</span>
+    <span class="s">&#39;%S&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;second&gt;\d{1,2})&#39;</span><span class="p">,</span>
+    <span class="s">&#39;</span><span class="si">%f</span><span class="s">&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;microsecond&gt;\d+)&#39;</span><span class="p">,</span>
+    <span class="s">&#39;%b&#39;</span><span class="p">:</span> <span class="s">&#39;(?P&lt;month_str&gt;[a-zA-Z]+)&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">TIME_FORMAT_LIST</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">T%H:%M:%S.</span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span>    <span class="c"># Example 2007-05-04T21:08:12.999999</span>
+    <span class="s">&quot;%Y/%m/</span><span class="si">%d</span><span class="s">T%H:%M:%S.</span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span>    <span class="c"># Example 2007/05/04T21:08:12.999999</span>
+    <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">T%H:%M:%S.</span><span class="si">%f</span><span class="s">Z&quot;</span><span class="p">,</span>   <span class="c"># Example 2007-05-04T21:08:12.999Z</span>
+    <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">T%H:%M:%S&quot;</span><span class="p">,</span>       <span class="c"># Example 2007-05-04T21:08:12</span>
+    <span class="s">&quot;%Y/%m/</span><span class="si">%d</span><span class="s">T%H:%M:%S&quot;</span><span class="p">,</span>       <span class="c"># Example 2007/05/04T21:08:12</span>
+    <span class="s">&quot;%Y%m</span><span class="si">%d</span><span class="s">T%H%M%S.</span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span>        <span class="c"># Example 20070504T210812.999999</span>
+    <span class="s">&quot;%Y%m</span><span class="si">%d</span><span class="s">T%H%M%S&quot;</span><span class="p">,</span>           <span class="c"># Example 20070504T210812</span>
+    <span class="s">&quot;%Y/%m/</span><span class="si">%d</span><span class="s"> %H:%M:%S&quot;</span><span class="p">,</span>       <span class="c"># Example 2007/05/04 21:08:12</span>
+    <span class="s">&quot;%Y/%m/</span><span class="si">%d</span><span class="s"> %H:%M&quot;</span><span class="p">,</span>          <span class="c"># Example 2007/05/04 21:08</span>
+    <span class="s">&quot;%Y/%m/</span><span class="si">%d</span><span class="s"> %H:%M:%S.</span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span>    <span class="c"># Example 2007/05/04 21:08:12.999999</span>
+    <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s"> %H:%M:%S.</span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span>    <span class="c"># Example 2007-05-04 21:08:12.999999</span>
+    <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s"> %H:%M:%S&quot;</span><span class="p">,</span>       <span class="c"># Example 2007-05-04 21:08:12</span>
+    <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s"> %H:%M&quot;</span><span class="p">,</span>          <span class="c"># Example 2007-05-04 21:08</span>
+    <span class="s">&quot;%Y-%b-</span><span class="si">%d</span><span class="s"> %H:%M:%S&quot;</span><span class="p">,</span>       <span class="c"># Example 2007-May-04 21:08:12</span>
+    <span class="s">&quot;%Y-%b-</span><span class="si">%d</span><span class="s"> %H:%M&quot;</span><span class="p">,</span>          <span class="c"># Example 2007-May-04 21:08</span>
+    <span class="s">&quot;%Y-%b-</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">,</span>                <span class="c"># Example 2007-May-04</span>
+    <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">,</span>                <span class="c"># Example 2007-05-04</span>
+    <span class="s">&quot;%Y/%m/</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">,</span>                <span class="c"># Example 2007/05/04</span>
+    <span class="s">&quot;</span><span class="si">%d</span><span class="s">-%b-%Y&quot;</span><span class="p">,</span>                <span class="c"># Example 04-May-2007</span>
+    <span class="s">&quot;%Y%m</span><span class="si">%d</span><span class="s">_%H%M%S&quot;</span><span class="p">,</span>           <span class="c"># Example 20070504_210812</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_group_or_none</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">fun</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fun</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_n_or_eq</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
+
+<span class="k">def</span> <span class="nf">_regex_parse_time</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">format</span><span class="p">):</span>
+    <span class="c"># Parser for finding out the minute value so we can adjust the string</span>
+    <span class="c"># from 24:00:00 to 00:00:00 the next day because strptime does not</span>
+    <span class="c"># understand the former.</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">REGEX</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">format</span> <span class="o">=</span> <span class="n">format</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">format</span><span class="p">,</span> <span class="n">inp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s">&quot;hour&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">inp</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s">&quot;hour&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;24&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">_n_or_eq</span><span class="p">(</span><span class="n">_group_or_none</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="mo">00</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;minute&quot;</span><span class="p">,</span> <span class="s">&quot;second&quot;</span><span class="p">,</span> <span class="s">&quot;microsecond&quot;</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="n">from_</span><span class="p">,</span> <span class="n">to</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">span</span><span class="p">(</span><span class="s">&quot;hour&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inp</span><span class="p">[:</span><span class="n">from_</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;00&quot;</span> <span class="o">+</span> <span class="n">inp</span><span class="p">[</span><span class="n">to</span><span class="p">:],</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inp</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">find_time</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">format</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return iterator of occurences of date formatted with format</span>
+<span class="sd">    in string. Currently supported format codes: &quot;&quot;&quot;</span>
+    <span class="n">re_format</span> <span class="o">=</span> <span class="n">format</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">REGEX</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">re_format</span> <span class="o">=</span> <span class="n">re_format</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">re_format</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">matchstr</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="o">*</span><span class="n">match</span><span class="o">.</span><span class="n">span</span><span class="p">())]</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">matchstr</span><span class="p">,</span> <span class="n">format</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">dt</span>
+
+
+<span class="n">find_time</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">+=</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">REGEX</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">_iter_empty</span><span class="p">(</span><span class="nb">iter</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">iter</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="bp">False</span>
+
+
+<span class="k">def</span> <span class="nf">extract_time</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Find subset of string that corresponds to a datetime and return</span>
+<span class="sd">    its value as a a datetime. If more than one or none is found, raise</span>
+<span class="sd">    ValueError. &quot;&quot;&quot;</span>
+    <span class="n">matched</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">bestmatch</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">for</span> <span class="n">time_format</span> <span class="ow">in</span> <span class="n">TIME_FORMAT_LIST</span><span class="p">:</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">find_time</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">time_format</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">found</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">matched</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">time_format</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">matched</span><span class="p">):</span>
+                    <span class="c"># Already matched is a substring of the one just matched.</span>
+                    <span class="n">matched</span> <span class="o">=</span> <span class="n">time_format</span>
+                    <span class="n">bestmatch</span> <span class="o">=</span> <span class="n">match</span>
+                <span class="k">elif</span> <span class="ow">not</span> <span class="n">matched</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">time_format</span><span class="p">):</span>
+                    <span class="c"># If just matched is substring of time_format, just ignore</span>
+                    <span class="c"># just matched.</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Ambiguous string&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">matched</span> <span class="o">=</span> <span class="n">time_format</span>
+                <span class="n">bestmatch</span> <span class="o">=</span> <span class="n">match</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_iter_empty</span><span class="p">(</span><span class="n">found</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Ambiguous string&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matched</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Time not found&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">bestmatch</span>
+
+
+<div class="viewcode-block" id="parse_time"><a class="viewcode-back" href="../../reference/time.html#sunpy.time.parse_time">[docs]</a><span class="k">def</span> <span class="nf">parse_time</span><span class="p">(</span><span class="n">time_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a time string will parse and return a datetime object.</span>
+<span class="sd">    Similar to the anytim function in IDL.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_string : string</span>
+<span class="sd">        Datestring to parse</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : datetime</span>
+<span class="sd">        DateTime corresponding to input date string</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.time.parse_time(&#39;2012/08/01&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.time.parse_time(&#39;2005-08-04T00:01:02.000Z&#39;)</span>
+
+<span class="sd">    .. todo:: add ability to parse tai (International Atomic Time seconds since </span>
+<span class="sd">    Jan 1, 1958)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_string</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">parse_time</span><span class="p">,</span> <span class="n">time_string</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_string</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">time_string</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_string</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="c">#Simple checking to see if the tuple is intended as input to datetime</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_string</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> \
+           <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_string</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">))</span> <span class="ow">and</span> \
+           <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">time_string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">9999</span> <span class="ow">and</span> \
+           <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_string</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">))</span> <span class="ow">and</span> \
+           <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">time_string</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">12</span> <span class="ow">and</span> \
+           <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_string</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">))</span> <span class="ow">and</span> \
+           <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">time_string</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">31</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="o">*</span><span class="n">time_string</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">parse_time</span><span class="p">,</span> <span class="n">time_string</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_string</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">1979</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_string</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">time_format</span> <span class="ow">in</span> <span class="n">TIME_FORMAT_LIST</span><span class="p">:</span> 
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ts</span><span class="p">,</span> <span class="n">time_delta</span> <span class="o">=</span> <span class="n">_regex_parse_time</span><span class="p">(</span><span class="n">time_string</span><span class="p">,</span> <span class="n">time_format</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="n">ts</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">time_format</span><span class="p">)</span> <span class="o">+</span> <span class="n">time_delta</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+    
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid time string!&quot;</span> <span class="o">%</span> <span class="n">time_string</span><span class="p">)</span>
+    </div>
+<span class="k">def</span> <span class="nf">is_time</span><span class="p">(</span><span class="n">time</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns true if the input is a valid date/time representation&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">parse_time</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+<div class="viewcode-block" id="day_of_year"><a class="viewcode-back" href="../../reference/time.html#sunpy.time.day_of_year">[docs]</a><span class="k">def</span> <span class="nf">day_of_year</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the day of year.&quot;&quot;&quot;</span>
+    <span class="n">SECONDS_IN_DAY</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mf">24.0</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">time_diff</span> <span class="o">=</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">datetime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">time_diff</span><span class="o">.</span><span class="n">days</span> <span class="o">+</span> <span class="n">time_diff</span><span class="o">.</span><span class="n">seconds</span> <span class="o">/</span> <span class="n">SECONDS_IN_DAY</span>
+    <span class="k">return</span> <span class="n">result</span>
+</div>
+<div class="viewcode-block" id="break_time"><a class="viewcode-back" href="../../reference/time.html#sunpy.time.break_time">[docs]</a><span class="k">def</span> <span class="nf">break_time</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a time returns a string. Useful for naming files.&quot;&quot;&quot;</span>
+    <span class="c">#TODO: should be able to handle a time range</span>
+    <span class="k">return</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%Y%m</span><span class="si">%d</span><span class="s">_%H%M%S&quot;</span><span class="p">)</span>
+
+</div>
+<span class="k">def</span> <span class="nf">get_day</span><span class="p">(</span><span class="n">dt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return datetime for the beginning of the day of given datetime. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../sunpy.html" >sunpy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

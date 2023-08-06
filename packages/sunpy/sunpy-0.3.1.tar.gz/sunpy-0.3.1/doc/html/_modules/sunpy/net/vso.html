@@ -1,0 +1,897 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sunpy.net.vso &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="sunpy" href="../../sunpy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../sunpy.html" accesskey="U">sunpy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for sunpy.net.vso</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Author: Florian Mayer &lt;florian.mayer@bitsrc.org&gt;</span>
+<span class="c">#</span>
+<span class="c"># This module was developed with funding provided by</span>
+<span class="c"># the ESA Summer of Code (2011).</span>
+<span class="c">#</span>
+<span class="c">#pylint: disable=W0401,C0103,R0904,W0141</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides a wrapper around the VSO API.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">string</span> <span class="kn">import</span> <span class="n">ascii_lowercase</span>
+<span class="kn">from</span> <span class="nn">suds</span> <span class="kn">import</span> <span class="n">client</span><span class="p">,</span> <span class="n">TypeNotFound</span>
+
+<span class="kn">from</span> <span class="nn">sunpy</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">sunpy.net</span> <span class="kn">import</span> <span class="n">download</span>
+<span class="kn">from</span> <span class="nn">sunpy.net.util</span> <span class="kn">import</span> <span class="n">get_filename</span><span class="p">,</span> <span class="n">slugify</span>
+<span class="kn">from</span> <span class="nn">sunpy.net.attr</span> <span class="kn">import</span> <span class="n">and_</span><span class="p">,</span> <span class="n">Attr</span>
+<span class="kn">from</span> <span class="nn">sunpy.net.vso.attrs</span> <span class="kn">import</span> <span class="n">walker</span><span class="p">,</span> <span class="n">TIMEFORMAT</span>
+<span class="kn">from</span> <span class="nn">sunpy.util.util</span> <span class="kn">import</span> <span class="n">to_angstrom</span><span class="p">,</span> <span class="n">print_table</span><span class="p">,</span> <span class="n">replacement_filename</span>
+<span class="kn">from</span> <span class="nn">sunpy.time</span> <span class="kn">import</span> <span class="n">parse_time</span>
+
+<span class="n">DEFAULT_URL</span> <span class="o">=</span> <span class="s">&#39;http://docs.virtualsolar.org/WSDL/VSOi_rpc_literal.wsdl&#39;</span>
+<span class="n">DEFAULT_PORT</span> <span class="o">=</span> <span class="s">&#39;nsoVSOi&#39;</span>
+<span class="n">RANGE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(\d+)(\s*-\s*(\d+))?(\s*([a-zA-Z]+))?&#39;</span><span class="p">)</span>
+
+
+<span class="c"># TODO: Name</span>
+<div class="viewcode-block" id="NoData"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.NoData">[docs]</a><span class="k">class</span> <span class="nc">NoData</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Risen for callbacks of VSOClient that are unable to supply</span>
+<span class="sd">    information for the request. &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<span class="k">class</span> <span class="nc">_Str</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Subclass of string that contains a meta attribute for the</span>
+<span class="sd">    record_item associated with the file. &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="c"># ----------------------------------------</span>
+
+<div class="viewcode-block" id="Results"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.Results">[docs]</a><span class="k">class</span> <span class="nc">Results</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returned by VSOClient.get. Use .wait to wait</span>
+<span class="sd">    for completion of download.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">map_</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="n">done</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evt</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    
+<div class="viewcode-block" id="Results.submit"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.Results.submit">[docs]</a>    <span class="k">def</span> <span class="nf">submit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Submit</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keys : list</span>
+<span class="sd">            names under which to save the value</span>
+<span class="sd">        value : object</span>
+<span class="sd">            value to save</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">map_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poke</span><span class="p">()</span>
+    </div>
+    <span class="k">def</span> <span class="nf">poke</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="sd">&quot;&quot;&quot; Signal completion of one item that was waited for. This can be</span>
+<span class="sd">        because it was submitted, because it lead to an error or for any</span>
+<span class="sd">        other reason. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">map_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map_</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map_</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="Results.require"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.Results.require">[docs]</a>    <span class="k">def</span> <span class="nf">require</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Require that keys be submitted before the Results object is</span>
+<span class="sd">        finished (i.e., wait returns). Returns a callback method that can</span>
+<span class="sd">        be used to submit the result by simply calling it with the result.</span>
+<span class="sd">        </span>
+<span class="sd">        keys : list</span>
+<span class="sd">            name of keys under which to save the result</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">submit</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Results.wait"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.Results.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Wait for result to be complete and return it. &quot;&quot;&quot;</span>
+        <span class="c"># Giving wait a timeout somehow circumvents a CPython bug that the</span>
+        <span class="c"># call gets ininterruptible.</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">evt</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_</span>
+    </div>
+<div class="viewcode-block" id="Results.add_error"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.Results.add_error">[docs]</a>    <span class="k">def</span> <span class="nf">add_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Signal a required result cannot be submitted because of an</span>
+<span class="sd">        error. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exception</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poke</span><span class="p">()</span>
+
+</div></div>
+<span class="k">def</span> <span class="nf">_parse_waverange</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="n">min_</span><span class="p">,</span> <span class="n">max_</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">RANGE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()[::</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&#39;wave_wavemin&#39;</span><span class="p">:</span> <span class="n">min_</span><span class="p">,</span>
+        <span class="s">&#39;wave_wavemax&#39;</span><span class="p">:</span> <span class="n">min_</span> <span class="k">if</span> <span class="n">max_</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">max_</span><span class="p">,</span>
+        <span class="s">&#39;wave_waveunit&#39;</span><span class="p">:</span> <span class="s">&#39;Angstrom&#39;</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">unit</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_date</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; - &#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s">&#39;time_start&#39;</span><span class="p">:</span> <span class="n">start</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="s">&#39;time_end&#39;</span><span class="p">:</span> <span class="n">end</span><span class="o">.</span><span class="n">strip</span><span class="p">()}</span>
+
+
+<span class="k">def</span> <span class="nf">iter_records</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">prov_item</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">provideritem</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">prov_item</span><span class="p">,</span> <span class="s">&#39;record&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">prov_item</span><span class="o">.</span><span class="n">record</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">record_item</span> <span class="ow">in</span> <span class="n">prov_item</span><span class="o">.</span><span class="n">record</span><span class="o">.</span><span class="n">recorditem</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">record_item</span>
+
+
+<span class="k">def</span> <span class="nf">iter_errors</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">prov_item</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">provideritem</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">prov_item</span><span class="p">,</span> <span class="s">&#39;record&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">prov_item</span><span class="o">.</span><span class="n">record</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">prov_item</span>
+
+
+<span class="k">class</span> <span class="nc">QueryResponse</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lst</span><span class="p">,</span> <span class="n">queryresult</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">QueryResponse</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queryresult</span> <span class="o">=</span> <span class="n">queryresult</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">query</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Furtherly reduce the query response by matching it against</span>
+<span class="sd">        another query, e.g. response.query(attrs.Instrument(&#39;aia&#39;)). &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">QueryResponse</span><span class="p">(</span>
+            <span class="n">attrs</span><span class="o">.</span><span class="n">filter_results</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">queryresult</span>
+        <span class="p">)</span>
+    
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">queryresult</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">iter_records</span><span class="p">(</span><span class="n">queryresult</span><span class="p">),</span> <span class="n">queryresult</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">total_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Total size of data in KB. May be less than the actual</span>
+<span class="sd">        size because of inaccurate data providers. &quot;&quot;&quot;</span>
+        <span class="c"># Warn about -1 values?</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">num_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return number of records. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">time_range</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return total time-range all records span across. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+                <span class="nb">min</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">start</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span>
+                  <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">),</span> <span class="n">TIMEFORMAT</span><span class="p">),</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+                <span class="nb">max</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">end</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span>
+                  <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">end</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">),</span> <span class="n">TIMEFORMAT</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print out human-readable summary of records retrieved&quot;&quot;&quot;</span>
+
+        <span class="n">table</span> <span class="o">=</span> <span class="p">[</span>
+          <span class="p">[</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">TIMEFORMAT</span><span class="p">))</span>
+              <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="s">&#39;N/A&#39;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">TIMEFORMAT</span><span class="p">))</span>
+              <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">end</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="s">&#39;N/A&#39;</span><span class="p">,</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">extent</span><span class="o">.</span><span class="n">type</span>
+              <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">extent</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="s">&#39;N/A&#39;</span>
+          <span class="p">]</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+        <span class="n">table</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;----------&#39;</span><span class="p">,</span><span class="s">&#39;--------&#39;</span><span class="p">,</span><span class="s">&#39;------&#39;</span><span class="p">,</span><span class="s">&#39;----------&#39;</span><span class="p">,</span><span class="s">&#39;----&#39;</span><span class="p">])</span>        
+        <span class="n">table</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;Start time&#39;</span><span class="p">,</span><span class="s">&#39;End time&#39;</span><span class="p">,</span><span class="s">&#39;Source&#39;</span><span class="p">,</span><span class="s">&#39;Instrument&#39;</span><span class="p">,</span><span class="s">&#39;Type&#39;</span><span class="p">])</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="n">print_table</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">colsep</span> <span class="o">=</span> <span class="s">&#39;  &#39;</span><span class="p">,</span> <span class="n">linesep</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">))</span>
+            
+    <span class="k">def</span> <span class="nf">add_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exception</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">DownloadFailed</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">MissingInformation</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">UnknownMethod</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">MultipleChoices</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">UnknownVersion</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">UnknownStatus</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<div class="viewcode-block" id="VSOClient"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient">[docs]</a><span class="k">class</span> <span class="nc">VSOClient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Main VSO Client. &quot;&quot;&quot;</span>
+    <span class="n">method_order</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s">&#39;URL-TAR_GZ&#39;</span><span class="p">,</span> <span class="s">&#39;URL-ZIP&#39;</span><span class="p">,</span> <span class="s">&#39;URL-TAR&#39;</span><span class="p">,</span> <span class="s">&#39;URL-FILE&#39;</span><span class="p">,</span> <span class="s">&#39;URL-packaged&#39;</span>
+    <span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">api</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">api</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">url</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">url</span> <span class="o">=</span> <span class="n">DEFAULT_URL</span>
+            <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="n">DEFAULT_PORT</span>
+            
+            <span class="n">api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="n">api</span><span class="o">.</span><span class="n">set_options</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api</span> <span class="o">=</span> <span class="n">api</span>
+    
+    <span class="k">def</span> <span class="nf">make</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">type_</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">split</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">)</span>
+            <span class="n">tip</span> <span class="o">=</span> <span class="n">split</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">rest</span> <span class="o">=</span> <span class="n">split</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="n">item</span> <span class="o">=</span> <span class="n">obj</span>
+            <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">rest</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="n">elem</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="c"># Do not throw away type information for dicts.</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                    <span class="n">item</span><span class="p">[</span><span class="n">tip</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">item</span><span class="p">[</span><span class="n">tip</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">return</span> <span class="n">obj</span>
+    
+<div class="viewcode-block" id="VSOClient.query"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">query</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Query data from the VSO with the new API. Takes a variable number</span>
+<span class="sd">        of attributes as parameter, which are chained together using AND.</span>
+<span class="sd">        </span>
+<span class="sd">        The new query language allows complex queries to be easily formed.</span>
+<span class="sd">        </span>
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Query all data from eit or aia between 2010-01-01T00:00 and</span>
+<span class="sd">        2010-01-01T01:00.</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; client.query(</span>
+<span class="sd">        ...    vso.Time(datetime(2010, 1, 1), datetime(2010, 1, 1, 1)),</span>
+<span class="sd">        ...    vso.Instrument(&#39;eit&#39;) | vso.Instrument(&#39;aia&#39;)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        out : :py:class:`QueryResult` (enhanced list) of matched items. Return value of same type as the one of :py:meth:`VSOClient.query`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">query</span><span class="p">)</span>
+        
+        <span class="n">responses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">walker</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s">&#39;QueryRequest&#39;</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">TypeNotFound</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">QueryResponse</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">responses</span><span class="p">))</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">QueryResponse</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">responses</span><span class="p">))</span>
+    </div>
+    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queryresponses</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">queryresponses</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">queryresponses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="n">fileids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">providers</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">for</span> <span class="n">queryresponse</span> <span class="ow">in</span> <span class="n">queryresponses</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">provideritem</span> <span class="ow">in</span> <span class="n">queryresponse</span><span class="o">.</span><span class="n">provideritem</span><span class="p">:</span>
+                <span class="n">provider</span> <span class="o">=</span> <span class="n">provideritem</span><span class="o">.</span><span class="n">provider</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">provideritem</span><span class="p">,</span> <span class="s">&#39;record&#39;</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">provideritem</span><span class="o">.</span><span class="n">record</span><span class="p">,</span> <span class="s">&#39;recorditem&#39;</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">provideritem</span><span class="o">.</span><span class="n">provider</span> <span class="ow">in</span> <span class="n">providers</span><span class="p">:</span>
+                    <span class="n">providers</span><span class="p">[</span><span class="n">provider</span><span class="p">]</span> <span class="o">=</span> <span class="n">provideritem</span>
+                    <span class="n">fileids</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span>
+                        <span class="n">record_item</span><span class="o">.</span><span class="n">fileid</span>
+                        <span class="k">for</span> <span class="n">record_item</span> <span class="ow">in</span> <span class="n">provideritem</span><span class="o">.</span><span class="n">record</span><span class="o">.</span><span class="n">recorditem</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">record_item</span> <span class="ow">in</span> <span class="n">provideritem</span><span class="o">.</span><span class="n">record</span><span class="o">.</span><span class="n">recorditem</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">record_item</span><span class="o">.</span><span class="n">fileid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fileids</span><span class="p">:</span>
+                            <span class="n">fileids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">record_item</span><span class="o">.</span><span class="n">fileid</span><span class="p">)</span>
+                            <span class="n">providers</span><span class="p">[</span><span class="n">provider</span><span class="p">]</span><span class="o">.</span><span class="n">record</span><span class="o">.</span><span class="n">recorditem</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="n">record_item</span>
+                            <span class="p">)</span>
+                            <span class="n">providers</span><span class="p">[</span><span class="n">provider</span><span class="p">]</span><span class="o">.</span><span class="n">no_of_records_found</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="n">providers</span><span class="p">[</span><span class="n">provider</span><span class="p">]</span><span class="o">.</span><span class="n">no_of_records_returned</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s">&#39;QueryResponse&#39;</span><span class="p">,</span> <span class="n">provideritem</span><span class="o">=</span><span class="n">providers</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">mk_filename</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">get_filename</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">fileid</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">fileid</span><span class="p">,</span> <span class="s">&quot;ascii&quot;</span><span class="p">,</span> <span class="s">&quot;ignore&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">fileid</span>
+
+        <span class="n">fs_encoding</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">getfilesystemencoding</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">fs_encoding</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">fs_encoding</span> <span class="o">=</span> <span class="s">&quot;ascii&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">fs_encoding</span><span class="p">,</span> <span class="s">&quot;ignore&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;file&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">replacement_filename</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        
+        <span class="n">dir_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dir_</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dir_</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fname</span>
+    
+    <span class="c"># pylint: disable=R0914</span>
+<div class="viewcode-block" id="VSOClient.query_legacy"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.query_legacy">[docs]</a>    <span class="k">def</span> <span class="nf">query_legacy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tstart</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tend</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Query data from the VSO mocking the IDL API as close as possible.</span>
+<span class="sd">        Either tstart and tend or date_start and date_end or date have</span>
+<span class="sd">        to be supplied.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tstart : datetime.datetime</span>
+<span class="sd">            Start of the time-range in which records are searched.</span>
+<span class="sd">        tend : datetime.datetime</span>
+<span class="sd">            Start of the time-range in which records are searched.</span>
+<span class="sd">        date : str</span>
+<span class="sd">            (start date) - (end date)</span>
+<span class="sd">        start_date : datetime</span>
+<span class="sd">            the start date</span>
+<span class="sd">        end_date : datetime</span>
+<span class="sd">            the end date</span>
+<span class="sd">        wave : str</span>
+<span class="sd">            (min) - (max) (unit)</span>
+<span class="sd">        min_wave : str</span>
+<span class="sd">            minimum spectral range</span>
+<span class="sd">        max_wave : str</span>
+<span class="sd">            maximum spectral range</span>
+<span class="sd">        unit_wave : str</span>
+<span class="sd">            spectral range units (Angstrom, GHz, keV)</span>
+<span class="sd">        extent : str</span>
+<span class="sd">            VSO &#39;extent type&#39; ... (FULLDISK, CORONA, LIMB, etc)</span>
+<span class="sd">        physobj : str</span>
+<span class="sd">            VSO &#39;physical observable&#39;</span>
+<span class="sd">        provider : str</span>
+<span class="sd">            VSO ID for the data provider (SDAC, NSO, SHA, MSU, etc)</span>
+<span class="sd">        source : str</span>
+<span class="sd">            spacecraft or observatory (SOHO, YOHKOH, BBSO, etc)</span>
+<span class="sd">            synonyms : spacecraft, observatory</span>
+<span class="sd">        instrument : str</span>
+<span class="sd">            instrument ID (EIT, SXI-0, SXT, etc)</span>
+<span class="sd">            synonyms : telescope, inst</span>
+<span class="sd">        detector : str</span>
+<span class="sd">            detector ID (C3, EUVI, COR2, etc.)</span>
+<span class="sd">        layout : str</span>
+<span class="sd">            layout of the data (image, spectrum, time_series, etc.)</span>
+
+<span class="sd">        level : str </span>
+<span class="sd">            level of the data product (numeric range, see below)</span>
+<span class="sd">        pixels : str</span>
+<span class="sd">            number of pixels (numeric range, see below)</span>
+<span class="sd">        resolution : str</span>
+<span class="sd">            effective resolution (1 = full, 0.5 = 2x2 binned, etc)</span>
+<span class="sd">            numeric range, see below.</span>
+<span class="sd">        pscale : str</span>
+<span class="sd">            pixel scale, in arcseconds (numeric range, see below)</span>
+<span class="sd">        near_time : datetime</span>
+<span class="sd">            return record closest to the time.  See below.</span>
+<span class="sd">        sample : int</span>
+<span class="sd">            attempt to return only one record per SAMPLE seconds.  See below.</span>
+<span class="sd">        </span>
+<span class="sd">        Numeric Ranges:</span>
+<span class="sd">        </span>
+<span class="sd">            - May be entered as a string or any numeric type for equality matching</span>
+<span class="sd">            - May be a string of the format &#39;(min) - (max)&#39; for range matching</span>
+<span class="sd">            - May be a string of the form &#39;(operator) (number)&#39; where operator is one of: lt gt le ge &lt; &gt; &lt;= &gt;=</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Query all data from eit between 2010-01-01T00:00 and</span>
+<span class="sd">        2010-01-01T01:00.</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; qr = client.query_legacy(</span>
+<span class="sd">        ...     datetime(2010, 1, 1), datetime(2010, 1, 1, 1), instrument=&#39;eit&#39;)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        out : :py:class:`QueryResult` (enhanced list) of matched items. Return value of same type as the one of :py:class:`VSOClient.query`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sdk</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">}</span>
+        <span class="n">ALIASES</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;wave_min&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_wavemin&#39;</span><span class="p">),</span>
+            <span class="s">&#39;wave_max&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_wavemax&#39;</span><span class="p">),</span>
+            <span class="s">&#39;wave_type&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_wavetype&#39;</span><span class="p">),</span>
+            <span class="s">&#39;wave_unit&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_waveunit&#39;</span><span class="p">),</span>
+            <span class="s">&#39;min_wave&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_wavemin&#39;</span><span class="p">),</span>
+            <span class="s">&#39;max_wave&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_wavemax&#39;</span><span class="p">),</span>
+            <span class="s">&#39;type_wave&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_wavetype&#39;</span><span class="p">),</span>
+            <span class="s">&#39;unit_wave&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;wave_waveunit&#39;</span><span class="p">),</span>
+            <span class="s">&#39;wave&#39;</span><span class="p">:</span> <span class="n">_parse_waverange</span><span class="p">,</span>
+            <span class="s">&#39;inst&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;instrument&#39;</span><span class="p">),</span>
+            <span class="s">&#39;telescope&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;instrument&#39;</span><span class="p">),</span>
+            <span class="s">&#39;spacecraft&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;source&#39;</span><span class="p">),</span>
+            <span class="s">&#39;observatory&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;source&#39;</span><span class="p">),</span>
+            <span class="s">&#39;start_date&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;time_start&#39;</span><span class="p">),</span>
+            <span class="s">&#39;end_date&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;time_end&#39;</span><span class="p">),</span>
+            <span class="s">&#39;start&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;time_start&#39;</span><span class="p">),</span>
+            <span class="s">&#39;end&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;time_end&#39;</span><span class="p">),</span>
+            <span class="s">&#39;near_time&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;time_near&#39;</span><span class="p">),</span>
+            <span class="s">&#39;date&#39;</span><span class="p">:</span> <span class="n">_parse_date</span><span class="p">,</span>
+            <span class="s">&#39;layout&#39;</span><span class="p">:</span> <span class="n">sdk</span><span class="p">(</span><span class="s">&#39;datatype&#39;</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">tstart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&#39;time_start&#39;</span><span class="p">:</span> <span class="n">tstart</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">tend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&#39;time_end&#39;</span><span class="p">:</span> <span class="n">tend</span><span class="p">})</span>
+        
+        <span class="n">queryreq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s">&#39;QueryRequest&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ALIASES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sdk</span><span class="p">(</span><span class="n">key</span><span class="p">))(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">):</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">TIMEFORMAT</span><span class="p">)</span>
+                <span class="n">attr</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)</span>
+                <span class="n">lst</span> <span class="o">=</span> <span class="n">attr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">rest</span> <span class="o">=</span> <span class="n">attr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                
+                <span class="c"># pylint: disable=E1103</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">queryreq</span><span class="o">.</span><span class="n">block</span>
+                <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">rest</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="n">elem</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unexpected argument </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">lst</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unexpected argument </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="n">lst</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Got multiple values for </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+                <span class="n">item</span><span class="p">[</span><span class="n">lst</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">QueryResponse</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">queryreq</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">TypeNotFound</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">QueryResponse</span><span class="p">([])</span>
+    </div>
+<div class="viewcode-block" id="VSOClient.latest"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.latest">[docs]</a>    <span class="k">def</span> <span class="nf">latest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return newest record (limited to last week). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_legacy</span><span class="p">(</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>  <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">(),</span>
+            <span class="n">time_near</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+        <span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="VSOClient.get"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_response</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;URL-FILE&#39;</span><span class="p">,),</span> <span class="n">downloader</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Download data specified in the query_response.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        query_response : sunpy.net.vso.QueryResponse</span>
+<span class="sd">            QueryResponse containing the items to be downloaded.</span>
+<span class="sd">        path : str</span>
+<span class="sd">            Specify where the data is to be downloaded. Can refer to arbitrary</span>
+<span class="sd">            fields of the QueryResponseItem (instrument, source, time, ...) via</span>
+<span class="sd">            string formatting, moreover the file-name of the file downloaded can</span>
+<span class="sd">            be refered to as file, e.g.</span>
+<span class="sd">            &quot;{source}/{instrument}/{time.start}/{file}&quot;.</span>
+<span class="sd">        methods : {list of str}</span>
+<span class="sd">            Methods acceptable to user.</span>
+<span class="sd">        downloader : sunpy.net.downloader.Downloader</span>
+<span class="sd">            Downloader used to download the data.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        out : :py:class:`Results` object that supplies a list of filenames with meta attributes containing the respective QueryResponse.</span>
+<span class="sd">        </span>
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; res = get(qr).wait()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">downloader</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">downloader</span> <span class="o">=</span> <span class="n">download</span><span class="o">.</span><span class="n">Downloader</span><span class="p">()</span>
+            <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">downloader</span><span class="o">.</span><span class="n">reactor</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>
+            <span class="n">thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">Results</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">downloader</span><span class="o">.</span><span class="n">reactor</span><span class="o">.</span><span class="n">stop</span><span class="p">(),</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="k">lambda</span> <span class="n">mp</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">query_response</span><span class="p">,</span> <span class="n">mp</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">Results</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">mp</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">query_response</span><span class="p">,</span> <span class="n">mp</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;downloads&#39;</span><span class="p">,</span><span class="s">&#39;download_dir&#39;</span><span class="p">),</span>
+                                <span class="s">&#39;{file}&#39;</span><span class="p">)</span>
+        <span class="n">fileids</span> <span class="o">=</span> <span class="n">VSOClient</span><span class="o">.</span><span class="n">by_fileid</span><span class="p">(</span><span class="n">query_response</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fileids</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">poke</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_all</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">make_getdatarequest</span><span class="p">(</span><span class="n">query_response</span><span class="p">,</span> <span class="n">methods</span><span class="p">)</span>
+                <span class="p">),</span>
+            <span class="n">methods</span><span class="p">,</span> <span class="n">downloader</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span>
+            <span class="n">fileids</span><span class="p">,</span> <span class="n">res</span>
+        <span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">poke</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="n">query_response</span><span class="p">,</span> <span class="n">map_</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">map_</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">record_item</span> <span class="ow">in</span> <span class="n">query_response</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">_Str</span><span class="p">(</span><span class="n">map_</span><span class="p">[</span><span class="n">record_item</span><span class="o">.</span><span class="n">fileid</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c"># pylint: disable=W0201</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">meta</span> <span class="o">=</span> <span class="n">record_item</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+    
+    <span class="k">def</span> <span class="nf">make_getdatarequest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">methods</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">methods</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method_order</span> <span class="o">+</span> <span class="p">[</span><span class="s">&#39;URL&#39;</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_getdatarequest</span><span class="p">(</span>
+            <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">fileid</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">v</span><span class="p">])</span>
+                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_provider</span><span class="p">(</span><span class="n">response</span><span class="p">)</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()),</span>
+            <span class="n">methods</span>
+        <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">create_getdatarequest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make</span><span class="p">(</span>
+            <span class="s">&#39;VSOGetDataRequest&#39;</span><span class="p">,</span>
+            <span class="n">request__method__methodtype</span><span class="o">=</span><span class="n">methods</span><span class="p">,</span> 
+            <span class="n">request__info</span><span class="o">=</span><span class="n">info</span><span class="p">,</span>
+            <span class="n">request__datacontainer__datarequestitem</span><span class="o">=</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s">&#39;DataRequestItem&#39;</span><span class="p">,</span> <span class="n">provider</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">fileiditem__fileid</span><span class="o">=</span><span class="p">[</span><span class="n">v</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">map_</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    
+    <span class="c"># pylint: disable=R0913,R0912</span>
+    <span class="k">def</span> <span class="nf">download_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">dw</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">qr</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">GET_VERSION</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s">&#39;0.8&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s">&#39;0.7&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s">&#39;0.6&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">dresponse</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">getdataresponseitem</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="n">from_</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span> <span class="ow">in</span> <span class="n">GET_VERSION</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dresponse</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="s">&#39;0.6&#39;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">version</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">UnknownVersion</span><span class="p">(</span><span class="n">dresponse</span><span class="p">))</span>
+                <span class="k">continue</span>
+            
+            <span class="c"># If from_ and to are uninitialized, the else block of the loop</span>
+            <span class="c"># continues the outer loop and thus this code is never reached.</span>
+            <span class="c"># pylint: disable=W0631</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">dresponse</span><span class="o">.</span><span class="n">status</span><span class="p">[</span><span class="n">from_</span><span class="p">:</span><span class="n">to</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dresponse</span><span class="p">,</span> <span class="s">&#39;status&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s">&#39;200&#39;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;200&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">dataitem</span> <span class="ow">in</span> <span class="n">dresponse</span><span class="o">.</span><span class="n">getdataitem</span><span class="o">.</span><span class="n">dataitem</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">(</span>
+                            <span class="n">dresponse</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">methodtype</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="n">dataitem</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
+                            <span class="n">dw</span><span class="p">,</span>
+                            <span class="n">res</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">dataitem</span><span class="o">.</span><span class="n">fileiditem</span><span class="o">.</span><span class="n">fileid</span><span class="p">)),</span>
+                            <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">,</span>
+                            <span class="n">path</span><span class="p">,</span>
+                            <span class="n">qr</span><span class="p">[</span><span class="n">dataitem</span><span class="o">.</span><span class="n">fileiditem</span><span class="o">.</span><span class="n">fileid</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                        <span class="p">)</span>
+                    <span class="k">except</span> <span class="n">NoData</span><span class="p">:</span>
+                        <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">DownloadFailed</span><span class="p">(</span><span class="n">dresponse</span><span class="p">))</span>
+                        <span class="k">continue</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="c"># FIXME: Is this a good idea?</span>
+                        <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">DownloadFailed</span><span class="p">(</span><span class="n">dresponse</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;300&#39;</span> <span class="ow">or</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;412&#39;</span> <span class="ow">or</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;405&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;300&#39;</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">methods</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple_choices</span><span class="p">(</span>
+                            <span class="n">dresponse</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">methodtype</span><span class="p">,</span> <span class="n">dresponse</span>
+                        <span class="p">)</span>
+                    <span class="k">except</span> <span class="n">NoData</span><span class="p">:</span>
+                        <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">MultipleChoices</span><span class="p">(</span><span class="n">dresponse</span><span class="p">))</span>
+                        <span class="k">continue</span>
+                <span class="k">elif</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;412&#39;</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missing_information</span><span class="p">(</span>
+                            <span class="n">info</span><span class="p">,</span> <span class="n">dresponse</span><span class="o">.</span><span class="n">info</span>
+                        <span class="p">)</span>
+                    <span class="k">except</span> <span class="n">NoData</span><span class="p">:</span>
+                        <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">MissingInformation</span><span class="p">(</span><span class="n">dresponse</span><span class="p">))</span>
+                        <span class="k">continue</span>
+                <span class="k">elif</span> <span class="n">code</span> <span class="o">==</span> <span class="s">&#39;405&#39;</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">methods</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknown_method</span><span class="p">(</span><span class="n">dresponse</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="n">NoData</span><span class="p">:</span>
+                        <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">UnknownMethod</span><span class="p">(</span><span class="n">dresponse</span><span class="p">))</span>
+                        <span class="k">continue</span>
+                
+                <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">dataitem</span> <span class="ow">in</span> <span class="n">dresponse</span><span class="o">.</span><span class="n">getdataitem</span><span class="o">.</span><span class="n">dataitem</span><span class="p">:</span>
+                    <span class="n">files</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">dataitem</span><span class="o">.</span><span class="n">fileiditem</span><span class="o">.</span><span class="n">fileid</span><span class="p">)</span>
+                
+                <span class="n">request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_getdatarequest</span><span class="p">(</span>
+                    <span class="p">{</span><span class="n">dresponse</span><span class="o">.</span><span class="n">provider</span><span class="p">:</span> <span class="n">files</span><span class="p">},</span> <span class="n">methods</span><span class="p">,</span> <span class="n">info</span>
+                <span class="p">)</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">download_all</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">request</span><span class="p">),</span> <span class="n">methods</span><span class="p">,</span> <span class="n">dw</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span>
+                    <span class="n">qr</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">info</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">UnknownStatus</span><span class="p">(</span><span class="n">dresponse</span><span class="p">))</span>
+    
+<div class="viewcode-block" id="VSOClient.download"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.download">[docs]</a>    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">dw</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Override to costumize download action. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;URL&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">dw</span><span class="o">.</span><span class="n">reactor</span><span class="o">.</span><span class="n">call_sync</span><span class="p">(</span>
+                <span class="n">partial</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">download</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mk_filename</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">),</span>
+                        <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">raise</span> <span class="n">NoData</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">by_provider</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+        <span class="n">map_</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">map_</span><span class="p">[</span><span class="n">record</span><span class="o">.</span><span class="n">provider</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">map_</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">by_fileid</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">fileid</span><span class="p">,</span> <span class="n">record</span><span class="p">)</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">response</span>
+        <span class="p">)</span>
+    
+    <span class="c"># pylint: disable=W0613</span>
+<div class="viewcode-block" id="VSOClient.multiple_choices"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.multiple_choices">[docs]</a>    <span class="k">def</span> <span class="nf">multiple_choices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">choices</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Override to pick between multiple download choices. &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">method_order</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">choices</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">elem</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">NoData</span>
+    
+    <span class="c"># pylint: disable=W0613</span></div>
+<div class="viewcode-block" id="VSOClient.missing_information"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.missing_information">[docs]</a>    <span class="k">def</span> <span class="nf">missing_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Override to provide missing information. &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">NoData</span>
+    
+    <span class="c"># pylint: disable=W0613</span></div>
+<div class="viewcode-block" id="VSOClient.unknown_method"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.VSOClient.unknown_method">[docs]</a>    <span class="k">def</span> <span class="nf">unknown_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Override to pick a new method if the current one is unknown. &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">NoData</span>
+
+</div></div>
+<div class="viewcode-block" id="InteractiveVSOClient"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.InteractiveVSOClient">[docs]</a><span class="k">class</span> <span class="nc">InteractiveVSOClient</span><span class="p">(</span><span class="n">VSOClient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Client for use in the REPL. Prompts user for data if required. &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">multiple_choices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">choices</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">choices</span><span class="p">):</span>
+                <span class="k">print</span> <span class="s">&quot;(</span><span class="si">%d</span><span class="s">) </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">choice</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;Method number: &quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NoData</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">choice</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NoData</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">choice</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">choice</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NoData</span>
+            <span class="k">elif</span> <span class="n">choice</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">choice</span><span class="p">]]</span>
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                    <span class="k">continue</span>
+        
+    <span class="k">def</span> <span class="nf">missing_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="n">choice</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="n">field</span> <span class="o">+</span> <span class="s">&#39;: &#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">choice</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NoData</span>
+        <span class="k">return</span> <span class="n">choice</span>
+    
+<div class="viewcode-block" id="InteractiveVSOClient.search"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.InteractiveVSOClient.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; When passed an Attr object, perform new-style query;</span>
+<span class="sd">        otherwise, perform legacy query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Attr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_legacy</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_response</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;URL-FILE&#39;</span><span class="p">,),</span> <span class="n">downloader</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;{file}&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">VSOClient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_response</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">downloader</span><span class="p">)</span>
+
+</div>
+<span class="n">g_client</span> <span class="o">=</span> <span class="bp">None</span>
+<div class="viewcode-block" id="search"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.search">[docs]</a><span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c"># pylint: disable=W0603</span>
+    <span class="k">global</span> <span class="n">g_client</span>
+    <span class="k">if</span> <span class="n">g_client</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">g_client</span> <span class="o">=</span> <span class="n">InteractiveVSOClient</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">g_client</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<span class="n">search</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">InteractiveVSOClient</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">__doc__</span>
+
+<div class="viewcode-block" id="get"><a class="viewcode-back" href="../../../reference/vso.html#sunpy.net.vso.get">[docs]</a><span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">query_response</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;URL-FILE&#39;</span><span class="p">,),</span> <span class="n">downloader</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="c"># pylint: disable=W0603</span>
+    <span class="k">global</span> <span class="n">g_client</span>
+    <span class="k">if</span> <span class="n">g_client</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">g_client</span> <span class="o">=</span> <span class="n">InteractiveVSOClient</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">g_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">query_response</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">downloader</span><span class="p">)</span>
+</div>
+<span class="n">get</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">VSOClient</span><span class="o">.</span><span class="n">get</span><span class="o">.</span><span class="n">__doc__</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">sunpy.net</span> <span class="kn">import</span> <span class="n">vso</span>
+    
+    <span class="n">client</span> <span class="o">=</span> <span class="n">VSOClient</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+        <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Time</span><span class="p">((</span><span class="mi">2011</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2011</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)),</span>
+        <span class="n">vso</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="s">&#39;aia&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="c">#res = client.get(result, path=&quot;/download/path&quot;).wait()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../sunpy.html" >sunpy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

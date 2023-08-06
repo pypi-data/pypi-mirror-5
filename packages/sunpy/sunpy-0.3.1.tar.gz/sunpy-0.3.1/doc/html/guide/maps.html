@@ -1,0 +1,317 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Maps &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="SunPy User Guide" href="index.html" />
+    <link rel="next" title="Using SunPy’s HEK module" href="hek.html" />
+    <link rel="prev" title="Querying Helioviewer.org with SunPy" href="helioviewer.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="hek.html" title="Using SunPy’s HEK module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="helioviewer.html" title="Querying Helioviewer.org with SunPy"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="maps">
+<h1>Maps<a class="headerlink" href="#maps" title="Permalink to this headline">¶</a></h1>
+<p>Maps in SunPy are spatially-aware data arrays. In other words, they are 2-dimensional data associated with a coordinate system. In this guide, we will
+cover some of the basic functionality of maps. Once you&#8217;ve read through this guide check out the <a class="reference internal" href="../reference/index.html"><em>code reference</em></a> for a more
+thorough look at SunPy maps.</p>
+<div class="section" id="data-support">
+<h2>Data Support<a class="headerlink" href="#data-support" title="Permalink to this headline">¶</a></h2>
+<p>The map object currently supports the following data sources</p>
+<ul class="simple">
+<li>SDO/AIA</li>
+<li>STEREO/EUVI, STEREO/COR</li>
+<li>Hinode/XRT</li>
+<li>SOHO/EIT, SOHO/LASCO, SOHO/MDI</li>
+<li>PROBA2/SWAP</li>
+<li>Yohkoh/SXT</li>
+</ul>
+<div class="section" id="creating-maps">
+<h3>1. Creating maps<a class="headerlink" href="#creating-maps" title="Permalink to this headline">¶</a></h3>
+<p>SunPy contains a number of example fits files. To make things easy,
+SunPy includes several example files which are used throughout the docs. These
+files have names like <tt class="xref py py-obj docutils literal"><span class="pre">sunpy.AIA_171_IMAGE</span></tt> and <tt class="xref py py-obj docutils literal"><span class="pre">sunpy.RHESSI_IMAGE</span></tt>.
+To create the sample AIA map type the following into your interactive Python shell:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">sunpy</span>
+<span class="n">my_map</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">make_map</span><span class="p">(</span><span class="n">sunpy</span><span class="o">.</span><span class="n">AIA_171_IMAGE</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The variable my_map is a SunPy map. To create a map from a local fits file try
+something like the following</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_map</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">make_map</span><span class="p">(</span><span class="s">&#39;/mydirectory/mymap.fits&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>SunPy should automatically detect the type of file (e.g. fits), what instrument it is
+associated with (e.g. AIA, EIT, LASCO) and will automatically look in the appropriate places for the fits
+keywords it needs to interpret the coordinate system. If the type of fits file
+is not recognized then SunPy will try some default fits keywords but results
+may vary. The list of files which are currently supported by SunPy can be found by looking at the
+documentation for make_map(). SunPy can also create maps from the jpg2000 files from
+<em class="xref py py-obj">helioviewer.org</em>.</p>
+</div>
+<div class="section" id="creating-custom-maps">
+<h3>2. Creating Custom Maps<a class="headerlink" href="#creating-custom-maps" title="Permalink to this headline">¶</a></h3>
+<p>It is also possible to create maps using custom data from a simulation for example. To do this you
+need to provide make_map() with both the data array as well as some basic header information. If no
+header is given then some default values as assumed. Here is a simple example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">header</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;cdelt1&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s">&#39;cdelt2&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s">&#39;telescop&#39;</span><span class="p">:</span><span class="s">&#39;sunpy&#39;</span><span class="p">}</span>
+<span class="n">my_map</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">make_map</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The format of the header follows the fits standard.</p>
+</div>
+<div class="section" id="inspecting-maps">
+<h3>2. Inspecting maps<a class="headerlink" href="#inspecting-maps" title="Permalink to this headline">¶</a></h3>
+<p>A map contains a number of data-associated attributes. To get a quick look at your map simply
+type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_map</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">make_map</span><span class="p">(</span><span class="n">sunpy</span><span class="o">.</span><span class="n">AIA_171_IMAGE</span><span class="p">)</span>
+<span class="n">my_map</span>
+</pre></div>
+</div>
+<p>This will show a representation of the data as well as some of its associated
+attributes. A number of other attributes are also available, for example the date,
+exposure time, map center, xrange, yrange
+other:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">map_date</span> <span class="o">=</span> <span class="n">my_map</span><span class="o">.</span><span class="n">date</span>
+<span class="n">map_exptime</span> <span class="o">=</span> <span class="n">my_map</span><span class="o">.</span><span class="n">exposure_time</span>
+<span class="n">map_center</span> <span class="o">=</span> <span class="n">my_map</span><span class="o">.</span><span class="n">center</span>
+<span class="n">map_xrange</span> <span class="o">=</span> <span class="n">my_map</span><span class="o">.</span><span class="n">xrange</span>
+<span class="n">map_yrange</span> <span class="o">=</span> <span class="n">my_map</span><span class="o">.</span><span class="n">yrange</span>
+</pre></div>
+</div>
+<p>To get a list of all of the attributes check the documentation by typing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">help</span><span class="p">(</span><span class="n">my_map</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The header of the map can be accessed by using the following method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">header</span> <span class="o">=</span> <span class="n">my_map</span><span class="o">.</span><span class="n">get_header</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This returns a dictionary with the header information as read from the source
+file.</p>
+</div>
+<div class="section" id="getting-at-the-data">
+<h3>3. Getting at the data<a class="headerlink" href="#getting-at-the-data" title="Permalink to this headline">¶</a></h3>
+<p>As a SunPy map inherits from the NumPy ndarray it can be accessed in the same
+way, through indexing. For example, to get the 0th element in the array</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_map</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">my_map</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>One important fact to remember which is intially confusing is that the first index is for the
+y direction while the second index is for the x direction! For more information about indexing
+please refer to the <em class="xref py py-obj">Numpy documentation</em>.
+You can also check on the shape of the array with</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_map</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<p>If you&#8217;d like to rip the data out of the SunPy map to use elsewhere
+you can use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">aia_map</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The variable var is now simply a <em class="xref py py-obj">Numpy ndarray</em>. Fortunately this is not generally necessary
+as the SunPy map inherits directly from the NumPy ndarray and therefore applying NumPy methods
+directly on the SunPy map is generally safe. So one could, for example, apply the following code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">log_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">my_map</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The np.log() function will be applied on each element in the map data array as expected. A few NumPy
+ndarray methods are also directly available such as, for example, to find the maximum and mean
+in the map data just use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_map</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+<span class="n">my_map</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This is the advantage of inheritance!</p>
+</div>
+<div class="section" id="creating-a-plot-of-your-map">
+<h3>4. Creating a plot of your map<a class="headerlink" href="#creating-a-plot-of-your-map" title="Permalink to this headline">¶</a></h3>
+<p>The SunPy map object has its own built-in plot methods so that it is easy to
+quickly view your map on the screen. To create a plot just type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_map</span><span class="o">.</span><span class="n">peek</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This will open a matplotlib plot right on your screen.
+In addition, to enable users to modify the plot it is possible to grab the
+matplotlib figure object by using the plot() command instead of the show()
+command. This makes it possible to use the SunPy plot as the foundation for a
+more complicated figure.</p>
+</div>
+<div class="section" id="overlaying-maps">
+<h3>5. Overlaying Maps<a class="headerlink" href="#overlaying-maps" title="Permalink to this headline">¶</a></h3>
+<p>The make_map() method described above can also handle a list of maps. If the maps are
+of a different type (e.g. different instruments) than the result of make_map is
+what we call a Composite Map. So for example to create a simple composite map:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_maps</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">make_map</span><span class="p">([</span><span class="n">sunpy</span><span class="o">.</span><span class="n">EIT_195_IMAGE</span><span class="p">,</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">RHESSI_IMAGE</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>A Composite map is different from a regular map and therefore different associated methods.
+To list which maps are part of your composite map use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_maps</span><span class="o">.</span><span class="n">list_maps</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Similar to all SunPy data objects, the composite map also has an associated show() method and a
+number of associated methods to customize your plot. For example, the following code turns
+adds a new map, sets its transparency to 25%, turns on contours from 50% to 90% for the second map,
+and then plots the result:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_maps</span><span class="o">.</span><span class="n">add_map</span><span class="p">(</span><span class="n">sunpy</span><span class="o">.</span><span class="n">AIA_171_IMAGE</span><span class="p">)</span>
+<span class="n">my_maps</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">my_maps</span><span class="o">.</span><span class="n">set_levels</span><span class="p">(</span><span class="mi">1</span><span class="p">,[</span><span class="mi">50</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">70</span><span class="p">,</span><span class="mi">80</span><span class="p">,</span><span class="mi">90</span><span class="p">],</span> <span class="n">percent</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="n">my_maps</span><span class="o">.</span><span class="n">peek</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This is not a particularly pretty plot but it shows what SunPy can do!</p>
+</div>
+<div class="section" id="working-with-your-map">
+<h3>5. Working with your map<a class="headerlink" href="#working-with-your-map" title="Permalink to this headline">¶</a></h3>
+<p>Part of the philosophy of the map object is to provide most of the basic
+functionality that a scientist would want therefore a map also contains a number
+of map-specific methods such as resizing a map or grabbing a subview. To get
+a list of the methods available for a map type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">help</span><span class="p">(</span><span class="n">my_map</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and check out the methods section!</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Maps</a><ul>
+<li><a class="reference internal" href="#data-support">Data Support</a><ul>
+<li><a class="reference internal" href="#creating-maps">1. Creating maps</a></li>
+<li><a class="reference internal" href="#creating-custom-maps">2. Creating Custom Maps</a></li>
+<li><a class="reference internal" href="#inspecting-maps">2. Inspecting maps</a></li>
+<li><a class="reference internal" href="#getting-at-the-data">3. Getting at the data</a></li>
+<li><a class="reference internal" href="#creating-a-plot-of-your-map">4. Creating a plot of your map</a></li>
+<li><a class="reference internal" href="#overlaying-maps">5. Overlaying Maps</a></li>
+<li><a class="reference internal" href="#working-with-your-map">5. Working with your map</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="helioviewer.html"
+                        title="previous chapter">Querying Helioviewer.org with SunPy</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="hek.html"
+                        title="next chapter">Using SunPy&#8217;s HEK module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/guide/maps.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="hek.html" title="Using SunPy’s HEK module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="helioviewer.html" title="Querying Helioviewer.org with SunPy"
+             >previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

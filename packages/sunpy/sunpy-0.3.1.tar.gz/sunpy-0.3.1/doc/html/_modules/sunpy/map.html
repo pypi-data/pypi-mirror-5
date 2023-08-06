@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sunpy.map &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../../index.html" />
+    <link rel="up" title="sunpy" href="../sunpy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../sunpy.html" accesskey="U">sunpy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for sunpy.map</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;SunPy Maps&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&quot;Keith Hughitt&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s">&quot;keith.hughitt@nasa.gov&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.map</span> <span class="kn">import</span> <span class="n">Map</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.header</span> <span class="kn">import</span> <span class="n">MapHeader</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.mapcube</span> <span class="kn">import</span> <span class="n">MapCube</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.compositemap</span> <span class="kn">import</span> <span class="n">CompositeMap</span>
+<span class="kn">from</span> <span class="nn">sunpy.map.sources</span> <span class="kn">import</span> <span class="o">*</span>
+
+<div class="viewcode-block" id="make_map"><a class="viewcode-back" href="../../reference/map.html#sunpy.map.make_map">[docs]</a><span class="k">def</span> <span class="nf">make_map</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Processes one or more inputs and returns a Map, MapCube, or CompositeMap</span>
+<span class="sd">    instance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : filepath(s), data array</span>
+<span class="sd">        The data source used to create the map object. This can be either a</span>
+<span class="sd">        filepath to an image, a 2d list, or an ndarray.</span>
+<span class="sd">    type : {&#39;composite&#39; | &#39;cube&#39;}</span>
+<span class="sd">        Type of multimap to construct when passed more than one input. The</span>
+<span class="sd">        default choice is a CompositeMap which is more lenient with respect</span>
+<span class="sd">        to how similar the input data is.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : Map, MapCube, CompositeMap</span>
+<span class="sd">        Returns a  subclass instance</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import sunpy</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.make_map(&quot;file.fts&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.make_map(&quot;file1.fts&quot;, &quot;file2.fts&quot;,..)</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.make_map([&quot;file1.fts&quot;, &quot;file2.fts&quot;,..])</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.make_map(&quot;path/to/files/*.fts&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.make_map(Map)</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.make_map(Map1, Map2,..)</span>
+<span class="sd">    &gt;&gt;&gt; sunpy.make_map([[0, 1],[2, 3]], {&#39;telescop&#39;: &#39;sunpy&#39;,..})</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="ow">is</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Invalid input.&quot;</span><span class="p">)</span>
+
+    <span class="c"># First check to see if data/header were passed in    </span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># n-dimensional list</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># 1-dimensional data</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c"># if either of the above cases hold, then create a new Map</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">{})</span>
+
+
+    <span class="c"># If not, check for one or more maps or filepaths</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c"># String</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="c"># Wildcard string</span>
+            <span class="k">if</span> <span class="n">filepath</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;*&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">glob</span>
+                <span class="n">maps</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="c"># Directory (use all files)</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                <span class="n">maps</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">filepath</span><span class="p">)]</span>
+
+            <span class="c"># Filepath</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Map</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+        <span class="c"># Map/MapCube/CompositeMap</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Map</span><span class="p">)</span> <span class="ow">or</span> 
+              <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">CompositeMap</span><span class="p">)</span> <span class="ow">or</span> 
+              <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">MapCube</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c"># List of filepaths or Maps</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c"># list of maps or filepaths</span>
+            <span class="n">maps</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c"># Unrecognized input</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidMapInput</span><span class="p">(</span><span class="s">&quot;Invalid input for make_map. Please specify &quot;</span>
+                                  <span class="s">&quot;one or more filepaths, Maps, directories, &quot;</span>
+                                  <span class="s">&quot;or wildcard expressions.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">maps</span> <span class="o">=</span> <span class="n">args</span>
+
+    <span class="c"># Make sure we found some data</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">maps</span><span class="p">)</span> <span class="ow">is</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NoMapsFound</span><span class="p">(</span><span class="s">&quot;Specified path contains no valid files.&quot;</span><span class="p">)</span>
+
+    <span class="n">mtype</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;type&quot;</span><span class="p">,</span> <span class="s">&quot;composite&quot;</span><span class="p">)</span>
+
+    <span class="c"># MapCube</span>
+    <span class="k">if</span> <span class="n">mtype</span> <span class="o">==</span> <span class="s">&quot;cube&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">MapCube</span><span class="p">(</span><span class="o">*</span><span class="n">maps</span><span class="p">)</span>
+    <span class="c"># CompositeMap (default)</span>
+    <span class="k">elif</span> <span class="n">mtype</span> <span class="o">==</span> <span class="s">&quot;composite&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">CompositeMap</span><span class="p">(</span><span class="o">*</span><span class="n">maps</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidMapType</span><span class="p">(</span><span class="s">&quot;Invalid multi-map type specified. Please choose &quot;</span>
+                             <span class="s">&quot;between &#39;composite&#39; or &#39;cube&#39;.&quot;</span><span class="p">)</span>
+</div>
+<span class="k">def</span> <span class="nf">read_header</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parses a file header and return some important parameters&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Map</span><span class="o">.</span><span class="n">read_header</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">InvalidMapInput</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception to raise when input variable is not a Map instance and does</span>
+<span class="sd">    not point to a valid Map input file.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">InvalidMapType</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception to raise when an invalid type of map is requested with make_map</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">NoMapsFound</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception to raise when input does not point to any valid maps or files </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../sunpy.html" >sunpy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

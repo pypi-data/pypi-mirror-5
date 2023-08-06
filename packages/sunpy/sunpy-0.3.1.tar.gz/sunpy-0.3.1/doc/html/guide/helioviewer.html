@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Querying Helioviewer.org with SunPy &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="SunPy User Guide" href="index.html" />
+    <link rel="next" title="Maps" href="maps.html" />
+    <link rel="prev" title="Using SunPy’s VSO module" href="vso.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="maps.html" title="Maps"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vso.html" title="Using SunPy’s VSO module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="querying-helioviewer-org-with-sunpy">
+<h1>Querying Helioviewer.org with SunPy<a class="headerlink" href="#querying-helioviewer-org-with-sunpy" title="Permalink to this headline">¶</a></h1>
+<p>SunPy can be used to make several basic requests using the The <a class="reference external" href="http://helioviewer.org/api/">Helioviewer.org API</a>
+including generating a PNG and downloading a <a class="reference external" href="http://wiki.helioviewer.org/wiki/JPEG_2000">JPEG 2000</a>
+image and loading it into a SunPy Map.</p>
+<p>The SunPy Helioviewer client requires installing two other pieces of software.
+The first - OpenJPEG - is an open source library for reading and writing JPEG2000
+files.  To install OpenJPEG, please follow the instructions at <a class="reference external" href="http://www.openjpeg.org">the OpenJPEG
+homepage</a> .  The other package you will need is
+the Python Imaging Library (PIL).  PIL can be obtained from
+<a class="reference external" href="http://www.pythonware.com/products/pil/">here</a>.
+Please follow the instructions there to install (note that PIL may ask you to
+install other packages too).  The reason that two packages are required is
+because matplotlib natively only reads in PNG files, and OpenJPEG
+does not write PNG files.
+PIL is needed because the OpenJPEG command j2k_to_image (which converts a JPEG2000
+file to other file formats) does not support outputting to PNG, and PNG is the
+only format Matplotlib can read in by itself. Matplotlib falls back to trying PIL
+when it encounters the intermediate image format we use; hence, PIL is required.</p>
+<p>To interact with the Helioviewer API, users first create a &#8220;HelioviewerClient&#8221;
+instance. The client instance can then be used to make various queries against
+the API using the same parameters one would use when making a web request.</p>
+<p>Nearly all requests require the user to specify the data they are interested in
+and this can be done using one of two methods:</p>
+<ol class="arabic simple">
+<li>Call &#8220;get_data_sources()&#8221; to get a list of the data that is available, and use the source id numbers referenced in the result to refer to a particular dataset, or,</li>
+<li>Specify the four components of a Helioviewer.org data source or layer: <em>observatory</em>, <em>instrument</em>, <em>detector</em> and <em>measurement</em>.</li>
+</ol>
+<p>Let&#8217;s begin by getting a list of data sources available on the server
+using the get_datasources method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sunpy.net.helioviewer</span> <span class="kn">import</span> <span class="n">HelioviewerClient</span>
+
+<span class="n">hv</span> <span class="o">=</span> <span class="n">HelioviewerClient</span><span class="p">()</span>
+<span class="n">datasources</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">get_data_sources</span><span class="p">()</span>
+
+<span class="c"># print a list of datasources and their associated ids</span>
+<span class="k">for</span> <span class="n">observatory</span><span class="p">,</span> <span class="n">instruments</span> <span class="ow">in</span> <span class="n">datasources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">inst</span><span class="p">,</span> <span class="n">detectors</span> <span class="ow">in</span> <span class="n">instruments</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">measurements</span> <span class="ow">in</span> <span class="n">detectors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">meas</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">measurements</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">observatory</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;nickname&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;sourceId&#39;</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>Suppose we next want to download a PNG image of the latest
+AIA 304 image available on Helioviewer.org. We could use the explicit
+approach:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">hv</span><span class="o">.</span><span class="n">download_png</span><span class="p">(</span><span class="s">&#39;2099/01/01&#39;</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">,</span> <span class="s">&quot;[SDO,AIA,AIA,304,1,100]&quot;</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Where 4.8 refers to the image resolution in arcseconds per pixel (larger values
+mean lower resolution), the &#8220;1&#8221; and &#8220;100&#8221; in the layer string refer to the
+visibility (visible/hidden) and opacity, x0 and y0 are the center points about
+which to focus and the width and height are the pixel values for the image
+dimensions.</p>
+<p>The result is:</p>
+<img alt="../_images/helioviewer_download_png_ex1.png" src="../_images/helioviewer_download_png_ex1.png" />
+<p>If we find that the source id for AIA 304 is is 13, we could make the same
+request using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">hv</span><span class="o">.</span><span class="n">download_png</span><span class="p">(</span><span class="s">&#39;2099/01/01&#39;</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">,</span> <span class="s">&quot;[13,1,100]&quot;</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now suppose we wanted to create a composite PNG image using data from two
+different AIA wavelengths and LASCO C2 coronagraph data. The layer string is
+extended to include the additional data sources, and opacity is throttled
+down for the second AIA layer so that it does not completely block out the
+lower layer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">hv</span><span class="o">.</span><span class="n">download_png</span><span class="p">(</span><span class="s">&#39;2099/01/01&#39;</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="s">&quot;[SDO,AIA,AIA,304,1,100],[SDO,AIA,AIA,193,1,50],[SOHO,LASCO,C2,white-light,1,100]&quot;</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">768</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">768</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The result looks like:</p>
+<img alt="../_images/helioviewer_download_png_ex2.png" src="../_images/helioviewer_download_png_ex2.png" />
+<p>Next, let&#8217;s see how we can download a JPEG 2000 image and load it into a SunPy
+Map object.</p>
+<p>The overall syntax is similar to the <em>download_png</em> request, expect instead of
+specifying a single string to indicate which layers to use, here we
+can specify the values as separate keyword arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">filepath</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">download_jp2</span><span class="p">(</span><span class="s">&#39;2012/07/05 00:30:00&#39;</span><span class="p">,</span> <span class="n">observatory</span><span class="o">=</span><span class="s">&#39;SDO&#39;</span><span class="p">,</span> <span class="n">instrument</span><span class="o">=</span><span class="s">&#39;HMI&#39;</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;HMI&#39;</span><span class="p">,</span> <span class="n">measurement</span><span class="o">=</span><span class="s">&#39;continuum&#39;</span><span class="p">)</span>
+<span class="n">hmi</span> <span class="o">=</span> <span class="n">sunpy</span><span class="o">.</span><span class="n">make_map</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+<span class="n">hmi</span><span class="o">.</span><span class="n">submap</span><span class="p">([</span><span class="mi">200</span><span class="p">,</span><span class="mi">550</span><span class="p">],[</span><span class="o">-</span><span class="mi">400</span><span class="p">,</span><span class="o">-</span><span class="mi">200</span><span class="p">])</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/helioviewer_download_jp2_ex.png" src="../_images/helioviewer_download_jp2_ex.png" />
+<p>For more information about using querying Helioviewer.org, see the Helioviewer.org
+API documentation at: <a class="reference external" href="http://helioviewer.org/api/">http://helioviewer.org/api/</a>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vso.html"
+                        title="previous chapter">Using SunPy&#8217;s VSO module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="maps.html"
+                        title="next chapter">Maps</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/guide/helioviewer.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="maps.html" title="Maps"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vso.html" title="Using SunPy’s VSO module"
+             >previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

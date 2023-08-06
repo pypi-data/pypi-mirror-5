@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Spectra &mdash; SunPy 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="SunPy 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="SunPy User Guide" href="index.html" />
+    <link rel="next" title="Customizing sunpy" href="customization.html" />
+    <link rel="prev" title="Using SunPy’s HEK module" href="hek.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="customization.html" title="Customizing sunpy"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="hek.html" title="Using SunPy’s HEK module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="spectra">
+<h1>Spectra<a class="headerlink" href="#spectra" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This module is under development! Use at your own risk.</p>
+</div>
+<div class="section" id="spectrograms">
+<h2>Spectrograms<a class="headerlink" href="#spectrograms" title="Permalink to this headline">¶</a></h2>
+<p>SunPy currently supports reading dynamic spectra from <a class="reference external" href="http://www.e-callisto.org/">e-Callisto</a> instruments.
+The main class that is used for this is
+<tt class="xref py py-class docutils literal"><span class="pre">CallistoSpectrogram</span></tt>. SunPy also
+comes with an example image that shows a radio burst observed at <a class="reference external" href="http://rosseobservatory.ie/">Rosse Observatory</a> (aka. BIR; Birr Castle, Co. Offaly, Ireland) that
+can be found in sunpy.CALLISTO_IMAGE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">sunpy</span>
+<span class="kn">from</span> <span class="nn">sunpy.spectra.sources.callisto</span> <span class="kn">import</span> <span class="n">CallistoSpectrogram</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">CallistoSpectrogram</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sunpy</span><span class="o">.</span><span class="n">CALLISTO_IMAGE</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can now view the image by using the
+<tt class="xref py py-meth docutils literal"><span class="pre">show()</span></tt>  method.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">image</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex1.png" src="../_images/spectra_ex1.png" />
+<p>We now notice that there seems to be something interesting that has been
+cut off at the corner of the image, so we use the extend method to request
+more data from the server. It optionally takes the amount of minutes we want
+to request from the server (negative values mean we want to add data that was
+registered before our existing local data), if none are given it defaults to
+15 minutes (the size of one e-Callisto file).:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">more</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">extend</span><span class="p">()</span>
+<span class="n">more</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex3.5.png" src="../_images/spectra_ex3.5.png" />
+<p>We will, for the purposes of this demonstration, continue working with the
+original image, though.</p>
+<p>You can then perform automatic constant background subtraction by using the
+<tt class="xref py py-meth docutils literal"><span class="pre">subtract_bg()</span></tt>
+method. The resulting image will be clipped at 0 using the <a href="#id1"><span class="problematic" id="id2">min_</span></a> parameter of
+show in order to avoid negative values.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">nobg</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">subtract_bg</span><span class="p">()</span>
+<span class="n">nobg</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">min_</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex2.png" src="../_images/spectra_ex2.png" />
+<p>If you want to see the background determined by the automatic subtraction,
+you can use the
+<tt class="xref py py-meth docutils literal"><span class="pre">auto_const_bg()</span></tt>
+method and visualize the resulting
+data using <tt class="xref py py-func docutils literal"><span class="pre">pyplot.plot()</span></tt>.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">bg</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">auto_const_bg</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">freq_axis</span><span class="p">,</span> <span class="n">bg</span><span class="p">)</span>
+<span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;Frequency [MHz]&quot;</span><span class="p">)</span>
+<span class="n">ylabel</span><span class="p">(</span><span class="s">&quot;Intensity&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> <span class="c"># This might not be necessary if you are using pylab.</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex3.png" src="../_images/spectra_ex3.png" />
+<p>Now let us say we want to isolate the interesting bit (which starts around
+10:38) from the boring background; there is a method called
+<tt class="xref py py-meth docutils literal"><span class="pre">in_interval()</span></tt>
+that allows us to take the part of an image that is
+within a specified interval. Leaving out the second argument it defaults
+to the end time of the file.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">interesting</span> <span class="o">=</span> <span class="n">nobg</span><span class="o">.</span><span class="n">in_interval</span><span class="p">(</span><span class="s">&quot;10:38&quot;</span><span class="p">)</span>
+<span class="n">interesting</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">min_</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex4.png" src="../_images/spectra_ex4.png" />
+<p>To get rid of the noise, we could also clip low intensities.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">interesting</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">min_</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex5.png" src="../_images/spectra_ex5.png" />
+<p>If we want more context, we can also join together different images into
+a large one in time (note that this does more than just concatenating the
+array and the axes &#8211; it also considers possible overlap or gaps).:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">c1</span> <span class="o">=</span> <span class="n">CallistoSpectrogram</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&quot;BIR_20110922_101500_01.fit&quot;</span><span class="p">)</span>
+<span class="n">c2</span> <span class="o">=</span> <span class="n">CallistoSpectrogram</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&quot;BIR_20110922_103000_01.fit&quot;</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">CallistoSpectrogram</span><span class="o">.</span><span class="n">join_many</span><span class="p">([</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">])</span>
+<span class="n">d</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex6.png" src="../_images/spectra_ex6.png" />
+<p>We could also get the from_range method to get data between those two points
+directly from the archive and joined together (though that will fetch all
+frequencies of BIR).:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">d</span> <span class="o">=</span> <span class="n">CallistoSpectrogram</span><span class="o">.</span><span class="n">from_range</span><span class="p">(</span><span class="s">&quot;BIR&quot;</span><span class="p">,</span> <span class="s">&quot;2011-09-22T10:15:00&quot;</span><span class="p">,</span> <span class="s">&quot;2011-09-22T10:45:00&quot;</span><span class="p">)</span>
+<span class="n">d</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex7.png" src="../_images/spectra_ex7.png" />
+<p>The <tt class="xref py py-meth docutils literal"><span class="pre">plot()</span></tt>
+and <tt class="xref py py-meth docutils literal"><span class="pre">show()</span></tt>
+methods return a special kind of figure that offers convenience features
+needed for analyzing spectrograms, a <tt class="xref py py-class docutils literal"><span class="pre">SpectroFigure</span></tt>. By using its
+<tt class="xref py py-meth docutils literal"><span class="pre">time_freq()</span></tt>, we can
+select points on the figure and frequency-time information of them will be returned
+as a <tt class="xref py py-class docutils literal"><span class="pre">TimeFreq</span></tt>. Time is
+stored as offsets in seconds from TimeFreq.start.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">fig</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">time_freq</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">time_freq</span><span class="p">()</span>
+<span class="c"># Select points.</span>
+<span class="n">time_freq</span><span class="o">.</span><span class="n">time</span>
+<span class="c">#array([   0.  ,   54.5 ,  104.  ,  163.25])</span>
+<span class="n">time_freq</span><span class="o">.</span><span class="n">freq</span>
+<span class="c">#array([ 68.76923077,  59.29888786,  48.50092678,  36.46385542])</span>
+</pre></div>
+</div>
+<p>We can then quickly visualize this using the
+<tt class="xref py py-meth docutils literal"><span class="pre">show()</span></tt> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">time_freq</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">marker</span><span class="o">=</span><span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s">&#39;--&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/spectra_ex8.png" src="../_images/spectra_ex8.png" />
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sunpy_logo_compact_192x239.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Spectra</a><ul>
+<li><a class="reference internal" href="#spectrograms">Spectrograms</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="hek.html"
+                        title="previous chapter">Using SunPy&#8217;s HEK module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="customization.html"
+                        title="next chapter">Customizing sunpy</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/guide/spectra.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="customization.html" title="Customizing sunpy"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="hek.html" title="Using SunPy’s HEK module"
+             >previous</a> |</li>
+        <li><a href="../index.html">SunPy 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >SunPy User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, SunPy Community.
+      Last updated on Mar 06, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
