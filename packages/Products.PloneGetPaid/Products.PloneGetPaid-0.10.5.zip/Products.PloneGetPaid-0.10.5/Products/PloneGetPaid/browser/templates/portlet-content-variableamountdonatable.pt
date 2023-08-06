@@ -1,0 +1,53 @@
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      i18n:domain="plonegetpaid">
+
+<body>
+<div metal:define-macro="portlet" tal:condition="view/payable">
+    <dl class="portlet" id="portlet-cart">
+    <form tal:attributes="action string:${context/absolute_url}/@@getpaid-cart-add" >
+
+        <dt class="portletHeader">
+            <span class="portletTopLeft"></span>
+        <span class="portletTopMiddle"
+              i18n:translate="text_product_details">Product Details</span>
+            <span class="portletTopRight"></span>
+        </dt>
+
+        <dd class="portletItem odd">
+          <div>
+
+            <p tal:define="field context/Title"
+               tal:condition="field"
+               tal:content="field"
+               />
+
+            <p tal:define="field view/payable/donation_text"
+               tal:condition="field">
+               <i tal:content="field" />
+            </p>
+            <input type="hidden" name="add_item" value="True"/>
+            <p tal:define="field python: '%.2f' % (getattr(view.payable,'price',0) or 0)"
+               i18n:translate="text_donate_price">
+                 Donation: <span i18n:name="value_currency" tal:content="view/currency" /> 
+                 <input id="donation_amount"
+                        type="text" 
+                        name="amount"
+                        tal:attributes="value field" 
+                        i18n:name="value_price" />
+            </p>
+
+          </div>
+        </dd>
+
+        <dd class="portletFooter">
+            <input type="submit" name="donate" value="Donate!" i18n:attributes="value label_donate"/>
+            <span class="portletBottomLeft"></span>
+            <span class="portletBottomRight"></span>
+        </dd>
+        </form>
+    </dl>
+
+</div>
+</body>
+</html>
