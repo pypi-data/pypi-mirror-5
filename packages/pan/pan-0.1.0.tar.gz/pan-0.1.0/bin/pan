@@ -1,0 +1,303 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Build a markdown file to an output format with sensible defaults."""
+
+from datetime import datetime
+import sys
+from hashlib import md5
+import json
+import yaml
+import re
+import os
+from os import path
+import clint
+import envoy
+import ast
+from pan.walk_up import walk_up
+from itertools import izip, repeat
+
+
+def prep_meta(item):
+    if isinstance(item, bool):
+        return {True: "true", False: "false"}[item]
+    # escape spaces
+    if isinstance(item, basestring):
+        return "\"{}\"".format(item.replace(" ", "\ "))
+
+
+def get_meta_tuple(metaitem):
+        # allow grabbing numbers XXX todo
+        k, content = metaitem
+        # raise Exception(content)
+        if "MetaString" in content:
+            return (k, content['MetaString'])
+
+        if "MetaInlines" in content:
+            isuseful = lambda x: bool([i in x for i in ['Str', 'Space', 'Code']])
+            fixspace = lambda x: 'Space' in x and " " or x.values()[0]
+            return (k, "".join(map(fixspace, filter(isuseful, content['MetaInlines']))))
+
+        if "MetaBool" in content:
+            return (k, content['MetaBool'])
+
+
+def walk_up(bottom):
+    """
+    mimic os.walk, but walk 'up'
+    instead of down the directory tree
+    """
+
+    bottom = path.realpath(bottom)
+
+    #get files in current dir
+    try:
+        names = os.listdir(bottom)
+    except Exception as e:
+        print e
+        return
+
+    dirs, nondirs = [], []
+    for name in names:
+        if path.isdir(path.join(bottom, name)):
+            dirs.append(name)
+        else:
+            nondirs.append(name)
+
+    yield bottom, dirs, nondirs
+
+    new_path = path.realpath(path.join(bottom, '..'))
+
+    # see if we are at the top
+    if new_path == bottom:
+        return
+
+    for x in walk_up(new_path):
+        yield x
+
+
+MAKE = {
+    'default': {},
+
+    'book': {
+        'template': "book.latex",
+        'titlepage': True
+    },
+
+    'worksheet': {
+        'template': "worksheet.latex",
+        'titlepage': False,
+    },
+
+    'letter': {
+        'template': "letter.latex",
+        'letter': True,
+    },
+
+    'beamer': {
+        'template': "default.beamer",
+        "--slide-level": "2",
+        "to": "-t beamer"
+    },
+
+    'rtf': {
+        'template': 'default.rtf',
+        'extension': 'rtf'
+    },
+
+    'html': {
+        'template': 'default.html',
+        'extension': 'html',
+    },
+
+    'plain': {
+        'template': 'default.plain',
+        'extension': 'txt',
+        'to': '-t plain -s',
+    }
+}
+
+# a starting point
+DEFAULT_OPTIONS = {
+    'version': None,
+    'make': "default",
+    'extension': "pdf",
+    "template": "default.latex",
+    'basefilters': "instructor.py stata.py",
+    'filters': "",
+    'titlepage': False,
+    'csl': "apa.csl",
+    'fonttheme': 'serif',
+    'fontsize': '12pt',
+
+    'instructor': False,
+
+    'graphics': True,
+    'verbatim-in-note': True,
+    'mainfont': "Minion Pro",
+    'mathfont': "Minion Pro",
+    'sansfont': "Helvetica Neue Light",
+    'monofont': "Inconsolata",
+    'geometry': """a4paper,left=24.8mm,top=27.4mm,textwidth=107mm,marginparsep=8.2mm,marginparwidth=49.4mm""",
+}
+
+
+
+# these are used to update meta values set within the document
+FLAGS_MAP = {
+    '--handout': {'handout': True},
+    '--instructor': {'instructor': True},
+
+    '--beamer': {'make': "beamer"},
+    '--book': {'make': "book"},
+    '--worksheet': {'make': "worksheet"},
+
+    '--html': {'make': "html"},
+    '--rtf': {'make': "rtf"},
+    '--plain': {'make': "plain"},
+    '--txt': {'make': "plain"},
+}
+
+
+verbose = '-v' in clint.args.flags or '--verbose' in clint.args.flags or False
+quietly = '-q' in clint.args.flags or '--quietly' in clint.args.flags or False
+assert not (verbose and quietly)
+force_build = '-f' in clint.args.flags or '--force' in clint.args.flags
+
+
+
+if not clint.args.files:
+    sys.stderr.write("No files found. Usage is: pan [options] file1 file2\n\nOptions:\n")
+    help_ops = {'--quietly': ""}
+    help_ops.update(FLAGS_MAP)
+    sys.stderr.write("\n".join(["{}".format(k) for k, v in sorted(help_ops.items()) if k[:2] == "--"]))
+    sys.stderr.write("\n\n")
+
+
+# find a bibliography file if we can
+default_bibliography = None
+for current, _, files in walk_up(os.curdir):
+    if 'references.bib' in files:
+        default_bibliography = os.path.join(current, "references.bib")
+        break
+
+
+# if we've found a bibliography build the option string for pandoc
+default_bibliography_string = default_bibliography \
+    and "--bibliography {}".format(default_bibliography) or ""
+
+
+# build each markdown file
+for f in clint.args.files:
+    path, name = os.path.split(f)
+    os.chdir(os.path.dirname(os.path.abspath(f)))
+
+    with open(name) as mdown:
+        markdown = "".join(mdown.readlines())
+
+    meta = envoy.run("""pandoc -f markdown+yaml_metadata_block -t json""", data=markdown)
+    metajson = json.loads(meta.std_out)[0]['unMeta']
+    doc_metadata_strings = dict(filter(bool, map(get_meta_tuple, metajson.items())))
+
+    # build options dict for this document
+    document_options = DEFAULT_OPTIONS.copy()
+
+    # override defaults with options set in document
+    document_options.update(doc_metadata_strings)
+
+    # override from command line
+    [document_options.update(FLAGS_MAP.get(i, {})) for i in clint.args.flags.all]
+
+    # update options based on what we're making
+    document_options.update(MAKE[document_options.pop('make')])
+
+    # break out template and meta values and make into strings for pandoc call
+    pandoc_filters_list = filter(bool, document_options.pop('filters').split(" "))
+    pandoc_filters_list = pandoc_filters_list + document_options.pop('basefilters').split(" ")
+    pandoc_filters = " ".join(["--filter {}".format(i) for i in pandoc_filters_list])
+
+
+    # work out which template to use
+    pandoc_template = document_options.pop('template')
+    pandoc_to = document_options.get('to', "")
+
+    # grab some metadata which influences how we name the built file
+    version = document_options.get('version')
+    datestamp = document_options.get('datestamp', False)
+    timestamp = document_options.get('timestamp', False)
+
+    # # compute the new filename
+    newname = "{}{}{}{}{}{}.{}".format(
+        "".join(name.split(".")[:-1]),
+        document_options.get('instructor') and "_instructor" or "",
+        document_options.get('handout') and "_handout" or "",
+        version and "_v{}".format(str(version).replace(".","-")) or "",
+        datestamp and "_{:%Y-%M-%d}".format(datetime.now()) or "",
+        timestamp and "_{:%H:%M:%S}".format(datetime.now()) or "",
+        document_options.pop('extension'),
+    )
+
+    # pass in metadata explicitly
+    variable_flags = " ".join(
+        ["-V {}={}".format(k, prep_meta(v)) for k, v in document_options.items()
+            if not k.startswith("--") and v])  # note the "and v" at the end to exclude null or false values
+
+    pandoc_flags = " ".join(
+        ["{}={}".format(k, prep_meta(v)) for k, v in document_options.items()
+            if k.startswith("--")])
+
+    # build the markdown into a single string
+    markdown = "".join(markdown).lstrip()
+
+    # build a dictionary to populate the pandoc command line call
+    d = {
+        'newname': newname,
+        'oldname': name,
+        'template': pandoc_template,
+        'flags': variable_flags + " " + pandoc_flags,
+        'filters': pandoc_filters,
+        'bibliography': default_bibliography_string,
+        'to': pandoc_to,
+    }
+
+    pstring = """pandoc --template={template} {flags} \
+{bibliography} --latex-engine=xelatex \
+-f markdown+yaml_metadata_block+fancy_lists --smart \
+{filters} --standalone  -o {newname} {to}""".format(**d)
+
+
+    # some logic to cache documents already built
+    checksum = os.path.join(".pan/", md5(str(d)+markdown).hexdigest())
+    if not os.path.isdir(".pan"):
+        os.mkdir(".pan")
+    if not os.path.exists(checksum):
+        with open(checksum, 'w') as f:
+            f.write("\n")
+    else:
+        print "{newname} had already been built.".format(**d)
+        if not force_build:
+            # we allow forcing because changing a template wouldn't change the
+            # checksum, but normally we will exit here if the hash matches
+            print "Use -f to force re-building."
+            break
+
+
+    # special case for plain text... we copy to the clipboard and do everything quietly
+    if "plain" in d['to']:
+        quietly = True
+        envoy.run("cat {}|pbcopy".format(d['newname']))
+        print "Plain text copied to clipboard."
+
+    # debugging info
+    if verbose:
+        print pstring
+
+    result = envoy.run(pstring, data=markdown)
+
+    # select which app to use to open the file and open it
+    app = d['newname'].endswith("pdf") and "skim" or "open"
+    if not quietly:
+        if result and result.status_code == 0:
+            envoy.run("""{} '{newname}'""".format(app, **d))
+        else:
+            print result.std_out, result.std_err
