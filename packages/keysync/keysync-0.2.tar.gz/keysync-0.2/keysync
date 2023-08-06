@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''keysync is a command line program'''
+
+from __future__ import print_function
+import sys
+import os
+import platform
+import argparse
+
+# if python < 2.7, get OrderedDict from a standalone lib
+if sys.version_info[0] == 2 and sys.version_info[1] < 7:
+    from ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
+
+import otrapps.util
+import otrapps
+from otrapps.chatsecure import ChatSecureProperties
+
+# no argv passed in here because argparse just checks sys.argv directly
+def main():
+    '''this is the main entry into this program'''
+
+    if len(sys.argv) == 1:
+        sys.argv.append('--help') # if no args, show help
+
+    # defaults
+    if platform.system() == 'Darwin':
+        default_input = 'adium'
+    else:
+        default_input = 'pidgin'
+
+    default_output = 'chatsecure'
+
+
+    parser = argparse.ArgumentParser()
+    # Note: the 'default' argument is not used with the input and output args
+    # below, because the combination of the append action and default, means
+    # the default will ALWAYS appear in the actions.
+    # this may or may not be an argparse bug.
+    parser.add_argument('-i', '--input', action='append',
+                        choices=sorted(otrapps.apps_supported),
+                        help="specify which programs to take as input. if multiple then they'll be merged (default: %s)" % (default_input))
+    parser.add_argument('-o', '--output', action='append',
+                        choices=sorted(otrapps.apps_supported),
+                        help="specify which format to write out. if multiple then each will be written out (default: %s)" % (default_output))
+    parser.add_argument('--output-folder', default=os.getcwd(),
+                        help='write the output files to this folder (default: current folder)')
+    parser.add_argument('--no-qrcode', action='store_true', default=False,
+                        help='do not print the ChatSecure QR Code to the terminal')
+    parser.add_argument('-q', '--quiet', action='store_true', default=False,
+                        help='do not print anything to the terminal')
+    parser.add_argument('-t', '--test', help=argparse.SUPPRESS, default=None)
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
+    args = parser.parse_args()
+
+    # manually set defaults, see Note above
+    if args.input == None or len(args.input) == 0:
+        args.input = [default_input]
+    if args.output == None or len(args.output) == 0:
+        args.output = [default_output]
+
+    # downcase all names to be a little more friendly
+    args.input = [i.lower() for i in args.input]
+    args.output = [o.lower() for o in args.output]
+
+    keydict = dict()
+    for app in args.input:
+        print('Reading %s files...' % ( app ))
+        # special case GB for now 'cause of this keyfile business
+        if app == 'chatsecure':
+            keyfile = os.path.join(args.output_folder, ChatSecureProperties.keyfile)
+            if os.path.exists(keyfile):
+                otrapps.util.merge_keydicts(keydict, ChatSecureProperties.parse(keyfile))
+            else:
+                print(('ChatSecure WARNING: No usable "' + ChatSecureProperties.keyfile +
+                    '" file found, not reading keys from ChatSecure!'))
+            break
+
+        properties = otrapps.apps[app]
+        if args.test:
+            # example: "tests/gajim/"
+            settings_dir = os.path.join(args.test, app)
+            otrapps.util.merge_keydicts(keydict, properties.parse(settings_dir))
+        else:
+            otrapps.util.merge_keydicts(keydict, properties.parse())
+
+    if keydict:
+        keydict = OrderedDict(sorted(keydict.items(), key=lambda t: t[0]))
+        otrapps.make_outdir(args.output_folder, '')
+        for app in args.output:
+            # once again special case GB
+            if 'chatsecure' in args.output:
+                ChatSecureProperties.write(keydict, args.output_folder)
+                if not args.quiet and ChatSecureProperties.password:
+                    if not args.no_qrcode and sys.stdout.isatty():
+                        print('\nScan this QR Code:')
+                        import qrcode
+                        pwqr = qrcode.QRCode()
+                        pwqr.add_data(ChatSecureProperties.password)
+                        pwqr.print_tty()
+                    print(('\nor enter this password into ChatSecure: \n\t' + ChatSecureProperties.password))
+                break
+
+            properties = otrapps.apps[app]
+            properties.write(keydict, args.output_folder)
+
+if __name__ == "__main__":
+    main()
