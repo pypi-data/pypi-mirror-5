@@ -1,0 +1,26 @@
+{% extends "admin/controller/change_form.html" %}
+{% load utils admin_urls %}
+
+{% block object-tools-items %}
+{% for item in object_tools_items %}
+    {% if item.always_display or has_change_permission %}
+    {% if 'pings'|isinstalled %}
+        <li><a href="{% url 'admin:pings_ping_ping' original.node.tinc|content_type original.node.tinc.pk %}">Pings</a></li>
+    {% endif %}
+    <li><a href="{{item.url_name}}/" class="{{item.css_class}}" title="{{item.description}}">{{item.verbose_name}}</a></li>
+    {% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">Home</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='nodes' %}">Nodes</a>
+&rsaquo; <a href="{% url 'admin:nodes_node_changelist' %}">Nodes</a>
+&rsaquo; <a href="{% url 'admin:nodes_node_change' original.node.pk %}">{{ original.node|truncatewords:"18" }}</a>
+&rsaquo; State
+</div>
+{% endblock %}
+
+{% block submit_buttons_bottom %}{% endblock %}
+
