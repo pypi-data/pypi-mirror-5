@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from MoinMoin.request import request_wsgi
+from MoinMoin.server.server_wsgi import moinmoinApp
+#from MoinMoin.server.server_wsgi import WsgiConfig as ConfigBase
+from notmm.controllers.wsgi import BaseController
+#from notmm.utils.wsgilib import HTTPResponse
+
+
+__all__ = ['MoinMoinController']
+
+#debug_moinmoin_version = '1.8.9'
+
+class MoinMoinController(BaseController):
+    """
+    A BaseController extension serving a MoinMoin wiki app.
+    """
+
+    def __init__(self, *args, **kwargs):
+        import pdb; pdb.set_trace()
+        self.moin_settings = kwargs['settings']
+        if not 'theme_force' in self.moin_settings:
+            self.moin_settings['theme_force'] = True
+        self.environ = {} # initial request environment
+        
+
+    def init_request(self, environ={}, request_class=request_wsgi.Request):
+        #super(MoinMoinController, self).init_request(environ, request_class)
+        # first set the request
+        request = request_class(environ)
+        request.cfg = self.moin_settings
+        request.run()
+
+        self.process_request(request)
+
+    def get_response(self, request):
+
+        return str(request.output())
+
+    def application(self, environ, start_response):
+        """Creates a mini MoinMoin wiki handler with generic file 
+        upload support.
+
+        """
+        self.environ.update(environ)
+        self.init_request(self.environ)
+        req = self.get_request()
+
+        start_response(req.status, req.headers)
+        if req._send_file is not None:
+            # moin wants to send a file (e.g. AttachFile.do_get)
+            def simple_wrapper(fileobj, bufsize):
+                return iter(lambda: fileobj.read(bufsize), '')
+            file_wrapper = environ.get('wsgi.file_wrapper', simple_wrapper)
+            if not '_send_buf_size' in req:
+                send_buf_size = environ['CONTENT_LENGTH']
+            else:
+                # workaround if _send_bufsize returns the None value
+                if not req._send_bufsize:
+                    send_buf_size = -1
+                else:
+                    send_buf_size = req._send_bufsize
+            return file_wrapper(req._send_file, send_buf_size)
+        
+        return [self.get_response(req)]
+
+
+        #return moinmoinApp(environ, start_response)

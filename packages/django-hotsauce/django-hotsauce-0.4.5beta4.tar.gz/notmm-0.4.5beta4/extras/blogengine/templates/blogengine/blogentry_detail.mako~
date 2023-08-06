@@ -1,0 +1,94 @@
+## coding: utf-8
+<%inherit file="/layout_clean.mako" />
+## set this to False to avoid POST issues in saveComment
+<%page cached="False" />
+<%namespace file="components.mako" import="headline" />
+<%namespace file="blogentry_comment_thread.mako" import="comments_for_item" />
+
+<% 
+result = data['result'] 
+settings = data['settings']
+author = data['result'].author
+media_prefix = data['MEDIA_URL']
+addthis_widget = data['addthis_widget']
+comments = data['comments']
+comment_count = len(comments)
+%>
+
+<%def name="title(text='foo')" cached="False">
+<% result = data['result'] %>
+${result}
+</%def>
+
+
+##<%def name="meta()">
+##<%
+##result = data['result']
+##tagstr = ''.join(["%s," % item.name for item in result.m.tags()])
+##tagstr = tagstr.rstrip(',')
+##%>
+## <link rel="alternate" type="text/rss" ...>
+## <meta name="author" content="${result.author}" />
+## <meta name="description" content="${result.short_description}" />
+##<meta name="keywords" content="${tagstr}" />
+##</%def>
+
+<div class="colmed b1 rounded fl whitebg" id="col1">
+##<p>Author: <a href="/blog/authors/${author}/" title="Article written by ${author}.">${author}</a></p>
+ ${headline(result, fulltext=True)}
+</div>
+##<div class="">
+## API actions for editors 
+##<ul class="colorList">
+##<li><a href="/blog/posts/delete/${result.s.oid}/">Delete this article</a></li>
+##<li><a href="/blog/posts/edit/${result.s.oid}/">Edit</a></li>
+##<li><a href="/blog/posts/send-to-friend/${result.s.oid}/">Tell a friend</a></li>
+##<li><a href="/blog/posts/subscribe/${result.s.oid}/">Subscribe to the RSS feed</a></li>
+##</ul>
+##</div>
+
+##% if 'ADDTHIS_USERNAME' in settings:
+##<%include file="addthis_widget.mako" />
+##% endif
+
+<div class="fr col350" id="col2">
+ 
+ <div class="ui-widget whitebg b1">
+  ##${comments_for_item()}
+  <h2 class="bluebg3">Dashboard</h2>
+  <ul class="colorList bluebg">
+   <li><a href="edit/">Manage article</a></li>
+   <li><a href="comments/">View comments (${comment_count})</a></li>
+   <li><a href="/blog/categories/${result.category.slug}/">View related posts</a></li>
+   ## RSS20Controller
+   <li><a href="comments.xml">Subscribe to comments feed</a></li>
+   <li><a href="vote/">Vote for this article</a></li>
+   <li><a href="share/">Tell a friend</a></li>
+  </ul>
+   % if (len(result.x.tags()) >=1):
+   <li>Tags: ${result.x.tags()}</li>
+   % endif
+  </ul>
+ </div>
+ 
+ <div class="ui-widget whitebg b1">
+  <h2 class="pinkbg">Add Comment</h2>
+  <%include file="blogentry_comment_form.mako" />
+ </div>
+
+</div>
+<br class="clear"/>
+
+##<div class="ui-footer whitebg">
+##DEMO
+##</div>
+##</div>
+##<br class="clear"/>
+##
+##<script type="text/javascript">
+##$(function(){
+##$('.colorList').eq(0).colorList({class:'orangebg'});
+##});
+##</script>
+
+
