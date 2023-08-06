@@ -1,0 +1,39 @@
+# Example:
+
+from active_redis import ActiveRedis, ActiveRedisModel, UUIDGenerator
+
+class Movie(ActiveRedisModel):
+    stored_attrs = ['title', 'year', 'author']
+
+    def __init__(self, uuid, title, year, author):
+        self.uuid = uuid
+        self.title, self.year, self.author = title, year, author
+
+
+if __name__ == '__main__':
+    ActiveRedis.config = {
+        'connexion': {'db': 3},
+        'namespace_prefix': 'mycinema'
+    }
+
+    assert Movie.delete_all()
+    assert 0, Movie.count()
+
+    topgun = Movie(UUIDGenerator.generate(), 'TopGun', 1987, 'Tony S.')
+    assert topgun.save()
+
+    titanic = Movie(UUIDGenerator.generate(), 'Titanic', 1997, 'James C.')
+    assert titanic.save()
+
+    topgun.update_attr('title', 'Top Gun')
+    assert 'Top Gun', Movie.find(topgun.uuid).title
+
+    assert 2, Movie.count()
+    assert 2, len(Movie.find_all())
+
+    m = Movie.find(topgun.uuid)
+    m.delete()
+
+    assert 1, Movie.count()
+    assert 1, len(Movie.find_all())
+
