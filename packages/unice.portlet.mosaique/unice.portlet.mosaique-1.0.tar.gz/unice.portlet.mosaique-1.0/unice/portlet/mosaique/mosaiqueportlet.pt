@@ -1,0 +1,76 @@
+<html tal:omit-tag="" 
+    tal:condition="nocall:view/mosaique"
+    xmlns="http://www.w3.org/1.09/xhtml"
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+	xmlns:metal="http://xml.zope.org/namespaces/metal"
+    xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+	i18n:domain="unice.portlet.mosaique">
+
+    <dl tal:attributes="id view/data/extra_id; class string:portlet portletMosaique ${view/data/extra_css}"
+         tal:define="items view/submosaique;">
+
+        <dt tal:condition="not:view/data/omit_header" class="portletHeader">
+            <tal:block content="view/header"/>
+        </dt>
+
+        <dd class="portletItem">
+
+            <tal:block repeat="item items">
+
+                <tal:block define="index repeat/item/index;
+                                    cols python:view.cols(index);
+                                    col python:12/cols;
+                                    row python: index // cols;
+                                    layout python:'list' if cols==1 else 'thumb';">
+
+                    <tal:block condition="python:index % cols == 0">
+                        <tal:block replace="structure string:&lt;div class='row mosaique-row'&gt;"/>
+                    </tal:block>
+
+                    <div tal:attributes="class string:col-md-${col} col-xs-12 mosaique-col mosaique-col-${layout}">
+
+                        <div tal:condition="python:item['type'] != 'Link'" tal:attributes="style string:max-height:${view/data/reduce_height}px;" class="mosaique-image">
+                            <a tal:attributes="href item/obj/absolute_url;">
+                                <img tal:attributes="src item/image; title python:view.captions(item)"/>
+                                <div tal:condition="item/theme" tal:attributes="class string:mosaique-theme mosaique-theme-${item/theme/suffix_id}">
+                                    <span tal:content="item/theme/suffix">AAAAAA</span>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div tal:condition="python:item['type'] == 'Link'" class="mosaique-video">
+                            <iframe tal:attributes="src item/obj/remoteUrl; height python:600-(int(view.data.reduce_height)/2)" width="800" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen ></iframe>
+
+                        </div>
+
+                        <div class="caption">
+                            <a tal:attributes="href item/obj/absolute_url;">
+                                <tal:block content="structure python:view.captions(item)"/>
+                            </a>
+                        </div>
+                        <a tal:condition="python:layout=='thumb'" tal:attributes="href item/obj/absolute_url;" class="more">
+                            <span class="">Lire la suite</span>
+                        </a>
+
+                    </div>
+
+                    <tal:block condition="python:index % cols == cols-1">
+                        <tal:block replace="structure string:&lt;/div&gt;"/>
+                    </tal:block>
+
+
+                    <tal:block condition="python:view.data.max_items and index==int(view.data.max_items)-1">
+                        <div class="row mosaique-more-items">
+                            <a href="#" tal:content="view/data/more_text"/>
+                        </div>
+                    </tal:block>
+
+                </tal:block>
+
+            </tal:block>
+
+        </dd>
+
+    </dl>
+
+</html>
