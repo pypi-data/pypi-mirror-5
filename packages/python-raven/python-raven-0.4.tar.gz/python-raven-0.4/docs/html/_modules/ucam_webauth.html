@@ -1,0 +1,841 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ucam_webauth &mdash; python-raven 0.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within python-raven 0.3 documentation"
+          href="../_static/opensearch.xml"/>
+    <link rel="top" title="python-raven 0.3 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">python-raven 0.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for ucam_webauth</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2013 Daniel Richman</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-raven</span>
+<span class="c">#</span>
+<span class="c"># python-raven is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU General Public License as published by</span>
+<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># python-raven is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c"># You should have received a copy of the GNU General Public License</span>
+<span class="c"># along with python-raven.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The ucam_webauth module implements version 3 of the WAA to WLS protocol.</span>
+
+<span class="sd">It is not set up to talk to a specific WAA (i.e., Raven), and subclassing</span>
+<span class="sd">this modules&#39; classes is required to make it functional (see :mod:`raven`).</span>
+
+<span class="sd">The protocol is implemented as defined at</span>
+<span class="sd">`&lt;https://raven.cam.ac.uk/project/waa2wls-protocol.txt&gt;`_</span>
+<span class="sd">at the time of writing (though that URL may have since been replaced with a</span>
+<span class="sd">newer version). A copy of wawa2wls-protocol.txt is included with python-raven,</span>
+<span class="sd">and more information can be found at `&lt;https://raven.cam.ac.uk/project/&gt;`_.</span>
+
+<span class="sd">.. glossary::</span>
+
+<span class="sd">    WAA</span>
+<span class="sd">        A WAA is a &quot;Web Application Agent&quot;</span>
+<span class="sd">        (i.e., an application using this module)</span>
+
+<span class="sd">    WLS</span>
+<span class="sd">        The &quot;Web Login Service&quot; (i.e., Raven)</span>
+
+<span class="sd">.. data:: ATYPE_PWD</span>
+<span class="sd">          STATUS_SUCCESS</span>
+<span class="sd">          STATUS_CANCELLED</span>
+<span class="sd">          STATUS_NOATYPES</span>
+<span class="sd">          STATUS_UNSUPPORTED_VERSION</span>
+<span class="sd">          STATUS_BAD_REQUEST</span>
+<span class="sd">          STATUS_INTERACTION_REQUIRED</span>
+<span class="sd">          STATUS_WAA_NOT_AUTHORISED</span>
+<span class="sd">          STATUS_AUTHENTICATION_DECLINED</span>
+
+<span class="sd">    :class:`AuthenticationType` and :class:`Status` instances used as constants</span>
+<span class="sd">    in requests and responses</span>
+
+<span class="sd">    They compare equal with their corresponding integers (for status codes)</span>
+<span class="sd">    and strings (for atypes).</span>
+
+<span class="sd">.. data:: STATUS_CODES</span>
+
+<span class="sd">    A dict mapping status.code (i.e., the integer status code) to the relevant</span>
+<span class="sd">    status object</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="n">__name__</span> <span class="o">=</span> <span class="s">&quot;ucam_webauth&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;0.3&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&quot;Daniel Richman&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2013 Daniel Richman&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s">&quot;main@danielrichman.co.uk&quot;</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s">&quot;LGPL3&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">string</span> <span class="kn">import</span> <span class="n">maketrans</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64decode</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha1</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">unquote</span><span class="p">,</span> <span class="n">urlencode</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">unquote</span><span class="p">,</span> <span class="n">urlencode</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Status&quot;</span><span class="p">,</span> <span class="s">&quot;STATUS_CODE_LIST&quot;</span><span class="p">,</span> <span class="s">&quot;STATUS_CODES&quot;</span><span class="p">,</span>
+           <span class="s">&quot;AuthenticationType&quot;</span><span class="p">,</span> <span class="s">&quot;ATYPE_PWD&quot;</span><span class="p">,</span> <span class="s">&quot;Request&quot;</span><span class="p">,</span> <span class="s">&quot;Response&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="AuthenticationType"><a class="viewcode-back" href="../ucam_webauth.html#ucam_webauth.AuthenticationType">[docs]</a><span class="k">class</span> <span class="nc">AuthenticationType</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An Authentication Type</span>
+
+<span class="sd">    This class exists to create the :const:`ucam_webauth.AUTH_PWD` constant.</span>
+
+<span class="sd">    .. attribute:: name</span>
+
+<span class="sd">        the name by which Ucam-webauth knows it</span>
+
+<span class="sd">    .. attribute:: description</span>
+
+<span class="sd">        a sentence describing it</span>
+
+<span class="sd">    Note that comparing an :class:`AuthenticationType` object with a string</span>
+<span class="sd">    (or another :class:`AuthenticationType` object) will compare the</span>
+<span class="sd">    :attr:`name` attribute only. Further, ``str(atype) == atype.name``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;ucam_webauth.AuthenticationType {0}&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">AuthenticationType</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">other</span>
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+</div>
+<span class="n">ATYPE_PWD</span> <span class="o">=</span> <span class="n">AuthenticationType</span><span class="p">(</span><span class="s">&quot;pwd&quot;</span><span class="p">,</span> <span class="s">&quot;Username and password&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Status"><a class="viewcode-back" href="../ucam_webauth.html#ucam_webauth.Status">[docs]</a><span class="k">class</span> <span class="nc">Status</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A WLS response Status</span>
+
+<span class="sd">    .. attribute:: code</span>
+
+<span class="sd">        a (three digit) integer</span>
+
+<span class="sd">    .. attribute:: name</span>
+
+<span class="sd">        short name for the status</span>
+
+<span class="sd">    .. attribute:: description</span>
+
+<span class="sd">        description: a sentence describing the status</span>
+
+<span class="sd">    Note that comparing a :class:`Status` object with an integer</span>
+<span class="sd">    (or another :class:`Status` object) will compare the :attr:`code`</span>
+<span class="sd">    attribute only. Further, `int(status_object) == status_object.code`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+    <span class="k">def</span> <span class="nf">__int__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;ucam_webauth.Status {0} {1}&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Status</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">other</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+</div>
+<span class="n">STATUS_CODE_LIST</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="s">&quot;success&quot;</span><span class="p">,</span> <span class="s">&quot;Successful authentication.&quot;</span><span class="p">),</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">410</span><span class="p">,</span> <span class="s">&quot;cancelled&quot;</span><span class="p">,</span> <span class="s">&quot;The user cancelled the authentication request&quot;</span><span class="p">),</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">510</span><span class="p">,</span> <span class="s">&quot;noatypes&quot;</span><span class="p">,</span>
+        <span class="s">&quot;No mutually acceptable authentication types available&quot;</span><span class="p">),</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">520</span><span class="p">,</span> <span class="s">&quot;unsupported_version&quot;</span><span class="p">,</span> <span class="s">&quot;Unsupported protocol version&quot;</span><span class="p">),</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">530</span><span class="p">,</span> <span class="s">&quot;bad_request&quot;</span><span class="p">,</span> <span class="s">&quot;General request parameter error&quot;</span><span class="p">),</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">540</span><span class="p">,</span> <span class="s">&quot;interaction_required&quot;</span><span class="p">,</span> <span class="s">&quot;Interaction would be required&quot;</span><span class="p">),</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">560</span><span class="p">,</span> <span class="s">&quot;waa_not_authorised&quot;</span><span class="p">,</span> <span class="s">&quot;Interaction would be required&quot;</span><span class="p">),</span>
+    <span class="n">Status</span><span class="p">(</span><span class="mi">570</span><span class="p">,</span> <span class="s">&quot;authentication_declined&quot;</span><span class="p">,</span>
+        <span class="s">&quot;The WLS declines to provide authentication services on this occasion&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">STATUS_CODES</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">status_code</span> <span class="ow">in</span> <span class="n">STATUS_CODE_LIST</span><span class="p">:</span>
+    <span class="n">STATUS_CODES</span><span class="p">[</span><span class="n">status_code</span><span class="o">.</span><span class="n">code</span><span class="p">]</span> <span class="o">=</span> <span class="n">status_code</span>
+    <span class="n">g_name</span> <span class="o">=</span> <span class="s">&quot;STATUS_{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">status_code</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+    <span class="nb">globals</span><span class="p">()[</span><span class="n">g_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">status_code</span>
+    <span class="n">__all__</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g_name</span><span class="p">)</span>
+<span class="k">del</span> <span class="n">status_code</span><span class="p">,</span> <span class="n">g_name</span>
+
+
+<div class="viewcode-block" id="Request"><a class="viewcode-back" href="../ucam_webauth.html#ucam_webauth.Request">[docs]</a><span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Request to the WLS</span>
+
+<span class="sd">    :type url: :class:`str`</span>
+<span class="sd">    :param url: a fully qualified URL; the user will be returned here</span>
+<span class="sd">                (along with the Response as a query parameter) afterwards</span>
+<span class="sd">    :type desc: :class:`str`</span>
+<span class="sd">    :param desc: optional description of the resource/website</span>
+<span class="sd">                 (encoding - see below)</span>
+<span class="sd">    :type aauth: :class:`set` of :class:`AuthenticationType` objects</span>
+<span class="sd">    :param aauth: optional set of permissible authentication types;</span>
+<span class="sd">                  we require the user to use one of them</span>
+<span class="sd">                  (if empty, the WLS uses its default set)</span>
+<span class="sd">    :type iact: ``True``, ``False`` or ``None``</span>
+<span class="sd">    :param iact: interaction required, forbidden or don&#39;t care (respectively)</span>
+<span class="sd">    :type msg: :class:`str`</span>
+<span class="sd">    :param msg: optional message explaining why authentication is required</span>
+<span class="sd">                (encoding - see below)</span>
+<span class="sd">    :type params: :class:`str`</span>
+<span class="sd">    :param params: data, which is returned unaltered in the :class:`Response`</span>
+<span class="sd">    :type fail: :class:`bool`</span>
+<span class="sd">    :param fail: if True, and authentication fails, the WLS must show an error</span>
+<span class="sd">                 message and not redirect back to the WAA</span>
+
+<span class="sd">    All parameters are available as attributes as of Request object,</span>
+<span class="sd">    once created.</span>
+
+<span class="sd">    .. attribute:: iact</span>
+
+<span class="sd">    * :const:`True`: the user must re-authenticate</span>
+<span class="sd">    * :const:`False`: no interaction with the user is permitted</span>
+<span class="sd">      (the request will only succeed if the user&#39;s identity can be</span>
+<span class="sd">      returned without interacting at all)</span>
+<span class="sd">    * :const:`None` (default): interacts if required</span>
+
+<span class="sd">    .. attribute:: msg</span>
+<span class="sd">                   desc</span>
+
+<span class="sd">        The &#39;msg&#39; and &#39;desc&#39; parameters are restricted to printable ASCII</span>
+<span class="sd">        characters (0x20 - 0x7e). The WLS will convert &#39;&lt;&#39; and &#39;&gt;&#39; to &#39;&amp;lt;&#39;</span>
+<span class="sd">        and &#39;&amp;gt;&#39; before using either string in HTML, preventing the</span>
+<span class="sd">        inclusion of markup. However, it does not touch &#39;&amp;&#39;, so HTML character</span>
+<span class="sd">        and numeric entities may be used to represent other characters.</span>
+
+<span class="sd">        If `encode_strings` is ``True``, ``&amp;`` will be escaped to ``&amp;amp;``,</span>
+<span class="sd">        and non-ascii characters in `msg` and `desc` will be converted to</span>
+<span class="sd">        their numeric entities.</span>
+
+<span class="sd">        Otherwise, it is up to you to encode your strings. An error will be</span>
+<span class="sd">        raised if `msg` or `desc` contain non-printable-ASCII characters.</span>
+
+<span class="sd">    .. attribute:: params</span>
+
+<span class="sd">        The ucam-webauth protocol does not specify any restrictions on the</span>
+<span class="sd">        content of params. However, awful things may happen if you put</span>
+<span class="sd">        arbitrary binary data in here. The Raven server appears to interpret</span>
+<span class="sd">        non-ascii contents as latin-1, turn them into html entities in order</span>
+<span class="sd">        to put them in a hidden HTML input element, then turn them back into</span>
+<span class="sd">        (hopefully) the same binary data to be returned in the Response. As a</span>
+<span class="sd">        result it outright rejects &#39;params&#39; containing bytes below 0x20, and</span>
+<span class="sd">        has the potential to go horribly wrong and land you in encoding hell.</span>
+
+<span class="sd">        Basically, you probably want to base64 params before giving it to a</span>
+<span class="sd">        Request object.</span>
+
+<span class="sd">    .. method:: __str__(self)</span>
+
+<span class="sd">        Evaluating ``str(request_object)`` gives a query string, excluding</span>
+<span class="sd">        the ``?``</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_printable_regexp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;^[</span><span class="se">\\</span><span class="s">x20-</span><span class="se">\\</span><span class="s">x7E]+$&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">aauth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">iact</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">encode_strings</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">iact</span> <span class="ow">is</span> <span class="bp">True</span> <span class="ow">or</span> <span class="n">iact</span> <span class="ow">is</span> <span class="bp">False</span> <span class="ow">or</span> <span class="n">iact</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;iact should be True, False or None&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">aauth</span> <span class="o">==</span> <span class="nb">frozenset</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;aauth may not be the empty set&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ver</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">desc</span> <span class="o">=</span> <span class="n">desc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aauth</span> <span class="o">=</span> <span class="n">aauth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iact</span> <span class="o">=</span> <span class="n">iact</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fail</span> <span class="o">=</span> <span class="n">fail</span>
+
+        <span class="c"># We encode now so that we can check the parameters are sane,</span>
+        <span class="c"># though the encoded versions aren&#39;t needed until __str__</span>
+
+        <span class="k">if</span> <span class="n">encode_strings</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_desc_encoded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode_printable</span><span class="p">(</span><span class="n">desc</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_msg_encoded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode_printable</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_desc_encoded</span> <span class="o">=</span> <span class="n">desc</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_msg_encoded</span> <span class="o">=</span> <span class="n">msg</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_printable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_desc_encoded</span><span class="p">,</span> <span class="s">&quot;desc&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_printable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_msg_encoded</span><span class="p">,</span> <span class="s">&quot;msg&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Request.__str__"><a class="viewcode-back" href="../ucam_webauth.html#ucam_webauth.Request.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a query string, for this Request (excluding the &#39;?&#39;)&quot;&quot;&quot;</span>
+        <span class="n">query_params</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;ver&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ver</span><span class="p">,</span> <span class="s">&quot;url&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_desc_encoded</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">query_params</span><span class="p">[</span><span class="s">&quot;desc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_desc_encoded</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aauth</span><span class="p">:</span>
+            <span class="n">query_params</span><span class="p">[</span><span class="s">&quot;aauth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aauth</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iact</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">query_params</span><span class="p">[</span><span class="s">&quot;iact&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;yes&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">iact</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="n">query_params</span><span class="p">[</span><span class="s">&quot;iact&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;no&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_msg_encoded</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">query_params</span><span class="p">[</span><span class="s">&quot;msg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_msg_encoded</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">query_params</span><span class="p">[</span><span class="s">&quot;params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fail</span><span class="p">:</span>
+            <span class="n">query_params</span><span class="p">[</span><span class="s">&quot;fail&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;yes&quot;</span>
+
+        <span class="k">return</span> <span class="n">urlencode</span><span class="p">(</span><span class="n">query_params</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Summarise the Request object&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;ucam_webauth.Request url={0!r}&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_encode_printable</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">string</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="c"># We don&#39;t need to worry about &lt;&gt;; but &amp; does need to be escaped.</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;&amp;&quot;</span><span class="p">,</span> <span class="s">&quot;&amp;amp;&quot;</span><span class="p">)</span>
+        <span class="c"># Care around python2/python3</span>
+        <span class="k">return</span> <span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;ascii&quot;</span><span class="p">,</span> <span class="s">&quot;xmlcharrefreplace&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&quot;ascii&quot;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_check_printable</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">parameter</span><span class="o">=</span><span class="s">&quot;String&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">string</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cls</span><span class="o">.</span><span class="n">_printable_regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;{0} contains non-printable characters&quot;</span>
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">parameter</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="Response"><a class="viewcode-back" href="../ucam_webauth.html#ucam_webauth.Response">[docs]</a><span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Response from the WLS</span>
+
+<span class="sd">    Constructed by parsing `string`, the &#39;encoded response string&#39; from the</span>
+<span class="sd">    WLS.</span>
+
+<span class="sd">    The Response class has the following attributes, which must be set by</span>
+<span class="sd">    subclassing it (see :class:`raven.Response`):</span>
+
+<span class="sd">    .. attribute:: old_version_ptags</span>
+
+<span class="sd">        A :class:`set` of :class:`str` objects</span>
+
+<span class="sd">        The ptags attribute is set to this value if the version of the</span>
+<span class="sd">        response is less than 3</span>
+
+<span class="sd">    .. attribute:: keys</span>
+
+<span class="sd">        A dict mapping key identifiers (`kid`) to a RSA public key</span>
+<span class="sd">        (which must be an object with a ``verify(digest, signature)``</span>
+<span class="sd">        method that returns a :class:`bool`)</span>
+
+<span class="sd">    A Response object has the following attributes:</span>
+
+<span class="sd">    **Always present**</span>
+
+<span class="sd">    .. attribute:: ver</span>
+
+<span class="sd">        response protocol version</span>
+<span class="sd">        (:class:`int`)</span>
+
+<span class="sd">    .. attribute:: status</span>
+
+<span class="sd">        response status</span>
+<span class="sd">        (:class:`Status` constant)</span>
+
+<span class="sd">    .. attribute:: msg</span>
+
+<span class="sd">        a text message describing the status of the authentication</span>
+<span class="sd">        request, suitable for display to the end-user</span>
+<span class="sd">        (:class:`str`)</span>
+
+<span class="sd">    .. attribute:: issue</span>
+
+<span class="sd">        response creation time</span>
+<span class="sd">        (:class:`datetime`, timezone naive - the values are UTC)</span>
+
+<span class="sd">    .. attribute:: id</span>
+
+<span class="sd">        an &quot;identifier&quot; for the response.</span>
+<span class="sd">        (:class:`int`)</span>
+
+<span class="sd">        The tuple (issue, id) is guaranteed to be unique</span>
+
+<span class="sd">    .. attribute:: url</span>
+
+<span class="sd">        the value of `url` supplied in the request, or equivalently,</span>
+<span class="sd">        the URL to which this response was delivered</span>
+<span class="sd">        (:class:`str`)</span>
+
+<span class="sd">    .. attribute:: success</span>
+
+<span class="sd">        shorthand for ``status == STATUS_SUCCESS``</span>
+<span class="sd">        (:class:`bool`)</span>
+
+<span class="sd">    .. attribute:: params</span>
+
+<span class="sd">        a copy of `params` from the request</span>
+<span class="sd">        (:class:`str`)</span>
+
+<span class="sd">    .. attribute:: signed</span>
+
+<span class="sd">        whether the signature was present and has been verified</span>
+<span class="sd">        (:class:`bool`)</span>
+
+<span class="sd">        Note that a present but invalid signature will produce an exception</span>
+<span class="sd">        when parsed.</span>
+
+<span class="sd">    **Present if authentication was successful, otherwise ``None``:**</span>
+
+<span class="sd">    .. attribute:: principal:</span>
+
+<span class="sd">        the authenticated identity of the user</span>
+<span class="sd">        (:class:`str`)</span>
+
+<span class="sd">    .. attribute:: ptags</span>
+
+<span class="sd">        attributes or properties of the principal</span>
+<span class="sd">        (:class:`frozenset` of :class:`str` objects)</span>
+
+<span class="sd">    .. attribute:: auth</span>
+
+<span class="sd">        method of authentication used</span>
+<span class="sd">        (:class:`AuthenticationType` constant, or ``None``)</span>
+
+<span class="sd">        If authentication was not established by interaction (i.e., the</span>
+<span class="sd">        client was already authenticated) then `auth` is ``None``</span>
+
+<span class="sd">    .. attribute:: sso</span>
+
+<span class="sd">        previous successful authentication types used</span>
+<span class="sd">        (:class:`frozenset` of :class:`AuthenticationType` constants)</span>
+
+<span class="sd">        `sso` will not be the empty set if auth is ``None``</span>
+
+<span class="sd">    **Optional if authentication was successful, otherwise ``None``:**</span>
+
+<span class="sd">    .. attribute:: life</span>
+
+<span class="sd">        remaining life of the user&#39;s WLS session</span>
+<span class="sd">        (:class:`int`, in seconds)</span>
+
+<span class="sd">    **Required if signed is True:**</span>
+
+<span class="sd">    .. attribute:: kid</span>
+
+<span class="sd">        identifies the RSA key used to sign the request</span>
+<span class="sd">        (:class:`str`)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Note that &quot;ptags&quot; is omitted in a version 1 response.</span>
+    <span class="n">_response_fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;ver&quot;</span><span class="p">,</span> <span class="s">&quot;status&quot;</span><span class="p">,</span> <span class="s">&quot;msg&quot;</span><span class="p">,</span> <span class="s">&quot;issue&quot;</span><span class="p">,</span> <span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="s">&quot;url&quot;</span><span class="p">,</span>
+                        <span class="s">&quot;principal&quot;</span><span class="p">,</span> <span class="s">&quot;ptags&quot;</span><span class="p">,</span> <span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;sso&quot;</span><span class="p">,</span> <span class="s">&quot;life&quot;</span><span class="p">,</span>
+                        <span class="s">&quot;params&quot;</span><span class="p">,</span> <span class="s">&quot;kid&quot;</span><span class="p">,</span> <span class="s">&quot;sig&quot;</span><span class="p">)</span>
+    <span class="n">_b64_trans</span> <span class="o">=</span> <span class="n">maketrans</span><span class="p">(</span><span class="s">&quot;-._&quot;</span><span class="p">,</span> <span class="s">&quot;+/=&quot;</span><span class="p">)</span>
+
+    <span class="n">old_version_ptags</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">digested_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_string</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_response_fields</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Incorrect number of values in response&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_response_fields</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parse_base_types</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fixup</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sanity_check</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Summarise the Response object&quot;&quot;&quot;</span>
+        <span class="n">extra</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptags</span><span class="p">:</span>
+                <span class="n">ptags</span> <span class="o">=</span> <span class="s">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ptags</span><span class="p">)</span>
+                <span class="n">extra</span> <span class="o">=</span> <span class="s">&quot; ({0})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ptags</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&lt;ucam_webauth.Response success: {r.principal}{extra}&gt;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&lt;ucam_webauth.Response failed: {r.status}&gt;&quot;</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="n">extra</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_split_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Split the response string into values</span>
+
+<span class="sd">        Returns values, digested: a list of strings (the unparsed values) and</span>
+<span class="sd">        the string that is hashed to calculate the signature</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;!&quot;</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_fields</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="s">&quot;kid&quot;</span><span class="p">,</span> <span class="s">&quot;sig&quot;</span><span class="p">)</span>
+        <span class="n">digested</span> <span class="o">=</span> <span class="s">&#39;!&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">ver</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">ver</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">ver</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_response_fields</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Incorrect number of values in response&quot;</span><span class="p">)</span>
+
+            <span class="n">values</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_response_fields</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&quot;ptags&quot;</span><span class="p">),</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">ver</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c"># Since we send ver=3 in the request, this shouldn&#39;t ever happen</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Response version unsupported&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">digested</span>
+
+    <span class="k">def</span> <span class="nf">_parse_base_types</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse integers, decode strings, split lists</span>
+
+<span class="sd">        Set empty values to None where appropriate</span>
+<span class="sd">        (i.e., except params and lists. lists are set to None in _fixup).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid status&quot;</span><span class="p">)</span>
+
+        <span class="c"># integers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ver</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ver</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+
+        <span class="c"># strings, required/optional checked in _sanity_check</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="s">&quot;url&quot;</span><span class="p">,</span> <span class="s">&quot;msg&quot;</span><span class="p">,</span> <span class="s">&quot;principal&quot;</span><span class="p">,</span> <span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;kid&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_value</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)))</span>
+
+        <span class="c"># datetime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">issue</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue</span><span class="p">,</span> <span class="s">&quot;%Y%m</span><span class="si">%d</span><span class="s">T%H%M%SZ&quot;</span><span class="p">)</span>
+
+        <span class="c"># comma_separated: ptags, sso, required/optional checked in _fixup</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;ptags&quot;</span><span class="p">,</span> <span class="s">&quot;sso&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">encoded_strings</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+                <span class="n">strings</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_decode_value</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                                    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">encoded_strings</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strings</span><span class="p">)</span>
+
+        <span class="c"># optional integer, required empty checked in _sanity_check</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">life</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">life</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">life</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">life</span><span class="p">)</span>
+
+        <span class="c"># string, but keep empty as &#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c"># base64 variant, verified and required-checked in _verify</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sig</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_webauth_b64decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sig</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sig</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_decode_value</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unquote &#39;!&#39; and &#39;%&#39; in response field values&quot;&quot;&quot;</span>
+        <span class="c"># From waa2wls-protocol.txt:</span>
+        <span class="c"># If the characters &#39;!&#39;  or &#39;%&#39; appear in any field value they MUST</span>
+        <span class="c"># be replaced by their %-encoded representation before concatenation.</span>
+        <span class="c"># Characters other than &#39;!&#39; and &#39;%&#39; MUST NOT be encoded at this stage.</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">unquote</span><span class="p">(</span><span class="n">encoded</span><span class="p">)</span>
+
+        <span class="c"># We shouldn&#39;t decode any %xx sequences except those for &#39;!&#39; and &#39;%&#39;</span>
+        <span class="c"># (%xx sequences present in the value before encoding would have been</span>
+        <span class="c"># rendered inert by % -&gt; %25)</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;%&quot;</span><span class="p">,</span> <span class="s">&quot;%25&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;!&quot;</span><span class="p">,</span> <span class="s">&quot;%21&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="n">encoded</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;The WLS encoded characters other than % and !&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_webauth_b64decode</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decode Ucam-webauth&#39;s variant of base64&quot;&quot;&quot;</span>
+        <span class="c"># Need to lose the unicode for translate and b64decode</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;ascii&quot;</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">_b64_trans</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">b64decode</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span> <span class="c"># apparently</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid base64 (sig)&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_fixup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Miscellaneous parsing steps</span>
+
+<span class="sd">        Replace status integer / authentication type strings with their</span>
+<span class="sd">        module level constant objects.</span>
+
+<span class="sd">        Set self.success</span>
+
+<span class="sd">        Add default ptags for older versions, replace lists that are required</span>
+<span class="sd">        by the protocol to be empty with None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="n">STATUS_CODES</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">STATUS_CODES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unrecognised status code {0}&quot;</span>
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">STATUS_SUCCESS</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_atype_obj</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ver</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ptags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_version_ptags</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sso</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_atype_obj</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sso</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptags</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Failed, yet ptags is not empty&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ptags</span> <span class="o">=</span> <span class="bp">None</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sso</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Failed, yet sso is not empty&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sso</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_atype_obj</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">auth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert a string to an AuthenticationType constant&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">auth</span> <span class="o">==</span> <span class="s">&quot;pwd&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ATYPE_PWD</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unrecognised authentication type {0}&quot;</span>
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">auth</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_verify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify the signature in response, if present</span>
+
+<span class="sd">        sets self.signed = True if successful; will raise ValueError if a</span>
+<span class="sd">        successful response is not signed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sig</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kid</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;sig and kid must either both be present or &quot;</span>
+                                <span class="s">&quot;both be empty&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sig</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unrecognised kid&quot;</span><span class="p">)</span>
+
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kid</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">digest</span> <span class="o">=</span> <span class="n">sha1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">digested_data</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sig</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Signature invalid&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">signed</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signed</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">success</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Successful responses must be signed&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_sanity_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Miscellaneous sanity checks that are not included in parsing.&quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;ver&quot;</span><span class="p">,</span> <span class="s">&quot;status&quot;</span><span class="p">,</span> <span class="s">&quot;issue&quot;</span><span class="p">,</span> <span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="s">&quot;url&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;{0} is required&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">principal</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Success, yet principal is empty&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sso</span> <span class="o">==</span> <span class="nb">set</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Success, yet neither auth nor sso provided&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;principal&quot;</span><span class="p">,</span> <span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;life&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Failed, yet {0} is not empty&quot;</span>
+                                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Response.check_iact_aauth"><a class="viewcode-back" href="../ucam_webauth.html#ucam_webauth.Response.check_iact_aauth">[docs]</a>    <span class="k">def</span> <span class="nf">check_iact_aauth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iact</span><span class="p">,</span> <span class="n">aauth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the WLS honoured `iact`, `aauth`</span>
+
+<span class="sd">        This method checks that `self.auth`, `self.sso` are consistent with</span>
+<span class="sd">        the `iact` and `aauth`, which should be the same as the values used</span>
+<span class="sd">        to construct the :class:`Request`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">iact</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="c"># must have authenticated just now:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+            <span class="c"># further, must have used one of the allowed methods</span>
+            <span class="k">if</span> <span class="n">aauth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">aauth</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="k">elif</span> <span class="n">iact</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="c"># shouldn&#39;t have just authenticated</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+            <span class="c"># but should have used one of the previous auth methods</span>
+            <span class="k">if</span> <span class="n">aauth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">aauth</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sso</span> <span class="o">==</span> <span class="nb">set</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># must have authenticated somehow at some point</span>
+            <span class="c"># (self.auth is not None or self.sso != set() is checked in</span>
+            <span class="c"># _sanity_check)</span>
+            <span class="c"># ... using an allowed method</span>
+            <span class="k">return</span> <span class="n">aauth</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="ow">in</span> <span class="n">aauth</span> <span class="ow">or</span> \
+                    <span class="n">aauth</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sso</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">python-raven 0.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel Richman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
