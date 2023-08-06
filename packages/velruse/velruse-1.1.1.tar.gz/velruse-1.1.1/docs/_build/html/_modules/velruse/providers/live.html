@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>velruse.providers.live &mdash; Velruse 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within Velruse 1.1 documentation"
+          href="../../../_static/opensearch.xml"/>
+    <link rel="top" title="Velruse 1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="velruse" href="../../velruse.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" accesskey="U">velruse</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for velruse.providers.live</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Live Authentication Views&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">from</span> <span class="nn">pyramid.httpexceptions</span> <span class="kn">import</span> <span class="n">HTTPFound</span>
+<span class="kn">from</span> <span class="nn">pyramid.security</span> <span class="kn">import</span> <span class="n">NO_PERMISSION_REQUIRED</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">..api</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AuthenticationComplete</span><span class="p">,</span>
+    <span class="n">AuthenticationDenied</span><span class="p">,</span>
+    <span class="n">register_provider</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..exceptions</span> <span class="kn">import</span> <span class="n">ThirdPartyFailure</span>
+<span class="kn">from</span> <span class="nn">..settings</span> <span class="kn">import</span> <span class="n">ProviderSettings</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">flat_url</span>
+
+
+<div class="viewcode-block" id="LiveAuthenticationComplete"><a class="viewcode-back" href="../../../providers/live.html#velruse.providers.live.LiveAuthenticationComplete">[docs]</a><span class="k">class</span> <span class="nc">LiveAuthenticationComplete</span><span class="p">(</span><span class="n">AuthenticationComplete</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Live Connect auth complete&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="includeme"><a class="viewcode-back" href="../../../providers/live.html#velruse.providers.live.includeme">[docs]</a><span class="k">def</span> <span class="nf">includeme</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s">&#39;add_live_login&#39;</span><span class="p">,</span> <span class="n">add_live_login</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s">&#39;add_live_login_from_settings&#39;</span><span class="p">,</span>
+                         <span class="n">add_live_login_from_settings</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="add_live_login_from_settings"><a class="viewcode-back" href="../../../providers/live.html#velruse.providers.live.add_live_login_from_settings">[docs]</a><span class="k">def</span> <span class="nf">add_live_login_from_settings</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s">&#39;velruse.live.&#39;</span><span class="p">):</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">settings</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">ProviderSettings</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;consumer_key&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;consumer_secret&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;scope&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;login_path&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;callback_path&#39;</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_live_login</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="add_live_login"><a class="viewcode-back" href="../../../providers/live.html#velruse.providers.live.add_live_login">[docs]</a><span class="k">def</span> <span class="nf">add_live_login</span><span class="p">(</span><span class="n">config</span><span class="p">,</span>
+                   <span class="n">consumer_key</span><span class="p">,</span>
+                   <span class="n">consumer_secret</span><span class="p">,</span>
+                   <span class="n">scope</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                   <span class="n">login_path</span><span class="o">=</span><span class="s">&#39;/login/live&#39;</span><span class="p">,</span>
+                   <span class="n">callback_path</span><span class="o">=</span><span class="s">&#39;/login/live/callback&#39;</span><span class="p">,</span>
+                   <span class="n">name</span><span class="o">=</span><span class="s">&#39;live&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add a Live login provider to the application.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">provider</span> <span class="o">=</span> <span class="n">LiveProvider</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">consumer_key</span><span class="p">,</span> <span class="n">consumer_secret</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span> <span class="n">login_path</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_view</span><span class="p">(</span><span class="n">provider</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">route_name</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span>
+                    <span class="n">permission</span><span class="o">=</span><span class="n">NO_PERMISSION_REQUIRED</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="n">provider</span><span class="o">.</span><span class="n">callback_route</span><span class="p">,</span> <span class="n">callback_path</span><span class="p">,</span>
+                     <span class="n">use_global_views</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                     <span class="n">factory</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">callback</span><span class="p">)</span>
+
+    <span class="n">register_provider</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">provider</span><span class="p">)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">LiveProvider</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">consumer_key</span><span class="p">,</span> <span class="n">consumer_secret</span><span class="p">,</span> <span class="n">scope</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;live&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span> <span class="o">=</span> <span class="n">consumer_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span> <span class="o">=</span> <span class="n">consumer_secret</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">scope</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">login_route</span> <span class="o">=</span> <span class="s">&#39;velruse.</span><span class="si">%s</span><span class="s">-login&#39;</span> <span class="o">%</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_route</span> <span class="o">=</span> <span class="s">&#39;velruse.</span><span class="si">%s</span><span class="s">-callback&#39;</span> <span class="o">%</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initiate a Live login&quot;&quot;&quot;</span>
+        <span class="n">scope</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;scope&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">or</span>
+                                 <span class="s">&#39;wl.basic wl.emails wl.signin&#39;</span><span class="p">)</span>
+        <span class="n">fb_url</span> <span class="o">=</span> <span class="n">flat_url</span><span class="p">(</span><span class="s">&#39;https://oauth.live.com/authorize&#39;</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span>
+                          <span class="n">client_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span><span class="p">,</span>
+                          <span class="n">redirect_uri</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">route_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback_route</span><span class="p">),</span>
+                          <span class="n">response_type</span><span class="o">=</span><span class="s">&quot;code&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HTTPFound</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">fb_url</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process the Live redirect&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;error_description&#39;</span><span class="p">,</span>
+                                    <span class="s">&#39;No reason provided.&#39;</span><span class="p">))</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;code&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">code</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;error_reason&#39;</span><span class="p">,</span> <span class="s">&#39;No reason provided.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">AuthenticationDenied</span><span class="p">(</span><span class="n">reason</span><span class="p">,</span>
+                                        <span class="n">provider_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                        <span class="n">provider_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+
+        <span class="c"># Now retrieve the access token with the code</span>
+        <span class="n">access_url</span> <span class="o">=</span> <span class="n">flat_url</span><span class="p">(</span>
+            <span class="s">&#39;https://oauth.live.com/token&#39;</span><span class="p">,</span>
+            <span class="n">client_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span><span class="p">,</span>
+            <span class="n">client_secret</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span><span class="p">,</span>
+            <span class="n">redirect_uri</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">route_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback_route</span><span class="p">),</span>
+            <span class="n">grant_type</span><span class="o">=</span><span class="s">&quot;authorization_code&quot;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="n">code</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">access_url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span><span class="s">&quot;Status </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">access_token</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">]</span>
+
+        <span class="c"># Retrieve profile data</span>
+        <span class="n">graph_url</span> <span class="o">=</span> <span class="n">flat_url</span><span class="p">(</span><span class="s">&#39;https://apis.live.net/v5.0/me&#39;</span><span class="p">,</span>
+                             <span class="n">access_token</span><span class="o">=</span><span class="n">access_token</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">graph_url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span><span class="s">&quot;Status </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+        <span class="n">live_profile</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">extract_live_data</span><span class="p">(</span><span class="n">live_profile</span><span class="p">)</span>
+
+        <span class="n">cred</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;oauthAccessToken&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">}</span>
+        <span class="k">if</span> <span class="s">&#39;refresh_token&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">cred</span><span class="p">[</span><span class="s">&#39;oauthRefreshToken&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;refresh_token&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">LiveAuthenticationComplete</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">,</span>
+                                          <span class="n">credentials</span><span class="o">=</span><span class="n">cred</span><span class="p">,</span>
+                                          <span class="n">provider_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                          <span class="n">provider_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">extract_live_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract and normalize Windows Live Connect data&quot;&quot;&quot;</span>
+    <span class="n">emails</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;emails&#39;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">profile</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;accounts&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s">&#39;domain&#39;</span><span class="p">:</span> <span class="s">&#39;live.com&#39;</span><span class="p">,</span> <span class="s">&#39;userid&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]}],</span>
+        <span class="s">&#39;gender&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;gender&#39;</span><span class="p">),</span>
+        <span class="s">&#39;verifiedEmail&#39;</span><span class="p">:</span> <span class="n">emails</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;preferred&#39;</span><span class="p">),</span>
+        <span class="s">&#39;updated&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;updated_time&#39;</span><span class="p">),</span>
+        <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&#39;formatted&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">),</span>
+            <span class="s">&#39;familyName&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;last_name&#39;</span><span class="p">),</span>
+            <span class="s">&#39;givenName&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;first_name&#39;</span><span class="p">),</span>
+        <span class="p">},</span>
+        <span class="s">&#39;displayName&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">),</span>
+        <span class="s">&#39;emails&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s">&#39;urls&#39;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">emails</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;personal&#39;</span><span class="p">):</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;emails&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;personal&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">emails</span><span class="p">[</span><span class="s">&#39;personal&#39;</span><span class="p">]})</span>
+    <span class="k">if</span> <span class="n">emails</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;business&#39;</span><span class="p">):</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;emails&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;business&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">emails</span><span class="p">[</span><span class="s">&#39;business&#39;</span><span class="p">]})</span>
+    <span class="k">if</span> <span class="n">emails</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;preferred&#39;</span><span class="p">):</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;emails&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;preferred&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">emails</span><span class="p">[</span><span class="s">&#39;preferred&#39;</span><span class="p">],</span>
+             <span class="s">&#39;primary&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
+    <span class="k">if</span> <span class="n">emails</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;account&#39;</span><span class="p">):</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;emails&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;account&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">emails</span><span class="p">[</span><span class="s">&#39;account&#39;</span><span class="p">]})</span>
+    <span class="k">if</span> <span class="s">&#39;link&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;urls&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;profile&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;link&#39;</span><span class="p">]})</span>
+    <span class="k">if</span> <span class="s">&#39;birth_day&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">profile</span><span class="p">[</span><span class="s">&#39;birthday&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;birth_year&#39;</span><span class="p">]),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;birth_month&#39;</span><span class="p">]),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;birth_day&#39;</span><span class="p">]),</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">profile</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" >velruse</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Ben Bangert.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

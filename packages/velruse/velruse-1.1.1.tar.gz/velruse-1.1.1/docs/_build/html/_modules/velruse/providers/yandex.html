@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>velruse.providers.yandex &mdash; Velruse 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within Velruse 1.1 documentation"
+          href="../../../_static/opensearch.xml"/>
+    <link rel="top" title="Velruse 1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="velruse" href="../../velruse.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" accesskey="U">velruse</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for velruse.providers.yandex</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Yandex Authentication Views</span>
+
+<span class="sd">You may see developer docs at http://api.yandex.com/oauth/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="kn">from</span> <span class="nn">pyramid.httpexceptions</span> <span class="kn">import</span> <span class="n">HTTPFound</span>
+<span class="kn">from</span> <span class="nn">pyramid.security</span> <span class="kn">import</span> <span class="n">NO_PERMISSION_REQUIRED</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">..api</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AuthenticationComplete</span><span class="p">,</span>
+    <span class="n">AuthenticationDenied</span><span class="p">,</span>
+    <span class="n">register_provider</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..exceptions</span> <span class="kn">import</span> <span class="n">CSRFError</span><span class="p">,</span> <span class="n">ThirdPartyFailure</span>
+<span class="kn">from</span> <span class="nn">..settings</span> <span class="kn">import</span> <span class="n">ProviderSettings</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">flat_url</span>
+
+
+<span class="n">PROVIDER_NAME</span> <span class="o">=</span> <span class="s">&#39;yandex&#39;</span>
+<span class="n">PROVIDER_AUTH_URL</span> <span class="o">=</span> <span class="s">&#39;https://oauth.yandex.ru/authorize&#39;</span>
+<span class="n">PROVIDER_ACCESS_TOKEN_URL</span> <span class="o">=</span> <span class="s">&#39;https://oauth.yandex.ru/token&#39;</span>
+<span class="n">PROVIDER_USER_PROFILE_URL</span> <span class="o">=</span> <span class="s">&#39;https://login.yandex.ru/info&#39;</span>
+
+
+<div class="viewcode-block" id="YandexAuthenticationComplete"><a class="viewcode-back" href="../../../providers/yandex.html#velruse.providers.yandex.YandexAuthenticationComplete">[docs]</a><span class="k">class</span> <span class="nc">YandexAuthenticationComplete</span><span class="p">(</span><span class="n">AuthenticationComplete</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Yandex auth complete&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="includeme"><a class="viewcode-back" href="../../../providers/yandex.html#velruse.providers.yandex.includeme">[docs]</a><span class="k">def</span> <span class="nf">includeme</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s">&#39;add_yandex_login&#39;</span><span class="p">,</span> <span class="n">add_yandex_login</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s">&#39;add_yandex_login_from_settings&#39;</span><span class="p">,</span>
+                         <span class="n">add_yandex_login_from_settings</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="add_yandex_login_from_settings"><a class="viewcode-back" href="../../../providers/yandex.html#velruse.providers.yandex.add_yandex_login_from_settings">[docs]</a><span class="k">def</span> <span class="nf">add_yandex_login_from_settings</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s">&#39;velruse.yandex.&#39;</span><span class="p">):</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">settings</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">ProviderSettings</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;consumer_key&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;consumer_secret&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;login_path&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;callback_path&#39;</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_yandex_login</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="add_yandex_login"><a class="viewcode-back" href="../../../providers/yandex.html#velruse.providers.yandex.add_yandex_login">[docs]</a><span class="k">def</span> <span class="nf">add_yandex_login</span><span class="p">(</span>
+    <span class="n">config</span><span class="p">,</span>
+    <span class="n">consumer_key</span><span class="p">,</span>
+    <span class="n">consumer_secret</span><span class="p">,</span>
+    <span class="n">login_path</span><span class="o">=</span><span class="s">&#39;/login/{name}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">PROVIDER_NAME</span><span class="p">),</span>
+    <span class="n">callback_path</span><span class="o">=</span><span class="s">&#39;/login/{name}/callback&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">PROVIDER_NAME</span><span class="p">),</span>
+    <span class="n">name</span><span class="o">=</span><span class="n">PROVIDER_NAME</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a Yandex login provider to the application.&quot;&quot;&quot;</span>
+    <span class="n">provider</span> <span class="o">=</span> <span class="n">YandexProvider</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">consumer_key</span><span class="p">,</span> <span class="n">consumer_secret</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span> <span class="n">login_path</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_view</span><span class="p">(</span>
+        <span class="n">provider</span><span class="p">,</span>
+        <span class="n">attr</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span>
+        <span class="n">route_name</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">login_route</span><span class="p">,</span>
+        <span class="n">permission</span><span class="o">=</span><span class="n">NO_PERMISSION_REQUIRED</span>
+    <span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span>
+        <span class="n">provider</span><span class="o">.</span><span class="n">callback_route</span><span class="p">,</span> <span class="n">callback_path</span><span class="p">,</span>
+        <span class="n">use_global_views</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">factory</span><span class="o">=</span><span class="n">provider</span><span class="o">.</span><span class="n">callback</span>
+    <span class="p">)</span>
+    <span class="n">register_provider</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">provider</span><span class="p">)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">YandexProvider</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">consumer_key</span><span class="p">,</span> <span class="n">consumer_secret</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">PROVIDER_NAME</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span> <span class="o">=</span> <span class="n">consumer_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span> <span class="o">=</span> <span class="n">consumer_secret</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">login_route</span> <span class="o">=</span> <span class="s">&#39;velruse.{name}-login&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="c"># Yandex doesn&#39;t support redirect_uri and scope parameters in</span>
+        <span class="c"># the query string.</span>
+        <span class="c"># You must define the Callback URI and the Scope fields manually in</span>
+        <span class="c"># application&#39;s settings page at https://oauth.yandex.ru/client/my</span>
+        <span class="c"># The following attribute is left intact in order to preserve API</span>
+        <span class="c"># consistency.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_route</span> <span class="o">=</span> <span class="s">&#39;velruse.{name}-callback&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initiate a Yandex login&quot;&quot;&quot;</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+        <span class="n">auth_url</span> <span class="o">=</span> <span class="n">flat_url</span><span class="p">(</span>
+            <span class="n">PROVIDER_AUTH_URL</span><span class="p">,</span>
+            <span class="n">client_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span><span class="p">,</span>
+            <span class="n">response_type</span><span class="o">=</span><span class="s">&#39;code&#39;</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">state</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">HTTPFound</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">auth_url</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process the Yandex redirect&quot;&quot;&quot;</span>
+        <span class="n">sess_state</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">)</span>
+        <span class="n">req_state</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sess_state</span> <span class="ow">or</span> <span class="n">sess_state</span> <span class="o">!=</span> <span class="n">req_state</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CSRFError</span><span class="p">(</span>
+                <span class="s">&#39;CSRF Validation check failed. Request state {req_state} is &#39;</span>
+                <span class="s">&#39;not the same as session state {sess_state}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">req_state</span><span class="o">=</span><span class="n">req_state</span><span class="p">,</span>
+                    <span class="n">sess_state</span><span class="o">=</span><span class="n">sess_state</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;code&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">code</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;error&#39;</span><span class="p">,</span> <span class="s">&#39;No reason provided.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">AuthenticationDenied</span><span class="p">(</span>
+                <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+                <span class="n">provider_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">provider_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span>
+            <span class="p">)</span>
+        <span class="c"># Now retrieve the access token with the code</span>
+        <span class="n">token_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;grant_type&#39;</span><span class="p">:</span> <span class="s">&#39;authorization_code&#39;</span><span class="p">,</span>
+            <span class="s">&#39;code&#39;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+            <span class="s">&#39;client_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumer_key</span><span class="p">,</span>
+            <span class="s">&#39;client_secret&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumer_secret</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">PROVIDER_ACCESS_TOKEN_URL</span><span class="p">,</span> <span class="n">token_params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span>
+                <span class="s">&#39;Status {status}: {content}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">access_token</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">]</span>
+
+        <span class="c"># Retrieve profile data</span>
+        <span class="n">profile_url</span> <span class="o">=</span> <span class="n">flat_url</span><span class="p">(</span>
+            <span class="n">PROVIDER_USER_PROFILE_URL</span><span class="p">,</span>
+            <span class="n">format</span><span class="o">=</span><span class="s">&#39;json&#39;</span><span class="p">,</span>
+            <span class="n">oauth_token</span><span class="o">=</span><span class="n">access_token</span>
+        <span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">profile_url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ThirdPartyFailure</span><span class="p">(</span>
+                <span class="s">&#39;Status {status}: {content}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">extract_normalize_yandex_data</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+        <span class="n">cred</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;oauthAccessToken&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">YandexAuthenticationComplete</span><span class="p">(</span>
+            <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">,</span>
+            <span class="n">credentials</span><span class="o">=</span><span class="n">cred</span><span class="p">,</span>
+            <span class="n">provider_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">provider_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">extract_normalize_yandex_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract and normalize Yandex data returned by the provider&quot;&quot;&quot;</span>
+    <span class="n">profile</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;accounts&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s">&#39;domain&#39;</span><span class="p">:</span> <span class="s">&#39;yandex.ru&#39;</span><span class="p">,</span>
+                <span class="s">&#39;userid&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s">&#39;birthday&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;birthday&#39;</span><span class="p">),</span>
+        <span class="s">&#39;gender&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;sex&#39;</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">email</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;default_email&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">email</span><span class="p">:</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;emails&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span>
+            <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span>
+            <span class="s">&#39;primary&#39;</span><span class="p">:</span> <span class="bp">True</span>
+        <span class="p">}]</span>
+
+    <span class="n">display_name</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;display_name&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">display_name</span><span class="p">:</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;preferredUsername&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">display_name</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s">&#39;nickname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">display_name</span>
+    <span class="n">real_name</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;real_name&#39;</span><span class="p">)</span>
+    <span class="n">profile</span><span class="p">[</span><span class="s">&#39;displayName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">real_name</span>
+        <span class="ow">or</span> <span class="n">display_name</span>
+        <span class="ow">or</span> <span class="s">&#39;Yandex user #{id}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span>
+    <span class="p">)</span>
+
+    <span class="c"># Now strip out empty values</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">profile</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">del</span> <span class="n">profile</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">profile</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Velruse 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../velruse.html" >velruse</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Ben Bangert.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
