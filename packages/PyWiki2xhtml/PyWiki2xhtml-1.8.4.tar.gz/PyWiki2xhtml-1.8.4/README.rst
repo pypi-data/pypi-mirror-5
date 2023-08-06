@@ -1,0 +1,15 @@
+PyWiki2Xhtml est un convertisseur de texte à la syntaxe Wiki vers du XHTML
+
+Outre ses possibilités de mise en forme "standard" (gras, souligné, italique, liste à 
+puces, paragraphes, etc..), il possède la fonctionnalité de générer automatiquement un 
+sommaire de titre à intégrer (avec liens sur les ancres de chaque titres).
+
+Il inclut aussi une extension du parser pour utiliser un système de macros dont quelques 
+unes sont déja implémentés (mediaplayer, pygments, etc..), mais qui peuvent aussi être 
+ajoutés à la volée.
+
+Beaucoup d'options de fonctionnement du parser sont configurables et il est possible dans 
+une certaine limite de modifier la syntaxe Wiki à utiliser (un exemple existe dans le 
+parser principal).
+
+(this module is restricted to utf-8 encoding input&output).
