@@ -1,0 +1,48 @@
+Flask request filter
+
+Flarf allows you to filter flask request to your specification.
+
+Simplest example: 
+
+    from flask import Flask
+    from flask.ext.flarf import Flarf, FlarFilter
+
+    def format_from_request(request):
+        return """
+               HEADER: {}\n
+               header: {}\n
+               PATH: {}\n
+               ARGS: {}\n
+               """.format(request.header.upper(),
+                          request.header,
+                          request.path.upper(),
+                          request.args)
+
+    flarf_filter = FlarfFilter(filter_tag='flarf_filter',
+                               filter_params=[format_from_request],
+                               filter_on=['includeme'])
+
+   app = Flask(__name__)
+   Flarf(app, filters=[flarf_filter])
+
+   @app.route("/includeme")
+   def index():
+       return render_template("index.html")
+
+   index.html:
+
+   MY_REQUEST: {{ flarf_ctx('flarf_filter').format_from_request }}
+
+Ok, so you can already do this without using Flarf in Flask and Jinja. However, 
+using a filter reduced what needed to be typed out to a small degree, and is
+reuseable. If you need to do the same thing over and over, you could use a 
+template macro, but what if you want to something more readily done in code and
+not always seen? For example, keeping a history of user requests on a per user
+basis? Calculate and format variables based on other incoming variables? 
+
+Basic examples are by nature super simple, but perhaps you can begin to see the
+uses: any time you need anything specific for your views/templates you can
+filter it from incoming request and have it readily available without having to
+prep the info on a per-view/per-template basis.
+
+Suggestions, input, & improvements welcomed.
