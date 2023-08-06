@@ -1,0 +1,54 @@
+{% load i18n l10n %}
+
+{% get_current_language as LANGUAGE_CODE %}
+
+<style type ="text/css" media="screen" >
+	#{{view_name}}_test
+	{
+		border: 1px solid blue;
+	}
+
+</style>
+
+
+<div id='{{view_name}}_test'>
+
+	<div id='{{view_name}}_xlsx_button'> XLSX </div>
+
+
+ --  {{view_name}}-- 
+
+</div>
+
+<!-- <div id="{{view_name}}_div_excel_csv" class="excel_container">
+	<a id = "excel_{{view_name}}" href="#"  alt="{% trans 'Save CDRs whith current settings' %}">Excel</a>
+	<a id="csv_{{view_name}}" href="#"  alt="{% trans 'Save CDRs whith current settings' %}">CSV</a>
+</div> -->
+
+
+<script type="text/javascript" lang="text/javascript">
+
+	$('#{{view_name}}_xlsx_button').button();
+
+	$('#{{view_name}}_xlsx_button').click(function(e){
+		{{view_name}}_callback('xlsx');
+	});
+
+	function setExportExcel(URL_XLSX,param='None',MEDIA_URL='/media/'){
+			url = URL_XLSX
+			$.ajax({
+				type: 'GET',
+				url: url,
+				dataType: 'json',
+				success: function(response){
+					// console.log('returned...',response);
+					new_user_msg = '<div id="" class="user_message '+response['msg_type']+'"><span>'+response['msg']+'</span><a href="'+MEDIA_URL+response['file_url']+'" title=""><span class="ui-icon ui-icon-circle-arrow-s download_file"></span></a><span class="ui-icon ui-icon-circle-close close_message_icon"></span></div>';
+					$('#manager_messages').prepend(new_user_msg);
+					$('input:button').button();
+					setCloseMessagesEvent();
+				}
+			});
+		};
+
+
+</script> 
