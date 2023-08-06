@@ -1,0 +1,129 @@
+Metadata-Version: 1.1
+Name: config-enhance
+Version: 1.2.2
+Summary: Provide reuse to ConfigParser files.
+Home-page: https://github.com/zillow/config-enhance
+Author: Jonathan Ultis
+Author-email: jonathanu@zillow.com
+License: # Copyright (c) 2012 Zillow
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Description: config-enhance
+        ==============
+        
+        config-enhance adds re-use capabilities to ConfigParser style config
+        files.
+        
+        It introduces a reserved key: '<<='
+        
+        The '<<=' key should be assigned a list of enhancements like:
+        
+        ::
+        
+            [section]
+            <<=
+                <other1
+                +other2
+                <other3
+                -other4
+        
+        Each enhancement is composed of an operator followed by a section name.
+        The operators are:
+        
+        -  '<' : mix things in from another section if they don't already exist
+        -  '+' : pull config from another section, overwrite settings in the
+           current section if there is a clash.
+        -  '-' : remove config items that exist in the source section from this
+           section
+        
+        You can use it like this:
+        
+        ::
+        
+            from config_enhance import enhance
+        
+            cp = ConfigParser (file ("my.cfg"))
+            enhance(cp)
+        
+        Suppose that my.cfg contains content like:
+        
+        ::
+        
+            [common]
+            flup = 1.0
+            requests = 2.0
+        
+            [tes_100]
+            <<= <common
+            requests = 5.0
+            tornado = 6.0
+        
+            [dev_tes_common]
+            tornado = 6.0d
+        
+            [dev_unpin]
+            flup = unpin
+        
+            [dev_tes_100]
+            <<=
+                <tes_100
+                +dev_tes_common
+                -dev_unpin
+        
+        After running enhance, 'cp' will be modified to contain:
+        
+        ::
+        
+            [common]
+            flup = 1.0
+            requests = 2.0
+        
+            [tes_100]
+            flup = 1.0
+            requests = 5.0
+            tornado = 6.0
+        
+            [dev_tes_common]
+            tornado = 6.0d
+        
+            [dev_unpin]
+            flup = unpin
+        
+            [dev_tes_100]
+            requests = 5.0
+            tornado = 6.0d
+        
+        target audience
+        ===============
+        
+        config-enhance is useful when managing version requirement sections in
+        buildout. Buildout already contains limited reuse features through the
+        '<=' idiom. But, version management is easier with an extended set.
+        
+        Other docs of interest
+        ----------------------
+        
+        `config parser
+        documentation <http://docs.python.org/2/library/configparser.html>`__
+        
+Keywords: zillow
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Topic :: Utilities
