@@ -1,0 +1,88 @@
+Metadata-Version: 1.0
+Name: jsonprop
+Version: 0.0.5
+Summary: A json serialization library for python.
+Home-page: http://packages.python.org/jsonprop
+Author: Dan Newcome
+Author-email: dnewcome@circleup.com
+License: BSD
+Description: # About
+        
+        Fine-grained control of JSON serialization using decorators.
+        
+        # Why
+        
+        Because sometimes you just need to serialize a few properties/exclude
+        null values/rename fields and want to do it declaratively.
+        
+        # Usage
+        
+        Imports
+        
+            from jsonprop import JsonObject, json_property
+        
+        Inherit from JsonObject
+        
+            class MyJsonObjectClass(JsonObject):
+                def __init__(self):
+                    self._test_prop = None
+        
+        Decorate getter method with @json_property
+        
+            ...
+                @json_property('json_test_prop', False)
+                def get_test_prop(self):
+                    return self._test_prop 
+        
+        use json() method inherited from JsonObject to serialize
+        
+                json = myclass.json()
+        
+        Alternatively, use the json_field to concisely specify a set of serializable fields
+        on an object that may be assigned to as descriptors.
+        
+            class MyObj(JsonObject):
+                field_one = json_field('fieldOne')
+                field_two = json_field('fieldTwo')
+        
+        Which may be serialized in the same manner as above.
+        
+        JsonObject supports the use of keyword arguments at object initialization time. The
+        example class above may be conveniently instantiated as follows:
+        
+            myobj = MyObj(field_one = 'one', field_two = 'two')
+        
+        
+        # API
+        
+        The general form of the decorator is:
+        
+            @json_property(name, include_null)
+        
+        where name is the desired JSON field name for the python property and 
+        include_null is a boolean that indicates whether or not null values will 
+        be included in the serialization. By default this value is True and null values
+        will be serialized. If this is set to False, the field will be omitted entirely
+        in the serialized JSON output in the event that the value of the field is
+        None.
+        
+        The decorator may be applied without arguments, in which case the field 
+        will not be renamed and nulls will be serialized. Note that the property
+        decorator must be called as a constructor, i.e. using empty parens `()'
+        
+            @json_property()
+        
+        
+        # Hacking
+        
+        Serializing properties as collections, maybe extend this to (gasp) xml. 
+        Take a look at serialization properties in c# for more.
+        
+        # Todo
+        
+        
+Keywords: json serialization
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Topic :: Software Development :: Libraries
+Classifier: License :: OSI Approved :: BSD License
