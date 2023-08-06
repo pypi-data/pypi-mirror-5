@@ -1,0 +1,46 @@
+{% extends 'accounts/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Log in or sign up for an account{% endblock %}
+
+{% block content %}
+	<div class='row'>
+		<div class='login-form span6'>
+			<form method='post' action='{% url "auth_login" %}'>
+				{% csrf_token %}
+
+				<legend>Log in</legend>
+
+				{% if next %}
+					<div class='alert alert-block'>
+						<i class='icon-warning-sign'></i>You must log in before you can access that page.
+					</div>
+				{% endif %}
+
+				{{ login_form | crispy }}
+
+				<input type='submit' value='Log in' class='btn btn-primary'/>
+
+				<input type='hidden' name='next' value='{{ next }}'/>
+
+				<p><a href='{% url "auth_password_reset" %}'>Forgot your password?</a></p>
+
+			</form>
+		</div>
+
+		<div class='signup-form span6'>
+			<form method='post' action='{% url "accounts_signup_form" %}' data-ajax='false'>
+				{% csrf_token %}
+
+				<legend>Sign up for an account</legend>
+
+				{{ signup_form | crispy }}
+
+				<p>Click <strong>I accept</strong> to agree to the {{ site.name }} <a href='{% url 'terms_of_service' %}'>Terms of Service</a>.</p>
+
+				<input type='submit' value='I accept' class='btn btn-primary'/>
+			</form>
+		</div>
+	</div>
+{% endblock %}
