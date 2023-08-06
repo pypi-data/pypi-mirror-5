@@ -1,0 +1,880 @@
+/*!
+ * Converse.js (Web-based XMPP instant messaging client)
+ * http://conversejs.org
+ *
+ * Copyright (c) 2012, Jan-Carel Brand <jc@opkode.com>
+ * Dual licensed under the MIT and GPL Licenses
+ */
+
+@import url("fonticons/style.css");
+
+#collective-xmpp-chat-data,
+#collective-xmpp-chat-data input {
+  color: rgb(79, 79, 79);
+}
+
+.hidden {
+    display: none
+}
+
+.locked {
+    padding-right: 22px;
+}
+
+span.spinner {
+    background: url(images/spinner.gif) no-repeat center;
+    width: 22px;
+    height: 22px;
+    padding: 0 2px 0 2px;
+    display: block;
+}
+
+span.spinner.centered {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    margin: 0 0 0 -25%;
+}
+
+span.spinner.hor_centered {
+    left: 40%;
+    position: absolute;
+}
+
+#chatpanel {
+    z-index: 99; /*--Keeps the panel on top of all other elements--*/
+    position: fixed;
+    bottom: 0; right: 0;
+    height: 332px;
+    width: auto;
+}
+
+#toggle-controlbox {
+    position: fixed;
+    font-size: 70%;
+    bottom: 0;
+    right: 0;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
+    background: #e3e2e2;
+    border: 1px solid #c3c3c3;
+    border-bottom: none;
+    padding: 1px 3px;
+    margin-right: 15px;
+    height: 16px;
+}
+
+#connecting-to-chat {
+    background: url(images/spinner.gif) no-repeat left;
+    padding-left: 1.4em;
+}
+
+.chat-head {
+    color: #ffffff;
+    margin: 0;
+    font-size: 100%;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
+    padding: 3px 0 0 3px;
+}
+
+.chat-head-chatbox {
+    background-color: rgb(79, 106, 114);
+    background-color: rgba(79, 106, 114, 1);
+}
+
+.chat-head-chatroom {
+    background-color: #2D617A;
+}
+
+.chatroom .chat-body {
+    height: 274px;
+    background-color: white;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-top: 0;
+}
+
+.chatroom .chat-area {
+    float: left;
+    width: 200px;
+}
+
+.chatroom .chat {
+    overflow: auto;
+    height: 400px;
+}
+
+.chatroom .participants {
+    float: left;
+    overflow: auto;
+    border-left: 1px solid #AAA;
+    max-width: 98px;
+    height: 274px;
+    background-color: white;
+    overflow: auto;
+    border-left: 1px solid #AAA;
+    border-bottom-right-radius: 4px;
+}
+
+.participants ul.participant-list li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    font-size: 12px;
+    padding: 0.5em 0 0 0.5em;
+    cursor: default;
+}
+
+ul.participant-list li.moderator {
+    color: #FE0007;
+}
+
+.chatroom .participant-list {
+    list-style: none;
+}
+
+.chat-blink {
+    background-color: #176679;
+    border-right:1px solid #176679;
+    border-left:1px solid #176679;
+}
+
+.chat-content {
+    padding: 0.3em;
+    font-size: 13px;
+    color: rgb(79, 79, 79);
+    height:200px;
+    width: 192px;
+    overflow-y:auto;
+    border: 0;
+    background-color: #ffffff;
+    line-height: 1.3em;
+}
+
+.chat-textarea {
+    border: 0;
+    height: 50px;
+}
+
+.chat-textarea-chatbox-selected {
+    border: 1px solid #578308;
+    margin:0;
+}
+
+.chat-textarea-chatroom-selected {
+    border: 2px solid #2D617A;
+    margin:0;
+}
+
+.chatroom .chat-content {
+    height:200px;
+}
+
+.chat-info {
+    color:#666666;
+}
+
+.chat-message-room,
+.chat-message-them,
+.chat-message-me {
+    font-weight: bold;
+    white-space: nowrap;
+    max-width: 100px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: inline-block;
+    float: left;
+    padding-right: 3px;
+}
+
+.chat-message-content {
+    word-wrap: break-word;
+}
+
+.chat-message-them {
+    color: #F62817;
+}
+
+.chat-message-me {
+    color: #436976;
+}
+
+.chat-message-room {
+    color: #4B7003;
+}
+
+.chat-event, .chat-date, .chat-info {
+    color: #808080;
+}
+
+li.chat-info {
+    padding-left: 10px;
+}
+
+.chat-date {
+    display: inline-block;
+    padding-top: 10px;
+}
+
+div#settings,
+div#chatrooms,
+div#login-dialog {
+    height: 274px;
+}
+
+p.not-implemented {
+    margin-top: 3em;
+    margin-left: 0.3em;
+    color: #808080;
+}
+
+div.delayed .chat-message-them {
+    color: #FB5D50;
+}
+
+div.delayed .chat-message-me {
+    color: #7EABBB;
+}
+
+input.error {
+    border: 1px solid red;
+}
+
+.conn-feedback.error {
+    color: red;
+}
+
+.chat-message-error {
+    color:#76797C;
+    font-size:90%;
+    font-weight:normal;
+}
+
+.chat-head .avatar {
+    float: left;
+    margin-right: 6px;
+}
+
+div.chat-title {
+    color: white;
+    font-weight: bold;
+    line-height: 15px;
+    display: block;
+    margin-top: 2px;
+    margin-right: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow: rgba(0,0,0,0.51) 0 -1px 0;
+    height: 1em;
+}
+
+.chat-head-chatbox,
+.chat-head-chatroom {
+    background: linear-gradient(top, rgba(206,220,231,1) 0%,rgba(79,106,114,1) 100%);
+    height: 35px;
+    position: relative;
+}
+
+p.user-custom-message,
+p.chatroom-topic {
+    font-size: 80%;
+    font-style: italic;
+    height: 1.3em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.activated{
+    display: block !important;
+}
+
+a.subscribe-to-user {
+    padding-left: 2em;
+    font-weight: bold;
+}
+
+dl.add-converse-contact {
+    margin: 0 0 0 0.5em;
+}
+
+.fancy-dropdown {
+    border:1px solid #ddd;
+    height: 22px;
+}
+
+.fancy-dropdown a.choose-xmpp-status {
+    width: 155px;
+}
+
+.fancy-dropdown a.choose-xmpp-status,
+.fancy-dropdown a.toggle-xmpp-contact-form {
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline;
+}
+
+.fancy-dropdown a.toggle-xmpp-contact-form span {
+   float: left; 
+}
+
+.choose-xmpp-status span {
+    padding-right: 5px; 
+    padding-left: 5px; 
+    float: left;
+}
+
+#fancy-xmpp-status-select a.change-xmpp-status-message {
+    float: right;
+    clear: right;
+    height: 22px;
+    padding: 0px 5px 0 0;
+    color: rgb(79, 79, 79);
+}
+
+ul#found-users {
+    padding: 10px 0 5px 5px;
+    border: 0;
+}
+
+form.search-xmpp-contact {
+    margin: 0;
+    padding-left: 5px;
+    padding: 0 0 5px 5px;
+}
+
+form.search-xmpp-contact input {
+    width: 8em;
+}
+
+.oc-chat-head {
+    margin: 0;
+    color: #FFF;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
+    height: 35px;
+    clear: right;
+    background-color: #5390C8;
+    padding: 3px 0 0 0;
+}
+
+a.configure-chatroom-button,
+a.close-chatbox-button {
+    font-size: 10px;
+    padding: 3px 3px 2px 3px;
+    margin-right: 3px;
+    cursor: pointer;
+    float: right;
+    -moz-box-shadow:inset 0 1px 0 0 #ffffff;
+    -webkit-box-shadow:inset 0 1px 0 0 #ffffff;
+    box-shadow:inset 0 1px 0 0 #ffffff;
+    background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffffff), color-stop(1, #f6f6f6) );
+    background:-moz-linear-gradient( center top, #ffffff 5%, #f6f6f6 100% );
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f6f6f6');
+    -moz-border-radius:6px;
+    -webkit-border-radius:6px;
+    border-radius:6px;
+    border:1px solid #888;
+    display:inline-block;
+    color: #666 !important;
+    text-decoration:none;
+    text-shadow:1px 1px 0 #ffffff;
+}
+
+a.configure-chatroom-button:active,
+a.close-chatbox-button:active {
+    position:relative;
+    top:1px;
+}
+
+.oc-chat-content dt {
+    margin: 0;
+    padding-top: 0.5em;
+}
+
+.chatroom-form-container {
+    color: #666;
+    padding: 5px;
+    height: 262px;
+    overflow-y: auto;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.chatroom-form {
+    background: white;
+    font-size: 12px;
+    padding: 10px 5px;
+}
+
+.chat-body p {
+    font-size: 14px;
+    color: #666;
+    padding: 5px;
+    margin: 0;
+}
+
+.chatroom-form legend {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.chatroom-form label {
+    font-weight: bold;
+    display: block;
+    clear: both;
+}
+
+.chatroom-form label input,
+.chatroom-form label select {
+    float: right;
+}
+
+#converse-roster dd.odd {
+    background-color: #DCEAC5; /* Make this difference */
+}
+
+#converse-roster dd.current-xmpp-contact {
+    clear: both;
+}
+
+#converse-roster dd.current-xmpp-contact span {
+    font-size: 16px;
+    float: left;
+    color: rgb(79, 79, 79);
+}
+
+#converse-roster dd.requesting-xmpp-contact button{
+    margin-left: 0.5em;
+}
+
+#converse-roster dd a,
+#converse-roster dd span {
+    text-shadow: 0 1px 0 rgba(250, 250, 250, 1);
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#converse-roster dd span {
+    padding: 2px 5px 0 0;
+}
+
+#converse-roster {
+    height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    position: relative;
+    top: 0;
+    border: none;
+    margin-top: 0.5em;
+}
+
+#available-chatrooms dd {
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    width: 165px;
+}
+
+#available-chatrooms dt,
+#converse-roster dt {
+    font-weight: normal;
+    font-size: 13px;
+    color: #666;
+    border: none;
+    padding: 0.3em 0em 0em 0.5em;
+    text-shadow: 0 1px 0 rgba(250, 250, 250, 1);
+}
+
+#converse-roster dt {
+    display: none;
+}
+
+dd.available-chatroom,
+#converse-roster dd {
+    font-weight: bold;
+    border: none;
+    display: block;
+    padding: 0 0em 0 0.5em;
+    color: #666;
+    text-shadow: 0 1px 0 rgba(250, 250, 250, 1);
+}
+
+.room-info {
+    font-size: 11px;
+    font-style: normal;
+    font-weight: normal;
+}
+
+li.room-info {
+    display: block;
+    margin-left: 5px;
+}
+
+div.room-info {
+    clear: left;
+}
+
+p.room-info {
+    margin: 0;
+    padding: 0;
+    display: block;
+    white-space: normal;
+}
+
+a.room-info {
+    width: 22px;
+    height: 22px;
+    float: right;
+    display: none;
+    clear: right;
+}
+
+a.open-room {
+    float: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+}
+
+dd.available-chatroom:hover a.room-info {
+    display: inline-block;
+    margin-top: 3px;
+    font-size: 15px;
+}
+
+#converse-roster dd a.remove-xmpp-contact {
+    line-height: 21px;
+    float: right;
+    width: 22px;
+    margin: 0;
+    display: none;
+    color: rgb(79, 79, 79);
+}
+
+#converse-roster  dd:hover a.remove-xmpp-contact {
+    display: inline-block;
+}
+
+#converse-roster a.open-chat {
+    line-height: 21px;
+    width: 85%;
+}
+#converse-roster  dd:hover a.open-chat {
+    width: 70%;
+}
+
+.chatbox,
+.chatroom {
+    box-shadow: 1px 1px 5px 1px rgba(0,0,0,0.4);
+    display:none;
+    float: right;
+    margin-right: 15px;
+    z-index: 20; /* So that it's higher than the content actions */
+    border-radius: 4px;
+}
+
+.chatbox {
+    width: 200px;
+}
+
+.chatroom {
+    width: 300px;
+}
+
+.oc-chat-content {
+    height:274px;
+    padding: 0;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.oc-chat-content dd {
+    margin-left: 0;
+    margin-bottom: 0;
+    padding: 1em;
+}
+
+.oc-chat-content dd.odd {
+    background-color: #DCEAC5;
+}
+
+div#controlbox-panes {
+    background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%); /* FF3.6+ */
+    background: -ms-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(240,240,240,1) 100%); /* IE10+ */
+    background: -o-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(240,240,240,1) 100%); /* Opera 11.10+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,1)), color-stop(100%,rgba(240,240,240,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(240,240,240,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: linear-gradient(top, rgba(255,255,255,1) 0%,rgba(240,240,240,1) 100%); /* W3C */
+    background-color: white;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    width: 200px;
+}
+
+
+form#converse-login {
+    background: white;
+    padding: 2em 0 0.3em 0.5em;
+}
+
+form#converse-login input {
+    display: block;
+    width: 90%;
+}
+
+form#converse-login .login-submit {
+    margin-top: 1em;
+    width: auto;
+}
+
+form.set-xmpp-status {
+    background: none;
+    padding: 0.5em 0 0.5em 0.5em;
+}
+
+form.add-chatroom {
+    background: none;
+    padding: 3px;
+}
+
+form.add-chatroom input[type=text] {
+    width: 95%;
+    margin: 3px;
+}
+
+form.add-chatroom input[type=button],
+form.add-chatroom input[type=submit] {
+    width: 48%;
+}
+
+select#select-xmpp-status {
+    float: right;
+    margin-right: 0.5em;
+}
+
+/* @group Tabs */
+
+.chat-head #controlbox-tabs {
+    text-align: center;
+    display: inline;
+    overflow: hidden;
+    font-size: 12px;
+    list-style-type: none;
+}
+
+/* single tab */
+.chat-head #controlbox-tabs li {
+    float:left;
+    list-style: none;
+    padding-left: 0;
+    text-shadow: white 0 1px 0;
+    width: 40%;
+}
+
+ul#controlbox-tabs li a {
+    display:block;
+    font-size:12px;
+    height: 34px;
+    line-height:34px;
+    margin: 0;
+    text-align:center;
+    text-decoration:none;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    color:#666;
+    text-shadow: 0 1px 0 rgba(250, 250, 250, 1);
+}
+
+.chat-head #controlbox-tabs li a:hover {
+    color: black;
+}
+
+.chat-head #controlbox-tabs li a {
+    background-color: white;
+    box-shadow: inset 0 4px 12px rgba(0,0,0,0.3);
+    border-bottom: 1px solid #CCC;
+}
+
+ul#controlbox-tabs a.current, ul#controlbox-tabs a.current:hover {
+    box-shadow: none;
+    border-bottom: 0;
+    height: 35px;
+    cursor: default;
+    color: rgb(102,102,102);
+}
+
+div#users,
+div#chatrooms,
+div#login-dialog,
+div#settings {
+    border: 0;
+    font-size: 14px;
+    background-color: white;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    width: 100%;
+}
+
+div#chatrooms {
+    overflow-y: auto;
+}
+
+form.sendXMPPMessage {
+    background: white;
+    border: 0;
+    border-top: 1px solid #BBB;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    -moz-background-clip: padding;
+    -webkit-background-clip: padding-box;
+    background-clip: padding-box;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    height: 65px;
+    width: 200px;
+}
+
+.chatroom form.sendXMPPMessage {
+    -webkit-border-bottom-right-radius: 0;
+    border-bottom-right-radius: 0;
+    height: 65px;
+}
+
+.chat-textarea {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    border: 0;
+    width: 100%;
+    padding: 3px;
+    border-radius: 4px;
+    resize: none;
+    height: 65px;
+}
+
+ul.chat-toolbar {
+    font-size: 14px;
+    margin: 0;
+    padding: 0 5px 0 0;
+    float: right;
+    display: inline-block;
+    height: 20px;
+}
+
+ul.chat-toolbar li {
+    display: inline-block;
+    list-style: none;
+    padding: 0 3px 0 3px;
+}
+
+ul.chat-toolbar li:hover {
+    cursor: pointer; 
+    color: rgb(39, 39, 39);
+}
+
+form#set-custom-xmpp-status {
+    float: left;
+    padding: 0;
+}
+
+.chat-textarea-chatbox-selected {
+    border: 1px solid #578308;
+    margin:0;
+}
+
+.chat-textarea-chatroom-selected {
+    border: 2px solid #2D617A;
+    margin:0;
+}
+
+#set-custom-xmpp-status button {
+    padding: 1px 2px 1px 1px;
+}
+
+#controlbox div.xmpp-status {
+    display: inline;
+}
+
+/* status dropdown styles */
+.chatbox dl.dropdown {
+    margin-right: 0.5em;
+    margin-bottom: 0;
+    background-color: rgb(240, 240, 240);
+}
+.chatbox .dropdown dd, .dropdown dt, .dropdown ul { margin:0px; padding:0px; }
+.chatbox .dropdown dd { position:relative; }
+
+input.custom-xmpp-status {
+    width: 138px;
+}
+
+form.add-xmpp-contact {
+    background: none;
+    padding: 5px;
+}
+
+form.add-xmpp-contact input {
+    width: 120px;
+}
+
+.chatbox .dropdown dt a span {
+    cursor:pointer; 
+    display:block; 
+    padding: 4px 7px 0 5px;
+    color: rgb(79, 79, 79);
+}
+
+.chatbox .dropdown dd ul {
+    padding: 5px 0 5px 0;
+    list-style:none;
+    position:absolute; left:0; top:0;
+    border:1px solid #ddd;
+    border-top: 0;
+    width: 99%;
+    z-index: 21;
+    background-color: rgb(240, 240, 240);
+}
+
+.chatbox .dropdown li {
+    list-style: none;
+    padding-left: 0;
+}
+
+.set-xmpp-status .dropdown dd ul {
+    z-index: 22;
+}
+
+.chatbox .dropdown a {
+    height: 22px;
+    display: inline-block;
+    line-height: 24px;
+}
+
+.chatbox .dropdown dd ul a:hover {
+    background-color: #bed6e5;
+}
+
+.xmpp-status-menu li a {
+    width: 100%;
+}
+
+.xmpp-status-menu li a span {
+    padding: 0 5px 0 5px;
+    color: rgb(79, 79, 79);
+}
