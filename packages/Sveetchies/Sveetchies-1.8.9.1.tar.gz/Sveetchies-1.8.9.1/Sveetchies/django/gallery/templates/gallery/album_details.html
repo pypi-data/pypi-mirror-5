@@ -1,0 +1,24 @@
+{% extends "gallery/subbase.html" %}
+{% block head_title %}{{ block.super }} - {{ album_object.title }}{% endblock %}
+
+{% block content %}
+    <h2><a href="{% url gallery-album-details album_object.slug %}">{{ album_object.title }}</a></h2>
+    
+    <div class="picture_list_container">
+        {% pagination_tag %}
+        <div class="item_mosaic">
+            {% for picture in object_list %}
+            <div class="picture_item {% cycle "row1" "row2" %}{% if forloop.first %} first{% endif %}{% if forloop.last %} last{% endif %}">
+                <a href="{{ picture.large.url }}" title="{% if picture.description %}{% filter force_escape %}{% wiki2xhtml picture.description 'short' %}{% endfilter %}{% else %}{{ picture.title }}{% endif %}" rel="album_{{ album_object.id }}">
+                    <img src="{{ picture.thumb.url }}" alt="{{ picture.title }}"/>
+                </a>
+                <p>{{ picture.title|truncatestring:15 }}</p>
+            </div>
+            {% empty %}
+            <p class="empty">Aucune image</p>
+            {% endfor %}
+            <div class="cale"></div>
+        </div>
+        {% pagination_tag %}
+    </div>
+{% endblock %}
