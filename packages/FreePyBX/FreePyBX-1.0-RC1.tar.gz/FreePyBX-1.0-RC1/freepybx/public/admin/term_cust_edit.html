@@ -1,0 +1,151 @@
+<!--
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+    Software distributed under the License is distributed on an "AS IS"
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+    License for the specific language governing rights and limitations
+    under the License.
+
+    The Original Code is FreePyBX/VoiceWARE.
+
+    The Initial Developer of the Original Code is Noel Morgan,
+    Copyright (c) 2011-2013 VoiceWARE Communications, Inc. All Rights Reserved.
+
+    http://www.vwci.com/
+
+    You may not remove or alter the substance of any license notices (including
+    copyright notices, patent notices, disclaimers of warranty, or limitations
+    of liability) contained within the Source Code Form of the Covered Software,
+    except that You may alter any license notices to the extent required to
+    remedy known factual inaccuracies.
+-->
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+
+
+<script charset="UTF-8" type="text/javascript">
+    dojo.require("dijit.form.FilteringSelect");
+    dojo.require("dojo.data.ItemFileReadStore");
+    dojo.require("dijit.form.Form");
+    dojo.require("dijit.form.DateTextBox");
+    dojo.require("dijit.layout.ContentPane");
+    dojo.require("dijit.form.TextBox");
+    dojo.require("dijit.form.Button");
+    dojo.require("dijit.form.RadioButton");
+    dojo.require("dojox.validate.web");
+    dojo.require("dojox.validate._base");
+    dojo.require("dijit.form.FilteringSelect");
+    dojo.require("dojo.data.ItemFileReadStore");
+
+    var termCustID = null;
+    var didID = null;
+
+    var termGatewayStore = new dojo.data.ItemFileWriteStore({url: '/admin/termination_gateway_store'});
+    var customerStore = new dojo.data.ItemFileWriteStore({url: '/admin/customers'});
+
+    function termCustAddFormHandler() {
+        if(dijit.byId("term_cust_edit_form").validate()) {
+            dojo.xhrPost({
+                url: "/admin/edit_term_cust",
+                handleAs: "text",
+                form: dojo.byId("term_cust_edit_form"),
+                load: function(res) {
+                    if (res.indexOf("Error") == -1) {
+                        new voiceware.notice.Notice({message:res});
+                        dijit.byId("customerContent").set("href", "/admin/termination_customer_list.html");
+                    } else {
+                        new voiceware.notice.Error({message: res});
+                    }
+                    return res;
+                },
+                error: function(err, ioArgs) {
+                    new voiceware.notice.Error({message: err});
+                    return err;
+                }
+            });
+        }
+    }
+
+    function setTermCustForm(obj) {
+        console.log(dojo.toJson(obj, true));
+        dojo.byId("orig_term_customer_id").value = obj.id;
+        dijit.byId("term_customer_id").set("value", obj.customer_id);
+        dijit.byId("term_cust_context").set("value", obj.context);
+        dijit.byId("term_termination_gateway_id").set("value", obj.termination_gateway_id);
+        dijit.byId("term_cust_ips").set("value", obj.ips);
+        dijit.byId("term_cust_pattern").set("value", obj.pattern);
+        dijit.byId("term_cust_active").set("value", obj.active);
+    }
+
+    function getTermCustomerByID() {
+        dojo.xhrGet({
+            url: "/admin/termination_customer_by_id/"+tmpObj.id,
+            handleAs: "json",
+            load: function(res) {
+                setTermCustForm(res.items[0]);
+                return res;
+            },
+            error: function(err, ioArgs) {
+                new voiceware.notice.Error({message: err});
+                return err;
+            }
+        });
+    }
+
+    dojo.addOnLoad(function() {
+        getTermCustomerByID();
+    });
+
+
+</script>
+<div dojoType="voiceware.PbxForm"
+     data-dojo-props="title:'Edit Termination Customer',legend:'Termination Customer Information',delStyle:'display:none', noticeClass: 'noNotice',
+     formName:'term_cust_edit_form',helpCategory:'add_term_cust', submitFunc:'termCustAddFormHandler();',
+     delFunc:'this.form.rest();'">
+    <input type="hidden" name="orig_term_customer_id" id="orig_term_customer_id" value=""/>
+    <ul class="field_list">
+        <li class="even">
+            <label class="fieldlabel">Customer</label>
+            <input dojoType="dijit.form.FilteringSelect" required="true" store="customerStore" value=""
+                   searchAttr="name" name="customer_id" id="term_customer_id"/>
+        </li>
+        <li class="even">
+            <label class="fieldlabel">Termination Gateway</label>
+            <input dojoType="dijit.form.FilteringSelect" required="true" store="termGatewayStore" value=""
+                   searchAttr="name" name="termination_gateway_id" id="term_termination_gateway_id"/>
+        </li>
+        <li class="even">
+            <label class="fieldlabel">Context</label>
+            <input type="text" required="true" name="context" placeholder="Same as SIP domain"
+                   dojoType="dijit.form.ValidationTextBox" id="term_cust_context"
+                   missingMessage="Please add a context name."
+                   regExp="\b(?:www\.)?[a-zA-Z0-9]+(?:(?:\-|_)[a-zA-Z0-9]+)*(?:\.[a-zA-Z0-9]+(?:(?:\-|_)[a-zA-Z0-9]+)*)*\.[a-zA-Z]{2,4}\b"
+                   promptMessage="Please enter a valid context."
+                   invalidMessage="Invalid context."
+                   trim="true"/>
+        </li>
+        <li class="odd">
+            <label class="fieldlabel">IP List</label>
+            <input type="text" required="true" name="ips" id="term_cust_ips" placeholder="123.456.789.123|123.234.345.567"
+                   dojoType="dijit.form.ValidationTextBox" missingMessage="Please provide an IP list."/>
+        </li>
+        <li class="even">
+            <label class="fieldlabel">Pattern</label>
+            <input type="text" required="true" name="pattern" id="term_cust_pattern" placeholder="e.g. 312|434|5|1"
+                   dojoType="dijit.form.ValidationTextBox" missingMessage="Please provide a pattern to be matched"/>
+        </li>
+        <li class="odd">
+            <label class="fieldlabel" for="term_cust_active">Active</label>
+            <input name="active" id="term_cust_active" value="true" checked="false"
+                   dojoType="dijit.form.CheckBox"/>
+        </li>
+    </ul>
+</div>
+</html>
+

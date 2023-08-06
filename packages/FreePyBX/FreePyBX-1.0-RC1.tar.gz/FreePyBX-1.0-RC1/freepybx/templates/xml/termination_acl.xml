@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document type="freeswitch/xml"
+          xmlns:py="http://genshi.edgewall.org/"
+          xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+          xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+          xmlns="http://www.w3.org/1999/xhtml">
+    <section name="configuration">
+        <configuration name="acl.conf" description="Network Lists">
+            <network-lists>
+                <!--
+                 These ACL's are automatically created on startup.
+
+                 rfc1918.auto  - RFC1918 Space
+                 nat.auto      - RFC1918 Excluding your local lan.
+                 localnet.auto - ACL for your local lan.
+                 loopback.auto - ACL for your local lan.
+                -->
+                <list name="lan" default="allow">
+                    <node type="deny" cidr="192.168.42.0/24"/>
+                    <node type="allow" cidr="209.222.91.85/32"/>
+                    <node type="allow" cidr="199.27.244.7/32"/>
+                    <node type="allow" cidr="199.27.244.9/32"/>
+                    <node type="allow" cidr="157.238.178.130/32"/>
+                    <node type="allow" cidr="157.238.178.149/32"/>
+                    <node type="allow" cidr="157.238.178.60/32"/>
+                    <node type="allow" cidr="67.216.35.162/32"/>
+                    <node type="allow" cidr="67.216.45.45/32"/>
+                    <py:for each="gateway in c.termination_gateways">
+                        <node type="allow" cidr="${gateway.ip}/32"/>
+                    </py:for>
+                </list>
+
+            </network-lists>
+        </configuration>
+    </section>
+</document>
