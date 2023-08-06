@@ -1,0 +1,60 @@
+#!/usr/bin/python
+
+import Tkinter, tkFileDialog, tkSimpleDialog
+from libmassresize import massresize
+
+info_text = """massresize
+==========
+Author: Ondrej Sika, http://ondrejsika.com, ondrej@ondrejsika.com
+Source: https://github.com/sikaondrej/massresize/
+Licence: MIT"""
+
+value_dir = None
+value_width = None
+
+def cmd_dir():
+    global dirname, value_dir
+    dirname = tkFileDialog.askdirectory(parent=root, title='Please select a directory')
+    
+    if value_dir:
+        value_dir.destroy()
+
+    value_dir = Tkinter.Label(root, text=dirname, justify="left", font="monospace")
+    value_dir.grid(row=1, column=1, columnspan=2)
+
+def cmd_width():
+    global width, value_width
+    width = tkSimpleDialog.askinteger(root, "Please select width of new images")
+
+    if value_width:
+        value_width.destroy()
+
+    value_width = Tkinter.Label(root, text="%spx"%width, justify="left", font="monospace")
+    value_width.grid(row=1, column=0)
+
+def cmd_resize():
+    res = massresize(dirname, width)
+    if res:
+        text = "Done"
+    else:
+        text = "Error"
+
+    done = Tkinter.Label(root, text=text, font="monospace")
+    done.grid(row=3, columnspan=3)
+
+root = Tkinter.Tk()
+root.title("massresize")
+
+info = Tkinter.Label(root, text=info_text, justify="left", font="monospace")
+
+button_dir = Tkinter.Button(root, text="Select directory", command=cmd_dir)
+button_width = Tkinter.Button(root, text="Select width of new image", command=cmd_width)
+button_resize = Tkinter.Button(root, text="Resize!", command=cmd_resize)
+
+info.grid(columnspan=3)
+
+button_width.grid(row=2, column=0)
+button_dir.grid(row=2, column=1)
+button_resize.grid(row=2, column=2)
+
+root.mainloop()
