@@ -1,0 +1,68 @@
+<html tal:omit-tag="" 
+    tal:condition="nocall:view/slider"
+    xmlns="http://www.w3.org/1.09/xhtml"
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+	xmlns:metal="http://xml.zope.org/namespaces/metal"
+    xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+	i18n:domain="unice.portlet.slider">
+
+
+    <dl tal:attributes="id view/data/extra_id; class string:portlet portletSlider ${view/data/extra_css}"
+         tal:define="items view/subslider;">
+
+        <dt tal:condition="not:view/data/omit_header" class="portletHeader">
+            <tal:block content="view/header"/>
+        </dt>
+
+        <dd class="portletItem">
+            <ul class="bxslider"
+                tal:attributes="data-slider-captions python:int('captions' in view.data.item_display);
+                                data-slider-captions-desc python:int('captions_desc' in view.data.item_display);
+                                data-slider-pager python:int('pager' in view.data.item_display);
+                                data-slider-auto python:int('auto' in view.data.item_display);">
+                <li tal:repeat="item items">
+                    
+                    <tal:block tal:condition="python:item['type'] != 'Link'">
+
+                        <a tal:attributes="href item/obj/absolute_url; style view/reduce_css;">
+                            <img tal:attributes="src item/image; title python:view.captions(item)"/>
+                        </a>
+
+                    </tal:block>
+
+                    <tal:block condition="python:item['type'] == 'Link'">
+                        <iframe tal:attributes="src item/obj/remoteUrl; height python:600-int(view.data.reduce_height)" width="800" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>
+                    </tal:block>
+
+                </li>
+            </ul>
+        </dd>
+
+        <!-- <div class="list-group" style="list-style: none; margin-left: 0;">
+            <tal:block repeat="item items">
+
+                <a class="list-group-item" tal:attributes="href item/obj/absolute_url">
+
+                    <span class="carre img-circle- img-cerclee pull-left" data-width="60" tal:condition="item/image">
+                        <tal:block replace="structure item/image"/>
+                    </span>
+
+                    <h4 class="list-group-item-heading" tal:content="item/obj/Title"/>
+                    <p class="list-group-item-text" tal:condition="item/date">
+                        <span class="text-muted">
+                            <i class="icon-calendar-empty"></i> <tal:block content="item/date"/>
+                            <tal:block condition="item/location">
+                                <i class="icon-map-marker"></i> <tal:block content="item/location"/>
+                            </tal:block>
+                        </span>
+                    </p>
+                    <p class="list-group-item-text" tal:content="item/obj/Description"/>
+
+                </a>
+            </tal:block>
+        </div> -->
+
+    </dl>
+
+
+</html>
