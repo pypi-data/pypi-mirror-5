@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+import socket
+import httplib
+import librato
+import psutil
+import time
+import sys
+import os
+
+
+def daemon(interval, source, user, token):
+
+    # run forever
+    while True:
+        # cpu
+        cpu_percent = psutil.cpu_percent(0.1) # block for part of a second for better accuracy
+
+        # memory
+        ram_percent = psutil.virtual_memory().percent 
+        swap_percent = psutil.swap_memory().percent 
+
+        # disk space
+        disk_percent = psutil.disk_usage('/').percent
+
+        # network traffic 
+        network_stats = psutil.net_io_counters()
+        network_in = network_stats.bytes_recv
+        network_out = network_stats.bytes_sent
+
+        metrics = librato.connect(user, token)
+        queue = metrics.new_queue()
+        queue.add('system.cpu_percent', cpu_percent, source=source)
+        queue.add('system.ram_percent', ram_percent, source=source)
+        queue.add('system.swap_percent', swap_percent, source=source)
+        queue.add('system.disk_percent', disk_percent, source=source)
+        queue.add('system.network_in', network_in, type='counter', source=source)
+        queue.add('system.network_out', network_out, type='counter', source=source)
+
+        try:
+            queue.submit()
+        except httplib.ResponseNotReady:
+            sys.stderr.write("Exception writing to librato queue: httplib.ResponseNotReady")
+            pass
+
+        time.sleep(interval)
+
+
+if __name__ == "__main__":
+
+    interval = int(os.environ.get('LIBRATO_INTERVAL', 60))
+    hostname = os.environ.get('LIBRATO_HOSTNAME', socket.gethostname())
+    librato_email = os.environ.get('LIBRATO_EMAIL', None)
+    librato_key = os.environ.get('LIBRATO_API_KEY', None)
+
+    if not librato_email or not librato_key:
+        print "You need to specify both LIBRATO_EMAIL and LIBRATO_API_KEY\n"
+        exit(1)
+
+    daemon(interval, hostname, librato_email, librato_key)
+    
