@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+from optparse import OptionParser
+from moshpit.controller import get_pit, create_pit, update_pit, remove_pit, list_pits, pit
+
+def main():
+    usage = """
+pit <nickname>                              Connects via mosh to specified server
+pit <action> [<args>]                       See actions below
+
+MoshPit Actions:
+  create <nickname> <[user@]host[:port]>    Creates and saves a new pit
+  update <nickname> <[user@]host[:port]>    Updates pit specified by nickname
+  remove <nickname>                         Removes server form your saved pits
+  list                                      Lists all saved pits
+    """
+    version = "1.2"
+    parser = OptionParser(usage=usage, version="MoshPit v%s" % version)
+
+    (options, args) = parser.parse_args()
+
+    if len(args) < 1:
+        parser.print_version()
+        print ""
+        parser.print_usage()
+        return 0
+
+    if args[0] == 'create' or args[0] == 'add' or args[0] == 'mk':
+        if len(args)<3:
+            parser.error("The create action requires 2 arguments")
+        if get_pit(args[1]):
+            parser.error("A pit with this name already exists")
+
+        return create_pit(args[1], args[2])
+    elif args[0] == 'update' or args[0] == 'mv':
+        if len(args)<3:
+            parser.error("The update action requires 2 arguments")
+        if not get_pit(args[1]):
+            parser.error("A pit with this name does not exists")
+
+        return update_pit(args[1], args[2])
+    elif args[0] == 'remove' or args[0] == 'delete' or args[0] == 'rm':
+        if not get_pit(args[1]):
+            parser.error("A pit with this name does not exists")
+
+        return remove_pit(args[1])
+    elif args[0] == 'list':
+        return list_pits()
+    else:
+        if not get_pit(args[0]):
+            parser.error("A pit with this name does not exists")
+
+        return pit(args[0])
+
+
+if __name__ == '__main__':
+    main()
