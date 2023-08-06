@@ -1,0 +1,25 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="collective.liches"
+      tal:omit-tag="">
+
+  <div tal:define="results view/get_broken_links" tal:condition="results/urls" class="broken-links">
+      <h3><span tal:replace="results/num" /> known problems in page <span tal:replace="results/name" /></h3>
+      <ol>
+          <li tal:repeat="url results/urls">
+            <a target="_blank" tal:attributes="href url/urlname" tal:content="url/urlname">http://localhost/path/to/broken/link</a>
+            : <b tal:content="url/result"> Reason </b>
+          </li>
+      </ol>
+      <script type="text/javascript" tal:content="structure view/mark_broken_links">
+          //js to mark all broken links
+      </script>
+      <form action="call-linkchecker.html"
+        tal:attributes="action string:${results/name}/@@call-linkchecker.html">
+      <input type="submit" name="checklinks" value="Check links">
+      </form>
+  </div>
+</html>
+

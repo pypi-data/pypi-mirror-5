@@ -1,0 +1,39 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="collective.liches">
+<body>
+
+<metal:main fill-slot="content-core">
+  <metal:content-core define-macro="content-core">
+    <div tal:define="results view/get_links">
+        <h2><span tal:replace="results/num" /> pages with problems in path <span tal:replace="results/name" /></h2>
+        <form action="" tal:attributes="action string:${here/absolute_url}/@@${view/__name__}">
+            <b tal:condition="results/code">filtered by '<i tal:replace="results/code">code</i>'</b>
+            <input type="hidden" tal:condition="results/name" name="url"
+            tal:attributes="value results/name" />
+            <br/>
+            <select name="code">
+              <option value="">(All)</option>
+              <tal:loop tal:repeat="c python:[c[0] for c in results['codes']]">
+                <option tal:attributes="value c;
+                    selected python: 'selected' if c==results['code'] else None" tal:content="c"></option>
+              </tal:loop>
+            </select>
+            <input type="submit" name="filter" value="Filter">
+          </form>
+        <ol>
+            <li tal:repeat="url results/urls">
+                <a tal:attributes="href python:url[0]" tal:content="python:url[0]"></a>
+            </li>
+        </ol>
+    </div>
+  </metal:content-core>
+</metal:main>
+
+</body>
+</html>
+
