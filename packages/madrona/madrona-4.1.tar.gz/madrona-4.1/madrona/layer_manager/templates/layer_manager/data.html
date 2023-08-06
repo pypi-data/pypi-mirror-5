@@ -1,0 +1,70 @@
+<div id="data-accordion" data-bind="with: layers">
+    <div id="layers-loading">
+        Loading...
+    </div>
+    <div class="accordion" data-bind="foreach: themes">
+        <div class="accordion-group">
+            <div class="accordion-heading" data-bind="css: { 'active': isOpenTheme() }">
+                <div>
+                    <a class="accordion-toggle"  data-bind="click: setOpenTheme">
+                        <span data-bind="text: name"></span></a>
+                </div>
+            </div>
+            <style>
+                .btn-layer { font-weight: normal; width: 56%; text-align:left; }
+            </style>
+            <div class="accordion-body collapse" data-bind="css: { 'in': isOpenTheme() }">
+                <div class="accordion-inner">
+                    <ul  class="unstyled" data-bind="foreach: layers ">
+                        <li class="layer" data-bind="css: { noSubLayers: subLayers.length === 0 } ">
+                            <div class="btn-group btn-group-layer" data-bind="css: {'open': showSublayers() }">
+
+                                <a class="btn btn-layer btn-small" 
+                                    data-bind="css: { 'active': active(), 'not-active': ! active() }, click: toggleActive">
+                                    <div>
+                                        <i class="icon-ok" data-bind="visible: active() && visible()"></i>
+                                        <i class="icon-eye-close" data-bind="visible: active() && ! visible()"></i>
+                                        <i class="icon-" data-bind="visible: !active()"></i>
+                                        <span data-bind="text: name"></span>
+                                        <span class="caret" style="display:none" data-bind="visible: subLayers.length > 0"></span>
+                                    </div>
+                                </a>
+                                <a class="btn btn-info-sign btn-small" 
+                                    data-bind="click: toggleDescription, css: { 'active': infoActive() }">
+                                    <i class="icon-info-sign icon-large"></i>
+                                </a>
+
+                                <!-- ko if: subLayers.length > 0 -->
+                                    <!-- ko if: !isCheckBoxLayer() -->
+                                    <ul class="dropdown-menu layer-menu" data-bind="event: { mouseleave: closeMenu }">
+                                        <li data-bind="foreach: subLayers">
+                                            <a data-bind="click: toggleActive">
+                                                <span data-bind="style: {visibility: active() ? 'visible': 'hidden' }">• </span>
+                                                <span data-bind="text: name"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <!-- /ko -->
+                                    <!-- ko if: isCheckBoxLayer() -->
+                                    <ul class="dropdown-menu layer-menu" data-bind="event: { mouseleave: closeMenu }">
+                                        <li data-bind="foreach: subLayers">
+                                            <a data-bind="click: toggleActive">
+                                                <span style="margin-left: -10px">
+                                                    <i class="icon-check" data-bind="style: {display: active() ? 'inline': 'none' }"></i>
+                                                    <i style="opacity: .4" class="icon-check-empty" 
+                                                        data-bind="style: {display: ! active() ? 'inline': 'none' }"></i>
+                                                </span>
+                                                <span data-bind="text: name"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <!-- /ko -->
+                                <!-- /ko -->
+                            </div>
+                        </li>  
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
