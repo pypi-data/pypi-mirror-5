@@ -1,0 +1,1122 @@
+#!/usr/bin/env python
+# Copyright (c) 2013. All Right Reserved, http://siqueries.com/
+
+import ConfigParser
+import getpass
+import optparse
+import os
+import random
+import signal
+import string
+import subprocess
+import sys
+import time
+import urllib
+import urllib2
+import json
+
+SIQUERIES_BASE_URL = os.environ.get("SIQUERIES_BASE_URL", "https://api.siqueries.com")
+# Distribution version
+VERSION = '1.0.8'
+# Global config details
+CONFIG_DATA = None
+# Default install location
+PREFIX_DEFAULT = "~/.siqueries"
+
+
+class ConfigData(object):
+    def __init__(self, prefix=None):
+        self.PREFIX = prefix or os.path.expanduser(PREFIX_DEFAULT)
+        # Directories
+        self.LOG_DIRECTORY = os.path.join(self.PREFIX, 'logs')
+        self.LAUNCH_DIRECTORY = os.path.join(self.PREFIX, 'launch')
+        self.SSH_DIRECTORY = os.path.join(self.PREFIX, 'ssh')
+        # Files
+        self.CONFIG_FILE = os.path.join(self.PREFIX, 'siqueries.cfg')
+        self.SSH_KEY = os.path.join(self.PREFIX, 'id_rsa')
+        # Config file sections
+        self.SSH_TUNNEL = "SSHTunnel"
+        # Ensure the directories exist.
+        self.create_directory(self.PREFIX, 0755)
+        self.create_directory(self.LOG_DIRECTORY, 0755)
+        self.create_directory(self.LAUNCH_DIRECTORY, 0755)
+        self.create_directory(self.SSH_DIRECTORY, 0700)
+
+    def create_directory(self, path, mode):
+        """
+        Create a directory if it does exist.
+        Arguments:
+            path -- directory path
+            mode -- mode to set on the directory
+        """
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                try:
+                    os.chmod(path, mode)
+                except Exception, e:
+                    LogColor.error("Failed to change mode of %r. Exiting." % path)
+                    LogColor.error(str(e))
+                    sys.exit(1)
+            else:
+                LogColor.error("The path %r is not a directory. Exiting." % path)
+        else:
+            try:
+                os.makedirs(path, mode)
+            except Exception, e:
+                LogColor.error("Failed to create %r. Exiting." % path)
+                LogColor.error(str(e))
+                sys.exit(1)
+
+
+def config_data_set(prefix):
+    global CONFIG_DATA
+    CONFIG_DATA = ConfigData(prefix)
+    print 'Installing into %r' % CONFIG_DATA.PREFIX
+
+
+class LogColor(object):
+    COLORS = {
+        'bg': '\033[40m\033m',
+        'green': '\033[92m',
+        'white': '\033[37m',
+        'red': '\033[91m',
+        'yellow': '\033[33m'
+    }
+    END = '\033[0m'
+
+    @classmethod
+    def clr(cls, color, txt, newln=True):
+        sys.stdout.write(cls.COLORS.get(color, '') + cls.COLORS['bg'] + txt + cls.END)
+        if newln:
+            sys.stdout.write("\n")
+
+    @classmethod
+    def cmd(cls, txt, newln=True):
+        cls.clr("white", txt, newln)
+
+    @classmethod
+    def header(cls, txt, newln=True):
+        cls.clr('white', txt, newln)
+
+    @classmethod
+    def ok(cls, txt, newln=True):
+        cls.clr("green", txt, newln)
+
+    @classmethod
+    def error(cls, txt, newln=True):
+        cls.clr("red", "Error notice: " + txt, newln)
+
+    @classmethod
+    def wait(cls, txt, newln=True):
+        cls.clr("red", "====> ", False)
+        cls.ok(txt, newln)
+
+
+class Settings(object):
+    '''Structure class'''
+
+    def __init__(self):
+        self.database_id = None
+        self.database_name = None
+        self.database_port = None
+        self.readonly_user = None
+        self.readonly_password = None
+        # For dev
+        self.db = None
+
+
+class HTTPClient(object):
+    '''Class to POST information to SiQueries.'''
+
+    def __init__(self):
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
+        urllib2.install_opener(self.opener)
+
+    def post(self, url, data_param=None):
+        '''A simple POST request wrapper'''
+        if data_param is None:
+            data = {}
+        else:
+            data = data_param
+        if not url.startswith('http'):
+            url = SIQUERIES_BASE_URL + url
+        encoded_args = urllib.urlencode(data)
+        try:
+            response = self.opener.open(url, encoded_args)
+        except urllib2.URLError, exc:
+            LogColor.error('Problem connecting to the SiQueries servers. Please try again later.')
+            error_file = open('/tmp/siqueries_error_log.html', 'w')
+            if hasattr(exc, 'read'):
+                error_file.write(exc.read())
+            error_file.close()
+            sys.exit(1)
+        return response.read()
+
+def admin_user_password_dec(wrapped_fn):
+    '''Decorator handling prompting of admin user/password as needed
+
+    Requirements
+        self.settings.admin_user data attribute
+
+    References
+        self.have_admin to determine whether admin is already configured
+        self.admin_user_password() to set/validate/check rights
+
+    '''
+    def fn(self, *args, **kwargs):
+        if not self.have_admin:
+            LogColor.header('\nThis step requires administrator access.\n'
+                                   'The credentials will be used during setup only for\n'
+                                   ' - determining the names of local databases [optional]\n'
+                                   ' - creating read-only user account [optional]\n'
+                                   ' - granting read-only database access to the user account [optional]\n'
+                                   'You may instead choose to do any or all of the above steps prior to\n'
+                                   ' running siqueries_install. The script will prompt you to enter the\n'
+                                   ' relevant information directly as needed.\n')
+            admin_user = get_value('Database administrator name')
+            LogColor.header('Please enter the password for the database'
+                                   ' administrator (leave empty for none)')
+            # Validate any value to permit a blank password
+            admin_password = get_value('Database administrator password',
+                                       is_password=True,
+                                       validate=empty_is_ok)
+            run_wrapped_fn = self.admin_user_password(admin_user, admin_password)
+        else:
+            run_wrapped_fn = True
+        if run_wrapped_fn:
+            retval = wrapped_fn(self, *args, **kwargs)
+        else:
+            retval = None
+        return retval
+    return fn
+
+def replacer_make(source, dest):
+    '''A means of creating a replacement function which operates on strings.
+
+    The use here is for escaping special characters from SQL arguments.
+
+    '''
+    def replacer(**kwargs):
+        def item_replacer(item):
+            key, value = item
+            if isinstance(value, basestring):
+                retval = (key, value.replace(source, dest))
+            else:
+                retval = item
+            return retval
+        retval = dict(map(item_replacer, kwargs.items()))
+        return retval
+    return replacer
+
+
+class DatabaseAdministrator(object):
+    def __init__(self, SiQueries_poster, db_accessors):
+        self.db_accessor = None
+        self.db_accessors = db_accessors
+        self.db_choice = None
+        self.have_admin = False
+        self.SiQueries_poster = SiQueries_poster
+        self.settings = Settings()
+
+    def admin_user_password(self, user, password):
+        '''Means of validating and storing admin user and password'''
+        self.have_admin = self.db_accessor.admin_user_password(user, password)
+        return self.have_admin
+
+    def readonly_user_password(self, database, user, password):
+        '''Means of validating and storing readonly user and password'''
+        rc = self.db_accessor.readonly_user_password(database, user, password)
+        if rc:
+            self.settings.readonly_user = user
+            self.settings.readonly_password = password
+        return rc
+
+    def start_step(self):
+        '''Beginning of interaction state machine'''
+        return self.database_type_step
+
+    def database_type_step(self):
+        '''Get database type'''
+        db_types = database_choices(self.SiQueries_poster)
+        db_type_name = get_choice('What type of database are you connecting?',
+                                  sorted(db_types))
+        self.db_choice = db_types[db_type_name]
+        self.settings.database_id = db_types[db_type_name]['id']
+        self.db_accessor = self.db_accessors[db_type_name.lower()]()
+        return self.database_listen_port_step
+
+    def database_listen_port_step(self):
+        '''Database listen port'''
+        LogColor.header('Enter database local listen port')
+        default = self.db_choice['default_port']
+        port = get_value('Database listen port',
+                         default=default,
+                         validate=is_integer)
+        self.db_accessor.port = port
+        self.settings.database_port = port
+        return self.database_name_step
+
+    def database_name_step(self):
+        '''Get database name'''
+        LogColor.header('Enter the database name to connect to SiQueries'
+                               '\n(leave blank to list of available databases)')
+        database = (get_value('Database name', validate=empty_is_ok)
+                    or self.database_name_from_choice())
+        if database is None:
+            retval = False
+        else:
+            self.settings.database_name = database
+            retval = self.readonly_user_step
+        return retval
+
+    @admin_user_password_dec
+    def database_name_from_choice(self):
+        '''Select database from automatically generated list (requires admin)'''
+        databases = self.db_accessor.databases_get()
+        if databases is None:
+            retval = False
+        else:
+            LogColor.header('\nSelect which database to connect:')
+            retval = get_choice('Database name', sorted(databases))
+        return retval
+
+    def readonly_user_step(self):
+        '''Get/create read-only role and password and grant database access'''
+        database = self.settings.database_name
+        LogColor.header('Enter an existing read-only role for SiQueries to use'
+                               '\nor leave blank to create a new one automatically')
+        user = get_value('Read-only role name', validate=empty_is_ok)
+        if user:
+            user_password = self.readonly_user_password_get(database, user=user)
+            while not user_password:
+                user_password = self.readonly_user_password_get(database, user=None)
+        else:
+            user_password = self.readonly_user_create_and_grant(database)
+        retval = (user_password and self.datasource_register_step) or False
+        return retval
+
+    def readonly_user_password_get(self, database, user=None):
+        '''Prompt for existing read-only database role
+
+        Return
+        (user, password) | False -- a tuple of the user and password iff apparently successful
+
+        '''
+        if user is None:
+            user = get_value('Read-only role name')
+        password = get_value('Read-only role password', is_password=True)
+        if self.readonly_user_password(database, user, password):
+            retval = (user, password)
+        else:
+            retval = False
+        return retval
+
+    @admin_user_password_dec
+    def readonly_user_create_and_grant(self, database):
+        '''Create a read-only user
+
+        Return
+        (user, password) | False -- a tuple of the user and password iff apparently successful
+
+        '''
+        user = db_name_generator(database.replace(' ', ''),
+                             self.db_choice['user_name_limit'])
+        password = random_password_generator()
+        LogColor.wait('Creating read-only user %r' % (user))
+        if (self.db_accessor.readonly_user_create_and_grant(database, user, password)
+            and self.readonly_user_password(database, user, password)):
+            retval = (user, password)
+        else:
+            retval = False
+        return retval
+
+    def datasource_register_step(self):
+        return None
+
+class MySQLConfig(object):
+    '''Intermediary for accessing a MySQL database'''
+
+    squote_escape = staticmethod(replacer_make("'", "''"))
+    backtick_escape = staticmethod(replacer_make("`", "``"))
+
+    def __init__(self):
+        self.port = None
+        self.admin_user = None
+        self.admin_password = None
+
+    def _sql_cmd_argv(self, user, password, database=None):
+        argv = ['mysql',
+                '--silent',
+                '-u%s' % (user)]
+        if self.port is not None:
+            argv.extend(['--host=127.0.0.1',
+                         '--port=%s' % (self.port),
+                         '--protocol=tcp'])
+        if password:
+            argv.extend(['-p%s' % (password)])
+        if database is not None:
+            argv.append(database)
+        return argv
+
+    def sql_commands_print(self):
+        cmds = ('''SHOW_DATABASES;''',
+                '''SELECT 'SUCCESS';''',
+                '''SELECT 'SUCCESS' FROM mysql.user WHERE user = '<USER>' AND host='127.0.0.1';''',
+                ('''GRANT SELECT, SHOW VIEW ON <DATABASE>.* TO `<USER>`@`127.0.0.1`'''
+                 ''' IDENTIFIED BY '<PASSWORD>';'''))
+        for cmd in cmds:
+            LogColor.cmd(cmd)
+
+    def admin_user_password(self, user, password):
+        '''Confirm and set admin user/password values'''
+        rc = self.user_password_is_valid(user, password, database='mysql')
+        if rc:
+            self.admin_user = user
+            self.admin_password = password
+        return rc
+
+    def readonly_user_password(self, database, user, password):
+        '''Confirm and set readonly user/password values'''
+        rc = self.user_password_is_valid(user, password, database)
+        if rc:
+            self.ro_user = user
+            self.ro_password = password
+        return rc
+
+    def databases_get(self):
+        '''Fetch a sequence of databases'''
+        argv = self._sql_cmd_argv(self.admin_user, self.admin_password, database=None)
+        sql = 'SHOW DATABASES;'
+        sql_retval = argv_run(argv, sql)
+        sql_rc = argv_check('list available databases', sql_retval, empty_is_ok)
+        if sql_rc:
+            databases = [db.strip() for db in sql_retval.info.split()]
+        else:
+            databases = None
+        return databases
+
+    def user_password_is_valid(self, user, password, database):
+        '''Determine whether a user/password combination is valid for access to a given database'''
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = '''SELECT 'SUCCESS';'''
+        sql_retval = argv_run(argv, sql)
+        rc = argv_check('validate user/password for %r' % (user),
+                        sql_retval,
+                        lambda x: 'SUCCESS' == x)
+        return rc
+
+    def user_has_role_create_access(self, user, password):
+        argv = self._sql_cmd_argv(user, password, database='mysql')
+        sql = ('''SELECT COUNT(1) FROM user WHERE User='%(user)s' AND grant_priv='y';'''
+               % self.squote_escape(user=user))
+        sql_retval = argv_run(argv, sql)
+        rc = argv_check('verify user %r has role create access' % (user),
+                        sql_retval,
+                        lambda x: 'SUCCESS' == x)
+        return rc
+
+    def readonly_user_create_and_grant(self, database, ro_user, ro_password):
+        admin_user, admin_password = self.admin_user, self.admin_password
+        user_exists = self.readonly_user_exists(admin_user, admin_password, database, ro_user)
+        if user_exists or (user_exists is None):
+            rc = False
+        else:
+            rc = self.readonly_user_access_grant(admin_user, admin_password, database, ro_user, ro_password)
+        return rc
+
+    def readonly_user_exists(self, user, password, database, ro_user):
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = ('''SELECT 'SUCCESS' FROM mysql.user WHERE User='%(user)s' AND Host='127.0.0.1';'''
+               % self.squote_escape(user=ro_user))
+        sql_retval = argv_run(argv, sql)
+        if sql_retval:
+            rc = ('SUCCESS' == sql_retval.info.strip())
+            if rc:
+                LogColor.error('Role %r already exists.' % (ro_user))
+                LogColor.header('''You may reset the password with\n'''
+                                       '''    SET PASSWORD FOR '%s'@'127.0.0.1' = 'New-Password';\n''' % (ro_user))
+                LogColor.header('''Or re-run SiQueries_setup to generate a different role\n''')
+        else:
+            LogColor.error('Error checking whether role %r exists.' % (ro_user))
+            LogColor.error(sql_retval.info)
+            rc = None
+        return rc
+
+    def readonly_user_access_grant(self, user, password, database, ro_user, ro_password):
+        argv = self._sql_cmd_argv(user, password, database)
+        params = self.squote_escape(role=ro_user, password=ro_password)
+        params.update(self.backtick_escape(database=database))
+        sql = ('''GRANT SELECT, SHOW VIEW ON `%(database)s`.* TO '%(role)s'@`127.0.0.1`'''
+               ''' IDENTIFIED BY "%(password)s";'''
+               % params)
+        sql_retval = argv_run(argv, sql)
+        rc = argv_check('create/grant access to database %r for role %r' % (database, user),
+                        sql_retval,
+                        lambda x: '' == x)
+        return rc
+
+
+class PostgreSQLConfig(object):
+    '''Intermediary for accessing a PostgreSQL database'''
+
+    dquote_escape = staticmethod(replacer_make('"', '""'))
+    squote_escape = staticmethod(replacer_make("'", "''"))
+
+    def __init__(self):
+        self.port = None
+        self.database = None
+        self.admin_user = None
+        self.admin_password = None
+        self.ro_user = None
+        self.ro_password = None
+
+    def _sql_cmd_argv(self, user, password, database=None):
+        argv = []
+        if password:
+            argv.extend(['env', 'PGPASSWORD=%s' % (password)])
+        argv.extend(['psql',
+                     '-t',
+                     '-U', user,
+                     '-v', 'ON_ERROR_STOP=1'])
+        if self.port is not None:
+            argv.extend(['-h', '127.0.0.1',
+                         '-p', str(self.port)])
+        if database is not None:
+            argv.append(database)
+        return argv
+
+    def sql_commands_print(self):
+        cmds = ('''SELECT 'SUCCESS';''',
+                ('''SELECT 'SUCCESS' FROM pg_roles WHERE rolname='<ADMIN-USER>' '''
+                 '''AND rolcreaterole='t';'''),
+                '''SELECT 'SUCCESS' FROM pg_roles WHERE rolname='<READONLY-USER>';''',
+                ('''CREATE USER "<READONLY-USER>" PASSWORD '<PASSWORD>' '''
+                 '''NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;'''),
+                '''SELECT datname FROM pg_database;''',
+                ('''SELECT relname'''
+                 ''' FROM pg_class JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace'''
+                 ''' WHERE nspname = 'public' AND relkind IN ('r','v')'''
+                 ''' ORDER BY relname ASC;'''),
+                '''GRANT SELECT ON TABLE "<TABLE>" TO "<READONLY-USER>";''')
+        for cmd in cmds:
+            LogColor.cmd(cmd)
+
+    def admin_user_password(self, user, password):
+        '''Confirm and set admin user/password values'''
+        rc = (self.user_password_is_valid(user, password, database=None)
+              and self.user_has_role_create_access(user, password))
+        if rc:
+            self.admin_user = user
+            self.admin_password = password
+        return rc
+
+    def readonly_user_password(self, database, user, password):
+        '''Confirm and set readonly user/password values'''
+        rc = (self.user_password_is_valid(user, password, database)
+              and self.user_has_readonly_access(user, password, database))
+        if rc:
+            self.ro_user = user
+            self.ro_password = password
+        return rc
+
+    def user_password_is_valid(self, user, password, database):
+        '''Return bool'''
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = '''SELECT 'SUCCESS';'''
+        sql_retval = argv_run(argv, sql)
+        rc = argv_check('validate user/password for %r' % (user),
+                        sql_retval,
+                        lambda x: 'SUCCESS' == x)
+        return rc
+
+    def user_has_role_create_access(self, user, password):
+        argv = self._sql_cmd_argv(user, password, database=None)
+        sql = ('''SELECT 'SUCCESS' FROM pg_roles WHERE rolname='%(rolname)s' '''
+               ''' AND rolcreaterole='t';'''
+               % self.dquote_escape(rolname=user))
+        sql_retval = argv_run(argv, sql)
+        rc = argv_check('verify user %r has role create access' % (user),
+                        sql_retval,
+                        lambda x: 'SUCCESS' == x)
+        return rc
+
+    def user_has_readonly_access(self, user, password, database):
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = '''SELECT 'SUCCESS';'''
+        sql_retval = argv_run(argv, sql)
+        rc = argv_check('verify role %r has readonly access to %r' % (user, database),
+                        sql_retval,
+                        lambda x: 'SUCCESS' == x)
+        return rc
+
+    def readonly_user_create_and_grant(self, database, ro_user, ro_password):
+        admin_user, admin_password = self.admin_user, self.admin_password
+        user_exists = self.readonly_user_exists(admin_user, admin_password, database, ro_user)
+        if user_exists or (user_exists is None):
+            rc = False
+        else:
+            rc = (self.readonly_user_create(admin_user, admin_password,
+                                            database,
+                                            ro_user, ro_password)
+                  and self.readonly_user_access_grant(admin_user, admin_password, database, ro_user))
+        return rc
+
+    def readonly_user_exists(self, user, password, database, ro_user):
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = ('''SELECT 'SUCCESS' FROM pg_roles WHERE rolname='%(rolname)s';'''
+               % self.squote_escape(rolname=ro_user))
+        sql_retval = argv_run(argv, sql)
+        if sql_retval:
+            rc = ('SUCCESS' == sql_retval.info.strip())
+            if rc:
+                LogColor.error('Role %r already exists.' % (ro_user))
+                LogColor.header('''You may reset the password with\n'''
+                                       '''    ALTER ROLE '%s' PASSWORD 'New-Password'\n''' % (ro_user))
+        else:
+            LogColor.error('Error checking whether role %r exists.' % (ro_user))
+            LogColor.error(sql_retval.info)
+            rc = None
+        return rc
+
+    def readonly_user_create(self, user, password, database, ro_user, ro_password):
+        '''Create a database-specific Postgresql read-only user'''
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = ('''CREATE USER "%(role)s" PASSWORD '%(password)s' '''
+               ''' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;'''
+               % self.dquote_escape(role=ro_user, password=ro_password))
+        sql_retval = argv_run(argv, sql)
+        argv_check('create read-only user %r' % (ro_user),
+                   sql_retval,
+                   lambda x: 'CREATE ROLE' == x)
+        return sql_retval
+
+    def databases_get(self):
+        '''List available databases
+
+        Return
+        seq | None -- a sequence of database names iff successful; None otherwise.
+
+        '''
+        argv = self._sql_cmd_argv(self.admin_user, self.admin_password, database=None)
+        sql = '''SELECT datname FROM pg_database ORDER BY datname ASC;'''
+        sql_retval = argv_run(argv, sql)
+        sql_rc = argv_check('list available databases', sql_retval, empty_is_ok)
+        if sql_rc:
+            databases = [db.strip() for db in sql_retval.info.split()]
+        else:
+            databases = None
+        return databases
+
+    def readonly_user_access_grant(self, user, password, database, ro_user):
+        tables_retval = self.tables_get(user, password, database)
+        if tables_retval:
+            tables = tables_retval.info.strip().split()
+            for table in tables:
+                if not self.readonly_user_table_access_grant(user, password, database, ro_user, table):
+                    rc = False
+                    break
+            else:
+                rc = True
+        else:
+            rc = False
+        return rc
+
+    def tables_get(self, user, password, database):
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = ('''SELECT relname'''
+               ''' FROM pg_class JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace'''
+               ''' WHERE nspname='public' AND relkind IN ('r','v')'''
+               ''' ORDER BY relname ASC;''')
+        sql_retval = argv_run(argv, sql)
+        argv_check('determine tables in %r' % self.database,
+                   sql_retval,
+                   lambda x: True)
+        return sql_retval
+
+    def readonly_user_table_access_grant(self, user, password, database, ro_user, table):
+        argv = self._sql_cmd_argv(user, password, database)
+        sql = ('''GRANT SELECT ON TABLE "%(table)s" TO "%(role)s";'''
+               % self.dquote_escape(table=table, role=ro_user))
+        LogColor.wait('Granting %r read-only access to table %r' % (ro_user, table))
+        sql_retval = argv_run(argv, sql)
+        argv_check('grant table select access on %r to "%r"' % (table, ro_user),
+                   sql_retval,
+                   lambda x: 'GRANT' == x)
+        return sql_retval
+    
+
+def is_integer(value):
+    '''Determine whether value is convertible to an integer'''
+    try:
+        int(value)
+    except (TypeError, ValueError):
+        rc = False
+    else:
+        rc = True
+    return rc
+
+
+def get_choice(question, choices, default=None):
+    '''Prompt for a response from a selection of choices.
+
+    Return
+        The selected item from choices (value, not an index)
+
+    Raises
+        ValueError -- if default is not in choices
+
+    Arguments
+        question -- the prompt
+        choices -- possible answers
+        default -- optional default value
+
+    Example
+        choice = get_choice('What fruit do you want?', ['galaxyS4', 'iphone5S'], 'galaxyS4')
+        print 'choice', choice
+
+    '''
+    if default is None:
+        default_idx = None
+    else:
+        try:
+            default_idx = choices.index(default)
+        except ValueError:
+            raise ValueError('Default choice %r is not in choice collection' % default)
+
+    enum_choices = list(enumerate(choices))
+    prompt = ((default_idx is not None and ('[%d]: ' % (default_idx + 1)))
+              or ': ')
+    while True:
+        LogColor.header(question)
+        for idx, item in enum_choices:
+            LogColor.ok('    %d.' % ((idx + 1)), newln=False)
+            print ' %s' % (item)
+        input_raw = raw_input(prompt)
+        if is_integer(input_raw):
+            choice_idx = int(input_raw) - 1
+        elif not input_raw.strip() and default_idx is not None:
+            choice_idx = default_idx
+        else:
+            choice_idx = None
+
+        if choice_idx is None:
+            LogColor.error('invalid choice value: %s' % input_raw)
+        elif choice_idx < 0 or (len(choices) <= choice_idx):
+            LogColor.error('choice out of range: %s' % choice_idx)
+        else:
+            # !!! Exit loop
+            break
+    return choices[choice_idx]
+
+
+def get_value(name, default=None, validate=None, validate_explanation=None,
+              is_password=False):
+    '''Prompt for and read a value from the terminal.
+
+    Return
+        string -- the read value
+
+    Arguments
+        name -- value name
+        default -- [optional] default value
+        validate -- [optional] callable to validate the input. Defaults to
+            ensuring something was entered.
+        validate_explanation -- [optional] error message if validate() fails
+        is_password -- [optional] if True, do not echo the response. Defaults to False.
+
+    '''
+    prompt_default = (default and ' [%s]' % (default)) or ''
+    prompt = '%s%s: ' % (name, prompt_default)
+    if is_password:
+        input_fn = lambda: getpass.getpass('')
+    else:
+        input_fn = raw_input
+    validate_fn = validate or (lambda x: bool(x))
+    error_msg = validate_explanation or ('Invalid Input.  Please try again.')
+    while True:
+        LogColor.header(prompt, newln=False)
+        input_raw = input_fn().strip()
+        input_value = input_raw or default or ''
+        if validate_fn(input_value):
+            # !!! Loop exit
+            break
+        else:
+            LogColor.error(error_msg)
+    return input_value
+
+
+def db_name_generator(db_name, max_length):
+    '''Generate a database user name which does not exceed a maximum length
+
+    If the name would exceed the maximum length, the name is shortened
+    and some random digits appended.
+
+    Return
+        string -- the generated name
+
+    Raises
+        RuntimeError -- if database name and maximum length values do not
+            permit generation of a useful name.
+
+    Arguments
+        db_name -- database name
+        max_length -- the inclusive size limit of the generated name
+
+    '''
+    PREFIX = 'siqueries_en_'
+    RANDOM_SUFFIX_LENGTH = 3
+    MAX_REQUIRED = len(PREFIX) + RANDOM_SUFFIX_LENGTH
+    if max_length < MAX_REQUIRED:
+        raise RuntimeError('Unable to generate a name with fewer than %d characters (%d specified).'
+                           % (MAX_REQUIRED, max_length))
+    name_full = ('%s%s%s' % (PREFIX, db_name.strip(), RANDOM_SUFFIX_LENGTH * 'X'))[:max_length]
+    chars = string.digits
+    name = (name_full[:-RANDOM_SUFFIX_LENGTH]
+            + ''.join([random.choice(chars) for i in range(RANDOM_SUFFIX_LENGTH)]))
+    return name
+
+
+class ResultTrue(object):
+    def __init__(self, info):
+        self.info = info
+
+    def __nonzero__(self):
+        return True
+
+    def __repr__(self):
+        return 'ResultTrue(%r)' % (self.info)
+
+
+class ResultFalse(object):
+    def __init__(self, info):
+        self.info = info
+
+    def __nonzero__(self):
+        return False
+
+    def __repr__(self):
+        return 'ResultFalse(%r)' % (self.info)
+
+
+def empty_is_ok(_value):
+    '''Validator for accepting an empty string'''
+    return True
+
+
+def is_yes_no(value):
+    '''Determine whether a string begins with y/n'''
+    lowered = value.strip().lower()
+    retval = lowered.startswith('y') or lowered.startswith('n')
+    return retval
+
+
+def bool_from_yes_no(value):
+    '''Convert a y/n string to a bool'''
+    lowered = value.strip().lower()
+    retval = lowered.startswith('y')
+    return retval
+
+
+def random_password_generator(length=24):
+    '''Generate a random password of a specified length
+
+    '''
+    valid_chars = string.letters + string.digits
+    password = ''.join(map(lambda x: random.choice(valid_chars), range(length)))
+    return password
+
+
+def database_choices(api):
+    db_settings = {'MySQL': {'default_port': 3306, 'user_name_limit': 16},
+                   'PostgreSQL': {'default_port': 5432, 'user_name_limit': 63}}
+    json_response = api.post('/client/database_types')
+    response = json.loads(json_response)
+    databases = response.get('database_types', [])
+    db_map = {}
+    for db in databases:
+        name = db['name']
+        db_map[name] = {'name': name, 'id': db['id']}
+        settings = db_settings.get(name)
+        if settings:
+            db_map[name].update(settings)
+    return db_map
+
+def argv_run(argv, input_str=None):
+    '''Execute an argv with optional input
+
+    Return
+    ResultFalse|ResultTrue
+
+    '''
+    if input_str is None:
+        stdin = None
+    else:
+        stdin = subprocess.PIPE
+    try:
+        proc = subprocess.Popen(argv,
+                                stdin=stdin,
+                                stderr=subprocess.STDOUT,
+                                stdout=subprocess.PIPE)
+        info, _unused = proc.communicate(input_str)
+        proc_exited_cleanly = (0 == proc.returncode)
+    except IOError:
+        info = None
+        proc_exited_cleanly = False
+    if stdin is not None:
+        proc.stdin.close()
+    retval = {True: ResultTrue, False: ResultFalse}[proc_exited_cleanly](info)
+    return retval
+
+
+def argv_check(what, argv_result, check_fn):
+    if argv_result:
+        if isinstance(argv_result.info, basestring):
+            info = argv_result.info.strip()
+        else:
+            info = argv_result.info
+        rc = check_fn(info)
+    else:
+        rc = False
+    if not rc:
+        LogColor.error('Failed to ' + what + '.')
+        if argv_result.info:
+            LogColor.error(argv_result.info)
+    return rc
+
+
+def create_ssh_conf():
+    '''Attempt to create the config file.
+
+    Complains and exits if the attempt fails. Good luck testing.
+
+    '''
+    try:
+        conf_file = open(CONFIG_DATA.CONFIG_FILE, 'a')
+    except IOError, exc:
+        # !!! Early exit
+        sys.stderr.write('Unable to write to config file %r\n' % (CONFIG_DATA.CONFIG_FILE))
+        sys.stderr.write('    %s\n' % (exc))
+        sys.stderr.write('Exiting.\n')
+        sys.exit(1)
+    else:
+        conf_file.close()
+
+
+def write_ssh_conf(key, value):
+    '''Write a config key and value to a config file SSHTunnel section.
+
+    Argumnents
+    key -- the storage key
+    value -- the storage value
+
+    '''
+    conf = ConfigParser.ConfigParser()
+    if os.path.exists(CONFIG_DATA.CONFIG_FILE):
+        conf.read(CONFIG_DATA.CONFIG_FILE)
+    section = CONFIG_DATA.SSH_TUNNEL
+    if section not in conf.sections():
+        conf.add_section(section)
+    conf.set(section, key, value)
+    try:
+        f = open(CONFIG_DATA.CONFIG_FILE, 'w')
+    except IOError, exc:
+        # !!! Early exit
+        sys.stderr.write('Unable to open config file for writing: %s\n' % (exc))
+        sys.stderr.write('Exiting.\n')
+        sys.exit(1)
+    conf.write(f)
+    f.close()
+
+
+def get_ssh_conf_value(key):
+    '''Retrieve the value of a key from a config file SSHTunnel section.
+
+    Return
+    string or None -- the associated value on success; None if the
+        config file, section, or key was not found.
+
+    Arguments
+    key -- the lookup key
+
+    '''
+    conf = ConfigParser.ConfigParser()
+    if os.path.exists(CONFIG_DATA.CONFIG_FILE):
+        conf.read(CONFIG_DATA.CONFIG_FILE)
+        try:
+            retval = conf.get(CONFIG_DATA.SSH_TUNNEL, key)
+        except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+            retval = None
+    else:
+        retval = None
+    return retval
+
+
+def connect_start():
+    '''Start siqueries_connect daemon process.
+
+    Exits if the return code is non-zero.
+
+    '''
+    # Launching SiQueries connect
+    LogColor.wait('Launching siqueries_connect')
+    retcode = subprocess.call(['siqueries_connect',
+                               '-d',
+                               '--prefix=%s' % CONFIG_DATA.PREFIX])
+    if 0 == retcode:
+        # Wait for connection to establish
+        time.sleep(5)
+        LogColor.wait('siqueries_connect running')
+    else:
+        LogColor.error('Failed to launch siqueries_connect. Exiting.')
+        sys.exit(1)
+
+
+def _exit(*args):
+    print ''
+    LogColor.ok('Exiting')
+    sys.exit(0)
+
+
+def opt_args_gather():
+    parser = optparse.OptionParser(version='%prog 1.0.0')
+    parser.add_option('--prefix',
+                      help=('installation prefix for configuration'
+                            'and runtime information. Defaults to %r' % PREFIX_DEFAULT))
+    opt_args = parser.parse_args()
+    return opt_args
+
+
+def main():
+    # Handle control-c
+    signal.signal(signal.SIGINT, _exit)
+
+    print 'Welcome to the SiQueries installation wizard.'
+
+    (options, _args) = opt_args_gather()
+
+    # This exits on failure
+    config_data_set(options.prefix)
+
+    # This exits on failure
+    create_ssh_conf()
+
+    # Instantiate API poster
+    client = HTTPClient()
+
+    LOGIN_ATTEMPT_LIMIT = 3
+    for _login_attempt in range(LOGIN_ATTEMPT_LIMIT):
+        email = get_value('Enter the email address registered with siqueries.com',
+                          validate = lambda x: 0 < x.find('@'),
+                          validate_explanation = 'This is not a valid email')
+        password = get_value('Enter your siqueries.com password', is_password=True)
+
+        # Login user
+        response = client.post('/client/login',
+                                    {'email': email,
+                                     'password': password})
+
+        if response != 'success':
+            LogColor.error(response)
+        else:
+            LogColor.wait('Username and password confirmed')
+            break
+    else:
+        LogColor.error('Login tries exceeded.')
+        sys.exit(1)
+
+    LogColor.wait('Checking for existing SSH keys')
+    if os.path.exists(CONFIG_DATA.SSH_KEY):
+        LogColor.wait('SSH key found. Using the existing SSH key.')
+    else:
+        LogColor.wait('Generating keys for SSH tunneling')
+        ret = subprocess.call([
+            'ssh-keygen',
+            '-q',  # shhh!
+            '-N', '', # No passphrase
+            '-C', 'siqueries.com ssh tunneling',
+            '-t', 'rsa',
+            '-f', CONFIG_DATA.SSH_KEY,
+        ])
+
+        if ret != 0:
+            LogColor.error('Failed to generate SSH key. Please confirm you have'
+                                  ' ssh-keygen installed.')
+            sys.exit(1)
+        LogColor.wait('Generated SSH keys.')
+
+    if not get_ssh_conf_value('client_id'):
+        LogColor.wait('''Creating tunnel account on SiQueries's server.'''
+                              ''' This will take a moment.''')
+        ssh_key = open('%s.pub' % CONFIG_DATA.SSH_KEY).read()
+        response = client.post('/client/create',
+                                    {'email': email,
+                                     'password': password,
+                                     'ssh_key': ssh_key,
+                                     'version': VERSION
+                                     })
+
+        response = json.loads(response)
+
+        write_ssh_conf('remotehost', response['connection']['server_hostname'])
+        write_ssh_conf('remoteuser', response['connection']['server_username'])
+        write_ssh_conf('remoteport', response['connection']['port'])
+        write_ssh_conf('client_id', response['connection']['client_id'])
+        LogColor.wait('Tunnel account created')
+    else:
+        LogColor.wait('Connection tunnel already set up')
+
+    # Get the project
+    projects = json.loads(client.post('/client/projects')).get('projects')
+    if not projects:
+        print ('\nUnable to find projects for your account. You must define a project'
+               ' through the SiQueries web interface before running this.')
+        sys.exit(1)
+    elif 1 == len(projects):
+        project = projects[0]
+    else:
+        project_map = dict([(p['name'], p) for p in projects])
+        project_name = get_choice('\nYou have multiple projects.'
+                                  ' To which project would you like to attatch this database',
+                                  sorted(project_map.keys()))
+        project = project_map[project_name]
+
+    # Run through database administration
+    db_accessors = {'mysql': MySQLConfig,
+                    'postgresql': PostgreSQLConfig}
+    db_admin = DatabaseAdministrator(client, db_accessors)
+    db_step = db_admin.start_step()
+    while db_step:
+        db_step = db_step()
+    if db_step is None:
+        LogColor.wait('Finished configuring database information')
+    elif not db_step:
+        # !!! Early exit
+        LogColor.error('Exiting.')
+        sys.exit(1)
+
+    register_args = {'project_id': project['id'],
+                     'type': db_admin.settings.database_id,
+                     'client_id': get_ssh_conf_value('client_id'),
+                     'port': db_admin.settings.database_port,
+                     'name': db_admin.settings.database_name,
+                     'user': db_admin.settings.readonly_user,
+                     'password': db_admin.settings.readonly_password}
+
+    write_ssh_conf('localport', db_admin.settings.database_port)
+    #connect_start()
+
+    LogColor.wait('Registering datasource with SiQueries. This will take a moment.')
+    reg_response = client.post('/client/register', register_args)
+    if reg_response == 'success':
+        LogColor.wait('Datasource registered. siqueries_connect is running.\n')
+        LogColor.ok('\nVisit')
+        LogColor.header('  https://studio.siqueries.com/project/%s/' % (project['slug']))
+        LogColor.ok('to explore your data.')
+    else:
+        LogColor.error('Problem setting up your datasource.'
+                              '\n    For further assistance please contact support@siqueries.com'
+                              '\n    and include the entire output from this run.')
+
+
+if '__main__' == __name__:
+    main()
