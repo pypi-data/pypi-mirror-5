@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""par2ls script"""
+
+import sys
+import os
+import optparse
+from par2ools import par2, fileutil
+from glob import glob
+
+USAGE="%prog [opts] <par2file ...>"
+VERSION=(0,1)
+
+def format_filenames(filenames):
+    return '\n'.join(fileutil.dircolorize(x) for x in filenames)
+
+def list_files(opts, par2s):
+    if len(par2s) == 1:
+        pf = par2.Par2File(par2s[0])
+        print format_filenames(pf.filenames())
+        if opts.par2:
+            print format_filenames(pf.related_pars())
+        return
+    for i,filename in enumerate(par2s):
+        pf = par2.Par2File(filename)
+        print "%s/:" % filename
+        print format_filenames(pf.filenames())
+        if opts.par2:
+            print format_filenames(pf.related_pars())
+        if i+1 < len(par2s):
+            print ""
+
+def main():
+    opts, args = parse_args()
+    list_files(opts, args)
+
+def parse_args():
+    parser = optparse.OptionParser(usage=USAGE, version='.'.join(map(str,VERSION)))
+    parser.add_option('-p', '--par2', action='store_true', help='include related par2 archives')
+    opts, args = parser.parse_args()
+    return opts, args
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main() or 0)
+    except KeyboardInterrupt:
+        sys.exit(-1)
+
