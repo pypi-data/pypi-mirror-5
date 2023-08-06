@@ -1,0 +1,61 @@
+<html tal:omit-tag="" 
+    xmlns="http://www.w3.org/1.09/xhtml"
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+    xmlns:metal="http://xml.zope.org/namespaces/metal"
+    xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+    i18n:domain="unice.portlet.profil">
+
+    <tal:block define="resume python:'resume' in view.data.extra_css;
+                       complet python:'complet' in view.data.extra_css;
+                       focus python:'focus' in view.data.extra_css;">
+
+
+        <dl tal:attributes="id view/data/extra_id;
+                            class string:portlet portletProfil ${view/data/extra_css}">
+
+            <dt tal:condition="not:view/data/omit_header" class="portletHeader">
+                <span tal:content="view/header"/>
+            </dt>
+
+            <dd class="portletItem">
+
+                <tal:block condition="view/profil/image_normal|nothing">
+                    <div tal:condition="resume" class="headshot">
+                        <img tal:replace="structure python:context.profil.getWrappedField('image').tag(context.profil, scale='normal',  css_class='photo')" />
+                    </div>
+                    <div tal:condition="complet" class="headshot carre img-circle img-cerclee" data-width="80">
+                        <img tal:replace="structure python:context.profil.getWrappedField('image').tag(context.profil, scale='normal',  css_class='photo')" />
+                    </div>
+                </tal:block>
+
+                <p class="fn">
+                    <span class="honorific-suffix" tal:content="view/profil/getSuffix | nothing"/>
+                    <span class="given-name" tal:content="view/profil/getFirstName | nothing"/>
+                    <span class="additional-name" tal:content="view/profil/getMiddleName | nothing"/>
+                    <span class="family-name" tal:content="view/profil/getLastName | nothing"/>
+                </p>
+
+                <hr/>
+
+                <p tal:condition="view/profil/getJobTitles"
+                    class="title text-muted"
+                    tal:repeat="jobTitle view/profil/getJobTitles"
+                    tal:content="jobTitle"/>
+
+                <div class="visualClear"></div>
+
+                <div tal:condition="python:view.profil.getBiography and complet" class="biography">
+                    <span tal:content="structure view/profil/getBiography" />
+                </div>
+
+                <p class="vcard" tal:condition="complet">
+                    <a tal:attributes="href string:${view/profil/absolute_url}/vCard" title="Télécharger la vCard">
+                        <i class="icon-download-alt  icon-large"></i> vCard</a>
+                </p>
+
+            </dd>
+        </dl>
+
+    </tal:block>
+
+</html>
