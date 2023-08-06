@@ -1,0 +1,218 @@
+Metadata-Version: 1.1
+Name: dj-stripe
+Version: 0.2.0
+Summary: Django + Stripe for humans 
+Home-page: https://github.com/pydanny/dj-stripe/
+Author: Daniel Greenfeld
+Author-email: pydanny@gmail.com
+License: BSD
+Description: =============================
+        dj-stripe
+        =============================
+        
+        .. image:: https://badge.fury.io/py/dj-stripe.png
+            :target: http://badge.fury.io/py/dj-stripe
+            
+        .. image:: https://travis-ci.org/pydanny/dj-stripe.png?branch=master
+                :target: https://travis-ci.org/pydanny/dj-stripe
+        
+        .. image:: https://pypip.in/d/dj-stripe/badge.png
+                :target: https://crate.io/packages/dj-stripe?version=latest
+        
+        
+        Django + Stripe for Humans
+        
+        Documentation
+        -------------
+        
+        The full documentation is at http://dj-stripe.rtfd.org.
+        
+        Features
+        --------
+        
+        * Subscription management
+        * Works with Django 1.5, 1.4
+        * Works with Python 3.3, 2.7, 2.6
+        * Dead-Easy installation (Done, just needs documentation)
+        * Single-unit purchases (forthcoming)
+        
+        
+        Quickstart
+        ----------
+        
+        Install dj-stripe:
+        
+        .. code-block:: bash
+        
+            pip install dj-stripe
+        
+        Add ``djstripe`` to your ``INSTALLED_APPS``:
+        
+        .. code-block:: python
+        
+        	INSTALLED_APPS +=(
+        	    "djstripe",
+        	)
+        
+        Add the context processor to your ``TEMPLATE_CONTEXT_PROCESSORS``:
+        
+        .. code-block:: python
+        
+            TEMPLATE_CONTEXT_PROCESSORS +=(
+                'djstripe.context_processors.djstripe_settings',
+            )
+        
+        Add your stripe keys:
+        
+        .. code-block:: python
+        
+            STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "<your publishable test key>")
+            STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "<your secret test key>")
+        
+        Add some payment plans:
+        
+        .. code-block:: python
+        
+            DJSTRIPE_PLANS = {
+                "monthly": {
+                    "stripe_plan_id": "pro-monthly",
+                    "name": "Web App Pro ($24.99/month)",
+                    "description": "The monthly subscription plan to WebApp",
+                    "price": 2499,  # $24.99
+                    "currency": "usd",
+                    "interval": "month"
+                },
+                "yearly": {
+                    "stripe_plan_id": "pro-yearly",
+                    "name": "Web App Pro ($199/year)",
+                    "description": "The annual subscription plan to WebApp",
+                    "price": 19900,  # $199.00
+                    "currency": "usd",
+                    "interval": "year"
+                }
+            }
+        
+        Add to the urls.py:
+        
+        .. code-block:: python
+        
+        	url(r'^payments/', include('djstripe.urls', namespace="djstripe")),
+        	
+        Run the commands::
+        
+        	python manage.py syncdb
+        
+            python manage.py migrate  # if you are using South
+        	
+        	python manage.py djstripe_init_customers
+        	
+        	python manage.py djstripe_init_plans
+        
+        If you haven't already, add the Bootstrap 3.0.0 JS and CSS to your base template:
+        
+        .. code-block:: html
+        
+            <!-- Latest compiled and minified CSS -->
+            <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc1/css/bootstrap.min.css">
+             
+            <!-- Latest compiled and minified JavaScript -->
+            <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc1/js/bootstrap.min.js"></script>
+        
+        Start up the webserver:
+        
+            * http://127.0.0.1:8000/payments/
+        
+        
+        
+        
+        History
+        -------
+        
+        0.2.0 (2013-08-12)
+        +++++++++++++++++++
+        
+        * Cancellation of plans now works.
+        * Upgrades and downgrades of plans now work.
+        * Changing of cards now works.
+        * Added breadcrumbs to improve navigation.
+        * Improved installation instructions.
+        * Consolidation of test instructions.
+        * Minor improvement to django-stripe-payments documentation
+        * Added coverage.py to test process.
+        * Added south migrations.
+        * Fixed the subscription_payment_required function-based view decorator.
+        * Removed unnecessary django-crispy-forms
+        
+        0.1.7 (2013-08-08)
+        +++++++++++++++++++
+        
+        * Middleware excepts all of the djstripe namespaced URLs. This way people can pay.
+        
+        0.1.6 (2013-08-08)
+        +++++++++++++++++++
+        
+        * Fixed a couple template paths
+        * Fixed the manifest so we include html, images.
+        
+        0.1.5 (2013-08-08)
+        +++++++++++++++++++
+        
+        * Fixed the manifest so we include html, css, js, images.
+        
+        0.1.4 (2013-08-08)
+        +++++++++++++++++++
+        
+        * Change PaymentRequiredMixin to SubscriptionPaymentRequiredMixin
+        * Add subscription_payment_required function-based view decorator
+        * Added SubscriptionPaymentRedirectMiddleware
+        * Much nicer accounts view display
+        * Much improved subscription form display
+        * Payment plans can have decimals
+        * Payment plans can have custom images
+        
+        0.1.3 (2013-08-7)
+        ++++++++++++++++++
+        
+        * Added account view
+        * Added Customer.get_or_create method
+        * Added djstripe_sync_customers management command
+        * sync file for all code that keeps things in sync with stripe
+        * Use client-side JavaScript to get history data asynchronously
+        * More user friendly action views
+        
+        0.1.2 (2013-08-6)
+        ++++++++++++++++++
+        
+        * Admin working
+        * Better publish statement
+        * Fix dependencies
+        
+        0.1.1 (2013-08-6)
+        ++++++++++++++++++
+        
+        * Ported internals from django-stripe-payments
+        * Began writing the views
+        * Travis-CI
+        * All tests passing on Python 2.7 and 3.3
+        * All tests passing on Django 1.4 and 1.5
+        * Began model cleanup
+        * Better form
+        * Provide better response from management commands
+        
+        0.1.0 (2013-08-5)
+        ++++++++++++++++++
+        
+        * First release on PyPI.
+Keywords: stripe django
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
