@@ -1,0 +1,42 @@
+[buildout]
+#extensions = buildout.bootstrap mr.developer
+extends = http://svn.plone.org/svn/collective/buildout/plonetest/test-4.x.cfg
+package-name = ${namespace_package}.${package}
+parts = omelette scripts compile_po
+sources-dir = dev
+find-links +=
+    http://packages.inigo-tech.com/packages/
+#auto-checkout = 
+#    inigo.templer
+
+#[sources]
+#inigo.templer = git https://github.com/inigoconsulting/inigo.templer.git
+
+[versions]
+inigo.templer = 1.3
+
+[test]
+recipe = zc.recipe.testrunner
+defaults = ['--tests-pattern', '^f?tests$', '-v']
+eggs = ${namespace_package}.${package} [test]
+
+[omelette]
+recipe = collective.recipe.omelette
+eggs = \${instance:eggs}
+
+[instance]
+eggs += Pillow
+
+[compile_po]
+recipe = collective.recipe.template
+input = templates/compile_po.in
+output = \${buildout:directory}/bin/compile_po
+mode = 755
+
+[scripts]
+recipe = zc.recipe.egg
+eggs = 
+    inigo.templer
+    PasteScript
+    zest.releaser
+    ${namespace_package}.${package}
