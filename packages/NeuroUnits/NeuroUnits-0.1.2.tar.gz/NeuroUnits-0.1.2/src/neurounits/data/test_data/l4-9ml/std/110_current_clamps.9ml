@@ -1,0 +1,44 @@
+
+
+ define_component i_squarewave{
+        
+        
+        i=0nA
+        
+        regime OFF{
+            i=0A
+            on (t>t_last + t_off) {
+                t_last = t
+                emit dummyevent()
+                transition_to ON;
+                }
+            # Dummy variable for testing:
+            f'= ({1m}-f)/10ms
+            }
+
+        regime ON{
+            i = i_amp
+            on (t>t_last + t_on) {
+                t_last = t
+                transition_to OFF;
+                }
+            
+            # Dummy variable for testing:    
+            f'= ({3m}-f)/30ms
+        }
+        
+        
+        initial {
+            t_last=0s
+            regime OFF
+            
+            f= 2m
+        }
+
+        <=> PARAMETER t_on, t_off
+        <=> OUTPUT i:(A)
+        <=> PARAMETER i_amp:(A)
+        <=> TIME t:(ms)
+
+        }
+        
