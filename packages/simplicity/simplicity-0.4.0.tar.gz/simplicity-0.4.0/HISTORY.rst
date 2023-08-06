@@ -1,0 +1,12 @@
+0.3.0 (2013-07-15)
+
+    * Accepts command-line argument
+
+0.2.0 (2013-07-15)
+
+    * Working prototype
+
+0.1.0 (2013-07-15)
+
+    * Pain point
+    * Inspiration
