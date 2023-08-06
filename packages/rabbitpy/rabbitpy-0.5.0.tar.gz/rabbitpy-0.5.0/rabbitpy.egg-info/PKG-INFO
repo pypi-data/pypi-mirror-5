@@ -1,0 +1,131 @@
+Metadata-Version: 1.0
+Name: rabbitpy
+Version: 0.5.0
+Summary: A minimalistic & pythonic AMQP library focused on supporting RabbitMQ
+Home-page: http://rabbitpy.readthedocs.org
+Author: Gavin M. Roy
+Author-email: gavinmroy@gmail.com
+License: Copyright (c) 2012 Gavin M. Roy
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+ * Neither the name of the rmqid library nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Description: rabbitpy - rabbitmq simplified
+        ==============================
+        A pure python, thread-safe, minimalistic and pythonic BSD Licensed AMQP/RabbitMQ library that supports Python 2.6+ and Python 3.2+. Previously named `rmqid`.
+        
+        [![Build Status](https://travis-ci.org/gmr/rabbitpy.png?branch=master)](https://travis-ci.org/gmr/rabbitpy)
+        
+        Version
+        -------
+        rmqid 0.4.3 is available for testing and use while rabbitpy is being worked on. They will remain API compatible with the exception of the Python package name.
+        
+        Installation
+        ------------
+        rabbitpy may be installed via the Python package index with the tool of your choice. I prefer pip:
+        
+            pip install rabbitpy
+        
+        But there's always easy_install:
+        
+            easy_install rabbitpy
+        
+        Documentation
+        -------------
+        https://rabbitpy.readthedocs.org
+        
+        Requirements
+        ------------
+         - pamqp - https://github.com/pika/pamqp
+         - requests - http://docs.python-requests.org/
+        
+        Python3 Caveats
+        ---------------
+         - Message bodies must use the bytes data type while most other values are strings.
+        
+        Examples
+        ========
+        
+        Simple Publisher
+        ----------------
+        The simple publisher is ideal for sending one off messages:
+        
+            >>> rabbitpy.publish('amqp://guest:guest@localhost:5672/%2f',
+                                 exchange='test',
+                                 routing_key='example',
+                                 body='This is my test message')
+        
+        If you want to add properties:
+        
+            >>> rabbitpy.publish('amqp://guest:guest@localhost:5672/%2f',
+                                 exchange='test',
+                                 routing_key='example',
+                                 body='This is my test message',
+                                 properties={'content_type': 'text/plain'})
+        
+        And publisher confirms:
+        
+            >>> rabbitpy.publish('amqp://guest:guest@localhost:5672/%2f',
+                                 exchange='test',
+                                 routing_key='example',
+                                 body='This is my test message',
+                                 properties={'content_type': 'text/plain'},
+                                 confirm=True)
+            True
+            >>>
+        
+        Simple Getter
+        -------------
+        
+            >>> m = rabbitpy.get('amqp://guest:guest@localhost:5672/%2f', 'test')
+            >>> m.json()
+            {u'foo': u'bar'}
+        
+        Simple Consumer
+        ---------------
+        
+            >>> with rabbitpy.consume('amqp://guest:guest@localhost:5672/%2f', 'test') as c:
+            ..    for message in c.next_message():
+            ...         print message.properties['message_id']
+            ...         print message.body
+            ...         message.ack()
+            ...
+            856dfdc7-5ee3-4fc1-9635-977bf0043a9f
+            {"foo": "bar"}
+        
+        More complex examples are available at https://rabbitpy.readthedocs.org
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Topic :: Communications
+Classifier: Topic :: Internet
+Classifier: Topic :: Software Development :: Libraries
