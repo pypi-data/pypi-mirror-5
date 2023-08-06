@@ -1,0 +1,134 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      xml:lang="en" lang="en"
+      metal:use-macro="context/prefs_main_template/macros/master"
+      i18n:domain="plone">
+
+<body>
+
+<metal:main fill-slot="prefs_configlet_main">
+
+    <h1 class="documentFirstHeading" i18n:translate="">
+        Manage Python Scripts
+    </h1>
+
+    <div class="documentDescription" i18n:translate="">
+        Manage Python Scripts that can be used by Python Script portlets.
+    </div>
+    
+    <div id="content-core">
+
+        <a href=""
+           class="link-parent"
+           tal:attributes="href string:$portal_url/plone_control_panel"
+           i18n:translate="label_up_to_plone_setup">
+            Up to Site Setup
+        </a>
+        
+        <div id="script-list">
+            <table class="listing nosort">
+                <thead>
+                    <tr>
+                        <th i18n:translate="">Title</th>
+                        <th i18n:translate="">Path</th>
+                        <th i18n:translate="" class="listingCheckbox">Enabled</th>
+                        <th i18n:translate="">Action</th>
+                        <th i18n:translate="">Timing active</th>
+                        <th i18n:translate="">Action</th>
+                        <th i18n:translate="">Timing samples</th>
+                        <th i18n:translate="">Min. time</th>
+                        <th i18n:translate="">Avg. time</th>
+                        <th i18n:translate="">Max. time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tal:loop repeat="script view/getScripts">
+                    <tr tal:define="oddrow repeat/script/odd"
+                        class="odd"
+                        tal:attributes="class python:oddrow and 'odd' or 'even'"> 
+	                        <td tal:content="script/title">Title</td>
+	                        <td tal:content="script/path">/PloneSite/myscript</td>
+	                        <td class="listingCheckbox">
+	                           <tal:tag condition="script/enabled" i18n:translate="">Yes</tal:tag>
+	                           <tal:tag condition="not: script/enabled" i18n:translate="">No</tal:tag>
+	                        </td>
+	                        <td>
+	                           <form action="#" method="post"
+	                                 tal:condition="script/enabled"
+	                                 tal:attributes="action string:${portal_url}/@@disable_pythonscript">
+	                               <input type="hidden" name="id" value="" tal:attributes="value script/path">
+	                               <span tal:replace="structure context/@@authenticator/authenticator"></span>
+	                               <input type="submit" name="button" value="Disable" i18n:attributes="value">
+                               </form>
+                               <form action="#" method="post"
+                                     tal:condition="not: script/enabled"
+                                     tal:attributes="action string:${portal_url}/@@enable_pythonscript">
+                                   <input type="hidden" name="id" value="" tal:attributes="value script/path">
+                                   <span tal:replace="structure context/@@authenticator/authenticator"></span>
+                                   <input type="submit" name="button" value="Enable" i18n:attributes="value">
+                               </form>
+	                        </td>
+	                        <td class="listingCheckbox">
+                               <tal:tag condition="python: script['enabled'] and script['timing']" i18n:translate="">Yes</tal:tag>
+                               <tal:tag condition="python: script['enabled'] and not script['timing']" i18n:translate="">No</tal:tag>
+                            </td>
+                            <td>
+                               <form action="#" method="post"
+                                     tal:condition="python: script['enabled'] and script['timing']"
+                                     tal:attributes="action string:${portal_url}/@@disabletiming_pythonscript">
+                                   <input type="hidden" name="id" value="" tal:attributes="value script/path">
+                                   <span tal:replace="structure context/@@authenticator/authenticator"></span>
+                                   <input type="submit" name="button" value="Disable timing" i18n:attributes="value">
+                               </form>
+                               <form action="#" method="post"
+                                     tal:condition="python: script['enabled'] and not script['timing']"
+                                     tal:attributes="action string:${portal_url}/@@enabletiming_pythonscript">
+                                   <input type="hidden" name="id" value="" tal:attributes="value script/path">
+                                   <span tal:replace="structure context/@@authenticator/authenticator"></span>
+                                   <input type="submit" name="button" value="Enable timing" i18n:attributes="value">
+                               </form>
+                            </td>
+                            <td>
+                               <tal:tag condition="python: script['enabled'] and script['timing']" tal:content="script/samples">8</tal:tag>
+                            </td>
+	                        <td>
+	                           <tal:if condition="python: script['enabled'] and script['timing']">
+	                               <span tal:content="python: '%.3f' % script['min_time']">0.3</span> sec
+	                           </tal:if>
+	                        </td>
+	                        <td>
+	                           <tal:if condition="python: script['enabled'] and script['timing']">
+	                               <span tal:content="python: '%.3f' % script['avg_time']">0.4</span> sec
+	                           </tal:if>
+	                        </td>
+	                        <td>
+	                           <tal:if condition="python: script['enabled'] and script['timing']">
+	                               <span tal:content="python: '%.3f' % script['max_time']">0.5</span> sec
+	                           </tal:if>
+	                        </td>
+                    </tr>
+                    </tal:loop>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="script-actions">
+            <form action="#" method="post"
+                  tal:attributes="action string:${portal_url}/@@rescan_pythonscript">
+                <span tal:replace="structure context/@@authenticator/authenticator"></span>
+                <input type="submit" name="button" value="Rescan scripts" i18n:attributes="value">
+            </form>
+            <form action="#" method="post"
+                  tal:attributes="action string:${portal_url}/@@checksyntax_pythonscript">
+                <span tal:replace="structure context/@@authenticator/authenticator"></span>
+                <input type="submit" name="button" value="Check syntax" i18n:attributes="value">
+            </form>
+        </div>
+
+    </div>
+
+</metal:main>
+</body>
+</html>
