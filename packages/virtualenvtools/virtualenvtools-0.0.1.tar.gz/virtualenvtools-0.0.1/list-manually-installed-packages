@@ -1,0 +1,24 @@
+#! /bin/bash
+
+remove="$(pip freeze -l |
+  sed -e "s+==.*++g" |
+  while read name; do
+    pip show "$name" |
+      grep "Requires:" |
+      sed -e "s+Requires: ++g" |
+      tr " " "\n" |
+      sed -e "s+,$++g";
+  done |
+  grep -v "^$" |
+  sort |
+  uniq |
+  sed -e "s+^+\\\\(+g" -e "s+$+\\\\)\\\\|+g" |
+  tr -d "\n" |
+  sed -e "s+\\\\|$++g")"
+
+pip freeze -l |
+  sed -e "s+^\($remove\)==.*$++g" |
+  grep -v "^$" |
+  sort |
+  uniq
+
