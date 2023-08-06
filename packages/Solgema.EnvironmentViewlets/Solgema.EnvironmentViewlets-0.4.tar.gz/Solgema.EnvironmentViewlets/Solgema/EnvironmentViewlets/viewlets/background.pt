@@ -1,0 +1,37 @@
+<div id="solgemabackground" class="visualNoPrint"
+   tal:define="bList view/backgroundsList;"
+   i18n:domain="plone"
+   metal:define-macro="portal_bandeau"
+   tal:condition="bList">
+  <div id="portal-background">
+    <div id="inner-portal-background" class="bannersContainer">
+        <tal:bandeaux repeat="bandeauTag bList">
+          <div tal:define="cssDisplay python:repeat['bandeauTag'].start and 'display: block' or 'display: none';
+                           oneItemStyle python:len(bList)<2 and 'position:relative;; ' or repeat['bandeauTag'].start and 'position:relative;; ' or ''"
+               tal:attributes="id string:carousel-banner-${repeat/bandeauTag/index};
+                               class python:repeat['bandeauTag'].start and bandeauTag['id']+' carousel-banner selected' or bandeauTag['id']+' carousel-banner';
+                               style python:repeat['bandeauTag'].start and oneItemStyle+cssDisplay or oneItemStyle+cssDisplay">
+            <p tal:replace="structure bandeauTag/content"/>
+          </div>
+        </tal:bandeaux>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+function initBackground() {
+    if (jq('#solgemabackground').find('.backgroundExtend').length>0) {
+        var htmlWidth = jq('html').outerWidth();
+        var htmlHeight = jq('html').outerHeight();
+        jq('#solgemabackground').addClass('backgroundExtend');
+        jq('#solgemabackground').width(htmlWidth).height(htmlHeight);
+        jq('#solgemabackground .carousel-banner').width(htmlWidth).height(htmlHeight);
+        jq('#solgemabackground .backgroundExtend').height(htmlHeight);
+    }
+    jq('#solgemabackground').detach().prependTo('body').show();
+}
+if (jq('#solgemabackground #inner-portal-background').children().length>1) {
+    jq(initBackground);
+} else if (jq('#solgemabackground #inner-portal-background a').length>0) {
+    jq(initBackground);
+}
+</script>
