@@ -1,0 +1,48 @@
+{% extends "kiwi/subbase.html" %}
+{% load kiwimarkup %}
+{% load kiwiwiki %}
+{% block head_title %}{{ block.super }} - {{ wikipageObject.title }}{% endblock %}
+{% block header_pathline_content %}
+    {% pathline wikipageAll wikipageObject.id %}
+{% endblock %}
+
+{% block content %}
+    {% wiki2xhtml_render wikipageObject.text wikipageAllPub attachment_items %}
+    <div class="columned">
+    
+        <div id="submenu">
+            <div class="container">
+                <h2>Sommaire</h2>
+                <div class="summary">
+                    <ul>
+                        <li><a href="#helper-blocks">Blocs de contenus</a></li>
+                        <li><a href="#helper-bulletlists">Listes à puces ou numérotées</a></li>
+                        <li><a href="#helper-titles">Titres et sommaire des titres</a></li>
+                        <li><a href="#helper-inline">Mise en forme des éléments en lignes</a></li>
+                        <li><a href="#helper-links">Liens</a></li>
+                        <li><a href="#helper-macros">Macros</a></li>
+                    </ul>
+                </div>
+            
+                <p class="revision_date">Dernière édition le {{ wikipageObject.last_date|date:"l d F Y à H:i" }}</p>
+                {% if with_history %}
+                    {% ifnotequal wikipageObject.rev_number 0 %}<p class="history_link"><a href="{{ wikipageObject.get_history_url }}"><strong>Historique des changements de ce document</strong></a></p>{% endifnotequal %}
+                {% endif %}
+                {% if user.is_staff %}<p class="history_link"><a href="/admin/kiwi/wikipage/{{ wikipageObject.id }}/"><strong>Éditer cette page</strong></a></p>{% endif %}
+            </div>
+        </div>
+        
+        <div class="content_container">
+            <h2>{{ wikipageObject.title }}</h2>
+            <div class="wiki2xhtml">
+                {{ W2X_Xhtml }}
+                {% attached_files_widget wikipageObject %}
+            </div>
+            
+            <div class="help_syntax">
+                {% wikisyntax %}
+            </div>
+        </div>
+        
+    </div>
+{% endblock %}
