@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% load bootstrap_toolkit %}
+{% load guardian_tags %}
+
+{% block content %}
+    <div class='row'>
+        <div class='span4'>
+            <h1>Create file system mount point</h1>
+
+            {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+            <form action='{% url 'appsetup:filesystems' %}' class='form' method='post'>
+                {% csrf_token %}
+                {{ form | as_bootstrap }}
+                <div class="form-actions">
+                    <input type="submit" class="btn btn-info" value="Create"/>
+                    <a class='btn' href='{% url 'appsetup:index' %}'>Cancel</a>
+                </div>
+            </form>
+        </div>
+        <div class='span3'>
+            <h3>currently existing mount points</h3>
+            {% if filesystems %}
+                <ul>
+                    {% for fs in filesystems %}
+                        <li>{{ fs }} - {{ fs.mount_point }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
