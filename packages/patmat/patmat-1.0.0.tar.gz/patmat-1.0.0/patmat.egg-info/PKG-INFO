@@ -1,0 +1,96 @@
+Metadata-Version: 1.1
+Name: patmat
+Version: 1.0.0
+Summary: Functional-style recursive pattern matching in Python. Crazy stuff.
+Home-page: https://github.com/admk/patmat
+Author: Xitong Gao
+Author-email: gxtfmx@gmail.com
+License: The MIT License (MIT)
+
+Copyright (c) 2013 Xitong Gao
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Description: patmat
+        ======
+        
+        Functional-style recursive pattern matching in Python. Crazy stuff.
+        
+        
+        Install
+        -------
+        .. code-block:: sh
+        
+            pip install patmat
+        
+        
+        Usage
+        -----
+        
+        Pattern matching with `patmat`:
+        
+        .. code-block:: python
+        
+            >>> from patmat import *
+            >>> Mimic({(1, Val('k')): (3, Val('v'))}).match({(1, 2): (3, 4)})
+            {'k': 2, 'v': 4}
+        
+        Multiple dispatch generic functions:
+        
+        .. code-block:: python
+        
+            >>> from patmat import *
+            >>>
+            >>> @case
+            >>> def func(match, l=[Val('head'), ...]):
+            ...     print('a list with first item: {}'.format(match.head))
+            >>>
+            >>> @case
+            >>> def func(match, l=Val('item')):
+            ...     print('an item: {}'.format(match.item))
+            >>>
+            >>> func([1, 2, 3])
+            a list with first item: 1
+            >>> func(4)
+            an item: 4
+        
+        Matches ``list``, ``tuple``, ``dict``, types, classes with attributes. Brace yourself
+        for the power of recursive pattern matching:
+        
+        .. code-block:: python
+        
+            >>> from patmat import *
+            >>> m = Mimic([
+            ...     1, Type(int, Val(2)),
+            ...     Mimic(a=3, b=[4, Val(5), 6], c=Val(7)),
+            ...     Val(8), {Val(9): 10, Val(11): 12},
+            ... ])
+            >>> class A: 
+            ...     __init__ = lambda self, **kwargs: self.__dict__.update(kwargs)
+            >>> m.match([1, 2, A(a=3, b=[4, 5, 6], c=7), 8, {9: 10, 11: 12}])
+            {2: 2, 5: 5, 7: 7, 8: 8, 9: 9, 11: 11}
+        
+Keywords: python,funtional programming,pattern matching
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.3
