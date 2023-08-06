@@ -1,0 +1,32 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:browser="http://namespaces.zope.org/browser"
+           xmlns:five="http://namespaces.zope.org/five"
+           xmlns:cmf="http://namespaces.zope.org/cmf"
+           xmlns:zcml="http://namespaces.zope.org/zcml"
+           xmlns:monkey="http://namespaces.plone.org/monkey">
+
+    <include package="collective.monkeypatcher" />
+    <include file="profiles.zcml" />
+
+    <monkey:patch
+        description="Patch PloneSite"
+        class="Products.CMFPlone.Portal.PloneSite"
+        original="indexObject"
+        replacement=".patch.indexObject"
+        />
+
+    <monkey:patch
+        description="Patch PloneSite"
+        class="Products.CMFPlone.Portal.PloneSite"
+        original="unindexObject"
+        replacement=".patch.unindexObject"
+        />
+
+    <class class="Products.CMFPlone.Portal.PloneSite"
+           zcml:condition="installed plone.uuid">
+        <implements interface="plone.uuid.interfaces.IUUIDAware" />
+        <implements interface="plone.uuid.interfaces.IAttributeUUID" />
+        <implements interface="Products.Archetypes.interfaces.IReferenceable" />
+    </class>
+
+</configure>
