@@ -1,0 +1,52 @@
+Metadata-Version: 1.0
+Name: TwitterAPI
+Version: 2.0.9.4
+Summary: Minimal wrapper for Twitter's REST and Streaming APIs
+Home-page: https://github.com/geduldig/TwitterAPI
+Author: Jonas Geduldig
+Author-email: boxnumber03@gmail.com
+License: MIT
+Download-URL: https://github.com/geduldig/TwitterAPI/tarball/master
+Description: <p><a href="https://crate.io/packages/TwitterAPI"><img src="https://pypip.in/d/TwitterAPI/badge.png" alt="Downloads" /></a> <a href="https://crate.io/packages/TwitterAPI"><img src="https://pypip.in/v/TwitterAPI/badge.png" alt="Downloads" /></a></p>
+        <h1 id="twitterapi">TwitterAPI</h1>
+        <p>This python package supports Twitter's REST and Streaming APIs (version 1.1) with OAuth. It works with the latest python versions in both 2.x and 3.x branches.</p>
+        <h2 id="scripting-usage">Scripting Usage</h2>
+        <p><em>See TwitterAPI/cli.py for a working code example.</em></p>
+        <p>First, authenticate with your application credentials:</p>
+        <pre><code>from TwitterAPI import TwitterAPI
+        api = TwitterAPI(consumer_key, consumer_secret, access_token_key, access_token_secret)</code></pre>
+        <p>Tweet something:</p>
+        <pre><code>r = api.request(&#39;statuses/update&#39;, {&#39;status&#39;:&#39;This is a tweet!&#39;})
+        print r.status_code</code></pre>
+        <p>Get some tweets:</p>
+        <pre><code>api.request(&#39;search/tweets&#39;, {&#39;q&#39;:&#39;zzz&#39;})
+        iter = api.get_iterator()
+        for item in iter:
+            print item</code></pre>
+        <p>Stream tweets from New York City:</p>
+        <pre><code>api.request(&#39;statuses/filter&#39;, {&#39;locations&#39;:&#39;-74,40,-73,41&#39;})
+        iter = api.get_iterator()
+        for item in iter:
+            print item
+            </code></pre>
+        <p>Notice that request() accepts both REST and Streaming API methods, and it takes two arguments: 1) the Twitter method, 2) a dictionary of method parameters. In the above examples we use the get_iterator() helper to get each tweet object. This iterator knows how to iterate both REST and Streaming API results, in addition to error objects. Alternatively, you have access to the response object which is returned by request(). From the response object you can get the raw response (.text) and the http status code (.status_code). See the documentation for the Requests library for more info.</p>
+        <h2 id="command-line-usage-cli.py">Command-line Usage (cli.py)</h2>
+        <p>For help:</p>
+        <pre><code>&gt; python -m TwitterAPI.cli -h </code></pre>
+        <p>You will need to supply your Twitter application OAuth credentials. The easiest option is to enter them in TwitterAPI/credentials.txt. It is the default place where cli.py will look for them. You also can supply an alternative credentials file as a command-line argument.</p>
+        <p>Call any REST API endpoint:</p>
+        <pre><code>&gt; python -m TwitterAPI.cli -endpoint statuses/update -parameters status=&#39;my tweet&#39;</code></pre>
+        <p>Another example (here using abreviated option names) that parses selected output fields:</p>
+        <pre><code>&gt; python -m TwitterAPI.cli -e search/tweets -p q=zzz count=10 -field screen_name text </code></pre>
+        <p>Calling any Streaming API endpoint works too:</p>
+        <pre><code>&gt; python -m TwitterAPI.cli -e statuses/filter -p track=zzz -f screen_name text</code></pre>
+        <p>After the -field option you must supply one or more key names from the raw JSON response object. This will print values only for these keys. With the -field option cli.py prints the entire JSON response object.</p>
+        <h2 id="installation">Installation</h2>
+        <pre><code>&gt; pip install TwitterAPI</code></pre>
+        <h2 id="contributors">Contributors</h2>
+        <ul>
+        <li>Jonas Geduldig</li>
+        </ul>
+        
+Keywords: twitter
+Platform: UNKNOWN
