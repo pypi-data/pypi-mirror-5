@@ -1,0 +1,45 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:cmf="http://namespaces.zope.org/cmf"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="collective.local.sendto">
+
+  <five:registerPackage package="." initialize=".initialize" />
+
+  <cmf:registerDirectory name="collective_sendto"/>
+  <i18n:registerTranslations directory="locales" />
+
+
+  <permission
+      id="collective.local.sendto.sendto"
+      title="collective.local.sendto: Send to"
+      />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="collective.local.sendto"
+      directory="profiles/default"
+      description="Installs the collective.local.sendto package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+  <!-- -*- extra stuff goes here -*- -->
+
+  <configure zcml:condition="installed plone.app.dexterity">
+    <include file="dexterity.zcml" />
+  </configure>
+
+  <include package=".browser" />
+
+  <genericsetup:upgradeStep
+       title="Migration profile for collective.local.sendto to 2"
+       description="Fix sendto action permission"
+       source="1"
+       destination="2"
+       handler=".upgrades.v2"
+       profile="collective.local.sendto:default" />
+
+</configure>
