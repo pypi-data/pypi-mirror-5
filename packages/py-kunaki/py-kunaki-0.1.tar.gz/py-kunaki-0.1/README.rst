@@ -1,0 +1,123 @@
+==================
+py-kunaki
+==================
+:Info: Python module to interface with the Kunaki.com XML API
+:Version: 0.1
+:Author: Netlandish Inc. (http://www.netlandish.com)
+
+Dependencies
+============
+
+* Python 2.6+
+
+
+Installation
+============
+
+PIP::
+
+    pip install py-kunaki
+
+Basic Manual Install::
+
+    $ python setup.py build
+    $ sudo python setup.py install
+
+Alternative Install (Manually):
+
+| Place kunaki directory in your Python path. Either in your Python installs site-packages directory or set your $PYTHONPATH environment variable to include a directory where the webutils directory lives.
+
+
+Usage
+=====
+
+Please first refer to Kunaki XML Web Service documentation: http://kunaki.com/XMLService.htm
+
+|
+
+**Get shipping options for a prospective order**::
+
+    from kunaki import ShippingProduct, ShippingOptions
+    
+    product1 = ShippingProduct(product_id='XZZ1111111', quantity=2)
+    product2 = ShippingProduct(product_id='PXZZ111112', quantity=3)
+    shipping_opts = ShippingOptions(
+        country='United States',
+        state='NY',
+        postal_code='10004',
+        products=[product1, product2],
+    )
+    # Optionally add a product
+    shipping_opts.add_product(ShippingProduct(product_id='PXZZ111111', quantity=1))
+    # Submit the shipping options request
+    shipping_opts.send()
+
+    if shipping_opts.success:
+        # Retrieve options list
+        options = shipping_opts.get_options()
+        for opt in options:
+            print 'Description:', opt.description
+            print 'Delivery Time:', opt.delivery_time
+            print 'Price:', opt.price
+    else:
+        print 'Error:', shipping_opts.error_msg
+
+
+**Request to manufacture and fulfill an order**::
+
+    from kunaki import ShippingProduct, Order
+    
+    products = [
+        ShippingProduct(product_id='XZZ1111111', quantity=2),
+        ShippingProduct(product_id='PXZZ111112', quantity=3),
+    ]
+    order = Order(
+        username='santaclaus@northpole.com',
+        password='Rednose',
+        name='John Smith',
+        address1='215 Maple Street',
+        address2='Room 134',
+        city='New York',
+        postal_code='10004',
+        country='United States',
+        shipping_description='USPS Priority Mail',
+        products=products,
+        state='NY',
+        company='Smith Enterprises',
+    )
+    # Optionally add a product
+    order.add_product(ShippingProduct(product_id='PXZZ111111', quantity=1))
+    # Submit the order request
+    order.send()
+    
+    if order.success:
+        print 'Order Id:', order.order_id
+    else:
+        print 'Error:', order.error_msg
+
+
+**Request for an order status**::
+
+    from kunaki import OrderStatus
+    
+    order_status = OrderStatus(
+        username='santaclaus@northpole.com',
+        password='Rednose',
+        order_id='567129',
+    )
+    
+    if order_status.success:
+        print 'Status:', order_status.status
+        print 'Tracking Type:', order_status.tracking_type
+        print 'Tracking Id:', order_status.tracking_id
+    else:
+        print 'Error:', order_status.error_msg
+
+
+==================
+Commercial Support
+==================
+
+This software, and lots of other software like it, has been built in support of many of
+Netlandish's own projects, and the projects of our clients. We would love to help you 
+on your next project so get in touch by dropping us a note at hello@netlandish.com.
