@@ -1,0 +1,45 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="ibme.persondirectory">
+<body>
+
+  <metal:content-core fill-slot="content-core">
+    <metal:content-core define-macro="content-core">
+
+      <ul class="persondirectory-listing"><!--
+        --><li tal:repeat="entry view/entryListing">
+          <tal:t tal:define="ob entry/getObject"
+               tal:content="structure ob/@@fragment" />
+        </li><!--
+      --></ul>
+
+    </metal:content-core>
+  </metal:content-core>
+
+  <metal:main fill-slot="column_two_slot">
+    <metal:column_two_slot define-macro="column_two_slot">
+      <div id="portal-column-two" class="cell width-1:4 position-3:4">
+
+      <dl class="persondirectory-filters">
+        <dd><a tal:attributes="href context/absolute_url">Show all</a></dd>
+        <tal:t tal:repeat="filter view/getFilters">
+          <dt tal:content="string:Filter by ${filter/title}">Filter by...</dt>
+          <tal:t tal:repeat="filter_value python:filter['values']">
+            <dd tal:attributes="class python:'selected' if filter_value['selected'] else '';">
+              <a tal:attributes="href filter_value/url"
+                 tal:content="filter_value/title">Filter</a>
+            </dd>
+          </tal:t>
+        </tal:t>
+      </dl>
+
+      </div>
+    </metal:column_two_slot>
+  </metal:main>
+
+</body>
+</html>

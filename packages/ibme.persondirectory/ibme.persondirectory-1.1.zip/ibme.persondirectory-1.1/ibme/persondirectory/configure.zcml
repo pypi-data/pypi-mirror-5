@@ -1,0 +1,66 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:z3c="http://namespaces.zope.org/z3c"
+    i18n_domain="ibme.persondirectory">
+
+    <include package="plone.app.contentlisting" />
+    <include package="plone.app.dexterity" />
+    <include package="plone.indexer" />
+
+    <include package=".browser" file="configure.zcml" />
+
+    <genericsetup:registerProfile
+        name="default"
+        title="Person Directory"
+        directory="profiles/default"
+        description="Dexterity-based directory"
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        />
+    <genericsetup:importStep
+        name="ibme.persondirectory"
+        title="Create indexes for ibme.persondirectory"
+        description=""
+        handler="ibme.persondirectory.setuphandlers.import_various" />
+
+    <plone:behavior
+        title="Directory"
+        description="Marker interface for person directory root"
+        provides=".behaviors.IDirectory"
+        />
+
+    <plone:behavior
+        title="Directory entry"
+        description="Marker interface for person directory entries"
+        provides=".behaviors.IEntry"
+        />
+
+    <utility
+        provides="zope.schema.interfaces.IVocabularyFactory"
+        name="ibme.persondirectory.entryfieldsvocab"
+        component=".behaviors.EntryFieldsVocab"
+        />
+
+    <subscriber
+       for=".behaviors.IDirectory
+            zope.lifecycleevent.IObjectModifiedEvent"
+       handler=".events.directoryModifiedHandler" />
+
+    <!-- Suggestion widget -->
+    <class class=".widget.SuggestionWidget">
+        <require permission="zope.Public"
+                 interface=".widget.ISuggestionWidget" />
+    </class>
+    <z3c:widgetTemplate
+        mode="input"
+        widget=".widget.ISuggestionWidget"
+        layer="z3c.form.interfaces.IFormLayer"
+        template="widget_templates/suggestion_input.pt" />
+
+    <!-- Catalog -->
+    <adapter name="pdir_keywords" factory=".catalog.index_pdir_keywords_IEntry" />
+    <adapter name="sortable_title" factory=".catalog.index_sortable_title_IEntry" />
+
+</configure>
