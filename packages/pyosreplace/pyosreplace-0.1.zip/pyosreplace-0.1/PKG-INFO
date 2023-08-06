@@ -1,0 +1,86 @@
+Metadata-Version: 1.1
+Name: pyosreplace
+Version: 0.1
+Summary: os.replace() backport for Python 2.x
+Home-page: https://bitbucket.org/tiran/pyosreplace
+Author: Christian Heimes
+Author-email: christian@python.org
+License: PSFL
+Description: =========
+        osreplace
+        =========
+        
+        Backport of os.replace()
+        
+        http://docs.python.org/3.3/library/os.html#os.replace
+        
+        http://bugs.python.org/issue8828
+        
+        Suggested usage::
+        
+          import sys
+          if sys.version_info >= (3, 3):
+              from os import replace
+          elif sys.platform == "win32":
+              from osreplace import replace
+          else:
+              # POSIX rename() is always atomic
+              from os import rename as replace
+        
+        
+        Python 3.1 is not supported. Please upgrade to Python 3.2 or better.
+        
+        Technical details
+        =================
+        
+        The ``replace()`` function uses ``MoveFileEx()`` with ``MOVEFILE_REPLACE_EXISTING``
+        flag. The flag can't be used to rename directories so it's not entirely equal
+        to rename(P) on POSIX.
+        
+        ``MoveFileEx()`` is *NOT* guaranteed to be atomic. Under certain and unknown
+        circumstances it may silently fall back to a non atomic call to ``CopyFile()``.
+        ``MoveFileTransacted()`` could improve the situation but it requires Vista or
+        newer.
+        
+        http://msdn.microsoft.com/en-us/library/windows/desktop/aa365240%28v=vs.85%29.aspx
+        http://msdn.microsoft.com/en-us/library/windows/desktop/aa365241%28v=vs.85%29.aspx
+        
+        Credits
+        =======
+        
+        Original patch by Antoine Pitrou.
+        
+        Changelog
+        =========
+        
+        pyosreplace 0.1
+        ---------------
+        
+        *Release date: 05-Nov-2013*
+        
+        - Python 3.2 support
+        
+        - tox for testing
+        
+        
+        pyosreplace 0.1b1
+        -----------------
+        
+        *Release date: 02-Jul-2013*
+        
+        - initial beta release
+        
+        
+Keywords: rename replace atomic movefileex
+Platform: Windows
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Python Software Foundation License
+Classifier: Natural Language :: English
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.2
