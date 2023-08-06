@@ -1,0 +1,41 @@
+<div class="contact-entry"
+  tal:define="portal_type context/portal_type;
+              useViewTypes context/portal_properties/site_properties/typesUseViewActionInListings;
+              useView python:portal_type in useViewTypes;">
+  <a tal:define="
+      title context/pretty_title_or_id|string:;
+      url context/absolute_url|string:#;
+      has_photo context/photo|nothing;"
+     tal:attributes="href url;
+                     title title">
+    <span class="contact-photo">
+      <img tal:condition="has_photo" style="border: none"
+           tal:attributes="src string:${url}/@@images/photo/thumb"  />
+      <img tal:condition="not:has_photo" style="border: none" src="defaultUser.png"
+           height="128" />
+    </span>
+    <span class="contact-title" tal:content="title"></span>
+    <span class="contact-company" tal:content="string:"></span>
+  </a>
+  <span class="contact-phone"
+     tal:condition="context/phone|nothing"
+     tal:attributes="href string:tel:${context/phone}"
+     tal:content="context/phone">317-456-2564</span>
+  <a tal:condition="context/email|nothing"
+     class="contact-email"
+     tal:attributes="href string:mailto:${context/email}"
+     tal:content="context/email"></a>
+
+  <span tal:repeat="held_position context/get_held_positions">
+    <a tal:attributes="href held_position/absolute_url"
+       tal:content="held_position/Title">Developer (Ecréall)</a>
+	<span class="contact-phone"
+	     tal:condition="held_position/phone|nothing"
+	     tal:attributes="href string:tel:${held_position/phone}"
+	     tal:content="held_position/phone">317-456-2564</span>
+	<a tal:condition="held_position/email|nothing"
+	     class="contact-email"
+	     tal:attributes="href string:mailto:${held_position/email}"
+	     tal:content="held_position/email"></a>
+  </span>
+</div>
