@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block tools %}
+<div id="tools" class="btn-toolbar">
+
+  {% include "controls/status_control.html" %}
+  {% include "controls/assignee_control.html" %}
+  <a href="{% url 'edit_issue' object.pk %}" class="btn">
+    <i class="icon-edit"></i> Edit
+  </a>
+  {% if issue.can_clone %}
+  <a href="{% url 'clone_issue' object.pk %}" class="btn action-inline"
+     data-pu_actionmethod="POST" data-pu_protect="true">
+    <i class="icon-copy"></i> Clone
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<h2>
+  <span class="label label-{{ issue.urgency }}">{{ issue.urgency }}</span>
+  {{ object.issue_id }} {{ object.title }}
+</h2>
+
+<dl>
+  {% if object.sla %}
+  <dt>SLA</dt>
+  <dd><a href="{% url 'view_sla' object.sla.pk %}">{{ object.sla }}</a></dd>
+  {% endif %}
+  <dt>Service</dt><dd>{{ object.service }}</dd>
+  <dt>Created</dt><dd>{{ object.created }}</dd>
+  {% if not object.dateclosed %}
+  <dt>Deadline</dt><dd>{{ object.deadline|default:"-" }}</dd>
+  <dt>Time to resolve</dt><dd>{{ object.time_to_resolve|default:"-" }}</dd>
+  {% else %}
+  <dt>Closed</dt><dd>{{ object.dateclosed|default:"-" }}</dd>
+  {% endif %}
+  <dt>Contact</dt><dd>{{ object.contact }}</dd>
+</dl>
+
+<div class="descr">
+  {{ view.text|safe }}
+</div>
+
+<div class="viewlet well expanded">
+  <header class="clearfix">
+    <h2 class="pull-left">Attachments</h2>
+    <span class="controls pull-right">
+    <div class="btn btn-mini btn-success fileinput-button">
+      <i class="icon-plus"></i>
+      <input type="file"
+             multiple="true"
+             name="attachment_upload"
+             data-progress="#progress_attachment"
+             data-issueid="{{ object.id }}"
+             data-target="#attachments" />
+    </div>  
+    <a class="btn btn-mini toggle expand" href="#attachments" title="Expand">
+      <i class="icon-expand"></i>
+    </a>
+    <a class="btn btn-mini toggle collapse" href="#attachments" title="Collapse">
+      <i class="icon-collapse"></i>
+    </a>
+  </header>
+
+  <div id="progress_attachment" 
+     class="progress progress-info hide">
+    <div class="bar"></div>
+  </div>
+
+  <ul id="attachments">
+    {% for attachment in object.attachment_set.all %}
+    {% include "snippets/attachment.html" with object=attachment %}
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="viewlet well expanded">
+  <header class="clearfix">
+    <h2 class="pull-left">Comments</h2>
+    <span class="controls pull-right">
+      <a href="{% url 'create_comment_json' object.pk %}" 
+         class="btn btn-success btn-mini add-inline"
+         target="#comments" title="Add comment">
+        <i class="icon-plus"></i>
+      </a>  
+      <a class="btn btn-mini toggle expand" href="#comments" title="Expand">
+        <i class="icon-expand"></i>
+      </a>
+      <a class="btn btn-mini toggle collapse" href="#comments" title="Collapse">
+        <i class="icon-collapse"></i>
+      </a>
+    </span>
+  </header>
+  {% for comment in object.comments.all %}
+  {% include "snippets/comment.html" with object=comment %}
+  {% endfor %}
+</div>
+
+{% include "snippets/history.html" %}
+
+{% endblock %}
