@@ -1,0 +1,159 @@
+{  rem "
+
+This template generates an HTML page containing a list and description of 
+every built in executable object (functions, macros, and operators) for
+templ.
+
+"
+}{v{:
+    % Get the list of vars now, before we add any of our own.
+    {set VARS {sort {vars}}}
+    {set HTMLESC {lambda {:
+        {strrep {single-quote} &#39;
+        {strrep {double-quote} &quot;
+        {strrep " " &#32;
+        {strrep $ &#36;
+        {strrep > &gt;
+        {strrep < &lt;
+        {strrep / &#47;
+        {strrep "\\" &#92;
+        {strrep ? &#63;
+        {strrep # &#35;
+        {strrep & &amp;
+            {@ 0 {$ :argv}}}
+        }
+        }}}}}}}}}
+    }}}
+    {set A-ESC {lambda {:
+        {HTMLESC {strrep "\\" -bslsh-
+        {strrep / -slsh-
+        {strrep # -pound-
+        {strrep pound _pound_
+        {strrep bslsh _bslsh_
+        {strrep slsh _slsh_
+        {strrep _ __
+            {@ 0 {$ :argv}}
+        }
+        }}}}}}}
+    }}}
+}}{syntax html}<html>
+    <head>
+        <title>templ builtin functions, operators, and macros</title>
+        <style type='text/css'>
+        /* <![CDATA[ */
+            
+            h2 \{
+                margin: 10px 0 8px 0;
+            \}
+            h3 \{
+                margin: 8px 0 4px 0;
+            \}
+            h4 \{
+                margin: 4px 0 16px 0;
+            \}
+
+            ul#reference li \{
+                border-bottom: 1px solid;
+            \}
+
+            ul.toc li \{
+                display: inline;
+                padding: 0 5px;
+            \}
+
+        /* ]]> */
+        </style>
+    </head>
+    <body>
+        <h1>templ builtin functions, operators, and macros</h1>
+        <h2>templ v{str.version} - {str.ver-date}</h2>
+{end-syntax html}
+
+            <ul id='toc_top' class='toc'>
+            {v{:
+                {for FUNCNAME {$ VARS}
+                {:
+                    % Set FUNC to be the actual value
+                    {set FUNC {$ {$ FUNCNAME}}}
+
+                    %See if it's an executable
+                    {if {is-exe {$ FUNC}}
+                    {:
+                        {spit <<<
+                    <li class='exe'><a href='#{A-ESC {$ FUNCNAME}}'>{HTMLESC {$ FUNCNAME}}</a></li>
+                        >>>}
+                    }} %end if is-exe
+                }} %end for
+            }}
+            </ul>
+
+            <ul id='reference' style='padding: 0; list-item-type: none;'>
+{v{:
+    % Iterate over all variable symbols, which includes all available functions
+    {for FUNCNAME {$ VARS}
+    {:
+        % Set FUNC to be the actual value
+        {set FUNC {$ {$ FUNCNAME}}}
+
+        %See if it's an executable
+        {if {is-exe {$ FUNC}}
+        {:
+            % Only use the symbols that are the actual name of the function, not all the aliases.
+            {if {=== {$ FUNCNAME} {exe-name {$ FUNC}} }
+            {:
+                {set ALIASES {aliases {$ FUNC}}}
+
+                %Show the canonical name.
+                {spit <<<
+            <li class='exe'>
+                <a id="{A-ESC {$ FUNCNAME} }" /> {implode
+                    {gen ALIAS {$ ALIASES} {implode <<< <a id="{A-ESC {$ ALIAS}}" /> >>>}}
+                }
+                <h2 class='name'>{HTMLESC {$ FUNCNAME }}</h2>
+                >>>
+                }
+
+                % Show the aliases.
+                {if {len {$ ALIASES}} {:
+                    {spit <<<
+                <h3 class='aliases'>aka: {implode ", " {gen
+                        ALIAS {$ ALIASES} {implode "" {' "\"<span class='alias'>" {$ ALIAS} "</span>\""}}
+                    }}</h3>
+                    >>> }
+                }}
+
+                %What type of executable.
+                {spit <<<
+                <h4 class='type'>{if
+                        
+                        {is-func {$ FUNC}}
+                        function
+
+                        {is-oper {$ FUNC}}
+                        operator
+                
+                        {is-macro {$ FUNC}}
+                        macro
+
+                    }</h4>
+                >>>
+                }
+
+                %The doc string
+                {spit <<<
+                <pre class='doc'>{HTMLESC {doc {$ FUNC }}}</pre>
+            </li>
+                >>>
+                }
+
+            }} %end if it's the name
+        }} %end if is-exe
+    }} %end for
+}}
+        </ul>
+    </body>
+</html>
+{ dont
+ vim: set syntax=templ:
+}
+
