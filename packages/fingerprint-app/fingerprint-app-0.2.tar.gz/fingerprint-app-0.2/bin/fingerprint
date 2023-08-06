@@ -1,0 +1,350 @@
+#!/usr/bin/env python
+#
+# LC
+#
+
+from time import gmtime, strftime
+import os, sys, string
+from optparse import OptionParser, OptionGroup
+
+import logging
+
+
+
+try:
+    import FingerPrint, FingerPrint.sergeant
+except ImportError:
+    #we need this to run from sources without installing fingerprint
+    fullPath = os.path.dirname(os.path.realpath(__file__))
+    parDir = os.path.abspath(os.path.join(fullPath, os.path.pardir))
+    #we need to use our local patched python-ptrace and not the system one
+    sys.path.insert(0, parDir)
+    import FingerPrint, FingerPrint.sergeant
+
+#
+# compatibility with python2.4
+#
+if "any" not in dir(__builtins__):
+    from FingerPrint.utils import any
+
+
+from FingerPrint.swirl import Swirl
+from FingerPrint.blotter import Blotter
+from FingerPrint.serializer import PickleSerializer
+import FingerPrint.composer
+
+
+def main():
+    #
+    # set up the option parser
+    #
+
+    runHelp = "\nRun \"fingerprint -h\" for more help."
+    requiredFlags = "[-q|-c|-d|-y]"
+    usage = "usage: %prog " + requiredFlags + " [options|-f file.swirl] [inputfile1 ... inputfileN]"
+    parser = OptionParser(usage, version=FingerPrint.version)
+
+
+    # required options one of them must be selected
+    group = OptionGroup(parser, "Required Options",
+                    "You must select one (and only one) of these options")
+    parser.add_option_group(group)
+    group.add_option("-c", "--create", action="store_true", dest="create",
+                    default=False,
+                    help="Create a swirl from the given input file names")
+    group.add_option("-d", "--display", action="store_true", dest="display",
+                    default=False,
+                    help="Display the content of the given swirl file")
+    group.add_option("-q", "--query", action="store_true", dest="query",
+                    default=False,
+                    help="Run a query against a swirl file")
+    group.add_option("-y", "--verify", action="store_true", dest="verify",
+                    default=False,
+                    help="Scan the current system to verify compatibility with given swirl")
+
+    #various option
+    parser.add_option("-a", "--search", action="store_true", dest="search",
+                    default=False,
+                    help="Use the \'module\' command line to search and display a "
+                    "list of modules able to sattisfy missing dependencies (Use with "
+                    "with verify flag -y)")
+    parser.add_option("-r", "--archive", action="store_true", dest="archive",
+                    help="Create an archive with all the dependency included. "
+                    "The archive will be named with the name of the swirl but with tar.gz "
+                    "appended (use with create flag -c)")
+    parser.add_option("-m", "--makeroll", action="store_true", dest="roll",
+                    help="Make a roll which can run the software contained in the archive. "
+                    "You can specify the archive file name with the -f flag otherwise it "
+                    "will be output.tar.gz. The name of the final roll is the name of the archive "
+                    "without the tar.gz extension (use with create flag -c)")
+    parser.add_option("-i", "--integrity", action="store_true", dest="integrity",
+                    default=False,
+                    help="Verify the integrity of all the dependencies of the "
+                    "given swirl (using md5sum) (use with verify flag -y)")
+    parser.add_option("-f", "--file", dest="filename", default='output.swirl',
+                    help="write or read swirl FILE instead of the default output.swirl",
+                    metavar="FILE")
+    parser.add_option("-n", "--name", dest="name", default="Swirl",
+                    help="the internal name of the swirl that will be created "
+                    "(default to Swirl)")
+    parser.add_option("-p", "--paths", dest="paths",
+                    help="add extra paths (colon separated) to search for "
+                    " dependencies (valid with verify only)")
+    parser.add_option("-e", "--process", dest="process",
+                    help="PIDs of the processes that should be dynamically traced"
+                    " for creating a swirl")
+    parser.add_option("-l", "--filelist", dest="filelist", default=None,
+                    help="a file containing a list of file which will be "
+                    "included to this swirl")
+    parser.add_option("-x", "--exec", dest="execCmd", default=None,
+                    help="create a swirl running the command passed as COMMAND and tracing "
+                    "its execution (use with create flag -c)", metavar="COMMAND")
+    parser.add_option("-s", "--csvfile", dest="csvfile", default=None,
+                    help="The output of a verification or of an integrity check "
+                    "will be saved in the FILE in a CSV format, if the file "
+                    "already exists the output of the new check will be appended "
+                    "to it if not it will be created", metavar="FILE")
+    parser.add_option("-S", "--query_file", dest="query_file", default=None,
+                    help="Check if the given FILE is required by this swirl, if run "
+                    "with verbose it also print the file requiring this FILE. Return "
+                    "0 if this FILE is required by this swirl 1 otherwise", metavar="FILE")
+    parser.add_option("-g", "--graph", dest="graph", default=None,
+                    help="create a file FILENAME to display the current swirl graph with dot "
+                    "program (use with display flag -d)",
+                    metavar="FILENAME")
+
+
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
+                    default=False,
+                    help="Output a textual representation of the swirl")
+    (options, args) = parser.parse_args()
+
+
+    #
+    # switch based on user input
+    #
+    if (options.query + options.verify + options.create + options.display) > 1:
+        #too many or too few flags
+        parser.error("Only one of the flags " + requiredFlags + " must be used at a time" + runHelp )
+    elif (options.query + options.verify + options.create + options.display) < 1:
+	parser.error("You must select one (and only one) required flags " + requiredFlags + runHelp )
+
+
+    # create logger
+    logger = logging.getLogger('fingerprint')
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler('fingerprint.log')
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    if options.verbose :
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.ERROR)
+    logger.addHandler(ch)
+
+
+
+    if options.create and options.roll:
+        # 
+        # creata a roll
+        #
+        archive_name = "output.tar.gz"
+        if 'output.swirl' not in options.filename :
+            archive_name = options.filename
+        roll_name = archive_name.rsplit(".tar.gz", 1)[0]
+        roller = FingerPrint.composer.Roller(archive_name, roll_name)
+	if not roller.make_roll() :
+            sys.exit(1)
+        return
+    elif options.verify or options.integrity or (options.archive and options.create) :
+        try:
+            serg = FingerPrint.sergeant.readFromPickle(options.filename)
+        except IOError, e:
+            print "The input file %s can not be read." % options.filename
+            sys.exit(1)
+        if options.paths :
+            serg.setExtraPath(options.paths)
+        if options.archive :
+            #
+            # archive the current swirl
+            #
+            archive_name = options.filename.split(".swirl")[0] + ".tar.gz"
+            comp = FingerPrint.composer.Archiver(serg, archive_name)
+            if not comp.archive() :
+                sys.exit(1)
+            print "Archive ", archive_name, " created."
+            return
+        elif options.csvfile :
+            #
+            # verify with csv file
+            #
+            swirl = serg.getSwirl()
+            if not os.path.isfile(options.csvfile):
+                # new file
+                # need to initialize it
+                csvfilein = open(options.csvfile, 'w')
+                csvfilein.write(swirl.name + ',' + swirl.getDateString())
+                csvfilein.write('\n\nVerification type\nDate\n')
+                for dep in swirl.getDependencies():
+                    csvfilein.write(dep.getName() + '\n')
+                csvfilein.close()
+            csvfilein = open(options.csvfile, 'r')
+            csvfileout = open(options.csvfile + '.tmp', 'w')
+            fileline = csvfilein.readline().strip().split(',')
+            # let's verify that this csv and this swirl file match
+            if fileline[0] != swirl.name or \
+                fileline[1] != swirl.getDateString():
+                print "The file %s does not correspond with the swirl %s" % \
+                    (options.csvfile, options.filename)
+                sys.exit(1)
+            csvfileout.write(fileline[0] + ',' + fileline[1] +'\n')
+            # empty line
+            csvfilein.readline()
+            csvfileout.write('\n')
+            if options.verify :
+                operation = 'Verify'
+                returnValue = serg.check()
+            elif options.integrity :
+                operation = 'Integrity'
+                returnValue = serg.checkHash()
+            error = serg.getError()
+            csvfileout.write(csvfilein.readline().rstrip() + ", " + operation + "\n")
+            datestr = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+            csvfileout.write(csvfilein.readline().rstrip() + ", " + datestr + "\n")
+            for fileline in csvfilein.readlines():
+                fileline = fileline.strip()
+                if any([i in fileline for i in error]):
+                    # there is an error
+                    csvfileout.write(fileline + ", False\n")
+                else:
+                    csvfileout.write(fileline + ", True\n")
+            csvfileout.close()
+            csvfilein.close()
+            os.rename(options.csvfile + '.tmp', options.csvfile)
+            if returnValue:
+                sys.exit(0)
+            else:
+                sys.exit(1)
+        elif options.verify :
+            #
+            # just verify swirl (no CSV)
+            #
+            if not serg.check():
+                # error lets print some stuff
+                print "The file %s failed.\n" % options.filename
+                if options.verbose :
+                    print "Missing Dependecies:"
+                    for i in serg.getError():
+                        print "    ", i
+                if options.search :
+                    # we have to search
+                    output = serg.searchModules()
+                    print "\nModule search:\n" + output
+                sys.exit(1)
+            if options.integrity :
+                if not serg.checkHash( True ):
+                    # error let print some stuff
+                    print "The file %s failed.\n" % options.filename
+                    if options.verbose :
+                        print "Modified Dependecies:"
+                        for i in serg.getError():
+                            print "     ", i
+                    sys.exit(1)
+            if options.verbose:
+                print "Swirl %s pass the test" % options.filename
+            # return successful
+            return
+
+
+    elif options.create :
+        #
+        # create a swirl
+        #
+        filenameList = []
+        if options.filelist :
+            #read the input filelist from file
+            try:
+                filelistfd = open(options.filelist)
+                for i in filelistfd:
+                    if i.strip():
+                        filenameList.append(i.strip())
+            except IOError, e:
+                parser.error("The file %s does not exist on this system: %s" %
+			(options.filelist, str(e)) + runHelp)
+        if filenameList == []:
+            #get the filelist from command line
+            filenameList = args
+        if not (len(filenameList) > 0 or options.process or options.execCmd):
+            parser.error("To create a swirl you need to specify at least:\n"
+                        "    - at least one inputfile\n    - a file name containing the files to fingerpting (-f)\n"
+                        "    - the process number to trace (-e)\n    - or the command line to execute (-x)" + runHelp)
+        #creating blotter
+        try:
+            blotter = Blotter(options.name, filenameList, options.process, options.execCmd)
+        except IOError, e:
+            #import traceback
+            #traceback.print_exc()
+            parser.error("Unable to create the swirl file: " + str(e) + runHelp)
+        if options.verbose:
+            print "swirl structure:\n", blotter.getSwirl().printMinimal()
+        if options.filename:
+            #this should be always true
+            outputfd = open(options.filename, 'w')
+            pickle = PickleSerializer( outputfd )
+            pickle.save(blotter.getSwirl() )
+            outputfd.close()
+            print "File %s saved" % options.filename
+        # success
+        return 0
+    elif options.display :
+        #
+        # display the swirl
+        #
+        if options.filename :
+            try:
+                serg = FingerPrint.sergeant.readFromPickle(options.filename)
+            except IOError, e:
+                parser.error("The file %s could not be opened on this system: %s." %
+                            (options.filename, e) + runHelp)
+            print "File name: ", options.filename
+            if options.verbose :
+                print serg.printVerbose()
+            else:
+                print serg.printMinimal()
+            if options.graph :
+                print "Writing dot file ", options.graph
+                outfile = open(options.graph, 'w')
+                outfile.write(serg.getDotFile())
+                outfile.close()
+                print "To get a image run:\ndot -Tpng -o %s.png %s" % (options.graph, options.graph)
+        return 0
+    elif options.query :
+        #
+        # query the swirl file
+        #
+        if options.filename :
+            try:
+                serg = FingerPrint.sergeant.readFromPickle(options.filename)
+            except IOError, e:
+                parser.error("The file %s could not be opened on this system: %s" %
+			(options.filename, str(e)) + runHelp)
+        if options.query_file :
+            # who requires this file
+            files = serg.checkDependencyPath(options.query_file)
+            if files :
+                if options.verbose :
+                    print string.join(files, '\n')
+                return 0
+            else:
+                # given file is not required by this swirl
+                sys.exit(1)
+    else:
+        parser.error( "You must select one option between the required flags " + requiredFlags + "." + runHelp)
+
+
+if __name__ == "__main__":
+    main()
+
