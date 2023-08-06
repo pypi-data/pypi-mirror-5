@@ -1,0 +1,306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Models &mdash; django-userena 1.2.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.2.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="django-userena 1.2.3 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="Utils" href="utils.html" />
+    <link rel="prev" title="Middleware" href="middleware.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="utils.html" title="Utils"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="middleware.html" title="Middleware"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">django-userena 1.2.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-userena.models">
+<span id="models"></span><span id="api-models"></span><h1>Models<a class="headerlink" href="#module-userena.models" title="Permalink to this headline">¶</a></h1>
+<p>Return to <a class="reference internal" href="index.html#api"><em>API Reference</em></a>.</p>
+<div class="section" id="upload-to-mugshot">
+<h2>upload_to_mugshot<a class="headerlink" href="#upload-to-mugshot" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.models.upload_to_mugshot">
+<tt class="descclassname">userena.models.</tt><tt class="descname">upload_to_mugshot</tt><big>(</big><em>instance</em>, <em>filename</em><big>)</big><a class="headerlink" href="#userena.models.upload_to_mugshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uploads a mugshot for a user to the <tt class="docutils literal"><span class="pre">USERENA_MUGSHOT_PATH</span></tt> and saving it
+under unique hash for the image. This is for privacy reasons so others
+can&#8217;t just browse through the mugshot directory.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="userenasignup">
+<h2>UserenaSignup<a class="headerlink" href="#userenasignup" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="userena.models.UserenaSignup">
+<em class="property">class </em><tt class="descclassname">userena.models.</tt><tt class="descname">UserenaSignup</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.models.UserenaSignup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Userena model which stores all the necessary information to have a full
+functional user implementation on your Django website.</p>
+<dl class="method">
+<dt id="userena.models.UserenaSignup.activation_key_expired">
+<tt class="descname">activation_key_expired</tt><big>(</big><big>)</big><a class="headerlink" href="#userena.models.UserenaSignup.activation_key_expired" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if activation key is expired.</p>
+<p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> when the <tt class="docutils literal"><span class="pre">activation_key</span></tt> of the user is expired and
+<tt class="docutils literal"><span class="pre">False</span></tt> if the key is still valid.</p>
+<p>The key is expired when it&#8217;s set to the value defined in
+<tt class="docutils literal"><span class="pre">USERENA_ACTIVATED</span></tt> or <tt class="docutils literal"><span class="pre">activation_key_created</span></tt> is beyond the
+amount of days defined in <tt class="docutils literal"><span class="pre">USERENA_ACTIVATION_DAYS</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="userena.models.UserenaSignup.change_email">
+<tt class="descname">change_email</tt><big>(</big><em>email</em><big>)</big><a class="headerlink" href="#userena.models.UserenaSignup.change_email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the email address for a user.</p>
+<p>A user needs to verify this new email address before it becomes
+active. By storing the new email address in a temporary field &#8211;
+<tt class="docutils literal"><span class="pre">temporary_email</span></tt> &#8211; we are able to set this email address after the
+user has verified it by clicking on the verification URI in the email.
+This email gets send out by <tt class="docutils literal"><span class="pre">send_verification_email</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>email</strong> &#8211; The new email address that the user wants to use.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="userena.models.UserenaSignup.send_activation_email">
+<tt class="descname">send_activation_email</tt><big>(</big><big>)</big><a class="headerlink" href="#userena.models.UserenaSignup.send_activation_email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a activation email to the user.</p>
+<p>This email is send when the user wants to activate their newly created
+user.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="userena.models.UserenaSignup.send_confirmation_email">
+<tt class="descname">send_confirmation_email</tt><big>(</big><big>)</big><a class="headerlink" href="#userena.models.UserenaSignup.send_confirmation_email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends an email to confirm the new email address.</p>
+<p>This method sends out two emails. One to the new email address that
+contains the <tt class="docutils literal"><span class="pre">email_confirmation_key</span></tt> which is used to verify this
+this email address with <tt class="xref py py-func docutils literal"><span class="pre">UserenaUser.objects.confirm_email()</span></tt>.</p>
+<p>The other email is to the old email address to let the user know that
+a request is made to change this email address.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="userenabaseprofile">
+<h2>UserenaBaseProfile<a class="headerlink" href="#userenabaseprofile" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="userena.models.UserenaBaseProfile">
+<em class="property">class </em><tt class="descclassname">userena.models.</tt><tt class="descname">UserenaBaseProfile</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.models.UserenaBaseProfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base model needed for extra profile functionality</p>
+<dl class="class">
+<dt id="userena.models.UserenaBaseProfile.Meta">
+<em class="property">class </em><tt class="descname">Meta</tt><a class="headerlink" href="#userena.models.UserenaBaseProfile.Meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Meta options making the model abstract and defining permissions.</p>
+<p>The model is <tt class="docutils literal"><span class="pre">abstract</span></tt> because it only supplies basic functionality
+to a more custom defined model that extends it. This way there is not
+another join needed.</p>
+<p>We also define custom permissions because we don&#8217;t know how the model
+that extends this one is going to be called. So we don&#8217;t know what
+permissions to check. For ex. if the user defines a profile model that
+is called <tt class="docutils literal"><span class="pre">MyProfile</span></tt>, than the permissions would be
+<tt class="docutils literal"><span class="pre">add_myprofile</span></tt> etc. We want to be able to always check
+<tt class="docutils literal"><span class="pre">add_profile</span></tt>, <tt class="docutils literal"><span class="pre">change_profile</span></tt> etc.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="userena.models.UserenaBaseProfile.can_view_profile">
+<tt class="descclassname">UserenaBaseProfile.</tt><tt class="descname">can_view_profile</tt><big>(</big><em>user</em><big>)</big><a class="headerlink" href="#userena.models.UserenaBaseProfile.can_view_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Can the <tt class="xref py py-class docutils literal"><span class="pre">User</span></tt> view this profile?</p>
+<p>Returns a boolean if a user has the rights to view the profile of this
+user.</p>
+<p>Users are divided into four groups:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Open</span></tt></dt>
+<dd>Everyone can view your profile</dd>
+<dt><tt class="docutils literal"><span class="pre">Closed</span></tt></dt>
+<dd>Nobody can view your profile.</dd>
+<dt><tt class="docutils literal"><span class="pre">Registered</span></tt></dt>
+<dd>Users that are registered on the website and signed
+in only.</dd>
+<dt><tt class="docutils literal"><span class="pre">Admin</span></tt></dt>
+<dd>Special cases like superadmin and the owner of the profile.</dd>
+</dl>
+</div></blockquote>
+<p>Through the <tt class="docutils literal"><span class="pre">privacy</span></tt> field a owner of an profile can define what
+they want to show to whom.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user</strong> &#8211; A Django <tt class="xref py py-class docutils literal"><span class="pre">User</span></tt> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="userena.models.UserenaBaseProfile.get_full_name_or_username">
+<tt class="descclassname">UserenaBaseProfile.</tt><tt class="descname">get_full_name_or_username</tt><big>(</big><big>)</big><a class="headerlink" href="#userena.models.UserenaBaseProfile.get_full_name_or_username" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the full name of the user, or if none is supplied will return
+the username.</p>
+<p>Also looks at <tt class="docutils literal"><span class="pre">USERENA_WITHOUT_USERNAMES</span></tt> settings to define if it
+should return the username or email address when the full name is not
+supplied.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><tt class="docutils literal"><span class="pre">String</span></tt> containing the full name of the user. If no name is
+supplied it will return the username or email address depending on
+the <tt class="docutils literal"><span class="pre">USERENA_WITHOUT_USERNAMES</span></tt> setting.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="userena.models.UserenaBaseProfile.get_mugshot_url">
+<tt class="descclassname">UserenaBaseProfile.</tt><tt class="descname">get_mugshot_url</tt><big>(</big><big>)</big><a class="headerlink" href="#userena.models.UserenaBaseProfile.get_mugshot_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the image containing the mugshot for the user.</p>
+<p>The mugshot can be a uploaded image or a Gravatar.</p>
+<p>Gravatar functionality will only be used when
+<tt class="docutils literal"><span class="pre">USERENA_MUGSHOT_GRAVATAR</span></tt> is set to <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><tt class="docutils literal"><span class="pre">None</span></tt> when Gravatar is not used and no default image is supplied
+by <tt class="docutils literal"><span class="pre">USERENA_MUGSHOT_DEFAULT</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="userenalanguagebaseprofile">
+<h2>UserenaLanguageBaseProfile<a class="headerlink" href="#userenalanguagebaseprofile" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="userena.models.UserenaLanguageBaseProfile">
+<em class="property">class </em><tt class="descclassname">userena.models.</tt><tt class="descname">UserenaLanguageBaseProfile</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.models.UserenaLanguageBaseProfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends the <a class="reference internal" href="#userena.models.UserenaBaseProfile" title="userena.models.UserenaBaseProfile"><tt class="xref py py-class docutils literal"><span class="pre">UserenaBaseProfile</span></tt></a> with a language choice.</p>
+<p>Use this model in combination with <tt class="docutils literal"><span class="pre">UserenaLocaleMiddleware</span></tt> automatically
+set the language of users when they are signed in.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Models</a><ul>
+<li><a class="reference internal" href="#upload-to-mugshot">upload_to_mugshot</a></li>
+<li><a class="reference internal" href="#userenasignup">UserenaSignup</a></li>
+<li><a class="reference internal" href="#userenabaseprofile">UserenaBaseProfile</a></li>
+<li><a class="reference internal" href="#userenalanguagebaseprofile">UserenaLanguageBaseProfile</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="middleware.html"
+                        title="previous chapter">Middleware</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="utils.html"
+                        title="next chapter">Utils</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/models.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="utils.html" title="Utils"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="middleware.html" title="Middleware"
+             >previous</a> |</li>
+        <li><a href="../index.html">django-userena 1.2.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, 2011 Bread &amp; Pepper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>

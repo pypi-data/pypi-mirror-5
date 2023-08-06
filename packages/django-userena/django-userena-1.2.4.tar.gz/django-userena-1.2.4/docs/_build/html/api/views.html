@@ -1,0 +1,526 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Views &mdash; django-userena 1.2.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.2.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="django-userena 1.2.3 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="uMessages" href="../contrib/umessages/index.html" />
+    <link rel="prev" title="Utils" href="utils.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../contrib/umessages/index.html" title="uMessages"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="utils.html" title="Utils"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">django-userena 1.2.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-userena.views">
+<span id="views"></span><span id="api-views"></span><h1>Views<a class="headerlink" href="#module-userena.views" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="signup">
+<h2>signup<a class="headerlink" href="#signup" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.signup">
+<tt class="descclassname">userena.views.</tt><tt class="descname">signup</tt><big>(</big><em>request</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.signup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signup of an account.</p>
+<p>Signup requiring a username, email and password. After signup a user gets
+an email with an activation link used to activate their account. After
+successful signup redirects to <tt class="docutils literal"><span class="pre">success_url</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>signup_form</strong> &#8211; Form that will be used to sign a user. Defaults to userena&#8217;s
+<tt class="xref py py-class docutils literal"><span class="pre">SignupForm</span></tt>.</li>
+<li><strong>template_name</strong> &#8211; String containing the template name that will be used to display the
+signup form. Defaults to <tt class="docutils literal"><span class="pre">userena/signup_form.html</span></tt>.</li>
+<li><strong>success_url</strong> &#8211; String containing the URI which should be redirected to after a
+successful signup. If not supplied will redirect to
+<tt class="docutils literal"><span class="pre">userena_signup_complete</span></tt> view.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary containing variables which are added to the template
+context. Defaults to a dictionary with a <tt class="docutils literal"><span class="pre">form</span></tt> key containing the
+<tt class="docutils literal"><span class="pre">signup_form</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">form</span></tt></dt>
+<dd>Form supplied by <tt class="docutils literal"><span class="pre">signup_form</span></tt>.</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="activate">
+<h2>activate<a class="headerlink" href="#activate" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.activate">
+<tt class="descclassname">userena.views.</tt><tt class="descname">activate</tt><big>(</big><em>request</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.activate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate a user with an activation key.</p>
+<p>The key is a SHA1 string. When the SHA1 is found with an
+<tt class="xref py py-class docutils literal"><span class="pre">UserenaSignup</span></tt>, the <tt class="xref py py-class docutils literal"><span class="pre">User</span></tt> of that account will be
+activated.  After a successful activation the view will redirect to
+<tt class="docutils literal"><span class="pre">success_url</span></tt>.  If the SHA1 is not found, the user will be shown the
+<tt class="docutils literal"><span class="pre">template_name</span></tt> template displaying a fail message.
+If the SHA1 is found but expired, <tt class="docutils literal"><span class="pre">retry_template_name</span></tt> is used instead,
+so the user can proceed to <tt class="xref py py-func docutils literal"><span class="pre">activate_retry()</span></tt> to get a new actvation key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>activation_key</strong> &#8211; String of a SHA1 string of 40 characters long. A SHA1 is always 160bit
+long, with 4 bits per character this makes it &#8211;160/4&#8211; 40 characters
+long.</li>
+<li><strong>template_name</strong> &#8211; String containing the template name that is used when the
+<tt class="docutils literal"><span class="pre">activation_key</span></tt> is invalid and the activation fails. Defaults to
+<tt class="docutils literal"><span class="pre">userena/activate_fail.html</span></tt>.</li>
+<li><strong>retry_template_name</strong> &#8211; String containing the template name that is used when the
+<tt class="docutils literal"><span class="pre">activation_key</span></tt> is expired. Defaults to
+<tt class="docutils literal"><span class="pre">userena/activate_retry.html</span></tt>.</li>
+<li><strong>success_url</strong> &#8211; String containing the URL where the user should be redirected to after
+a successful activation. Will replace <tt class="docutils literal"><span class="pre">%(username)s</span></tt> with string
+formatting if supplied. If <tt class="docutils literal"><span class="pre">success_url</span></tt> is left empty, will direct
+to <tt class="docutils literal"><span class="pre">userena_profile_detail</span></tt> view.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary containing variables which could be added to the template
+context. Default to an empty dictionary.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="email-confirm">
+<h2>email_confirm<a class="headerlink" href="#email-confirm" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.email_confirm">
+<tt class="descclassname">userena.views.</tt><tt class="descname">email_confirm</tt><big>(</big><em>request</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.email_confirm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Confirms an email address with a confirmation key.</p>
+<p>Confirms a new email address by running <tt class="xref py py-func docutils literal"><span class="pre">User.objects.confirm_email()</span></tt>
+method. If the method returns an <tt class="xref py py-class docutils literal"><span class="pre">User</span></tt> the user will have his new
+e-mail address set and redirected to <tt class="docutils literal"><span class="pre">success_url</span></tt>. If no <tt class="docutils literal"><span class="pre">User</span></tt> is
+returned the user will be represented with a fail message from
+<tt class="docutils literal"><span class="pre">template_name</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>confirmation_key</strong> &#8211; String with a SHA1 representing the confirmation key used to verify a
+new email address.</li>
+<li><strong>template_name</strong> &#8211; String containing the template name which should be rendered when
+confirmation fails. When confirmation is successful, no template is
+needed because the user will be redirected to <tt class="docutils literal"><span class="pre">success_url</span></tt>.</li>
+<li><strong>success_url</strong> &#8211; String containing the URL which is redirected to after a successful
+confirmation.  Supplied argument must be able to be rendered by
+<tt class="docutils literal"><span class="pre">reverse</span></tt> function.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary of variables that are passed on to the template supplied by
+<tt class="docutils literal"><span class="pre">template_name</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="direct-to-user-template">
+<h2>direct_to_user_template<a class="headerlink" href="#direct-to-user-template" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.direct_to_user_template">
+<tt class="descclassname">userena.views.</tt><tt class="descname">direct_to_user_template</tt><big>(</big><em>request</em>, <em>username</em>, <em>template_name</em>, <em>extra_context=None</em><big>)</big><a class="headerlink" href="#userena.views.direct_to_user_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple wrapper for Django&#8217;s <tt class="xref py py-func docutils literal"><span class="pre">direct_to_template()</span></tt> view.</p>
+<p>This view is used when you want to show a template to a specific user. A
+wrapper for <tt class="xref py py-func docutils literal"><span class="pre">direct_to_template()</span></tt> where the template also has access to
+the user that is found with <tt class="docutils literal"><span class="pre">username</span></tt>. For ex. used after signup,
+activation and confirmation of a new e-mail.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>username</strong> &#8211; String defining the username of the user that made the action.</li>
+<li><strong>template_name</strong> &#8211; String defining the name of the template to use. Defaults to
+<tt class="docutils literal"><span class="pre">userena/signup_complete.html</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Keyword arguments</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">extra_context</span></tt></dt>
+<dd>A dictionary containing extra variables that should be passed to the
+rendered template. The <tt class="docutils literal"><span class="pre">account</span></tt> key is always the <tt class="docutils literal"><span class="pre">User</span></tt>
+that completed the action.</dd>
+</dl>
+<p><strong>Extra context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">viewed_user</span></tt></dt>
+<dd>The currently <tt class="xref py py-class docutils literal"><span class="pre">User</span></tt> that is viewed.</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="signin">
+<h2>signin<a class="headerlink" href="#signin" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.signin">
+<tt class="descclassname">userena.views.</tt><tt class="descname">signin</tt><big>(</big><em>request</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.signin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signin using email or username with password.</p>
+<p>Signs a user in by combining email/username with password. If the
+combination is correct and the user <tt class="xref py py-func docutils literal"><span class="pre">is_active()</span></tt> the
+<tt class="xref py py-func docutils literal"><span class="pre">redirect_signin_function()</span></tt> is called with the arguments
+<tt class="docutils literal"><span class="pre">REDIRECT_FIELD_NAME</span></tt> and an instance of the <tt class="xref py py-class docutils literal"><span class="pre">User</span></tt> who is is
+trying the login. The returned value of the function will be the URL that
+is redirected to.</p>
+<p>A user can also select to be remembered for <tt class="docutils literal"><span class="pre">USERENA_REMEMBER_DAYS</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>auth_form</strong> &#8211; Form to use for signing the user in. Defaults to the
+<tt class="xref py py-class docutils literal"><span class="pre">AuthenticationForm</span></tt> supplied by userena.</li>
+<li><strong>template_name</strong> &#8211; String defining the name of the template to use. Defaults to
+<tt class="docutils literal"><span class="pre">userena/signin_form.html</span></tt>.</li>
+<li><strong>redirect_field_name</strong> &#8211; Form field name which contains the value for a redirect to the
+succeeding page. Defaults to <tt class="docutils literal"><span class="pre">next</span></tt> and is set in
+<tt class="docutils literal"><span class="pre">REDIRECT_FIELD_NAME</span></tt> setting.</li>
+<li><strong>redirect_signin_function</strong> &#8211; Function which handles the redirect. This functions gets the value of
+<tt class="docutils literal"><span class="pre">REDIRECT_FIELD_NAME</span></tt> and the <tt class="xref py py-class docutils literal"><span class="pre">User</span></tt> who has logged in. It
+must return a string which specifies the URI to redirect to.</li>
+<li><strong>extra_context</strong> &#8211; A dictionary containing extra variables that should be passed to the
+rendered template. The <tt class="docutils literal"><span class="pre">form</span></tt> key is always the <tt class="docutils literal"><span class="pre">auth_form</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">form</span></tt></dt>
+<dd>Form used for authentication supplied by <tt class="docutils literal"><span class="pre">auth_form</span></tt>.</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="email-change">
+<h2>email_change<a class="headerlink" href="#email-change" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.email_change">
+<tt class="descclassname">userena.views.</tt><tt class="descname">email_change</tt><big>(</big><em>request</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.email_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change email address</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>username</strong> &#8211; String of the username which specifies the current account.</li>
+<li><strong>email_form</strong> &#8211; Form that will be used to change the email address. Defaults to
+<tt class="xref py py-class docutils literal"><span class="pre">ChangeEmailForm</span></tt> supplied by userena.</li>
+<li><strong>template_name</strong> &#8211; String containing the template to be used to display the email form.
+Defaults to <tt class="docutils literal"><span class="pre">userena/email_form.html</span></tt>.</li>
+<li><strong>success_url</strong> &#8211; Named URL where the user will get redirected to when successfully
+changing their email address.  When not supplied will redirect to
+<tt class="docutils literal"><span class="pre">userena_email_complete</span></tt> URL.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary containing extra variables that can be used to render the
+template. The <tt class="docutils literal"><span class="pre">form</span></tt> key is always the form supplied by the keyword
+argument <tt class="docutils literal"><span class="pre">form</span></tt> and the <tt class="docutils literal"><span class="pre">user</span></tt> key by the user whose email address
+is being changed.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">form</span></tt></dt>
+<dd>Form that is used to change the email address supplied by <tt class="docutils literal"><span class="pre">form</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">account</span></tt></dt>
+<dd>Instance of the <tt class="docutils literal"><span class="pre">Account</span></tt> whose email address is about to be changed.</dd>
+</dl>
+<p><strong>Todo</strong></p>
+<p>Need to have per-object permissions, which enables users with the correct
+permissions to alter the email address of others.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="password-change">
+<h2>password_change<a class="headerlink" href="#password-change" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.password_change">
+<tt class="descclassname">userena.views.</tt><tt class="descname">password_change</tt><big>(</big><em>request</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.password_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change password of user.</p>
+<p>This view is almost a mirror of the view supplied in
+<tt class="xref py py-func docutils literal"><span class="pre">contrib.auth.views.password_change()</span></tt>, with the minor change that in
+this view we also use the username to change the password. This was needed
+to keep our URLs logical (and REST) across the entire application. And
+that in a later stadium administrators can also change the users password
+through the web application itself.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>username</strong> &#8211; String supplying the username of the user who&#8217;s password is about to be
+changed.</li>
+<li><strong>template_name</strong> &#8211; String of the name of the template that is used to display the password
+change form. Defaults to <tt class="docutils literal"><span class="pre">userena/password_form.html</span></tt>.</li>
+<li><strong>pass_form</strong> &#8211; Form used to change password. Default is the form supplied by Django
+itself named <tt class="docutils literal"><span class="pre">PasswordChangeForm</span></tt>.</li>
+<li><strong>success_url</strong> &#8211; Named URL that is passed onto a <tt class="xref py py-func docutils literal"><span class="pre">reverse()</span></tt> function with
+<tt class="docutils literal"><span class="pre">username</span></tt> of the active user. Defaults to the
+<tt class="docutils literal"><span class="pre">userena_password_complete</span></tt> URL.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary of extra variables that are passed on to the template. The
+<tt class="docutils literal"><span class="pre">form</span></tt> key is always used by the form supplied by <tt class="docutils literal"><span class="pre">pass_form</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">form</span></tt></dt>
+<dd>Form used to change the password.</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="profile-edit">
+<h2>profile_edit<a class="headerlink" href="#profile-edit" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.profile_edit">
+<tt class="descclassname">userena.views.</tt><tt class="descname">profile_edit</tt><big>(</big><em>request</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.profile_edit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Edit profile.</p>
+<p>Edits a profile selected by the supplied username. First checks
+permissions if the user is allowed to edit this profile, if denied will
+show a 404. When the profile is successfully edited will redirect to
+<tt class="docutils literal"><span class="pre">success_url</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>username</strong> &#8211; Username of the user which profile should be edited.</li>
+<li><strong>edit_profile_form</strong> &#8211; Form that is used to edit the profile. The <tt class="xref py py-func docutils literal"><span class="pre">EditProfileForm.save()</span></tt>
+method of this form will be called when the form
+<tt class="xref py py-func docutils literal"><span class="pre">EditProfileForm.is_valid()</span></tt>.  Defaults to <tt class="xref py py-class docutils literal"><span class="pre">EditProfileForm</span></tt>
+from userena.</li>
+<li><strong>template_name</strong> &#8211; String of the template that is used to render this view. Defaults to
+<tt class="docutils literal"><span class="pre">userena/edit_profile_form.html</span></tt>.</li>
+<li><strong>success_url</strong> &#8211; Named URL which will be passed on to a django <tt class="docutils literal"><span class="pre">reverse</span></tt> function after
+the form is successfully saved. Defaults to the <tt class="docutils literal"><span class="pre">userena_detail</span></tt> url.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary containing variables that are passed on to the
+<tt class="docutils literal"><span class="pre">template_name</span></tt> template.  <tt class="docutils literal"><span class="pre">form</span></tt> key will always be the form used
+to edit the profile, and the <tt class="docutils literal"><span class="pre">profile</span></tt> key is always the edited
+profile.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">form</span></tt></dt>
+<dd>Form that is used to alter the profile.</dd>
+<dt><tt class="docutils literal"><span class="pre">profile</span></tt></dt>
+<dd>Instance of the <tt class="docutils literal"><span class="pre">Profile</span></tt> that is edited.</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="profile-detail">
+<h2>profile_detail<a class="headerlink" href="#profile-detail" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.profile_detail">
+<tt class="descclassname">userena.views.</tt><tt class="descname">profile_detail</tt><big>(</big><em>request</em>, <em>username</em>, <em>template_name='userena/profile_detail.html'</em>, <em>extra_context=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.profile_detail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detailed view of an user.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>username</strong> &#8211; String of the username of which the profile should be viewed.</li>
+<li><strong>template_name</strong> &#8211; String representing the template name that should be used to display
+the profile.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary of variables which should be supplied to the template. The
+<tt class="docutils literal"><span class="pre">profile</span></tt> key is always the current profile.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">profile</span></tt></dt>
+<dd>Instance of the currently viewed <tt class="docutils literal"><span class="pre">Profile</span></tt>.</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="profile-list">
+<h2>profile_list<a class="headerlink" href="#profile-list" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="userena.views.profile_list">
+<tt class="descclassname">userena.views.</tt><tt class="descname">profile_list</tt><big>(</big><em>request</em>, <em>page=1</em>, <em>template_name='userena/profile_list.html'</em>, <em>paginate_by=50</em>, <em>extra_context=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#userena.views.profile_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all profiles that are public.</p>
+<p>It&#8217;s possible to disable this by changing <tt class="docutils literal"><span class="pre">USERENA_DISABLE_PROFILE_LIST</span></tt>
+to <tt class="docutils literal"><span class="pre">True</span></tt> in your settings.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>page</strong> &#8211; Integer of the active page used for pagination. Defaults to the first
+page.</li>
+<li><strong>template_name</strong> &#8211; String defining the name of the template that is used to render the
+list of all users. Defaults to <tt class="docutils literal"><span class="pre">userena/list.html</span></tt>.</li>
+<li><strong>paginate_by</strong> &#8211; Integer defining the amount of displayed profiles per page. Defaults to
+50 profiles per page.</li>
+<li><strong>extra_context</strong> &#8211; Dictionary of variables that are passed on to the <tt class="docutils literal"><span class="pre">template_name</span></tt>
+template.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context</strong></p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">profile_list</span></tt></dt>
+<dd>A list of profiles.</dd>
+<dt><tt class="docutils literal"><span class="pre">is_paginated</span></tt></dt>
+<dd>A boolean representing whether the results are paginated.</dd>
+</dl>
+<p>If the result is paginated. It will also contain the following variables.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">paginator</span></tt></dt>
+<dd>An instance of <tt class="docutils literal"><span class="pre">django.core.paginator.Paginator</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">page_obj</span></tt></dt>
+<dd>An instance of <tt class="docutils literal"><span class="pre">django.core.paginator.Page</span></tt>.</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Views</a><ul>
+<li><a class="reference internal" href="#signup">signup</a></li>
+<li><a class="reference internal" href="#activate">activate</a></li>
+<li><a class="reference internal" href="#email-confirm">email_confirm</a></li>
+<li><a class="reference internal" href="#direct-to-user-template">direct_to_user_template</a></li>
+<li><a class="reference internal" href="#signin">signin</a></li>
+<li><a class="reference internal" href="#email-change">email_change</a></li>
+<li><a class="reference internal" href="#password-change">password_change</a></li>
+<li><a class="reference internal" href="#profile-edit">profile_edit</a></li>
+<li><a class="reference internal" href="#profile-detail">profile_detail</a></li>
+<li><a class="reference internal" href="#profile-list">profile_list</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="utils.html"
+                        title="previous chapter">Utils</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../contrib/umessages/index.html"
+                        title="next chapter">uMessages</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/views.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../contrib/umessages/index.html" title="uMessages"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="utils.html" title="Utils"
+             >previous</a> |</li>
+        <li><a href="../index.html">django-userena 1.2.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, 2011 Bread &amp; Pepper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>
