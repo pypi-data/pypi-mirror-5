@@ -1,0 +1,47 @@
+{% load kiwiadmin adminmedia %}
+    {% for wikipage in seq %}
+        <tr id="page-row-{{ wikipage.id }}" class="child-of-{{ wikipage.parent }}">
+            <th class="uri-cell">
+                <span style="padding-left:{{ indent|indenter }}px;" class="{% if indent %}child{% else %}parent{% endif %}"></span>
+                {% if wikipage.in_popup %}
+                <a onclick="opener.dismissRelatedLookupPopup(window, '{{ wikipage.id }}'); return false;" href="{{ wikipage.id }}/">
+                {% else %}
+                <a href="/admin/kiwi/wikipage/{{ wikipage.id }}/">
+                {% endif %}
+                {{ wikipage.uri }}</a>
+            </th>
+            
+            <td class="title-cell">{{ wikipage.object.title }}</td>
+            
+            <td class="active-cell">
+            {% if wikipage.object.active %}
+                <img src="{% admin_media_prefix %}img/admin/icon-yes.gif" alt="activé" />
+            {% else %}
+                <img src="{% admin_media_prefix %}img/admin/icon-no.gif" alt="archivé" />
+            {% endif %}
+            </td>
+            
+            <td class="in_sitemap-cell">
+            {% if wikipage.object.in_sitemap %}
+                <img src="{% admin_media_prefix %}img/admin/icon-yes.gif" alt="visible" />
+            {% else %}
+                <img src="{% admin_media_prefix %}img/admin/icon-no.gif" alt="caché" />
+            {% endif %}
+            </td>
+            
+            {% if not wikipage.in_popup %}
+            <td class="last-modification-cell">{{ wikipage.object.last_date|date:"l d F Y à H:i"|title }}</td>
+            
+            <td class="template-cell">
+            {% if wikipage.object.template.title %}
+                {{ wikipage.object.template.title }}
+            {% else %}
+                Par défaut
+            {% endif %}
+            </td>
+            
+            <td class="author-cell">{{ wikipage.object.author.username }}</td>
+            {% endif %}
+        </tr>
+        {% if wikipage.recurse %}{{ wikipage.recurse }}{% endif %}
+{% endfor %}

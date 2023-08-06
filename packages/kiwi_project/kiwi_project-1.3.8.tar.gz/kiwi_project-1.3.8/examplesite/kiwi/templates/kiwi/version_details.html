@@ -1,0 +1,27 @@
+{% extends "kiwi/subbase.html" %}
+{% load kiwimarkup %}
+{% load kiwiwiki %}
+{% block head_title %}{{ block.super }} - {{ wikipageObject.title }} (n°{{ versionObject.rev_number }}){% endblock %}
+{% block header_pathline_content %}
+    {% pathline wikipageAll wikipageObject.id %}
+     &gt; <a href="{{ wikipageObject.get_history_url }}">Historique des versions</a>
+     &gt; Version n°{{ versionObject.rev_number }}
+{% endblock %}
+
+{% block content %}
+    <div class="content_container">
+        <p>Version n°{{ versionObject.rev_number }} de <a href="{{ wikipageObject.get_absolute_url }}">{{ wikipageObject.uri }}</a></p>
+        
+        <h2>{{ versionObject.title }}</h2>
+        
+        <div class="wiki2xhtml">
+            {% wiki2xhtml_render wikipageObject.text wikipageAllPub %}
+            {% if W2X_Summary %}{{ W2X_Summary }}{% endif %}
+            
+            {{ W2X_Xhtml }}
+            {% attached_files_widget wikipageObject %}
+        </div>
+        
+        <p><a href="{{ versionObject.get_diff_url }}"><strong>Différences avec la version publiée</strong></a></p>
+    </div>
+{% endblock %}
