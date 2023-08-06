@@ -1,0 +1,314 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Families &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../../index.html" />
+    <link rel="up" title="Modules" href="../modules.html" />
+    <link rel="next" title="Complexes" href="comp.html" />
+    <link rel="prev" title="Genome" href="gen.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="comp.html" title="Complexes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gen.html" title="Genome"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" accesskey="U">Modules</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="families">
+<h1>Families<a class="headerlink" href="#families" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>A family is a group of similar complexes.</p>
+<div class="section" id="family-properties">
+<h3>Family Properties<a class="headerlink" href="#family-properties" title="Permalink to this headline">¶</a></h3>
+<p>All members of a family have variations on a common function vector (see
+<a class="reference internal" href="org.html#func"><em>Function Vectors</em></a>). These variations are computed by multiplying each entry by a
+random factor scaled by <a class="reference internal" href="../conf.html#mutate_factor" title="mutate_factor"><tt class="xref py py-data docutils literal"><span class="pre">mutate_factor</span></tt></a>. All members of a family bind
+with the same other families, although the strength of the binding is
+determined separately by the resulting <a class="reference internal" href="comp.html#pykaryote.sim.complexes.Complex" title="pykaryote.sim.complexes.Complex"><tt class="xref py py-class docutils literal"><span class="pre">Complex</span></tt></a>&#8216;s
+binding affinity.</p>
+</div>
+<div class="section" id="family-membership">
+<h3>Family Membership<a class="headerlink" href="#family-membership" title="Permalink to this headline">¶</a></h3>
+<p>Families are the solution to the problem of tracking &#8220;point mutations&#8221; in
+proteins. In nature a point mutation in a protein is unlikely to have any
+effect on its behavior. Although our proteins tend to be far shorter than
+real ones, we want similar behavior. Therefore whenever a new protein is
+created, it is checked against existing proteins to see if it is related
+to one of them, that is, if their composition is identical at all but
+<a class="reference internal" href="../conf.html#sibling_distance" title="sibling_distance"><tt class="xref py py-data docutils literal"><span class="pre">sibling_distance</span></tt></a> points. Next the new protein is checked agains
+the sibling&#8217;s family&#8217;s base composition vector to see if it is within
+<a class="reference internal" href="../conf.html#max_relation_distance" title="max_relation_distance"><tt class="xref py py-data docutils literal"><span class="pre">max_relation_distance</span></tt></a>, thus preventing excessive family sprawl. If
+a new protein is related to any existing proteins, then it still has a
+chance, given by <a class="reference internal" href="../conf.html#separation_chance" title="separation_chance"><tt class="xref py py-data docutils literal"><span class="pre">separation_chance</span></tt></a>, to form a new family,
+otherwise the protein will randomly join one of the families that it is
+related to.</p>
+<p>Complex families consist of all the bindings of each of their component
+protein families. That is, if we have two families:</p>
+<div class="highlight-python"><pre>A = {A', A'', A'''}
+B = {B', B''}</pre>
+</div>
+<p>then the complex family will potentially have all of the members:</p>
+<div class="highlight-python"><pre>AB = {A'B', A'B'', A''B', A''B'', A'''B', A'''B''}</pre>
+</div>
+<p>However, each member complex is only created when an organism has both of its
+components simultaneously, thus while all the above <em>could</em> be members of AB,
+it is likely that only a few of them will actually have existed.</p>
+</div>
+<div class="section" id="family-formation">
+<h3>Family Formation<a class="headerlink" href="#family-formation" title="Permalink to this headline">¶</a></h3>
+<p>A new family can be created in one of 2 ways. A new family for length 1
+complexes is formed when a new protein is created that isn&#8217;t put in an
+existing family as described above. New families for length &gt; 1 complexes are
+created when family bindings are checked. When an organism wants to see if 2
+families bind, it checks the combination with the <tt class="xref py py-class docutils literal"><span class="pre">FamilyTracker</span></tt>.
+If those 2 families have never been checked before, then the tracker decides
+whether or not they should bind based on <a class="reference internal" href="../conf.html#family_binding_chance" title="family_binding_chance"><tt class="xref py py-data docutils literal"><span class="pre">family_binding_chance</span></tt></a>. If
+they do bind, then a new family is created.</p>
+<p>The only exception is when the new family matches an existing family.
+Complex families only care about the component families, not about order. In
+other words, both bindings AB + C and AC + B produce complexes in family ABC.
+Thus if 2 families bind to form another family that already exists, a
+reference to that family is returned instead of making a brand new family.</p>
+</div>
+</div>
+<div class="section" id="module-pykaryote.sim.families">
+<span id="documentation"></span><h2>Documentation<a class="headerlink" href="#module-pykaryote.sim.families" title="Permalink to this headline">¶</a></h2>
+<p>Pykaryote Families</p>
+<dl class="class">
+<dt id="pykaryote.sim.families.Family">
+<em class="property">class </em><tt class="descclassname">pykaryote.sim.families.</tt><tt class="descname">Family</tt><a class="headerlink" href="#pykaryote.sim.families.Family" title="Permalink to this definition">¶</a></dt>
+<dd><p>Family(id, environment, base=None)</p>
+<p>A family contains a set of related complexes.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">id</span></tt> (frozenset): a python set containing the id numbers of the protein 
+families that make up this family</p>
+<p><tt class="docutils literal"><span class="pre">environment</span></tt>: a reference to the simulation Environment.</p>
+</div></blockquote>
+<dl class="attribute">
+<dt id="pykaryote.sim.families.Family.base">
+<tt class="descname">base</tt><a class="headerlink" href="#pykaryote.sim.families.Family.base" title="Permalink to this definition">¶</a></dt>
+<dd><p>base: list</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.Family.environment">
+<tt class="descname">environment</tt><a class="headerlink" href="#pykaryote.sim.families.Family.environment" title="Permalink to this definition">¶</a></dt>
+<dd><p>environment: object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.Family.function_vector">
+<tt class="descname">function_vector</tt><a class="headerlink" href="#pykaryote.sim.families.Family.function_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>function_vector: numpy.ndarray</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.Family.id">
+<tt class="descname">id</tt><a class="headerlink" href="#pykaryote.sim.families.Family.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>id: object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.Family.length">
+<tt class="descname">length</tt><a class="headerlink" href="#pykaryote.sim.families.Family.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>length: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.Family.name">
+<tt class="descname">name</tt><a class="headerlink" href="#pykaryote.sim.families.Family.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>name: str</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.Family.size">
+<tt class="descname">size</tt><a class="headerlink" href="#pykaryote.sim.families.Family.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>size: &#8216;int&#8217;</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pykaryote.sim.families.FamilyTracker">
+<em class="property">class </em><tt class="descclassname">pykaryote.sim.families.</tt><tt class="descname">FamilyTracker</tt><a class="headerlink" href="#pykaryote.sim.families.FamilyTracker" title="Permalink to this definition">¶</a></dt>
+<dd><p>FamilyTracker(environment)</p>
+<p>Tracks and manages all existing families</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">environment</span></tt>: A reference to the simulation Evironment.</div></blockquote>
+<dl class="method">
+<dt id="pykaryote.sim.families.FamilyTracker.add_family">
+<tt class="descname">add_family</tt><big>(</big><em>self</em>, <em>id=None</em>, <em>base=None</em><big>)</big><a class="headerlink" href="#pykaryote.sim.families.FamilyTracker.add_family" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the family matching the given ID. If no such family exists, 
+creates the family.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">id</span></tt> (frozenset or None): For complexes: a frozenset of proteins 
+making up the family. 
+for proteins: None, an id will be generated for the protein</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.families.FamilyTracker.binds">
+<tt class="descname">binds</tt><big>(</big><em>self</em>, <em>Family fam1</em>, <em>Family fam2</em><big>)</big> &rarr; Family<a class="headerlink" href="#pykaryote.sim.families.FamilyTracker.binds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if two families bind and returns the bound family.</p>
+<p>Return None if the families do not bind.
+If their binding hasn&#8217;t been checked before, initializes it properly</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">fam1id</span></tt>, <tt class="docutils literal"><span class="pre">fam2id</span></tt>: two families</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.FamilyTracker.family_bindings">
+<tt class="descname">family_bindings</tt><a class="headerlink" href="#pykaryote.sim.families.FamilyTracker.family_bindings" title="Permalink to this definition">¶</a></dt>
+<dd><p>family_bindings: dict</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.families.FamilyTracker.family_lookup">
+<tt class="descname">family_lookup</tt><a class="headerlink" href="#pykaryote.sim.families.FamilyTracker.family_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>family_lookup: dict</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.families.generate_function_vector">
+<tt class="descclassname">pykaryote.sim.families.</tt><tt class="descname">generate_function_vector</tt><big>(</big><em>length</em><big>)</big><a class="headerlink" href="#pykaryote.sim.families.generate_function_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a function vector for a family with &#8216;length&#8217; proteins (length = 1 =&gt; a family of proteins)</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">length</span></tt> (int): The complex length that this function vector corresponds to.</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.families.random">
+<tt class="descclassname">pykaryote.sim.families.</tt><tt class="descname">random</tt><big>(</big><big>)</big> &rarr; x in the interval [0, 1).<a class="headerlink" href="#pykaryote.sim.families.random" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.families.string_from_set">
+<tt class="descclassname">pykaryote.sim.families.</tt><tt class="descname">string_from_set</tt><big>(</big><em>set</em><big>)</big><a class="headerlink" href="#pykaryote.sim.families.string_from_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts sets (Familiy ids) into strings for comparison/hashing</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Families</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#family-properties">Family Properties</a></li>
+<li><a class="reference internal" href="#family-membership">Family Membership</a></li>
+<li><a class="reference internal" href="#family-formation">Family Formation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pykaryote.sim.families">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gen.html"
+                        title="previous chapter">Genome</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="comp.html"
+                        title="next chapter">Complexes</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/ref/sim/fam.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="comp.html" title="Complexes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gen.html" title="Genome"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" >Modules</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using Petri &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../index.html" />
+    <link rel="next" title="Deprecated Scripts" href="deprecated.html" />
+    <link rel="prev" title="Running Pykaryote" href="running.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="deprecated.html" title="Deprecated Scripts"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running Pykaryote"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-petri">
+<h1>Using Petri<a class="headerlink" href="#using-petri" title="Permalink to this headline">¶</a></h1>
+<p>This section describes the <tt class="docutils literal"><span class="pre">petri</span></tt> command line tool.</p>
+<p>Petri contains three sub commands: <tt class="docutils literal"><span class="pre">run</span></tt>, <tt class="docutils literal"><span class="pre">graph</span></tt>, and <tt class="docutils literal"><span class="pre">batch</span></tt>. To list these sub commands, run:</p>
+<div class="highlight-python"><pre>$ petri -h</pre>
+</div>
+<div class="section" id="running-with-mpi">
+<h2>Running with MPI<a class="headerlink" href="#running-with-mpi" title="Permalink to this headline">¶</a></h2>
+<p>Petri uses Message Passing Interface (MPI) to distribute batches of comparisons over multiple processors. Each simulation runs on one processor. Use <tt class="docutils literal"><span class="pre">mpirun</span></tt> to execute programs over MPI:</p>
+<div class="highlight-python"><pre>$ mpirun petri run
+
+1 processors found
+added comparison: comparison
+
+Total: 0.00% (0/60000)
+comparison: 0.00%
+        (0 running, 0 done, 0 failed, 60 queued)
+Top 3 slowest jobs:
+
+all jobs done
+runtime: 0:00:00.000070 (hh:mm:ss)</pre>
+</div>
+<p>As you can see, the default comparison ran on one processor. However, none of the 60 queued jobs ran. This is because petri requires at least two processors in order to run. One processor is always reserved to coordinate sending and receiving jobs.</p>
+<p><tt class="docutils literal"><span class="pre">mpirun</span></tt>&#8216;s <tt class="docutils literal"><span class="pre">-np</span></tt> flag allows you to specify how many processors to use. Lets try again with two processors:</p>
+<div class="highlight-python"><pre>$ mpirun -np 2 petri run</pre>
+</div>
+<p>The previous example uses processors from the same computer. Where MPI shines is its ability to run a program over multiple computers. Pass <tt class="docutils literal"><span class="pre">mpirun</span></tt> a file containing a list of computers, and it will use processors from all of them. If we had a hosts file called mpi_hosts we could run petri on 100 processors:</p>
+<div class="highlight-python"><pre>$ mpirun --hostfile mpi_hosts np 100 petri run</pre>
+</div>
+<p>For more information on MPI and the hosts file format, see <a class="reference external" href="http://www.open-mpi.org/faq/?category=running#simple-spmd-run">The Open MPI FAQ</a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you are a researcher at Calvin College, a host file for the Unix Lab is located at <tt class="docutils literal"><span class="pre">extras/unix_lab_mpi_hosts</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="the-run-command">
+<h2>The <tt class="docutils literal"><span class="pre">run</span></tt> Command<a class="headerlink" href="#the-run-command" title="Permalink to this headline">¶</a></h2>
+<p>Petri&#8217;s <tt class="docutils literal"><span class="pre">run</span></tt> command runs a comparison multiple times, automatically averaging and graphing the results.</p>
+<p>When run without any options, petri loads settings from its default configuration file in <tt class="docutils literal"><span class="pre">pykaryote/petri/config/petri_settings.cfg</span></tt>. For a detailed description of <tt class="docutils literal"><span class="pre">petri_settings.cfg</span></tt>, see <a class="reference internal" href="../ref/other_config_files.html#petri-settings"><em>Petri Settings Configuration Files</em></a>.</p>
+<p>Settings from the configuration file can be overwritten with command line arguments. For a list of possible arguments, use the <tt class="docutils literal"><span class="pre">-h</span></tt> flag:</p>
+<div class="highlight-python"><pre>$ petri run -h
+
+usage: petri run [-h] [-s SIM] [-c CMP] [-n NAME] [-r RUNS] [-d DATA] [-k]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SIM, --sim SIM     the template simulation configuration file for the
+                        comparison
+  -c CMP, --cmp CMP     the configuration file for the comparison
+  -n NAME, --name NAME  the name of the comparison
+  -r RUNS, --runs RUNS  the number of times each simulation is run
+  -d DATA, --data DATA  the directory in which to store finished comparisons
+  -k, --keep-files      Do not delete simulation data after graphing</pre>
+</div>
+<p>By default, simulation data and graphs are saved to <tt class="docutils literal"><span class="pre">~/pykaryote</span></tt>. Specify a different output directory with the <tt class="docutils literal"><span class="pre">-d</span></tt> flag:</p>
+<div class="highlight-python"><pre>$ mpirun -np 4 petri run -d ~/my_output_dir</pre>
+</div>
+<p>When petri is finished, graphs will be located in <tt class="docutils literal"><span class="pre">~/my_output_dir/comparison/graphs</span></tt>.</p>
+<p>You can also specify the number of times to run each simulation, and the simulation configuration file to use. The default setting of <tt class="docutils literal"><span class="pre">1000</span></tt> generations takes a long time to run. Lets limit it to just <tt class="docutils literal"><span class="pre">5</span></tt>.</p>
+<p>Copy the default configuration file from <tt class="docutils literal"><span class="pre">pykaryote/configs/sim.cfg</span></tt> to your current directory. Open it, and change this line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">generation_limit</span> <span class="o">=</span> <span class="mi">1000</span>
+</pre></div>
+</div>
+<p>to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">generation_limit</span> <span class="o">=</span> <span class="mi">5</span>
+</pre></div>
+</div>
+<p>run <tt class="docutils literal"><span class="pre">petri</span></tt> with the <tt class="docutils literal"><span class="pre">-r</span></tt> flag to specify a single run and the <tt class="docutils literal"><span class="pre">--sim</span></tt> flag to specify our new configuration file:</p>
+<div class="highlight-python"><pre>$ mpirun -np 2 petri run --sim sim.cfg -r 1</pre>
+</div>
+</div>
+<div class="section" id="the-batch-command">
+<h2>The <tt class="docutils literal"><span class="pre">batch</span></tt> Command<a class="headerlink" href="#the-batch-command" title="Permalink to this headline">¶</a></h2>
+<p>Since comparisons take a long time, it would be nice to be able to queue several comparisons to run overnight. This can be done with the batch command.</p>
+<p>For example, if you had a file named <tt class="docutils literal"><span class="pre">cmp_batch.cfg</span></tt> which lists comparisons to run, you could run them with:</p>
+<div class="highlight-python"><pre>$ mpirun --hosts mpi_hosts -np 100 petri batch cmp_batch.cfg</pre>
+</div>
+<p>For a description of the batch configuration file format, see <a class="reference internal" href="../ref/other_config_files.html#petri-batch-config"><em>Petri Batch Configuration Files</em></a>.</p>
+<p>Again, a list of available arguments:</p>
+<div class="highlight-python"><pre>$ petri batch -h
+
+usage: petri batch [-h] [-d DATA] [-r RUNS] [-k] config
+
+positional arguments:
+  config                the configuration file describing a batch of
+                        comparisons to run
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DATA, --data DATA  the directory in which comparisons are stored
+  -r RUNS, --runs RUNS  the number of times each simulation is run
+  -k, --keep-files      Do not delete simulation data after graphing</pre>
+</div>
+</div>
+<div class="section" id="the-graph-command">
+<h2>The <tt class="docutils literal"><span class="pre">graph</span></tt> Command<a class="headerlink" href="#the-graph-command" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes when running a large batch, one of the comparisons fails to graph. This can be because a simulation timed out or was configured incorrectly.</p>
+<p>The graph command can be used to graph leftover data from a failed (or successful) comparison. Simply point it in the direction of the failed comparison:</p>
+<div class="highlight-python"><pre>$ petri graph my_failed_comparison</pre>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The name of a comparison is always relative to the data directory, which defaults to <tt class="docutils literal"><span class="pre">~/pykaryote</span></tt>. Thus, the comparison in the previous command is located in <tt class="docutils literal"><span class="pre">~/pykaryote/my_failed_comparison</span></tt>.</p>
+</div>
+<p>graph does not have many arguments:</p>
+<div class="highlight-python"><pre>$ petri graph --help
+
+usage: petri graph [-h] [-d DATA] [-k] name
+
+positional arguments:
+  name                  the name of the comparison to graph
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DATA, --data DATA  the directory in which comparisons are stored
+  -k, --keep-files      Do not delete simulation data after graphing</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using Petri</a><ul>
+<li><a class="reference internal" href="#running-with-mpi">Running with MPI</a></li>
+<li><a class="reference internal" href="#the-run-command">The <tt class="docutils literal"><span class="pre">run</span></tt> Command</a></li>
+<li><a class="reference internal" href="#the-batch-command">The <tt class="docutils literal"><span class="pre">batch</span></tt> Command</a></li>
+<li><a class="reference internal" href="#the-graph-command">The <tt class="docutils literal"><span class="pre">graph</span></tt> Command</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="running.html"
+                        title="previous chapter">Running Pykaryote</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="deprecated.html"
+                        title="next chapter">Deprecated Scripts</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/tut/petri.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="deprecated.html" title="Deprecated Scripts"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running Pykaryote"
+             >previous</a> |</li>
+        <li><a href="../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

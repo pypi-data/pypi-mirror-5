@@ -1,0 +1,289 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Complexes &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../../index.html" />
+    <link rel="up" title="Modules" href="../modules.html" />
+    <link rel="next" title="Petri" href="../petri.html" />
+    <link rel="prev" title="Families" href="fam.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../petri.html" title="Petri"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="fam.html" title="Families"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" accesskey="U">Modules</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="complexes">
+<h1>Complexes<a class="headerlink" href="#complexes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#pykaryote.sim.complexes.Complex" title="pykaryote.sim.complexes.Complex"><tt class="xref py py-class docutils literal"><span class="pre">Complex</span></tt></a> represents a protein complex in the simulation.
+Each complex is made up of between 1 and <a class="reference internal" href="../conf.html#max_complex_length" title="max_complex_length"><tt class="xref py py-data docutils literal"><span class="pre">max_complex_length</span></tt></a>
+proteins. A protein is stored only as a list of chemicals, so a length one
+complex is equivalent to a protein, and is often refered to as such. The
+primary feature of a complex is it&#8217;s function vector (see <a class="reference internal" href="org.html#func"><em>Function Vectors</em></a>);
+it&#8217;s utility for gathering chemicals. Throughout the simulation, there is
+only one <a class="reference internal" href="#pykaryote.sim.complexes.Complex" title="pykaryote.sim.complexes.Complex"><tt class="xref py py-class docutils literal"><span class="pre">Complex</span></tt></a> everything else references that instance.</p>
+<div class="section" id="storage">
+<h3>Storage<a class="headerlink" href="#storage" title="Permalink to this headline">¶</a></h3>
+<p>At the simulation level, the <a class="reference internal" href="#pykaryote.sim.complexes.ComplexTracker" title="pykaryote.sim.complexes.ComplexTracker"><tt class="xref py py-class docutils literal"><span class="pre">ComplexTracker</span></tt></a> class manages
+Complexes, creating them and providing lookup capabilities. Each complex is
+created automatically the first time something tries to look it up and a
+reference is returned for all subsequent attempts.</p>
+<p>At the organism level each organism has a dictionary of the complexes it
+owns. Each entry has a link to the complex, an amount, and a list of all
+the other owned complexes that it binds to.</p>
+</div>
+<div class="section" id="binding">
+<h3>Binding<a class="headerlink" href="#binding" title="Permalink to this headline">¶</a></h3>
+<p>Each complex binds only as its <a class="reference internal" href="fam.html#pykaryote.sim.families.Family" title="pykaryote.sim.families.Family"><tt class="xref py py-class docutils literal"><span class="pre">Family</span></tt></a> binds.
+Every time an organism gets a new complex (that it didn’t own already) it
+checks its family binding with its other complexes. For the ones that
+bind, it looks up the resulting complex and adds it to its known
+complexes. This means that an organism generally only needs to check its
+own list, rather than checking the over dictionary every time it
+manufactures a protein or complex.</p>
+<p>You can allow complexes to bind with other complexes, or only allow proteins
+to be added onto existing complexes. This can be set using
+<a class="reference internal" href="../conf.html#complex_complex_binding" title="complex_complex_binding"><tt class="xref py py-data docutils literal"><span class="pre">complex_complex_binding</span></tt></a>. Disabling complex-complex binding tends to
+force organisms to grow one level of complexity at a time, rather than
+leaping from level 3 to level 6. It also tends to reduce the number of unique
+complexes in existence as there are fewer possible mechanisms for complexes
+to form.</p>
+</div>
+</div>
+<div class="section" id="module-pykaryote.sim.complexes">
+<span id="documentation"></span><h2>Documentation<a class="headerlink" href="#module-pykaryote.sim.complexes" title="Permalink to this headline">¶</a></h2>
+<p>Pykaryote Complexes</p>
+<dl class="class">
+<dt id="pykaryote.sim.complexes.Complex">
+<em class="property">class </em><tt class="descclassname">pykaryote.sim.complexes.</tt><tt class="descname">Complex</tt><a class="headerlink" href="#pykaryote.sim.complexes.Complex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complex(composition, function, family)</p>
+<p>The Complex class represents combinations of proteins from 1 (a protein) 
+to many.</p>
+<p>Each instance of Complex is stored in the ComplexTracker class, and 
+referenced by the various organisms that build it.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">composition</span></tt> (list): The chemical list versions of the proteins 
+making up the complex</p>
+<p><tt class="docutils literal"><span class="pre">function</span></tt> (array): The complex&#8217;s function vector</p>
+<p><tt class="docutils literal"><span class="pre">family</span></tt>: The family to which the complex belongs</p>
+</div></blockquote>
+<dl class="attribute">
+<dt id="pykaryote.sim.complexes.Complex.binding_affinity">
+<tt class="descname">binding_affinity</tt><a class="headerlink" href="#pykaryote.sim.complexes.Complex.binding_affinity" title="Permalink to this definition">¶</a></dt>
+<dd><p>binding_affinity: &#8216;float&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.complexes.Complex.family">
+<tt class="descname">family</tt><a class="headerlink" href="#pykaryote.sim.complexes.Complex.family" title="Permalink to this definition">¶</a></dt>
+<dd><p>family: object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.complexes.Complex.function">
+<tt class="descname">function</tt><a class="headerlink" href="#pykaryote.sim.complexes.Complex.function" title="Permalink to this definition">¶</a></dt>
+<dd><p>function: numpy.ndarray</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.complexes.Complex.is_functional">
+<tt class="descname">is_functional</tt><a class="headerlink" href="#pykaryote.sim.complexes.Complex.is_functional" title="Permalink to this definition">¶</a></dt>
+<dd><p>is_functional: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.complexes.Complex.length">
+<tt class="descname">length</tt><a class="headerlink" href="#pykaryote.sim.complexes.Complex.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>length: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.complexes.Complex.name">
+<tt class="descname">name</tt><a class="headerlink" href="#pykaryote.sim.complexes.Complex.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>name: str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pykaryote.sim.complexes.ComplexTracker">
+<em class="property">class </em><tt class="descclassname">pykaryote.sim.complexes.</tt><tt class="descname">ComplexTracker</tt><a class="headerlink" href="#pykaryote.sim.complexes.ComplexTracker" title="Permalink to this definition">¶</a></dt>
+<dd><p>ComplexTracker(environment, str name=&#8217;&#8216;, str data=&#8217;&#8216;, log=True)</p>
+<p>Tracks and manages all existing proteins</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">environment</span></tt>: A reference to the simulation Environment</p>
+<p><tt class="docutils literal"><span class="pre">name</span></tt> (str): The name of the simulation, used for logging</p>
+<p><tt class="docutils literal"><span class="pre">data</span></tt> (str): The data directory of the simulation, used for logging</p>
+</div></blockquote>
+<dl class="attribute">
+<dt id="pykaryote.sim.complexes.ComplexTracker.complex_lookup">
+<tt class="descname">complex_lookup</tt><a class="headerlink" href="#pykaryote.sim.complexes.ComplexTracker.complex_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>complex_lookup: dict</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.complexes.ComplexTracker.get_complex">
+<tt class="descname">get_complex</tt><big>(</big><em>self</em>, <em>str complex</em>, <em>family=None</em><big>)</big><a class="headerlink" href="#pykaryote.sim.complexes.ComplexTracker.get_complex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a complex by name, creating it if it does not exist.</p>
+<p>If looking up a complex of length 1, let family = None.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">complex</span></tt> (str): A STRING representation of the complex&#8217;s 
+composition</p>
+<p><tt class="docutils literal"><span class="pre">family</span></tt>: None for proteins (len 1 complexes)
+A Family for complexes - the family to which the complex will belong</p>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.complexes.function_string">
+<tt class="descclassname">pykaryote.sim.complexes.</tt><tt class="descname">function_string</tt><big>(</big><em>function</em><big>)</big><a class="headerlink" href="#pykaryote.sim.complexes.function_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a function vector into a string for displaying</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.complexes.mutate_family_vector">
+<tt class="descclassname">pykaryote.sim.complexes.</tt><tt class="descname">mutate_family_vector</tt><big>(</big><em>vec</em><big>)</big><a class="headerlink" href="#pykaryote.sim.complexes.mutate_family_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>mutates the family function vector to create a complex vector</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.complexes.mutate_function_vector">
+<tt class="descclassname">pykaryote.sim.complexes.</tt><tt class="descname">mutate_function_vector</tt><big>(</big><em>base_vec</em>, <em>length</em><big>)</big><a class="headerlink" href="#pykaryote.sim.complexes.mutate_function_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tweaks the supplied vector to create a new function vector.
+Used for individualizing relative functions for a new protein</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">base_vec</span></tt>: The function vector to be tweaked</p>
+<p><tt class="docutils literal"><span class="pre">length</span></tt> (int): the length of the complex in question</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.complexes.random">
+<tt class="descclassname">pykaryote.sim.complexes.</tt><tt class="descname">random</tt><big>(</big><big>)</big> &rarr; x in the interval [0, 1).<a class="headerlink" href="#pykaryote.sim.complexes.random" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Complexes</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#storage">Storage</a></li>
+<li><a class="reference internal" href="#binding">Binding</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pykaryote.sim.complexes">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="fam.html"
+                        title="previous chapter">Families</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../petri.html"
+                        title="next chapter">Petri</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/ref/sim/comp.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../petri.html" title="Petri"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="fam.html" title="Families"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" >Modules</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

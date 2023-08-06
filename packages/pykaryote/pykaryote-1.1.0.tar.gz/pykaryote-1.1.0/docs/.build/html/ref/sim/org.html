@@ -1,0 +1,441 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Organism &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../../index.html" />
+    <link rel="up" title="Modules" href="../modules.html" />
+    <link rel="next" title="Genome" href="gen.html" />
+    <link rel="prev" title="Environment" href="env.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gen.html" title="Genome"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="env.html" title="Environment"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" accesskey="U">Modules</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="organism">
+<h1>Organism<a class="headerlink" href="#organism" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Each <tt class="xref py py-class docutils literal"><span class="pre">Organism</span></tt> represents an organism (or colony thereof) in the
+simulation. Organisms do most of the activity in the simulation. On every
+generation step, each organism reads one codon of their genome and either
+changes its mode, or performs the appropriate action. Depending on the
+organism&#8217;s current mode, this action can be gathering, moving, or making a
+protein.</p>
+<div class="section" id="gathering">
+<h3>Gathering<a class="headerlink" href="#gathering" title="Permalink to this headline">¶</a></h3>
+<p>When an organism is in gather mode, every time it reads a chemical codon, it
+will gather that resource. The amount of that chemical that it gathers is
+computed by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">C</span><span class="o">*</span><span class="n">G</span><span class="o">*</span><span class="n">F</span>
+</pre></div>
+</div>
+<p>Where C is the amount of that chemical present in the environment, G is the
+global <a class="reference internal" href="../conf.html#gather_proportion" title="gather_proportion"><tt class="xref py py-data docutils literal"><span class="pre">gather_proportion</span></tt></a>, and F is the entry for that chemical in the
+organism&#8217;s function vector (<a class="reference internal" href="#func"><em>Function Vectors</em></a>).</p>
+<p>Gathering is the default mode for an organism, and it will reset to this mode
+after completing a set of move or protein actions.</p>
+</div>
+<div class="section" id="movement">
+<h3>Movement<a class="headerlink" href="#movement" title="Permalink to this headline">¶</a></h3>
+<p>When an organism is in movement mode, each read of a chemical codon will
+cause the organism to move towards that chemical. This is known as a movement
+action. Each movement action is made up of <a class="reference internal" href="../conf.html#move_speed" title="move_speed"><tt class="xref py py-data docutils literal"><span class="pre">move_speed</span></tt></a> movement steps.
+For a movement step, the organism looks at each
+of the adjacent grid squares (up, down, left, right) and it&#8217;s own and moves
+to the one with the largest concentration of the specified chemical. If
+it finds a local maximum of that chemical, it will stay there.</p>
+<p>While in movement mode, an organism can make up to <a class="reference internal" href="../conf.html#max_moves" title="max_moves"><tt class="xref py py-data docutils literal"><span class="pre">max_moves</span></tt></a>
+movement actions before it is automatically reset to gather mode. This is
+largely to prevent movement point mutations from changing a large chunk of a
+genome into useless moves. If the organism encounters another mode codon
+before it runs out of moves, it will switch to that mode, resetting the move
+counter.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Organisms can share the same location; there are no collisions in the world
+of Biological Complexity.</p>
+</div>
+</div>
+<div class="section" id="making-proteins">
+<h3>Making Proteins<a class="headerlink" href="#making-proteins" title="Permalink to this headline">¶</a></h3>
+<p>When an organism is in protein mode, each chemical codon that it reads will
+cause the organism to attempt to add that chemical to its current protein. In
+order to do this, it must have 1 unit of the chemical in question. If it
+lacks the resources, the current protein is aborted and all the spent
+resources are refunded. If the environment is resource poor, of if
+<a class="reference internal" href="../conf.html#gather_proportion" title="gather_proportion"><tt class="xref py py-data docutils literal"><span class="pre">gather_proportion</span></tt></a> is set low, it will take a long time before
+organisms acquire enough resources to begin protein construction.</p>
+<p>The organism will keep adding to the protein until it changes modes, or until
+the protein reaches <a class="reference internal" href="../conf.html#max_protein_length" title="max_protein_length"><tt class="xref py py-data docutils literal"><span class="pre">max_protein_length</span></tt></a> at which point the organism
+will reset to gather mode. In either case, the protein is completed
+and&#8211;providing that it is at least <a class="reference internal" href="../conf.html#min_protein_length" title="min_protein_length"><tt class="xref py py-data docutils literal"><span class="pre">min_protein_length</span></tt></a> long&#8211;it will
+be added to the organism&#8217;s stock of proteins, potentially binding to other
+proteins, and modifying the organism&#8217;s function vector.</p>
+</div>
+<div class="section" id="fitness">
+<h3>Fitness<a class="headerlink" href="#fitness" title="Permalink to this headline">¶</a></h3>
+<p>Each organism calculates its own fitness based on its genome length and the
+amount of chemicals that it has acquired over the course of a generation. For
+a detailed discussion of fitness and reproduction, see <a class="reference internal" href="sim.html#fitness"><em>Fitness and Reproduction</em></a></p>
+</div>
+<div class="section" id="function-vectors">
+<span id="func"></span><h3>Function Vectors<a class="headerlink" href="#function-vectors" title="Permalink to this headline">¶</a></h3>
+<p>An organism&#8217;s ability to gather chemicals is determined by its function
+vector. The function vector has one entry for each chemical in the
+environment. The entry multiplies the amount of that chemical that it can
+gather. An organism&#8217;s initial function vector will consist of 1&#8217;s for all
+chemicals that can be gathered without proteins, and 0&#8217;s everywhere else.</p>
+<p>When an organism produces a protein, that protein&#8217;s function vector is added
+to the organisms. This happens for each copy of that protein that is
+produced. Thus, an organism with 10 copies of a protein that adds 2 to the
+entry for chemical 0 will be 20 times more effective at gathering chemical 0
+than its neighbors without that protein. When two complexes (possibly
+proteins) bind, the reactant&#8217;s vectors are subtracted from the organism&#8217;s
+vector based on how much bound, and the product&#8217;s vector is added based on
+the amount created.</p>
+</div>
+</div>
+<div class="section" id="module-pykaryote.sim.organism">
+<span id="documentation"></span><h2>Documentation<a class="headerlink" href="#module-pykaryote.sim.organism" title="Permalink to this headline">¶</a></h2>
+<p>Pykaryote Organisms</p>
+<dl class="class">
+<dt id="pykaryote.sim.organism.Organism">
+<em class="property">class </em><tt class="descclassname">pykaryote.sim.organism.</tt><tt class="descname">Organism</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism" title="Permalink to this definition">¶</a></dt>
+<dd><p>Organism(environment, row=None, column=None, genome=&lt;???&gt;, chemicals=None, fit_scale=1.0, id=-1, ancestry=[], data=None, on_movement=None)</p>
+<p>This class represents an organism in the simulation. It has a location, 
+a genome, etc.</p>
+<p>The self.complexes data structure is a bit complicated and deserves 
+explanation.</p>
+<p>complexes has an entry for each complex that the organism has. 
+The entries are tuples with the following elements.</p>
+<ol class="arabic">
+<li><p class="first">the complex</p>
+</li>
+<li><p class="first">the current amount of the complex possessed by the organism</p>
+</li>
+<li><dl class="first docutils">
+<dt>a list of all complexes in the organism that [1] binds to, </dt>
+<dd><dl class="first last docutils">
+<dt>each element has:</dt>
+<dd><ol class="first last arabic simple">
+<li>The binding affinity</li>
+<li>a reference to the entry for the other complex in self.complexes</li>
+<li>a reference to the entry for the result complex in self.complexes</li>
+</ol>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ol>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">environment</span></tt>: The environment in which this organism lives, </dt>
+<dd>used as a reference</dd>
+<dt><tt class="docutils literal"><span class="pre">row</span></tt> (int): The row location in the environment. if None it will be </dt>
+<dd>chosen randomly</dd>
+<dt><tt class="docutils literal"><span class="pre">column</span></tt> (int): The column location in the environment. if None it </dt>
+<dd>will be chosen randomly</dd>
+</dl>
+<p><tt class="docutils literal"><span class="pre">genome</span></tt> (int or list): The genome of the organism, 
+if a list, the genome will stay that way
+if an int, a genome of that length will be generated</p>
+<p><tt class="docutils literal"><span class="pre">chemical</span></tt> (list): The starting amount of chemicals owned by the organism. 
+If None, the organism owns 0.0 of all chemicals</p>
+<p><tt class="docutils literal"><span class="pre">fit_scale</span></tt> (float): The fitness scaling factor. See the documentation for 
+further details.</p>
+<p><tt class="docutils literal"><span class="pre">id</span></tt> (int): The id # for this organism w/in the generation.</p>
+<p><tt class="docutils literal"><span class="pre">ancestry</span></tt> (list): the list of ancestor id #&#8217;s</p>
+<p><tt class="docutils literal"><span class="pre">data</span></tt> (list): a list of control values for the organism, used only 
+for reconstructing an organism.</p>
+</div></blockquote>
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.ancestry">
+<tt class="descname">ancestry</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.ancestry" title="Permalink to this definition">¶</a></dt>
+<dd><p>ancestry: list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.organism.Organism.breed">
+<tt class="descname">breed</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.organism.Organism.breed" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a copy of the organism with possible mutations, chemicals are not kept
+location may be kept based on global variables</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.builds">
+<tt class="descname">builds</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.builds" title="Permalink to this definition">¶</a></dt>
+<dd><p>builds: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.cell">
+<tt class="descname">cell</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>cell: numpy.ndarray</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.organism.Organism.chem_fitness">
+<tt class="descname">chem_fitness</tt><big>(</big><em>self</em>, <em>ndarray chemicals</em><big>)</big><a class="headerlink" href="#pykaryote.sim.organism.Organism.chem_fitness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the unscaled fitness benefit of a vector of chemicals.</p>
+<p>This is used to calculate an organisms fitness.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.chemicals">
+<tt class="descname">chemicals</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.chemicals" title="Permalink to this definition">¶</a></dt>
+<dd><p>chemicals: numpy.ndarray</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.column">
+<tt class="descname">column</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.column" title="Permalink to this definition">¶</a></dt>
+<dd><p>column: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.complexes">
+<tt class="descname">complexes</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.complexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>complexes: dict</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.environment">
+<tt class="descname">environment</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.environment" title="Permalink to this definition">¶</a></dt>
+<dd><p>environment: object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.failed_builds">
+<tt class="descname">failed_builds</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.failed_builds" title="Permalink to this definition">¶</a></dt>
+<dd><p>failed_builds: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.fit_scale">
+<tt class="descname">fit_scale</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.fit_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>fit_scale: &#8216;float&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.organism.Organism.fitness">
+<tt class="descname">fitness</tt><big>(</big><em>self</em>, <em>genome_cost=True</em><big>)</big><a class="headerlink" href="#pykaryote.sim.organism.Organism.fitness" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fitness function of the organism.</p>
+<p>Each chemical contributes a set amount to the fitness. The chemicals 
+provide diminishing returns.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">genome_cost</span></tt>: if set to False, the genome fitness cost will not be
+subtracted from the organism.</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.function">
+<tt class="descname">function</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.function" title="Permalink to this definition">¶</a></dt>
+<dd><p>function: numpy.ndarray</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.gathers">
+<tt class="descname">gathers</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.gathers" title="Permalink to this definition">¶</a></dt>
+<dd><p>gathers: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.genome">
+<tt class="descname">genome</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.genome" title="Permalink to this definition">¶</a></dt>
+<dd><p>genome: numpy.ndarray</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.id">
+<tt class="descname">id</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>id: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.len">
+<tt class="descname">len</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.len" title="Permalink to this definition">¶</a></dt>
+<dd><p>len: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.mode">
+<tt class="descname">mode</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>mode: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.move_count">
+<tt class="descname">move_count</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.move_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>move_count: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.moves">
+<tt class="descname">moves</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.moves" title="Permalink to this definition">¶</a></dt>
+<dd><p>moves: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.pos">
+<tt class="descname">pos</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>pos: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.organism.Organism.read_genome">
+<tt class="descname">read_genome</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.organism.Organism.read_genome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and executes codons from the genome.</p>
+<p>This is the applications inner most loop, and accounts for most of
+the program runtime. If you&#8217;re looking to optimize, start here.</p>
+<dl class="docutils">
+<dt>Reads one codon of the genome and performs the appropriate actions</dt>
+<dd>if a mode codon, change mode
+if a chemical codon perform the mode-specific action for that chemical</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pykaryote.sim.organism.Organism.row">
+<tt class="descname">row</tt><a class="headerlink" href="#pykaryote.sim.organism.Organism.row" title="Permalink to this definition">¶</a></dt>
+<dd><p>row: &#8216;int&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.organism.Organism.swap">
+<tt class="descname">swap</tt><big>(</big><em>self</em>, <em>other</em><big>)</big><a class="headerlink" href="#pykaryote.sim.organism.Organism.swap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a section of other&#8217;s genome into its own genome</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.organism.create_function_vector">
+<tt class="descclassname">pykaryote.sim.organism.</tt><tt class="descname">create_function_vector</tt><big>(</big><big>)</big><a class="headerlink" href="#pykaryote.sim.organism.create_function_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a default function vector. Capable of harvesting n0 complexes, but nothing else.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Organism</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#gathering">Gathering</a></li>
+<li><a class="reference internal" href="#movement">Movement</a></li>
+<li><a class="reference internal" href="#making-proteins">Making Proteins</a></li>
+<li><a class="reference internal" href="#fitness">Fitness</a></li>
+<li><a class="reference internal" href="#function-vectors">Function Vectors</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pykaryote.sim.organism">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="env.html"
+                        title="previous chapter">Environment</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gen.html"
+                        title="next chapter">Genome</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/ref/sim/org.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gen.html" title="Genome"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="env.html" title="Environment"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" >Modules</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

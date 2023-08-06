@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+"""
+A simple command line script to display graphs from a comparison
+
+Run ``python comparison_graph.py -h`` for more information
+"""
+from optparse import OptionParser
+import matplotlib as mpl
+# for running without an x server
+# must run before all other mpl functions
+mpl.use('Agg')
+import os.path
+
+usage = "%prog comparison_directory\n\
+   $ python comparison_graph.py ~/mydata/\n"
+
+if __name__ == '__main__':
+    parser = OptionParser(usage = usage)
+    options, args = parser.parse_args()
+    from pykaryote.utils.comparison import Grapher
+    sim_config_path = os.path.join(args[0], 'sim-0.cfg')
+    g = Grapher(args[0], sim_config_path)
+    g.save_all()

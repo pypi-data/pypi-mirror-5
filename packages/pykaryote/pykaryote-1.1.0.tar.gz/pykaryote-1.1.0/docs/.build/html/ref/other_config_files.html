@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Other Configuration Files &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../index.html" />
+    <link rel="next" title="Modules" href="modules.html" />
+    <link rel="prev" title="Analyzer Data File Format" href="data-format.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="Modules"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="data-format.html" title="Analyzer Data File Format"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="other-configuration-files">
+<h1>Other Configuration Files<a class="headerlink" href="#other-configuration-files" title="Permalink to this headline">¶</a></h1>
+<p>This section describes other configuration files. These include comparison configuration files, petri settings files, and petri batch files.</p>
+<div class="section" id="comparison-configuration-files">
+<span id="cmp-cfg"></span><h2>Comparison Configuration Files<a class="headerlink" href="#comparison-configuration-files" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Comparison configuration files are ugly and use eval. If you have time, refactor them to use JSON or some other method.</p>
+</div>
+<p>A comparison is a set of simulations where one or more option is varied. Comparisons make it easy to see the effects of different configuration options.</p>
+<p>A comparison configuration file describes which options should be varied. By convention, it is named <tt class="docutils literal"><span class="pre">cmp.cfg</span></tt>.</p>
+<p>The first line of a comparison configuration file is a tuple of options to be varied. Subsequent lines are tuples of values which those options should be set to for a run.</p>
+<p>Lines which begin with <tt class="docutils literal"><span class="pre">(</span></tt> are evaled.</p>
+<p>This example configuration file will run three simulations with different values of <tt class="docutils literal"><span class="pre">strong_chance</span></tt> and <tt class="docutils literal"><span class="pre">strong_factor</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="s">&#39;strong_chance&#39;</span><span class="p">,</span> <span class="s">&#39;strong_factor&#39;</span><span class="p">)</span>
+<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="petri-settings-configuration-files">
+<span id="petri-settings"></span><h2>Petri Settings Configuration Files<a class="headerlink" href="#petri-settings-configuration-files" title="Permalink to this headline">¶</a></h2>
+<p>Petri loads default settings from <tt class="docutils literal"><span class="pre">petri_settings.cfg</span></tt>, which is in INI format. Command line arguments then override these defaults.</p>
+<p>In petri settings files, <tt class="docutils literal"><span class="pre">$config</span></tt> refers to pykaryote&#8217;s internal configuration directory located at <tt class="docutils literal"><span class="pre">pykaryote/configs</span></tt>.</p>
+<p>Here is an example <tt class="docutils literal"><span class="pre">petri_settings.cfg</span></tt> file:</p>
+<div class="highlight-python"><pre>[settings]
+output_data_dir = ~/pykaryote/mpi_simulations
+
+[default-comparison]
+comparison_config = $config/cmp.cfg
+simulation_config = $config/sim.cfg
+comparison_name = comparison
+num_runs = 60</pre>
+</div>
+</div>
+<div class="section" id="petri-batch-configuration-files">
+<span id="petri-batch-config"></span><h2>Petri Batch Configuration Files<a class="headerlink" href="#petri-batch-configuration-files" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">petri</span> <span class="pre">batch</span> <span class="pre">&lt;batch_config_file&gt;</span></tt> runs a batch of comparisons. Petri batch configuration files use INI syntax. Each section of the file is the name of a comparison to run.</p>
+<p>Here is an example <tt class="docutils literal"><span class="pre">petri_batch.cfg</span></tt> file:</p>
+<div class="highlight-python"><pre>[default_comparison_50_runs]
+comparison_config = ~/pykaryote/pykaryote/configs/cmp.cfg
+simulation_config = ~/pykaryote/pykaryote/configs/sim.cfg
+num_runs = 50
+
+[default_comparison_10_runs]
+comparison_config = ~/pykaryote/pykaryote/configs/cmp.cfg
+simulation_config = ~/pykaryote/pykaryote/configs/sim.cfg
+num_runs = 10</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Other Configuration Files</a><ul>
+<li><a class="reference internal" href="#comparison-configuration-files">Comparison Configuration Files</a></li>
+<li><a class="reference internal" href="#petri-settings-configuration-files">Petri Settings Configuration Files</a></li>
+<li><a class="reference internal" href="#petri-batch-configuration-files">Petri Batch Configuration Files</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="data-format.html"
+                        title="previous chapter">Analyzer Data File Format</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="modules.html"
+                        title="next chapter">Modules</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/ref/other_config_files.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="Modules"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="data-format.html" title="Analyzer Data File Format"
+             >previous</a> |</li>
+        <li><a href="../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

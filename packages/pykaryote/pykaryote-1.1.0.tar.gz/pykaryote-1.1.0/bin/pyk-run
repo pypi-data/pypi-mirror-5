@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+"""
+run.py is a script to run a single BC simulation. 
+
+Run ``python run.py -h`` for more information.
+"""
+from optparse import OptionParser
+from pkg_resources import resource_filename
+import os.path
+
+if __name__ == '__main__':
+    parser = OptionParser()
+    parser.add_option("-c","--config", dest = "config",
+        default = resource_filename('pykaryote', os.path.join('configs',
+                                    'sim.cfg')),
+        help = "The configuration file for the simulation")
+    parser.add_option("-n","--name", dest = "name",
+        default = "Test",
+        help = "The name of the simulation")
+    parser.add_option("-d","--data", dest="data", default='',
+        help = "The directory in which to store the log and analyzer data for \
+the simulation. It is recommended that you choose a local directory e.g. \
+'/tmp/data' to avoid network overhead.") 
+    options, args = parser.parse_args()
+    from pykaryote.sim.simulation import Simulation
+    options.data = os.path.normpath(options.data)
+    sim = Simulation(options.config, name=options.name, data=options.data)
+    sim.run()

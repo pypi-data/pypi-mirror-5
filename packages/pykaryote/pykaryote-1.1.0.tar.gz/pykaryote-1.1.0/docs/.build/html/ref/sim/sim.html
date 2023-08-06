@@ -1,0 +1,313 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Simulation &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../../index.html" />
+    <link rel="up" title="Modules" href="../modules.html" />
+    <link rel="next" title="Environment" href="env.html" />
+    <link rel="prev" title="Modules" href="../modules.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="env.html" title="Environment"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../modules.html" title="Modules"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" accesskey="U">Modules</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="simulation">
+<h1>Simulation<a class="headerlink" href="#simulation" title="Permalink to this headline">¶</a></h1>
+<p><strong>simulation</strong> provides the <tt class="xref py py-class docutils literal"><span class="pre">Simulation</span></tt> class, a master class
+for creating and executing Pykaryote simulations. Conventionally
+<tt class="xref py py-class docutils literal"><span class="pre">Simulation</span></tt> is managed by one of the command line utilities, but it can also be imported and run in an interactive
+Python console.</p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Simulation</span></tt> manages all the components of a simulation. It
+contains an <a class="reference internal" href="env.html#pykaryote.sim.environment.Environment" title="pykaryote.sim.environment.Environment"><tt class="xref py py-class docutils literal"><span class="pre">Environment</span></tt></a> that represents,
+funnily enough, the environment in which the the population of
+<a class="reference internal" href="org.html#pykaryote.sim.organism.Organism" title="pykaryote.sim.organism.Organism"><tt class="xref py py-class docutils literal"><span class="pre">Organism</span></tt></a>&#8216;s live. Through the environment, it
+also contains a <a class="reference internal" href="comp.html#pykaryote.sim.complexes.ComplexTracker" title="pykaryote.sim.complexes.ComplexTracker"><tt class="xref py py-class docutils literal"><span class="pre">ComplexTracker</span></tt></a> and a
+<a class="reference internal" href="fam.html#pykaryote.sim.families.FamilyTracker" title="pykaryote.sim.families.FamilyTracker"><tt class="xref py py-class docutils literal"><span class="pre">FamilyTracker</span></tt></a> that keep track of the complexes
+and complex families that exist in the simulation.</p>
+<div class="section" id="running-a-simulation">
+<h2>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
+<p>A Simulation is run as a series of generations. Each generation starts with a
+population of organisms, distrubuted in some fashion in an environment. The
+generation is comprised of <a class="reference internal" href="../conf.html#generation_length" title="generation_length"><tt class="xref py py-data docutils literal"><span class="pre">generation_length</span></tt></a> steps. In each step all
+of the organisms perform one action (the actual implementation groups these
+together with each organism performing <a class="reference internal" href="../conf.html#org_step" title="org_step"><tt class="xref py py-data docutils literal"><span class="pre">org_step</span></tt></a> steps at a time. This
+is only for optimization and doesn&#8217;t currently affect the workings of the
+model). It is also possible to update the environment over the course of the
+generation, although no methods for doing so are yet fully implemented.</p>
+<p>At the end of a generation, the fitness for each organism is computed and
+used to determine which organisms will reproduce. Analysis data is logged
+by the <a class="reference internal" href="../utils/analysis.html#pykaryote.utils.analysis.CreativeAnalyzer" title="pykaryote.utils.analysis.CreativeAnalyzer"><tt class="xref py py-class docutils literal"><span class="pre">CreativeAnalyzer</span></tt></a>. Every
+<a class="reference internal" href="../conf.html#log_step" title="log_step"><tt class="xref py py-data docutils literal"><span class="pre">log_step</span></tt></a> generations, the state of the simulation is logged
+in a human-readable fashion. Every <a class="reference internal" href="../conf.html#save_step" title="save_step"><tt class="xref py py-data docutils literal"><span class="pre">save_step</span></tt></a> generations, the
+simulation is <a class="reference external" href="http://docs.python.org/library/pickle.html">pickled</a> and
+stored for later loading. Finally, a new generation is created and the
+whole process starts anew.</p>
+</div>
+<div class="section" id="fitness-and-reproduction">
+<span id="fitness"></span><h2>Fitness and Reproduction<a class="headerlink" href="#fitness-and-reproduction" title="Permalink to this headline">¶</a></h2>
+<p>Every organism has a chance to reproduce, a chance determined by its
+fitness score. Fitness scores are computed as follows. For each chemical
+that it posesses, the organism receives a bonus to its fitness based on
+the fitness function specified in <tt class="xref py py-data docutils literal"><span class="pre">chemical_fitness_falloff</span></tt>. The sum
+of the chemical fitness scores is then multiplied by the normalization
+constant discussed below. Finally, the product of
+<tt class="xref py py-data docutils literal"><span class="pre">genome_fitness_factor</span></tt> and the length of the organism&#8217;s genome is
+subtracted from the normalized score.</p>
+<p>The normalization constant is intended to allow comparison of simulations
+with different environments, gather rates, etc. This constant is computed by
+the simulation when it is created. The simulation calculates the amount of
+chemicals an organism would acquire if it gathered evenly distributed amounts
+of all available chemicals, with no proteins or movement, in a square that
+was the average of all the squares in the environment. The normalization
+constant is assigned so that after the chemical fitness is normalized and the
+genome fitness cost subtracted, this ideal organism would have a fitness
+equal to <a class="reference internal" href="../conf.html#fitness_scale" title="fitness_scale"><tt class="xref py py-data docutils literal"><span class="pre">fitness_scale</span></tt></a>.</p>
+</div>
+<div class="section" id="loading-simulations">
+<span id="loading"></span><h2>Loading Simulations<a class="headerlink" href="#loading-simulations" title="Permalink to this headline">¶</a></h2>
+<p>Simulations save themselves every <a class="reference internal" href="../conf.html#save_step" title="save_step"><tt class="xref py py-data docutils literal"><span class="pre">save_step</span></tt></a> generations while
+running. These saves can be reloaded as simulations and run again to&#8211;for
+instance&#8211;recover from a system crash or explore a different possible future.
+Loading simulations is simple, but it must be done in the interpreter.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pykaroyte.sim.simulation</span> <span class="kn">import</span> <span class="n">load_sim</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sim</span> <span class="o">=</span> <span class="n">load_sim</span><span class="p">(</span><span class="s">&quot;my/saved/simulation/save_gen_150.p&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># show some graphs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sim</span><span class="o">.</span><span class="n">analyzer</span><span class="o">.</span><span class="n">save_all</span><span class="p">()</span> <span class="c"># saves data to the &#39;graphs&#39; directory</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># runs from the point it left off</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="section" id="module-pykaryote.sim.simulation">
+<span id="documentation"></span><h3>Documentation<a class="headerlink" href="#module-pykaryote.sim.simulation" title="Permalink to this headline">¶</a></h3>
+<p>Pykaryote Simulations</p>
+<dl class="class">
+<dt id="pykaryote.sim.simulation.Simulation">
+<em class="property">class </em><tt class="descclassname">pykaryote.sim.simulation.</tt><tt class="descname">Simulation</tt><big>(</big><em>self</em>, <em>config</em>, <em>name='Test'</em>, <em>data='.'</em>, <em>clear=True</em>, <em>comparison=False</em>, <em>status_callback=None</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Simulation class organizes and runs the complexity simulations.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><p class="first"><tt class="docutils literal"><span class="pre">name</span></tt> (str): The name of this simulation</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">data</span></tt> (str): The directory in which to store the log and analyzer data </dt>
+<dd>the simulation. It is recommended that you choose a local directory
+e.g.  &#8216;/tmp/data&#8217; to avoid network overhead.</dd>
+</dl>
+<p><tt class="docutils literal"><span class="pre">config</span></tt> (str): the configuration file for the simulation.</p>
+<p class="last"><tt class="docutils literal"><span class="pre">clear</span></tt> (bool): Default True, delete the contents of this simulation&#8217;s
+data directory before starting.</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.create_fitness_scaler">
+<tt class="descname">create_fitness_scaler</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.create_fitness_scaler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the fitness of an &#8220;average&#8221; primitive organism which has the minimum genome length.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.details">
+<tt class="descname">details</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints the details of the simulation in such a way that a new 
+simulation can be constructed from the data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.finished_yet">
+<tt class="descname">finished_yet</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.finished_yet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the simulation should end.</p>
+<p>As specified in the config files, a simulation should end after
+generation_limit generations or once complexity grows past 
+complexity_limit or if the estimated total runtime exceeds 
+runtime_limit. If any of these configuration options are zero, there is
+no limit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.iterate">
+<tt class="descname">iterate</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.iterate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advances the simulation one step with each organism reading one 
+step of their genome.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.log">
+<tt class="descname">log</tt><big>(</big><em>self</em>, <em>filename</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a human-readable log file of the simulation in the specified 
+file.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd>filename (str): the file in which to save the log.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.new_generation">
+<tt class="descname">new_generation</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.new_generation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Breeds a new generation from the previous. Overwrites the old 
+generation with the new, and returns a list of organisms that 
+reproduced (with organisms that reproduced more than once appearing 
+more than once).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.run">
+<tt class="descname">run</tt><big>(</big><em>self</em>, <em>log=True</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the simulation until it finishes.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">log</span></tt> (boolean): Log the state of the simulation every log_step</dt>
+<dd>generations</dd>
+</dl>
+<p><tt class="docutils literal"><span class="pre">verbose</span></tt> (boolean): Print generation numbers</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.run_generation">
+<tt class="descname">run_generation</tt><big>(</big><em>self</em>, <em>log=True</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.run_generation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.save">
+<tt class="descname">save</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves a pickled copy of the simulation. This can be loaded via the 
+simulation.load_sim(file) method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.sim.simulation.Simulation.summary">
+<tt class="descname">summary</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.Simulation.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a summary of the current generation, giving their fitnesses and net fitness</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.sim.simulation.load_sim">
+<tt class="descclassname">pykaryote.sim.simulation.</tt><tt class="descname">load_sim</tt><big>(</big><em>sim_file</em><big>)</big><a class="headerlink" href="#pykaryote.sim.simulation.load_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads and returns a pickled simulation.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">sim_file</span></tt> (str): the filename of the pickled simulation</div></blockquote>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Simulation</a><ul>
+<li><a class="reference internal" href="#running-a-simulation">Running a Simulation</a></li>
+<li><a class="reference internal" href="#fitness-and-reproduction">Fitness and Reproduction</a></li>
+<li><a class="reference internal" href="#loading-simulations">Loading Simulations</a><ul>
+<li><a class="reference internal" href="#module-pykaryote.sim.simulation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../modules.html"
+                        title="previous chapter">Modules</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="env.html"
+                        title="next chapter">Environment</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/ref/sim/sim.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="env.html" title="Environment"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../modules.html" title="Modules"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" >Modules</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

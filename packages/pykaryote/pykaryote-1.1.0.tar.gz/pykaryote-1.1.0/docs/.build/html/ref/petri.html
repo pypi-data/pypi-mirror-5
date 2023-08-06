@@ -1,0 +1,216 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Petri &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../index.html" />
+    <link rel="up" title="Modules" href="modules.html" />
+    <link rel="next" title="Analysis" href="utils/analysis.html" />
+    <link rel="prev" title="Complexes" href="sim/comp.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="utils/analysis.html" title="Analysis"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sim/comp.html" title="Complexes"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="modules.html" accesskey="U">Modules</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="petri">
+<h1>Petri<a class="headerlink" href="#petri" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-pykaryote.petri.master">
+<span id="master"></span><h2>Master<a class="headerlink" href="#module-pykaryote.petri.master" title="Permalink to this headline">¶</a></h2>
+<p>Code to execute on master thread.</p>
+<p>The master thread holds a thread pool and a queue of jobs. It sends jobs to
+worker processors and reports status on running jobs.</p>
+<dl class="class">
+<dt id="pykaryote.petri.master.Master">
+<em class="property">class </em><tt class="descclassname">pykaryote.petri.master.</tt><tt class="descname">Master</tt><big>(</big><em>dest_dir</em>, <em>status_interval=10</em><big>)</big><a class="headerlink" href="#pykaryote.petri.master.Master" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object to run on the master processor.</p>
+<p>Master controls the queuing of jobs and the reporting of job status.</p>
+<dl class="method">
+<dt id="pykaryote.petri.master.Master.add_comparison">
+<tt class="descname">add_comparison</tt><big>(</big><em>comparison_config_filename</em>, <em>sim_config_filename</em>, <em>comparison_name</em>, <em>num_runs</em>, <em>clean=True</em><big>)</big><a class="headerlink" href="#pykaryote.petri.master.Master.add_comparison" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queues a comparison to run.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.petri.master.Master.add_comparisons">
+<tt class="descname">add_comparisons</tt><big>(</big><em>batch_config</em>, <em>num_runs=None</em>, <em>clean=True</em><big>)</big><a class="headerlink" href="#pykaryote.petri.master.Master.add_comparisons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds comparisons from a config file.</p>
+<p>Optionally overrides the number of runs.
+Config files are in .ini format, where each section is the name of a
+comparison. For example:</p>
+<blockquote>
+<div>[my-comparison]
+comparison_config = configs/cmp.cfg
+simulation_config = configs/sim.cfg
+num_runs = 80</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.petri.master.Master.log">
+<tt class="descname">log</tt><big>(</big><em>string</em><big>)</big><a class="headerlink" href="#pykaryote.petri.master.Master.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a string to the log.</p>
+<p>The function could later be used to write to a log file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.petri.master.Master.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#pykaryote.petri.master.Master.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shuts down all processes and clear the list of queued jobs.</p>
+<p>If a job is currently running, that job will not shutdown until
+it finishes.</p>
+<p>No jobs can be sent after this call.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.petri.master.Master.wait_and_log">
+<tt class="descname">wait_and_log</tt><big>(</big><big>)</big><a class="headerlink" href="#pykaryote.petri.master.Master.wait_and_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the main loop.</p>
+<p>Call this after adding jobs to the queue. This is the main loop of the
+program, which sends jobs and prints status reports.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pykaryote.petri.worker">
+<span id="worker"></span><h2>Worker<a class="headerlink" href="#module-pykaryote.petri.worker" title="Permalink to this headline">¶</a></h2>
+<p>Code to be run by worker processors.</p>
+<p>Worker processors execute jobs and report status back to the master processor.</p>
+<dl class="class">
+<dt id="pykaryote.petri.worker.Worker">
+<em class="property">class </em><tt class="descclassname">pykaryote.petri.worker.</tt><tt class="descname">Worker</tt><big>(</big><em>data_dir</em>, <em>status_interval=10</em><big>)</big><a class="headerlink" href="#pykaryote.petri.worker.Worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs jobs on worker processors and reports status back to the master.</p>
+<p>Jobs are received from the master thread. Typical jobs include running
+simulations and graphing comparison batches.</p>
+<dl class="method">
+<dt id="pykaryote.petri.worker.Worker.graph_comparison">
+<tt class="descname">graph_comparison</tt><big>(</big><em>cmp_name</em>, <em>values=None</em>, <em>clean=True</em><big>)</big><a class="headerlink" href="#pykaryote.petri.worker.Worker.graph_comparison" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregate and graph a completed comparison.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.petri.worker.Worker.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#pykaryote.petri.worker.Worker.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the current job.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pykaryote.petri.tags">
+<span id="tags"></span><h2>Tags<a class="headerlink" href="#module-pykaryote.petri.tags" title="Permalink to this headline">¶</a></h2>
+<p>Tags contains constants for tags used when communicating over MPI.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Petri</a><ul>
+<li><a class="reference internal" href="#module-pykaryote.petri.master">Master</a></li>
+<li><a class="reference internal" href="#module-pykaryote.petri.worker">Worker</a></li>
+<li><a class="reference internal" href="#module-pykaryote.petri.tags">Tags</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="sim/comp.html"
+                        title="previous chapter">Complexes</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="utils/analysis.html"
+                        title="next chapter">Analysis</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/ref/petri.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="utils/analysis.html" title="Analysis"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sim/comp.html" title="Complexes"
+             >previous</a> |</li>
+        <li><a href="../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="modules.html" >Modules</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

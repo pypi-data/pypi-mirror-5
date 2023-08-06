@@ -1,0 +1,640 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Analysis &mdash; Pykaryote 1.1.0d documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0d',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pykaryote 1.1.0d documentation" href="../../index.html" />
+    <link rel="up" title="Modules" href="../modules.html" />
+    <link rel="next" title="Globals" href="globals.html" />
+    <link rel="prev" title="Petri" href="../petri.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="globals.html" title="Globals"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../petri.html" title="Petri"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" accesskey="U">Modules</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="analysis">
+<h1>Analysis<a class="headerlink" href="#analysis" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Every <tt class="xref py py-class docutils literal"><span class="pre">Simulation</span></tt> has a <tt class="xref py py-class docutils literal"><span class="pre">CreativeAnalyzer</span></tt> attached.
+This CreativeAnalyzer logs data from the simulation as it runs. If all the
+data is stored in memory, then long simulations suffer from memory creep and
+will eventually bog down. Instead a logfile is created for each type of data,
+and each subsequent generation simply appends to those logfiles. The analysis
+data is therefore always available.</p>
+<p>The data can be read by any analyzer, by pointing it to the correct directory
+(&#8220;Test/analyzer&#8221; by default). That means that the data can be read and
+plotted after the simulation finishes. Partial plots can even be generated
+while the simulation is still running, by creating an <tt class="xref py py-class docutils literal"><span class="pre">Analyzer</span></tt> in
+another terminal and reading the data generated thus far.</p>
+<div class="section" id="data-collection">
+<h3>Data Collection<a class="headerlink" href="#data-collection" title="Permalink to this headline">¶</a></h3>
+<p>In general I&#8217;ve tried to collect only the data necessary. If you try and
+collect all the data that might ever be desired, you&#8217;ll create log bloat very
+quickly. If too much data is collected (especially if the environment is
+logged each generation), the data can easily exceed 20 GB. Instead, do as
+much processing as possible before hand and store only the aggregate data
+(e.g. average fitness rather than each organism&#8217;s fitness).</p>
+</div>
+<div class="section" id="computing-complexity">
+<span id="complexity"></span><h3>Computing Complexity<a class="headerlink" href="#computing-complexity" title="Permalink to this headline">¶</a></h3>
+<p>Each chemical can be assigned a complexity number based on how much of its
+gathering is due to complexes. For instance if an organism’s function
+vector for a chemical is 100, 1 due to default, 50 due to proteins, 10 due
+to len = 2 complexes and 39 due to len = 3 complexes, then for that
+organism, that chemical would have a complexity rating of
+<span class="math">\((1*0+50*1+10*2+39*3)/100 = 1.87\)</span>. This data can be plotted for each
+chemical individually, or in aggregate as an organism-specific complexity
+score.</p>
+<p>We can also compute &#8220;irreducible complexity&#8221;. Each functional complex can
+be assigned a component complexity rating based on how many of its
+components are functional. The algorithm is similar to computing
+complexity. In this case, For each chemical, each functional complex
+contributes <span class="math">\(amount*function*N/orgfunction\)</span> to the chemical score
+where <span class="math">\(N\)</span> is the number of <em>non</em>-functional components of that
+complex. The chemical scores are then averaged to get the organism score.</p>
+</div>
+</div>
+<div class="section" id="module-pykaryote.utils.analysis">
+<span id="documentation"></span><h2>Documentation<a class="headerlink" href="#module-pykaryote.utils.analysis" title="Permalink to this headline">¶</a></h2>
+<p>The analysis module is responsible for tracking and displaying the data from a 
+BC simulation. There are two classes, Analyzer which is used to read and 
+display stored data, and CreativeAnalyzer which extends Analyzer to allow 
+tracking and storing data.</p>
+<dl class="class">
+<dt id="pykaryote.utils.analysis.Analyzer">
+<em class="property">class </em><tt class="descclassname">pykaryote.utils.analysis.</tt><tt class="descname">Analyzer</tt><big>(</big><em>data_folders</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and plots data collected from a simulation.</p>
+<p>The Analyzer class defines methods for reading and plotting simulation 
+data. Data is read from the files created by a CreativeAnalyzer.</p>
+<p>src/analyze.py is a command line usable script to use Analyzer to display 
+stored data.</p>
+<p>Note that the various <tt class="docutils literal"><span class="pre">plot_...</span></tt> methods provided by Analyzer are
+functionally equivalent to a pylab <tt class="docutils literal"><span class="pre">plot([some</span> <span class="pre">data])</span></tt> command. 
+(although they do set their own title)</p>
+<dl class="docutils">
+<dt><em>Args</em>: <tt class="docutils literal"><span class="pre">data_folders</span> <span class="pre">(list)</span></tt>: A list of strings for the directory(s) </dt>
+<dd>containing the analysis data. Can be 1 simulations analyzer/ or 
+multiple ones (but with compatible config file)</dd>
+<dt><em>Data</em>:</dt>
+<dd><p class="first">The Analyzer provides access to the analysis data. This access is 
+provided through quick_read(data) and export_as_csv(data). The options 
+for data are:</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">fitness</span></tt> - Average fitness</li>
+<li><tt class="docutils literal"><span class="pre">genome_length</span></tt> - Average genome length</li>
+<li><tt class="docutils literal"><span class="pre">chemicals</span></tt> - Average amount of each chemical owned</li>
+<li><tt class="docutils literal"><span class="pre">time_spent</span></tt> - Breakdown of proportional time spent gathering, 
+moving, building</li>
+<li><tt class="docutils literal"><span class="pre">failed_builds</span></tt> - Moles of attempted-protein that were returned 
+because of a lack of resources to finish</li>
+<li><tt class="docutils literal"><span class="pre">complexes</span></tt> - Average amount of complexes, broken down by length</li>
+<li><tt class="docutils literal"><span class="pre">complex_diversity</span></tt> - Average number of unique complexes, 
+broken down by length</li>
+<li><tt class="docutils literal"><span class="pre">complexes_invented</span></tt> - Total number of complexes invented, 
+broken down by length</li>
+<li><tt class="docutils literal"><span class="pre">family_sizes</span></tt> - Average family size, broken down by length</li>
+<li><tt class="docutils literal"><span class="pre">family_lengths</span></tt> - Number of families, broken down by length</li>
+<li><tt class="docutils literal"><span class="pre">chemical_complexity</span></tt> - Complexity score of each chemical. See 
+<tt class="xref py py-meth docutils literal"><span class="pre">compute_chem_complexity()</span></tt> documentation for details</li>
+<li><tt class="docutils literal"><span class="pre">percent_functional</span></tt> - Percent of complexes in use that are 
+functional.
+See <tt class="xref py py-meth docutils literal"><span class="pre">percent_functional()</span></tt> for more details</li>
+<li><tt class="docutils literal"><span class="pre">component_percent_functional</span></tt> - Percent of components of functional
+complexes that are themselves functional.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;#&gt;ancestors</span></tt> where # is the number of generations back specified 
+by globals - Number of organisms contributing to the genome # 
+generations ahead</li>
+<li><tt class="docutils literal"><span class="pre">complexity</span></tt> - Complexity score of each organism. See 
+<a class="reference internal" href="#pykaryote.utils.analysis.compute_complexity" title="pykaryote.utils.analysis.compute_complexity"><tt class="xref py py-meth docutils literal"><span class="pre">compute_complexity()</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">irreducible_complexity</span></tt>- Irreducible complexity score of each 
+organism. See <a class="reference internal" href="#pykaryote.utils.analysis.compute_complexity" title="pykaryote.utils.analysis.compute_complexity"><tt class="xref py py-meth docutils literal"><span class="pre">compute_complexity()</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">num_distinct_complexes_current</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_distinct_complexes_current_functional</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_distinct_complexes_current_nonfunctional</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_distinct_complexes_ever</span></tt> - synonymous with <tt class="docutils literal"><span class="pre">complexes_invented</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_distinct_complexes_ever_functional</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_distinct_complexes_ever_nonfunctional</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_families_current</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_families_current_functional</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_families_current_nonfunctional</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_families_ever</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_families_ever_functional</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">num_families_ever_nonfunctional</span></tt></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.export_all_as_csv">
+<tt class="descname">export_all_as_csv</tt><big>(</big><em>output_file</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.export_all_as_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports all the analyzer data to a csv with headings. Note that for that 
+is separated by chemical number or complex length columns are created 
+for each chemical or length e.g. chemicals_0, chemicals_1,...</p>
+<p>All headings match the data variables discussed in the Analyzer class 
+documentation.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">output_file</span></tt> (str): The filename of the new csv data</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.export_varialble_as_csv">
+<tt class="descname">export_varialble_as_csv</tt><big>(</big><em>data</em>, <em>output_file</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.export_varialble_as_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts an analyzer data log to csv.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">data</span></tt> (str): the data file to read from.</p>
+<p><tt class="docutils literal"><span class="pre">output_file</span></tt> (str): The filename of the new csv data</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_ancestry">
+<tt class="descname">plot_ancestry</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_ancestry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the number of organisms that contribute to the gene pool a few
+generations ahead. How many controlled by <tt class="docutils literal"><span class="pre">track_ancestors</span></tt>.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/ancestry.png"><img alt="../../_images/ancestry.png" src="../../_images/ancestry.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_avg_time_spent">
+<tt class="descname">plot_avg_time_spent</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_avg_time_spent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average time spent on each type of action. The white section
+corresponds to the time spent switching modes in which no useful work
+is done.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/time_spent.png"><img alt="../../_images/time_spent.png" src="../../_images/time_spent.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_chemical_complexity">
+<tt class="descname">plot_chemical_complexity</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_chemical_complexity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average complexity value for each chemical</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/chemical_complexity.png"><img alt="../../_images/chemical_complexity.png" src="../../_images/chemical_complexity.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_chemicals">
+<tt class="descname">plot_chemicals</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_chemicals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average number of each chemical owned by organisms in each 
+generation</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/chemicals.png"><img alt="../../_images/chemicals.png" src="../../_images/chemicals.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_complex_diversity">
+<tt class="descname">plot_complex_diversity</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_complex_diversity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average number of distinct complexes of each length
+owned by an organism</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/complex_diversity.png"><img alt="../../_images/complex_diversity.png" src="../../_images/complex_diversity.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_complexes">
+<tt class="descname">plot_complexes</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_complexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average units of complexes owned by an organism, broken down
+by complex length.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/complexes.png"><img alt="../../_images/complexes.png" src="../../_images/complexes.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_complexity">
+<tt class="descname">plot_complexity</tt><big>(</big><em>breakdown=True</em>, <em>mass_mode=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_complexity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the complexity, averaging over all chemicals.
+Does not weight based on chemical amounts or effectiveness.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">breakdown</span></tt> (bool): For single runs, this plot can show regions 
+marking min, lower Q, average, upper Q, max. To disable this feature
+and plot only the average line, set breakdown to False</p>
+<p><tt class="docutils literal"><span class="pre">mass_mode</span></tt> (bool) - special options for mass_run&#8217;s plot. 
+Default: <tt class="docutils literal"><span class="pre">False</span></tt></p>
+<p><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</p>
+</div></blockquote>
+<a class="reference internal image-reference" href="../../_images/complexity.png"><img alt="../../_images/complexity.png" src="../../_images/complexity.png" style="width: 406.0px; height: 306.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_complexity_and_fitness">
+<tt class="descname">plot_complexity_and_fitness</tt><big>(</big><em>breakdown=True</em>, <em>mass_mode=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_complexity_and_fitness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots two graphs: one of fitness and one of complexity</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">breakdown</span></tt> (bool): For single runs, this plot can show regions 
+marking min, lower Q, average, upper Q, max. To disable this feature
+and plot only the average line, set breakdown to False</p>
+<p><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_component_percent_functional">
+<tt class="descname">plot_component_percent_functional</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_component_percent_functional" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the percent of components of complexes that are functional</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/comp_perc_func.png"><img alt="../../_images/comp_perc_func.png" src="../../_images/comp_perc_func.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_failed_builds">
+<tt class="descname">plot_failed_builds</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_failed_builds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average number of moles of attempted-protein that were 
+returned due to insufficient resources to finish.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_family_lengths">
+<tt class="descname">plot_family_lengths</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_family_lengths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the number of families of each length</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/fam_length.png"><img alt="../../_images/fam_length.png" src="../../_images/fam_length.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_family_sizes">
+<tt class="descname">plot_family_sizes</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_family_sizes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average size of families of each length</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/fam_size.png"><img alt="../../_images/fam_size.png" src="../../_images/fam_size.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_fitness">
+<tt class="descname">plot_fitness</tt><big>(</big><em>breakdown=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_fitness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average fitness</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">breakdown</span></tt> (bool): For single runs, this plot can show regions 
+marking min, lower Q, average, upper Q, max. To disable this feature
+and plot only the average line, set breakdown to False</p>
+<p><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</p>
+</div></blockquote>
+<a class="reference internal image-reference" href="../../_images/fitness.png"><img alt="../../_images/fitness.png" src="../../_images/fitness.png" style="width: 406.0px; height: 306.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_gen_time">
+<tt class="descname">plot_gen_time</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_gen_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the time taken by each generation.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_genome_length">
+<tt class="descname">plot_genome_length</tt><big>(</big><em>breakdown=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_genome_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the average genome length</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">breakdown</span></tt> (bool): For single runs, this plot can show regions 
+marking min, lower Q, average, upper Q, max. To disable this feature
+and plot only the average line, set breakdown to False</p>
+<p><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</p>
+</div></blockquote>
+<a class="reference internal image-reference" href="../../_images/genome.png"><img alt="../../_images/genome.png" src="../../_images/genome.png" style="width: 406.0px; height: 306.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_invented_complexes">
+<tt class="descname">plot_invented_complexes</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_invented_complexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the total number of complexes invented</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/invented_complexes.png"><img alt="../../_images/invented_complexes.png" src="../../_images/invented_complexes.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_num_distinct">
+<tt class="descname">plot_num_distinct</tt><big>(</big><em>comp_or_fam</em>, <em>timeframe='current'</em>, <em>functional=None</em>, <em>derivative=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_num_distinct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the number of complexes/families that currently/have ever
+existed, and may be restricted to non- or functional.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">comp_or_fam</span></tt> (str) either &#8220;complexes&#8221; or &#8220;families&#8221; 
+(only first letter necessary).</p>
+<p><tt class="docutils literal"><span class="pre">timeframe</span></tt> (str) either &#8220;current&#8221; or &#8220;ever&#8221;</p>
+<p><tt class="docutils literal"><span class="pre">functional</span></tt> whether to plot only functional rather than only 
+non-functional.  Both are printed if this is <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p><tt class="docutils literal"><span class="pre">derivative</span></tt> whether to plot the derivative.</p>
+<p><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_percent_functional">
+<tt class="descname">plot_percent_functional</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_percent_functional" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the percent of complexes that are functional</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">**kwargs</span></tt>: a list of keyword args that can be passed to the 
+plotting function</dd>
+</dl>
+<a class="reference internal image-reference" href="../../_images/percent_functional.png"><img alt="../../_images/percent_functional.png" src="../../_images/percent_functional.png" style="width: 400.0px; height: 300.0px;" /></a>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.plot_time_spent_in_gaussian">
+<tt class="descname">plot_time_spent_in_gaussian</tt><big>(</big><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.plot_time_spent_in_gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot how long each organism spent on each chemical.</p>
+<p>Creates a series of subplots where each bar corresponds to an
+the amount of time an organsim spent in each chemical gaussian.
+Each subplot in the series represents a single generation.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">data</span></tt> is a three dimentional array where::</dt>
+<dd><dl class="first last docutils">
+<dt>data[run_number, organism, gaussian_index] = number_of_codon_reads</dt>
+<dd>(number of codon reads while in that gaussian)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.quick_read">
+<tt class="descname">quick_read</tt><big>(</big><em>data</em>, <em>mode='standard'</em>, <em>ndmin=1</em>, <em>format='text'</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.quick_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads data as saved by the CreativeAnalyzer class.</p>
+<p>Reads from a simulation or batch of simulations.</p>
+<p>Average, mean, and standard deveation are calculated using the middle
+80%. Number of blanks uses the whole data set.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">data</span></tt> (str): the data file to read from.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">mode</span></tt> (str): The reading mode. Options are:</dt>
+<dd><ul class="first last">
+<li><p class="first"><tt class="docutils literal"><span class="pre">standard</span></tt> returns the mean of multiple runs</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">threshold</span></tt> returns the mean, standard deviation, and </dt>
+<dd><p class="first last">number of simulations which did not reach the threshold.
+Used to aggregate data specified in the [threshold-metrics]
+section of a simulation&#8217;s configuration file.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">split</span></tt> returns data from multiple runs separately</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">stddev</span></tt> retuns tuple (avg, stddev)</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">breakdown</span></tt> returns a tuple (min, lower_part, avg, </dt>
+<dd><p class="first last">upper_part, max)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">format</span></tt> (str): File format to expect data in. Either &#8216;text&#8217; or</dt>
+<dd>&#8216;binary&#8217;</dd>
+</dl>
+</div></blockquote>
+<p><em>Returns</em>:</p>
+<blockquote>
+<div>A numpy array
+<em>or</em>
+a tuple of arrays</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.save_all">
+<tt class="descname">save_all</tt><big>(</big><em>out_dir</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.save_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots and saves graphs of simulation data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.Analyzer.save_environment_drawing">
+<tt class="descname">save_environment_drawing</tt><big>(</big><em>out_dir</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.Analyzer.save_environment_drawing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws a picture of the chemical environment.</p>
+<p>This function does not use matplotlib.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pykaryote.utils.analysis.CreativeAnalyzer">
+<em class="property">class </em><tt class="descclassname">pykaryote.utils.analysis.</tt><tt class="descname">CreativeAnalyzer</tt><big>(</big><em>sim</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.CreativeAnalyzer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves data from a running simulation.</p>
+<p>Data, in the form of text files containing numpy arrays, are saved to 
+an &#8216;analyzer&#8217; directory.</p>
+<dl class="docutils">
+<dt><em>Args</em>:</dt>
+<dd><tt class="docutils literal"><span class="pre">sim</span></tt>: The simulation for which data will be recorded.</dd>
+</dl>
+<dl class="method">
+<dt id="pykaryote.utils.analysis.CreativeAnalyzer.close_all">
+<tt class="descname">close_all</tt><big>(</big><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.CreativeAnalyzer.close_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes metric data files.</p>
+<p>Also writes threshold metric data files.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.CreativeAnalyzer.quick_append">
+<tt class="descname">quick_append</tt><big>(</big><em>metric</em>, <em>new_data</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.CreativeAnalyzer.quick_append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends to the analyzer data logs.</p>
+<p><em>Args</em>:</p>
+<blockquote>
+<div><p><tt class="docutils literal"><span class="pre">metric</span></tt> (str): the name of the metric being recorded</p>
+<p><tt class="docutils literal"><span class="pre">new_data</span></tt>: The new data to add</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.CreativeAnalyzer.save_as_data">
+<tt class="descname">save_as_data</tt><big>(</big><em>ndarray</em>, <em>name</em>, <em>format='text'</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.CreativeAnalyzer.save_as_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the given array as a datafile with name <tt class="docutils literal"><span class="pre">name</span></tt>.</p>
+<p><tt class="docutils literal"><span class="pre">format</span></tt> (str): either &#8216;text&#8217; or &#8216;binary&#8217;</p>
+<p>If it is a 1 or 2d array, save in text format.
+If it has three or more dimensions, save in .np binary format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pykaryote.utils.analysis.CreativeAnalyzer.update">
+<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.CreativeAnalyzer.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the Analyzer with data from a new generation</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pykaryote.utils.analysis.compute_complexity">
+<tt class="descclassname">pykaryote.utils.analysis.</tt><tt class="descname">compute_complexity</tt><big>(</big><em>org</em><big>)</big><a class="headerlink" href="#pykaryote.utils.analysis.compute_complexity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes a score for the complexity and irreducible complexity of the 
+organism based on the complexity level of each chemical function.</p>
+<p>More information on computing complexities can be found in <a class="reference internal" href="#complexity"><em>Computing Complexity</em></a></p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Analysis</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#data-collection">Data Collection</a></li>
+<li><a class="reference internal" href="#computing-complexity">Computing Complexity</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pykaryote.utils.analysis">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../petri.html"
+                        title="previous chapter">Petri</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="globals.html"
+                        title="next chapter">Globals</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/ref/utils/analysis.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="globals.html" title="Globals"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../petri.html" title="Petri"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Pykaryote 1.1.0d documentation</a> &raquo;</li>
+          <li><a href="../modules.html" >Modules</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011 - 2013, James Lamine and Ethan Van Andel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

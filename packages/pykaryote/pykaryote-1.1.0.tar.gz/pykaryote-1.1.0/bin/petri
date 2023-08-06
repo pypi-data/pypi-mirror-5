@@ -1,0 +1,175 @@
+#!/usr/bin/env python
+import argparse
+import ConfigParser
+import argparse
+import os
+import os.path
+from pkg_resources import resource_stream, resource_filename
+from mpi4py import MPI
+from pykaryote.petri import tags
+
+CONFIG_FILE = 'petri_settings.cfg'
+
+def graph(args):
+    """Graphs a partially completed comparison.
+
+    To be used in case a comparison or is killed before it can graph.
+    Run with the 'graph' subcommand from the command line.
+    """
+    from pykaryote.petri.worker import Worker
+    w = Worker(args.data)
+    values = None
+    num_runs = None
+    w.graph_comparison(args.name, clean=not args.keep_files)
+
+def run(args):
+    """Runs a comparison.
+
+    Missing command line options will be loaded from the global settings.cfg
+    configuration file.
+    Run with the 'run' subcommand from the command line.
+    """
+    mpi_run(data_dir=args.data, cmp_cfg=args.cmp, sim_cfg=args.sim,
+            name=args.name, runs=args.runs, clean=not args.keep_files)
+
+def batch(args):
+    """Runs several comparisons in a batch.
+
+    Missing command line options will be loaded from the global settings.cfg
+    configuration file.
+    Run with the 'batch' subcommand from the command line.
+    """
+    mpi_run(batch=args.config, data_dir=args.data, runs=args.runs,
+            clean=not args.keep_files)
+
+def mpi_run(data_dir=None, cmp_cfg=None, sim_cfg=None, name=None, runs=None,
+            batch=None, clean=True):
+    """Run comparison(s) over MPI.
+
+    MPI jobs are run using a master/worker model. The processor with id 0 is 
+    the master thread. All other processors are workers. The master creates and
+    sends simulation jobs to the workers. It also gathers and reports status.
+
+    Workers wait for jobs. When running a job, a worker will periodically
+    report status back to the master thread.
+    """
+    comm = MPI.COMM_WORLD
+    MPI_myID = comm.Get_rank()
+
+    if comm.Get_size() < 2:
+        command = 'run' if batch is None else 'batch'
+        print 'error: at least two processors required'
+        print 'try: mpirun -np 2 petri {}'.format(command)
+
+    elif MPI_myID == tags.MASTER_ID:
+        # master process
+        from pykaryote.petri.master import Master
+
+        num_processors = comm.Get_size()
+        master_name = MPI.Get_processor_name()
+
+        print 'master running on %s' % master_name
+        print '%d processors found' % num_processors
+
+        m = Master(data_dir)
+        if batch is None:
+            m.add_comparison(cmp_cfg, sim_cfg, name, runs, clean=clean)
+        else:
+            m.add_comparisons(batch, num_runs=runs, clean=clean)
+        m.wait_and_log()
+        m.shutdown()
+    else:
+        # worker process
+        from pykaryote.petri.worker import Worker
+        w = Worker(data_dir)
+        w.run()
+
+def parse_config_path(path):
+    """Parses paths from a config file.
+
+    '~' is expanded to an absoloute path, and '$config' is expanded to 
+    point to resources in pykaryote's configs directory.
+    """
+    if path[0] == '~':
+        return os.path.expanduser(path)
+    elif path[:8] == '$config/':
+        return resource_filename('pykaryote', os.path.join('configs',
+                                 path[8:]))
+    else:
+        return path
+
+if __name__ == '__main__':
+    # load default options from config file
+    # override with config file from the current directory or user's home
+    # directory if either config files exist
+    config = ConfigParser.RawConfigParser()
+    settings_file = resource_stream('pykaryote.petri', os.path.join('config',
+                                    CONFIG_FILE))
+    config.readfp(settings_file)
+    config.read([os.path.join(os.curdir, CONFIG_FILE),
+                os.path.join(os.path.expanduser("~"), '.' + CONFIG_FILE)])
+    output_data_dir = config.get('settings', 'output_data_dir')
+    comparison_config = config.get('default-comparison', 'comparison_config')
+    sim_config = config.get('default-comparison', 'simulation_config')
+    comparison_name = config.get('default-comparison', 'comparison_name')
+    num_runs = config.getint('default-comparison', 'num_runs')
+    output_data_dir = parse_config_path(output_data_dir)
+    comparison_config = parse_config_path(comparison_config)
+    sim_config = parse_config_path(sim_config)
+
+    # parse command line arguments
+    parser = argparse.ArgumentParser(description='run batches of pykaryote '\
+                                     'simulations using MPI',
+                                    epilog='run subcommands with \'-h\' for '\
+                                    'additional help')
+    subcommands = parser.add_subparsers(title='subcommands')
+    graph_command = subcommands.add_parser('graph',
+                                           help='graph a partially completed '\
+                                           'comparison')
+    graph_command.add_argument('name', help='the name of the comparison to '\
+                               'graph', default=comparison_name)
+    graph_command.add_argument('-d', '--data', default=output_data_dir,
+                               help='the directory in which comparisons are '\
+                               'stored')
+    graph_command.add_argument('-k','--keep-files', action='store_true',
+                             help='Do not delete simulation data after '\
+                             'graphing')
+    graph_command.set_defaults(func=graph)
+    batch_command = subcommands.add_parser('batch',
+                                           help='runs a batch of comparisons')
+    batch_command.add_argument('config',
+                               help='the configuration file describing a '\
+                               'batch of comparisons to run')
+    batch_command.add_argument('-d', '--data', default=output_data_dir,
+                                help='the directory in which comparisons are '\
+                                'stored')
+    batch_command.add_argument('-r', '--runs', default=None, type=int,
+                               help='the number of times each simulation is '\
+                               'run')
+    batch_command.add_argument('-k','--keep-files', action='store_true',
+                             help='Do not delete simulation data after '\
+                             'graphing')
+    batch_command.set_defaults(func=batch)
+    run_command = subcommands.add_parser('run', help='runs a single '\
+                                         'comparison')
+    run_command.add_argument('-s', '--sim', default=sim_config,
+                             help='the template simulation configuration '\
+                             'file for the comparison')
+    run_command.add_argument('-c', '--cmp', default=comparison_config,
+                             help='the configuration file for the comparison')
+    run_command.add_argument('-n', '--name', default=comparison_name,
+                             help='the name of the comparison')
+    run_command.add_argument('-r', '--runs', default=num_runs, type=int,
+                             help='the number of times each simulation is run')
+    run_command.add_argument('-d', '--data', default=output_data_dir,
+                             help='the directory in which to store finished'\
+                             'comparisons')
+    run_command.add_argument('-k','--keep-files', action='store_true',
+                             help='Do not delete simulation data after '\
+                             'graphing')
+    run_command.set_defaults(func=run)
+    args = parser.parse_args()
+    if not os.path.exists(args.data):
+        os.makedirs(args.data)
+    # run the appropriate subcommand
+    args.func(args)
