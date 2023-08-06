@@ -1,0 +1,101 @@
+                                            PyMTGP64
+
+This Python module is an interface to MTGP, the Mersenne Twister for Graphic Processors (mtgp64) 
+by Mutsuo Saito and Makoto Matsumoto (Hiroshima University).
+For more details see http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MTGP/ and the reference below.
+
+The module provides random generators for uniform, Normal and Poisson distributions. 
+Only 64-bit floating numbers are generated.
+The random generator for the Poisson distribution exists in two forms. In the first one, 
+the distribution is computed for a single value of the characteristic mean 'lambda'.  
+In the second form, each generated random number can have is own mean value 'lambda'. 
+This form is particularly suited for generating Photon noise for a large image.  
+
+The module implements and provides the following methods:
+* init(seed) : Initialize the module
+* uniform(n) : Generates n uniformly distributed random numbers in the real interval ]0,1[
+* normal(n) : Generates two random series of size n Normally distributed
+* poisson(lambda,n) : Generates a Poisson distribution of mean lambda and size n\n \
+* poisson_multlamb(lambda) : As poisson() with multiple values of lambda (one for each generated random number). 
+* free() : Free the state of the pseudo-random number generator
+* seed(value) : Initialize the seed value
+* block_seeds(seeds) : Initialize the seed associated with each block
+* block_num() : Return the number of blocks
+* device() : Return the device index
+
+Reference: Mutsuo Saito, Makoto Matsumoto, Variants of Mersenne Twister Suitable for Graphic Processors,
+Transactions on Mathematical Software, 39 (2013), pp. 12:1--12:20, DOI:10.1145/2427023.24270249
+
+                  INSTALLATION
+
+The compilation requires CUDA Toolkit (version 5.0 or later).
+Edit appropriatley the Makefile. You must in particular define the path 
+where CUDA libraries and header files are installed (CUDAPATH).
+You may also want to tune the constants that are defined in mtgp64-const.h
+
+To compile the module type : 
+    make all
+and to install it type:
+    make install
+or
+    python setup.py install --home=$HOME/
+Depending on your system, this will install the module in $HOME/lib/python or in $HOME/lib64/python
+You can also install it as root for all the users, in that case type:
+    python setup.py install
+
+You can finally do a complete test by typping:
+    make test
+This will run the script named pymtgp64_test.py
+
+
+                     LICENCES
+
+Copyright (c) 2013 by R. Samadi (LESIA - Observatoire de Paris)
+
+
+This is a free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+ 
+This software is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with this code.  If not, see <http://www.gnu.org/licenses/>.
+
+
+Copyright (c) 2009, 2010 Mutsuo Saito, Makoto Matsumoto and Hiroshima
+University.
+Copyright (c) 2011, 2012 Mutsuo Saito, Makoto Matsumoto, Hiroshima
+University and University of Tokyo.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of the Hiroshima University, The Uinversity
+      of Tokyo nor the names of its contributors may be used to
+      endorse or promote products derived from this software without
+      specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
