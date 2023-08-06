@@ -1,0 +1,89 @@
+Metadata-Version: 1.1
+Name: cs.bodysection
+Version: 1.4
+Summary: Extra view to add section name for Plone. Specially useful when having INavigationRoot based sites (like ones with LinguaPlone
+Home-page: http://code.codesyntax.com/private/cs.bodysection
+Author: Mikel Larreategi
+Author-email: mlarreategi@codesyntax.com
+License: GPL
+Description: ============
+        Introduction
+        ============
+        
+        After the INavigationRoot fixes in previous versions of Plone, if you install
+        LinguaPlone 4.x in Plone 4.x you will end having section-es, section-en, and so
+        on in your site.
+        
+        That's because LinguaPlone 4.x adds root folder for each language in your site 
+        and sets them INavigationRoot interface.
+        
+        In some projects you need content-based section identifiers for your body to get 
+        them styled property by your designer.
+        
+        That's what you get with this small products. It just have a browser view with 
+        one method. Add it to your main_template in this way::
+        
+          <body tal:define="isRTL portal_state/is_rtl;
+                            sl python:plone_view.have_portlets('plone.leftcolumn', view); 
+                            sr python:plone_view.have_portlets('plone.rightcolumn', view);
+                            root_content context/@@navigation_root_content;
+                            body_content_class root_content/section_content_body_class;
+                            body_class python:plone_view.bodyClass(template, view) + ' ' + body_content_class;
+                            sunburst_view python:context.restrictedTraverse('@@sunburstview')"
+        
+        In this way your body tag will have an extra content-section-your-items-id class
+        and yet preserve the section-es (or the one for your language).
+        
+        Useful? It is useful for us :)
+        
+        Use 
+        ====
+        
+        Add it to your buildout::
+        
+         eggs = 
+              ...
+              cs.bodysection
+              
+        And run buildout. No need to install it. 
+        
+        Changelog
+        =========
+        
+        1.3 (2010/12/20)
+        ----------------
+        
+        - fix to add just first level classname
+          [erral]
+        
+        1.2 (2010/12/01)
+        ----------------
+        - remove the method to check if the context is the default
+          page of a INavigationRoot element. This product is not the
+          place for that
+          [erral]
+        
+        
+        1.1 (2010/11/25)
+        --------------------
+        - added a new method to the view to check whether
+          the current context item is a INavigationRoot item
+          or a default-page of a INavigationRoot item
+          [erral]
+        
+        
+        1.0.1 (2010/11/09)
+        --------------------
+        - fix documentation
+          [erral]
+        
+        
+        1.0 (2010/11/08)
+        -------------------
+        
+        - Initial release
+          [erral]
+        
+Platform: UNKNOWN
+Classifier: Framework :: Plone
+Classifier: Programming Language :: Python
