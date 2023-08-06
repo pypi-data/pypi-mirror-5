@@ -1,0 +1,161 @@
+Introduction
+============
+
+Lapels remaps reads aligned to the in silico genome back to the reference 
+coordinate and annotates variants.
+
+Two files are taken as input:
+    (1) a MOD file that is used to generate the in silico genome and
+    (2) a BAM file that contains the in silico genome alignments.
+    
+Lapels will generate a new BAM file with corrected read positions, adjusted 
+cigar strings, and annotated tags of variants (eg. SNPs, Insertions, and 
+Deletions).  
+
+
+For detail usage, please type after installation:
+
+    pylapels -h
+
+
+
+System Requirements
+===================
+Lapels and its modules have been tested under Python 2.6.5 and 2.7
+
+Several python modules are required to run the code.
+
+* [pysam >= 0.74]
+
+As a wrapper of Samtools, the pysam module facilitates the manipulation of 
+SAM/BAM files in Python. You are recommended to use the latest package,
+which can be downloaded from:
+http://code.google.com/p/pysam/
+
+If you are using the previous pysam (v0.6), you should notice that it has been
+reported a bug in dealing with integer tags. 
+(http://code.google.com/p/pysam/issues/detail?id=101)
+
+
+* [argparse >= 1.2]
+
+The argparse module is used to parse the arguments of the module. It has been 
+maintained in Python Standard Library since Python 2.7. It can be found in:
+http://code.google.com/p/argparse/ .
+
+
+* others
+Reads that have multiple alignments are required to have tag HI to specify
+the hit index. Recent aligners (eg. bowtie >= 0.12.8 and tophat >= 1.4.0) will 
+create this tag. It is recommended to use a recent version for read alignment.
+
+
+
+Installation
+============
+
+It is recommended to use easy-install 
+(http://packages.python.org/distribute/easy_install.html) for the installation.
+
+Users need to download the tarball of source from
+
+    http://code.google.com/p/lapels/
+    
+and then type:
+
+    easy_install lapels-<version>.tar.gz
+    
+By default, the package will be installed under the directory of Python
+dist-packages, and the executable of pylapels can be found under 
+/usr/local/bin/ . 
+
+
+If you don't have permission to install it in the system-owned directory, you 
+can install it in locally.
+
+
+For easy_install >= 0.6.11, You are recommended to run one command to install 
+the package locally:
+    
+    easy_install --user lapels-<version>.tar.gz
+
+
+Otherwise, please follow the next steps:
+
+(1) Create a local package directory for python:
+
+    mkdir -p <local_lib_dir>
+    mkdir -p <local_bin_dir>
+
+(2) Add the absolute path of <local_dir> to the environment variable PYTHONPATH:
+      
+    export PYTHONPATH=$PYTHONPATH:<local_lib_dir>
+    
+(3) Use easy_install to install the package in that directory:
+    
+    easy_install -d <local_lib_dir> -s <local_bin_dir> lapels-<version>.tar.gz
+
+ 
+For example, if you want to install the package under the home directory in 
+a Linux system, you can type:
+
+    mkdir -p /home/$USER/.local/lib/python/dist-packages/
+    mkdir -p /home/$USER/.local/bin/
+    
+    export PYTHONPATH=$PYTHONPATH:/home/$USER/.local/lib/python/dist-packages/
+    
+    easy_install -d /home/$USER/.local/lib/python/dist-packages/ -s /home/$USER/.local/bin/ lapels-<version>.tar.gz
+
+After installation, the executable files will be located in 
+    /home/$USER/.local/bin . 
+
+
+
+ 
+ 
+Example
+=======
+
+Examples can be downloaded from
+
+    http://code.google.com/p/lapels/
+    
+To run on the example files, type:
+
+    pylapels examples/example.mod examples/example.bam
+    
+
+The following is the content in the input and output BAM file in the example
+(the sequence and mapping quality are omitted).
+
+input:
+    UNC9-SN296_0254:3:1305:8580:174183#TGACCA   163 chr2    6361064 255 100M    =   6361092 128 <SEQ>    <MAPQ>    NM:i:1  NH:i:1
+    UNC9-SN296_0254:3:1305:8580:174183#TGACCA   83  chr2    6361092 255 100M    =   6361064 -128    <SEQ>    <MAPQ>    NM:i:1  NH:i:1
+
+output:
+    UNC9-SN296_0254:3:1305:8580:174183#TGACCA   163 chr2    6363700 255 35M7D63M1I1M    =   6363728 134 <SEQ>    <MAPQ>    NH:i:1  OC:Z:100M   OM:i:1  d0:i:7  i0:i:1  s0:i:1
+    UNC9-SN296_0254:3:1305:8580:174183#TGACCA   83  chr2    6363728 255 7M7D63M1I29M    =   6363700 -134    <SEQ>    <MAPQ>    NH:i:1  OC:Z:100M   OM:i:1  d0:i:7  i0:i:1  s0:i:1
+
+
+In the output, read positions and cigar strings are in the reference coordinate. 
+The length of each read(template) and the mate position (if any) has been 
+updated. 
+
+New tags have been added for each read. The default tags and their meaning are 
+shown below:
+
+    OC : the old cigar in the alignment of the in silico genome 
+    OM : the old NM (edit distance to the in silico sequence)
+    s0 : the number of observed SNP positions having the in silico alleles
+    i0 : the number of bases in the observed insertions having in silico alleles
+    d0 : the number of bases in the observed deletions having in silico alleles
+
+
+
+Auxiliary Tools
+===============
+    vcf2mod      convert an VCF file into a MOD file
+    insilico     construct the pseudo genome from a MOD file and a reference FASTA file
+    fixmate      fix the mate information (a replacement of samtools fixmate)
+    
+Please refer to their help information (-h) for detail usage.
