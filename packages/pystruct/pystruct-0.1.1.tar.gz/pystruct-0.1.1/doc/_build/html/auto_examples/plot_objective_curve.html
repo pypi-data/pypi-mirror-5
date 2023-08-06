@@ -1,0 +1,167 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Plotting the objective and constraint caching in 1-slack SSVM &mdash; pystruct 0.1-alpha documentation</title>
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1-alpha',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pystruct 0.1-alpha documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Efficient exact learning of 1-slack SSVMs" href="plot_exact_learning.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="latent_svm.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="plot_exact_learning.html" title="Efficient exact learning of 1-slack SSVMs"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="latent_svm.html" title="&lt;no title&gt;"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pystruct 0.1-alpha documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="plotting-the-objective-and-constraint-caching-in-1-slack-ssvm">
+<span id="plot-objective-curve-py"></span><h1>Plotting the objective and constraint caching in 1-slack SSVM<a class="headerlink" href="#plotting-the-objective-and-constraint-caching-in-1-slack-ssvm" title="Permalink to this headline">¶</a></h1>
+<p>This example illustrates the use of <tt class="docutils literal"><span class="pre">plot_learning.py</span></tt>, which can be used to
+analyze the learning of models.
+The file can be call directly as executable or imported as done here.</p>
+<p>The task is the same as in plot_directional_grid.py.</p>
+<p>Red circles show the primal objective when inference was run.  The green curve
+shows the approximated primal objective when finding constraints from the
+cache.
+The blue shows the objective restricted to the working set. The blue curve is
+guaranteed to increase in cutting plane training in each step, and provides a
+lower bound on the primal objective.</p>
+<p>In contrast to the caching proposed in [1], we do not produce constraints from
+the cache as long as possible. A heuristic is used to see whether the cached
+constraint is strong enough.</p>
+<p>Here training is stopped when the green curve goes below the blue curve.
+This means no strong enough constraint could be found. The fact that the
+primal objective can go below the cutting plane objective is a result of
+approximate inference. The real most violating constraint could not be found,
+leading to underestimating the primal objective.</p>
+<p>See plot_exact_learning.py for a way to deal with this.</p>
+<img alt="../_images/plot_objective_curve_1.png" class="align-center" src="../_images/plot_objective_curve_1.png" />
+<p><strong>Script output</strong>:</p>
+<div class="highlight-python"><pre>Training 1-slack dual structural SVM
+new constraint too weak.
+new constraint too weak.
+new constraint too weak.
+new constraint too weak.
+no additional constraints
+OneSlackSSVM(C=1, break_on_bad=False, cache_tol=auto, check_constraints=True,
+       inactive_threshold=1e-10, inactive_window=50, inference_cache=100,
+       logger=None, max_iter=1000,
+       model=DirectionalGridCRF(n_states: 3, inference_method: qpbo),
+       n_jobs=-1, positive_constraint=None, show_loss_every=10,
+       switch_to=None, tol=0.1, verbose=0)
+Iterations: 192
+Objective: 502.445839
+Gap: -19.767398</pre>
+</div>
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_objective_curve.py"><tt class="xref download docutils literal"><span class="pre">plot_objective_curve.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pystruct.models</span> <span class="kn">import</span> <span class="n">DirectionalGridCRF</span>
+<span class="kn">import</span> <span class="nn">pystruct.learners</span> <span class="kn">as</span> <span class="nn">ssvm</span>
+<span class="kn">import</span> <span class="nn">pystruct.toy_datasets</span> <span class="kn">as</span> <span class="nn">toy</span>
+<span class="kn">from</span> <span class="nn">pystruct.plot_learning</span> <span class="kn">import</span> <span class="n">plot_learning</span>
+
+
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">toy</span><span class="o">.</span><span class="n">generate_blocks_multinomial</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">n_labels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><a href="http://docs.scipy.org/doc/numpy-1.6.0/reference/generated/numpy.unique.html#numpy.unique"><span class="n">np</span><span class="o">.</span><span class="n">unique</span></a><span class="p">(</span><span class="n">Y</span><span class="p">))</span>
+<span class="n">crf</span> <span class="o">=</span> <span class="n">DirectionalGridCRF</span><span class="p">(</span><span class="n">n_states</span><span class="o">=</span><span class="n">n_labels</span><span class="p">,</span> <span class="n">inference_method</span><span class="o">=</span><span class="s">&quot;qpbo&quot;</span><span class="p">,</span>
+                         <span class="n">neighborhood</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">clf</span> <span class="o">=</span> <span class="n">ssvm</span><span class="o">.</span><span class="n">OneSlackSSVM</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">crf</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">check_constraints</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">inference_cache</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                        <span class="n">inactive_window</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">,</span> <span class="n">show_loss_every</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+
+<span class="n">plot_learning</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Total running time of the example:</strong>  19.08 seconds</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="latent_svm.html"
+                        title="previous chapter">&lt;no title&gt;</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_exact_learning.html"
+                        title="next chapter">Efficient exact learning of 1-slack SSVMs</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="plot_exact_learning.html" title="Efficient exact learning of 1-slack SSVMs"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="latent_svm.html" title="&lt;no title&gt;"
+             >previous</a> |</li>
+        <li><a href="../index.html">pystruct 0.1-alpha documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Andreas Mueller.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+
+
+.. _plot_grid_crf.py:
+
+
+==================================
+Learning interactions on a 2d grid
+==================================
+Simple pairwise model with arbitrary interactions on a 4-connected grid.
+The inputs contain a cross pattern with a separate state for the center.
+The crosses are placed randomly in the image and noise is added.
+
+The center state is not encoded in the input, so that the task can not be
+solved without pairwise interactions.
+
+
+
+.. rst-class:: horizontal
+
+
+    *
+
+      .. image:: images/plot_grid_crf_2.png
+            :scale: 47
+
+    *
+
+      .. image:: images/plot_grid_crf_1.png
+            :scale: 47
+
+
+**Script output**::
+
+  Training 1-slack dual structural SVM
+  new constraint too weak.
+  new constraint too weak.
+  new constraint too weak.
+  new constraint too weak.
+  no additional constraints
+  overall accuracy (training set): 0.975309
+
+
+
+**Python source code:** :download:`plot_grid_crf.py <plot_grid_crf.py>`
+
+.. literalinclude:: plot_grid_crf.py
+    :lines: 12-
+
+**Total running time of the example:**  44.55 seconds
+    
