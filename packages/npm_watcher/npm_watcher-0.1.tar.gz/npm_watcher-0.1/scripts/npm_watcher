@@ -1,0 +1,65 @@
+#! /usr/bin/env python
+import subprocess
+
+import time
+import signal
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+import re
+import sys
+import os.path
+
+
+class PackageEventHandler(FileSystemEventHandler):
+    path = ''
+
+    def __init__(self, path):
+        self.path = os.path.abspath(path)
+
+    def on_modified(self, event):
+        super(PackageEventHandler, self).on_modified(event)
+        self.run_install(event)
+
+    def run_install(self, event):
+        if not event.is_directory and re.match('.*package\.json$', event.src_path):
+            subprocess.call('npm install', cwd=self.path, shell=True)
+
+
+def watch(path):
+    event_handler = PackageEventHandler(path)
+    observer = Observer()
+    observer.schedule(event_handler, path)
+
+    print '\nwatching...'
+
+    observer.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+
+    observer.join()
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Requires a app path")
+        exit()
+
+    path = sys.argv[1]
+
+    if not re.match('/$', path):
+        path += '/'
+
+    if not os.path.exists(path + 'package.json'):
+        print ('Could not find package.json file')
+        exit()
+
+    watch(path)
+
+
+if __name__ == "__main__":
+    main()
+
