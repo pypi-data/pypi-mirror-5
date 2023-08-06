@@ -1,0 +1,31 @@
+Object do (
+    eval = method(code, context,
+        Parser parse(code) eval(context ifNone(return Root))
+    )
+
+    list = method(
+        if (call message args len == 1) then (
+            return (List clone(call message arg(0)))
+        ) else (
+            return (List clone(call message argsEvaluatedIn(call sender)))
+        )
+    )
+
+    str = method(
+        args = call message args
+        String clone(if(args, args at(0), ""))
+    )
+
+    range = method(Range clone(call message argsEvaluatedIn(call sender)))
+
+    with = block(
+        obj = call message arg(0, call sender)
+        res = call message arg(1, call sender)
+        obj close
+        res
+    )
+
+    open = block(filename,
+        return File clone open(filename)
+    )
+)
