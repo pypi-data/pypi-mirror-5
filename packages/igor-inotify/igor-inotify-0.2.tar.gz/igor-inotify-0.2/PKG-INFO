@@ -1,0 +1,60 @@
+Metadata-Version: 1.1
+Name: igor-inotify
+Version: 0.2
+Summary: inotify based managment system
+Home-page: http://code.pocketnix.org/hammerhead/file/tip
+Author: Da_Blitz
+Author-email: code@pocketnix.org
+License: MIT BSD
+Download-URL: http://code.pocketnix.org/igor/archive/tip.tar.bz2
+Description: ======
+         Igor
+        ======
+        A Runner/Manager of plugins that perform work in response to filesystem events
+        
+        The intended usage of this is to manage creation/deletion of containers by symlinking into a 'containers-enabled'
+        directory
+        
+        Starting the App
+        ----------------
+        Igor is relativly simple and in most cases cna be run without arguments. -v can be specified multiple times
+        to increase the verbosity of logging to stdout and -c can be used to override the default config file
+        
+        example: ::
+        
+            $ igor
+        
+        igor also understand/can override the default config dirs with the 2 following environment variables
+        
+         * IGOR_CONFIG_DIR: The directory to look for config files in
+         * IGOR_CONFIG: The full path to igor's config file. If this is not specified, igor looks for 'igor.conf'
+           in IGOR_CONFIG_DIR
+        
+        To get a list of all possible environment variables that can be set, use the following command::
+        
+            $ python -m igor.conts
+        
+        
+        Plugins
+        --------
+        Plugins are defined in a config file ending in \*.conf in the IGOR_CONFIG_DIR. These files are a yaml file
+        with at least 2 keys:
+        
+         * name: The name of the plugin, mainly used for logging
+         * plugin: The path to the plugin in the form path/to/module/on/the/filesystem[:name of the setup function]
+           where the name of the setup function is optional and defaults to 'setup'
+        
+        In a plugin there exists a single setup function that takes 3 arguments, a config, a logger and a way to 
+        generate inotify instances
+        
+         * config: The Yaml config file that defines this plugin as python objects including the 'name' and 'plugin' as 
+           defined above. any extra keys in the config file automatically get passed in via config.
+         * logger: logging.getLogger instance that has been set up for this plugin with the correct logging policy applied
+         * inotify: Takes a callable and returns a butter.inotify.Inotify instance that allows the adding of watches
+           (listening for events is done by igor). The callable provided is called on each inotify event and is given a 
+           butter.inotify.InotifyEvent object
+        
+        for an example of how this works, take a look at 'inotify.py' and 'inotify.conf' in example_fs
+        
+Keywords: inotify linux managment
+Platform: UNKNOWN
