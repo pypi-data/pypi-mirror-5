@@ -1,0 +1,1 @@
+## Price plugin for django-cms
