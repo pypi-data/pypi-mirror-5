@@ -1,0 +1,38 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="collective.behavior.localskin">
+
+    <i18n:registerTranslations directory="locales" />
+
+    <include package="plone.behavior" file="meta.zcml" />
+    <include package="plone.app.dexterity" />
+    <include package="collective.behavior.localregistry" />
+
+    <plone:behavior
+        title="Local skin theme"
+        description="Dexterity behavior to enable a local skin theme."
+        provides=".behavior.ILocalSkin"
+        factory=".behavior.LocalSkin"
+        for="collective.behavior.localregistry.behavior.ILocalRegistry"
+        />
+
+    <adapter
+        for=".behavior.ILocalRegistryDependentFields"
+        provides="plone.autoform.interfaces.IFormFieldProvider"
+        factory=".behavior.getLocalSkinFormFieldProvider"
+        />
+
+    <utility
+        provides="zope.schema.interfaces.IVocabularyFactory"
+        component=".behavior.getSkinNames"
+        name="collective.behavior.localskin.vocabularies.skinnames"
+        />
+
+    <subscriber
+        for="ZPublisher.interfaces.IPubAfterTraversal"
+        handler=".behavior.change_skin"
+        />
+
+</configure>
