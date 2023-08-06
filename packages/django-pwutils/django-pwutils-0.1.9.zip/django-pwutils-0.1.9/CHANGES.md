@@ -1,0 +1,35 @@
+django-pwutils
+===================
+
+0.1.9 [2013-08-09]
+--------------------
+
+* patch linklockfile to always get unique name
+
+0.1.8 [2013-07-25]
+--------------------
+
+* use lockfile from separate app
+
+0.1.7 [2013-06-21]
+--------------------
+
+* log message in gen_sphinx_data command
+* do not require SPHINX_PORT setting
+
+* TODO remove search stuff from this app
+
+0.1.6 [2013-05-28]
+-------------------------
+
+* added more tests
+* require admin-tools>0.5.1
+* update requirements for tests
+* added predefined settings for jenkins and tests
+* added settings for devel
+
+0.1.5
+------
+
+* use only timezone aware dates
+
