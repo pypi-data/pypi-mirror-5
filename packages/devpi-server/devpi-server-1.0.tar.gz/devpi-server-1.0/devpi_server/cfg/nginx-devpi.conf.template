@@ -1,0 +1,15 @@
+server {
+    server_name %(outside_host)s;   
+    listen %(outside_port)s;
+    gzip             on;
+    gzip_min_length  2000;
+    gzip_proxied     any;
+    gzip_types       text/html application/json; 
+
+    root %(serverdir)s;  # arbitrary for now
+    location / {
+        proxy_pass http://localhost:%(port)s;
+        proxy_set_header  X-outside-url $scheme://$host;
+        proxy_set_header  X-Real-IP $remote_addr;
+    }   
+} 
