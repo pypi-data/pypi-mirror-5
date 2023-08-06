@@ -1,0 +1,97 @@
+Metadata-Version: 1.1
+Name: xbob.sox
+Version: 1.1.0
+Summary: Audio reader and writer using sox for bob and python
+Home-page: http://pypi.python.org/pypi/xbob.sox
+Author: Elie Khoury
+Author-email: elie.khoury@idiap.ch
+License: GPLv3
+Description: =========================
+         Python Bindings for Sox
+        =========================
+        
+        This package is a simple Python wrapper to read and write functionalities in Sox <http://sox.sourceforge.net>.
+        The github version can be found here: https://github.com/bioidiap/xbob.sox
+        
+        Installation
+        ------------
+        
+        You can just add a dependence for ``xbob.sox`` on your ``setup.py`` to
+        automatically download and have this package available at your satellite
+        package. This works well if Bob is installed centrally at your machine.
+        
+        Otherwise, you will need to tell ``buildout`` how to build the package locally
+        and how to find Bob. For that, just add a recipe to your buildout that will
+        fetch the package and compile it locally, setting the buildout variable
+        ``prefixes`` to where Bob is installed (a build directory will also work). For
+        example::
+        
+          [buildout]
+          parts = xbob.sox <other parts here...>
+          prefixes = /Users/elie/work/bob/build/debug
+          ...
+        
+          [xbob.sox]
+          recipe = xbob.buildout:develop
+        
+          ...
+        
+        Development
+        -----------
+        
+        To develop these bindings, you will need the open-source libraries `Bob <http://www.idiap.ch/software/bob/>`_ and `Sox <http://sox.sourceforge.net>`_ installed somewhere. This satellite package was tested with Bob version 1.2.x, and Sox version 14.3.x and 14.4.x, and on OSX and UBUNTU 10.x and 12.x. 
+        If you have compiled Bob and Sox yourself and installed it on a non-standard location, you will need to note down the path leading to the root of that installation.
+        
+        Just type::
+        
+          $ python bootstrap.py
+          $ ./bin/buildout
+        
+        If Bob is installed in a non-standard location, edit the file ``buildout.cfg`` to set the root to Bob's local installation path. Remember to use the **same python interpreter** that was used to compile Bob, then execute the same steps
+        as above.
+        
+        Usage
+        -----
+        
+        To read, just do something like::
+        
+          import xbob.sox
+          infilename='xbob/sox/data/sample1.sph'
+          audio = xbob.sox.reader(infilename)
+          (rate, data) = audio.load()
+          print rate
+          print data
+        
+        This allows to read more wave formats than ``scipy.io.wavfile`` module. The output data are the same as for the MATLAB ``wavread`` function, and comparable with ``scipy.io.wavfile`` module (just multiplied by 2^15). Unit-tests to compare the 3 implementations are available. Just run::
+        
+          $ bin/nosetests -vs
+        
+        To write, do something like::
+          
+          outfilename='out.wav'
+          writer=xbob.sox.writer(outfilename, rate)
+          writer.save(data)
+            
+        
+        The ``xbob.sox.writer`` method accepts more parameters to optionally select the codec and the number of bits per sample (if the codec allows). Please refer to its built-in. By default, it uses the default codec and bits per sample that are associated with the extension of the file. 
+        
+        
+        Supported Encoding and Extensions
+        ----------------------------------
+        
+        `Encodings`: 
+        
+        ``SIGN2``, ``UNSIGNED``, ``FLOAT``, ``FLOAT_TEXT``, ``FLAC``, ``HCOM``, ``WAVPACK``, ``WAVPACKF``, ``ULAW``, ``ALAW``, ``G721``, ``G723``, ``CL_ADPCM``, ``CL_ADPCM16``, ``MS_ADPCM``, ``IMA_ADPCM``, ``OKI_ADPCM``, ``DPCM``, ``DWVW``, ``DWVWN``, ``GSM``, ``MP3``, ``VORBIS``, ``AMR_WB``, ``AMR_NB``, ``CVSD``, ``LPC10``.
+        
+        `Extensions`: 
+        
+        ``.voc``, ``.smp``, ``.wve``, ``.gsrt``, ``.amr-wb``, ``.prc``, ``.sph``, ``.amr-nb``, ``.txw``, ``.sndt``, ``.vorbis``, ``.speex``, ``.hcom``, ``.wav``, ``.aiff``, ``.aifc``, ``.8svx``, ``.maud``, ``.xa``, ``.au``, ``.flac``, ``.avr``, ``.caf``, ``.wv``, ``.paf``, ``.sf``, ``.sox``.
+        
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
