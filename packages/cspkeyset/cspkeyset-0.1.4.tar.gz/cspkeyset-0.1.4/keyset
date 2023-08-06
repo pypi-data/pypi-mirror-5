@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
+import argparse
+
+from cspkeyset.hdimage import hdimage
+
+
+def restore(args):
+    global parser
+    try:
+        hdimage.restore(args.file, paswd=args.pasw, filetype=args.type)
+    except Exception as exc:
+        parser.error(str(exc))
+
+
+def backup(args):
+    global parser
+    img = hdimage(args.cont, user=args.user)
+    if img.empty:
+        parser.error('Container {0} does not exist for user {1}'.format(args.cont, img.user))
+    try:
+        img.backup(args.file)
+    except Exception as exc:
+        parser.error(str(exc))
+
+
+def delete(args):
+    global parser
+    img = hdimage(args.cont, user=args.user)
+    if img.empty:
+        parser.error('Container {0} does not exist for user {1}'.format(args.cont, img.user))
+    try:
+        img.delete()
+    except Exception as exc:
+        parser.error(str(exc))
+
+
+def query(args):
+    global parser
+    try:
+        res = hdimage.query(args.file, filetype=args.type)
+    except Exception as exc:
+        parser.error(str(exc))
+    if args.sub == 'name':
+        print(res['name'])
+    elif args.sub == 'certs':
+        for ks, ci in res['certs'].items():
+            print('{0}:'.format(ks))
+            for k, v in sorted(ci.items()):
+                print('   {0}: {1}'.format(k, str(v)))
+
+
+parser = argparse.ArgumentParser(description='Manage cryptoprovider containers')
+sub = parser.add_subparsers(title='Keyset commands')
+
+par_backup = sub.add_parser('backup', help='Save container to archive')
+par_backup.add_argument('-cont', metavar='ID', required=True, help='Container name')
+par_backup.add_argument(
+    '-user', metavar='USER', help='Container user name, defaults to current user')
+par_backup.add_argument('file', nargs='?', help='Output file name (defaults to container ID)')
+par_backup.set_defaults(func=backup)
+
+par_restore = sub.add_parser(
+    'restore', help='Load container from archive (.zip and .rar archives supported)')
+par_restore.add_argument('-pasw', help='Container password', default=None)
+par_restore.add_argument('-type', choices=['rar', 'zip'], help='Archive type', default=None)
+par_restore.add_argument('file', help='Input file name')
+par_restore.set_defaults(func=restore)
+
+par_del = sub.add_parser('delete', help='Delete container')
+par_del.add_argument('-cont', metavar='ID', required=True, help='Container name')
+par_del.add_argument('-user', metavar='USER', help='Container user name, defaults to current user')
+par_del.set_defaults(func=delete)
+
+par_query = sub.add_parser('query', help='Query container archive')
+par_query.add_argument('-type', choices=['rar', 'zip'], help='Archive type', default=None)
+
+q_sub = par_query.add_subparsers(title='Query subcommands')
+q_name = q_sub.add_parser('name', help='Print container ID')
+q_name.set_defaults(sub='name')
+q_certs = q_sub.add_parser('certs', help='Print certificate names in container')
+q_certs.set_defaults(sub='certs')
+
+par_query.add_argument('file', help='Archive file name')
+par_query.set_defaults(func=query)
+
+args = parser.parse_args()
+if hasattr(args, 'func'):
+    args.func(args)
+else:
+    parser.print_usage()
