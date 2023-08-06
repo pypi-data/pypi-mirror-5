@@ -1,0 +1,55 @@
+{% load redis_metrics_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Redis Metrics</title>
+<style type="text/css">
+caption {font-weight: bold; font-size: 1.5em;}
+table, td {border:1px solid #ccc;}
+</style>
+</head>
+<body>
+{% if metrics %}
+
+    {# Generate the HTML for the charts #}
+    <h1>Metrics for {{ today }}</h1>
+
+    {% for category, metric_data in metrics.items %}
+    {% for metric_name, value_list in metric_data %}
+        <h2>{{ category }}</h2>
+        <div id="chart-{{ metric_name }}"></div>
+    {% endfor %}
+    {% endfor %}
+
+{# Stick the required JS at the bottom of the page #}
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+  google.load("visualization", "1", {packages:["corechart"]});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+    {% for category, metric_data in metrics.items %}
+    {% for metric_name, value_list in metric_data %}
+    var data = google.visualization.arrayToDataTable([
+      ['Key', 'Metric Value'],
+      {% for key, value in value_list %}
+      ['{{ key|strip_metric_prefix }}', {{ value|default:0 }}]{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]);
+
+    var options = {
+      title: '{{ category }}: {{ metric_name }}',
+      legend: {position: 'none'}
+    };
+
+    var chart_div = document.getElementById('chart-{{ metric_name }}');
+    var chart = new google.visualization.LineChart(chart_div);
+    chart.draw(data, options);
+    {% endfor %} {# end metric_name, value_list #}
+    {% endfor %} {# end category, metric_data #}
+  }
+</script>
+{% else %}
+    <p>You don't have any metrics set up yet!</p>
+{% endif %}
+</body>
+</html>
