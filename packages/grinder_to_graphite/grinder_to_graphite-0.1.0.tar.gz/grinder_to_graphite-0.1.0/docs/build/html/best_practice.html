@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Best Practices &mdash; Grinder To Graphite 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Grinder To Graphite 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Additional Resources" href="resources.html" />
+    <link rel="prev" title="Gallery" href="gallery.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="resources.html" title="Additional Resources"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gallery.html" title="Gallery"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Grinder To Graphite 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="best-practices">
+<h1>Best Practices<a class="headerlink" href="#best-practices" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ease-of-use">
+<h2>Ease of Use<a class="headerlink" href="#ease-of-use" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="use-virtualenv">
+<h3>Use virtualenv<a class="headerlink" href="#use-virtualenv" title="Permalink to this headline">¶</a></h3>
+<p>It will make your life easier.</p>
+</div>
+<div class="section" id="set-a-default-config-file">
+<h3>Set a default config file<a class="headerlink" href="#set-a-default-config-file" title="Permalink to this headline">¶</a></h3>
+<p>It is pretty common to want to use the same g2g config file for many different
+invocations of g2g.  If you set a default config file, your usage changes from</p>
+<div class="highlight-python"><pre>g2g &lt;config file&gt;</pre>
+</div>
+<p>becomes simply</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g2g</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="choose-prefix-and-suffix-carefully">
+<h3>Choose prefix and suffix carefully<a class="headerlink" href="#choose-prefix-and-suffix-carefully" title="Permalink to this headline">¶</a></h3>
+<p>These can help you effectively manage your Graphite namespace.  Divide
+up your metrics by application, type, or any other criteria you can
+imagine.</p>
+<p><em>Examples:</em></p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="45%" />
+<col width="55%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Carbon Prefix</th>
+<th class="head">Carbon Suffix</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>&lt;none&gt;</td>
+<td>grinder</td>
+</tr>
+<tr class="row-odd"><td>&lt;none&gt;</td>
+<td>grinder.app_name</td>
+</tr>
+<tr class="row-even"><td>grinder</td>
+<td>&lt;none&gt;</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="use-pypy">
+<h3>Use pypy<a class="headerlink" href="#use-pypy" title="Permalink to this headline">¶</a></h3>
+<p>In many cases, g2g runs more than twice as fast on pypy as it does on cpython.
+If you will regularly be ingesting large amounts of data, consider installing
+pypy.</p>
+</div>
+<div class="section" id="be-judicious-when-configuring-response-time-metrics">
+<h3>Be judicious when configuring response time metrics<a class="headerlink" href="#be-judicious-when-configuring-response-time-metrics" title="Permalink to this headline">¶</a></h3>
+<p>Response time groups and percentiles can add numerous new metrics to Graphite.
+Be sure you&#8217;ve selected the ones you need.  If you change these settings
+frequently, you could wind up with many stale metrics in Graphite, making
+it hard to see which ones currently apply.</p>
+</div>
+<div class="section" id="possible-gotchas">
+<h3>Possible gotchas<a class="headerlink" href="#possible-gotchas" title="Permalink to this headline">¶</a></h3>
+<p>g2g has to keep each grinder transaction in memory until it is flushed
+to Graphite. It&#8217;s possible
+that very high TPS Grinder tests, coupled with very long graphite reporting
+intervals, could cause memory issues in g2g.  This has not been a problem
+in any of the testing we&#8217;ve done so far.  However, if this happens you
+can lower
+the carbon_interval_seconds setting to reduce the amount of data g2g
+has to keep in memory.  Because this approach will cause only a subset
+of the available data to be retained by Graphite, it&#8217;s best to only
+use it if you are actually having g2g memory problems.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compatibility.html">Compatibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installation Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuring.html">Configuring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using.html">Using Grinder to Graphite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="results.html">Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery.html">Gallery</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">Additional Resources</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gallery.html"
+                        title="previous chapter">Gallery</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="resources.html"
+                        title="next chapter">Additional Resources</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="resources.html" title="Additional Resources"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gallery.html" title="Gallery"
+             >previous</a> |</li>
+        <li><a href="index.html">Grinder To Graphite 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Travis Bear.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b2.
+    </div>
+  </body>
+</html>

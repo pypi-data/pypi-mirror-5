@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Usage &mdash; Grinder To Graphite 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Grinder To Graphite 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Where Is My Stuff?" href="results.html" />
+    <link rel="prev" title="Configuring" href="configuring.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="results.html" title="Where Is My Stuff?"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="configuring.html" title="Configuring"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Grinder To Graphite 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="running">
+<h2>Running<a class="headerlink" href="#running" title="Permalink to this headline">¶</a></h2>
+<p>&#8216;g2g&#8217; is the Grinder to Graphite executable.  Normal usage (after
+adjusting the values in your sample config file to be appropriate
+for your environment) looks like this:</p>
+<div class="highlight-python"><pre>g2g  &lt;config_file&gt;</pre>
+</div>
+<p>Once you have established a useful g2g configuration file, it is common
+to use it over and over.  You can set a default config file like this:</p>
+<div class="highlight-python"><pre>g2g -s &lt;g2g config_file&gt;</pre>
+</div>
+<p>or</p>
+<div class="highlight-python"><pre>g2g --set-config-file=&lt;g2g config_file&gt;</pre>
+</div>
+<p>After you have set a default config file, g2g can then be optionally
+invoked without specifying any other configuration.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g2g</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="modes">
+<h2>Modes<a class="headerlink" href="#modes" title="Permalink to this headline">¶</a></h2>
+<p>There are three primary ways to use g2g:</p>
+<div class="section" id="grinder-run-completed-default-mode">
+<h3>Grinder Run Completed: Default Mode<a class="headerlink" href="#grinder-run-completed-default-mode" title="Permalink to this headline">¶</a></h3>
+<p>The most common use of grinder to graphite is the case where
+you have completed a Grinder run and you want to send the
+results to Graphite. This is the default usage, which is
+described above.  No
+special options are required.</p>
+</div>
+<div class="section" id="grinder-run-in-progress-follow-mode">
+<h3>Grinder Run In Progress: Follow Mode<a class="headerlink" href="#grinder-run-in-progress-follow-mode" title="Permalink to this headline">¶</a></h3>
+<p>If you have a long-duration Grinder run in progress, you might
+not want to wait for it to finish before you begin forwarding
+results to Graphite.  g2g supports this via a follow (tailing)
+mode, where new results are continually forwarded to graphite.</p>
+<p>For follow mode to work, you will first need to do a
+quick run with your grinder script to generate a valid mapping
+file.  A mapping file is a grinder log file that most likely has a
+name like &lt;hostname&gt;-0.log.  Once a valid mapping
+file is in place, you can do realtime reporting for your Grinder
+script as many times as you want.</p>
+<p>Tailing mode can be enabled in the config file by setting
+<em>follow</em> to True.  It can also be enabled on the command
+line using either of these options:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g2g</span> <span class="o">-</span><span class="n">f</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g2g</span> <span class="o">--</span><span class="n">follow</span><span class="o">=</span><span class="bp">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="grinder-run-in-progress-resume-mode">
+<h3>Grinder Run In Progress: Resume Mode<a class="headerlink" href="#grinder-run-in-progress-resume-mode" title="Permalink to this headline">¶</a></h3>
+<p>For long-running Grinder tests, there is an alternate to follow
+mode.  It is possible to re-run g2g manually on a Grinder log
+that is still being written, and process only at the data that is
+new since the last time g2g has been run.  This avoids re-processing
+potentially large amounts of data while giving you control over
+when g2g runs.</p>
+<p>Resuming log processing can be enabled in the config by setting <em>resume</em> to
+True.  It can also be specified on the command line using either of
+these options</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g2g</span> <span class="o">-</span><span class="n">r</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g2g</span> <span class="o">--</span><span class="n">resume</span><span class="o">=</span><span class="bp">True</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<p>Many of the settings in the g2g config file can be overridden
+on the command line.  To see a full list of available options:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g2g</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Permalink to this headline">¶</a></h2>
+<p>Questions about g2g can be asked on the grinder-use mailing list.
+To subscribe, see</p>
+<p><a class="reference external" href="http://sourceforge.net/p/grinder/mailman/">http://sourceforge.net/p/grinder/mailman/</a></p>
+<p>Bugs can be reported to the project site on Bitbucket.</p>
+<p><a class="reference external" href="https://bitbucket.org/travis_bear/grinder_to_graphite/issues">https://bitbucket.org/travis_bear/grinder_to_graphite/issues</a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compatibility.html">Compatibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installation Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuring.html">Configuring</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Using Grinder to Graphite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="results.html">Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="best_practice.html">Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">Additional Resources</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="configuring.html"
+                        title="previous chapter">Configuring</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="results.html"
+                        title="next chapter">Where Is My Stuff?</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="results.html" title="Where Is My Stuff?"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="configuring.html" title="Configuring"
+             >previous</a> |</li>
+        <li><a href="index.html">Grinder To Graphite 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Travis Bear.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b2.
+    </div>
+  </body>
+</html>
