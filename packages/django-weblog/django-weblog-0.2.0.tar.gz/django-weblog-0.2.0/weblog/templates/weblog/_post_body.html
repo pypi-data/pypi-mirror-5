@@ -1,0 +1,32 @@
+{% load comments %}
+{% load humanize %}
+
+{% get_comment_count for post as comment_count %}
+
+<div class="post">
+{% if single_post %}    
+    <h2 class="post_title">{{ post.title }}</h2>
+{% else %}
+    <h2 class="post_title"><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h2>
+{% endif %}
+    <div class="post_date">{{ post.pub_date|naturalday }}</div>
+    <div class="post_body">{% if query %}
+        {{ post.body_html|safe|truncatewords_html:25 }} <p><a href="{{ post.get_absolute_url }}">Read more</a></p>
+    {% else %}
+        {{ post.body_html|safe }}
+    {% endif %}</div>
+    <div class="post_meta">Modified: {{ post.modify_date|naturalday:'Y-m-d' }} {{ post.modify_date|time }}
+{% if perms.weblog.post_change %}
+        • <a href="{% url admin:weblog_post_change post.id %}">edit</a>
+{% endif %}
+        • <a href="{{ post.get_absolute_url }}#comments">{{ comment_count }}  comment{{ comment_count|pluralize }}</a> • <a href="/feeds/comments/{{ post.year }}/{{ post.month }}/{{ post.day }}/{{ post.slug }}/" title="Post Comments Feed">Feed</a><br />
+        Categor{{ post.categories.all|pluralize:'y,ies' }}:
+{% for category in post.categories.all %}
+   	{% for item in category.path_items %}
+    	{% if not forloop.first %} » {% endif %}<a href="{{ item.get_absolute_url }}">{{ item.name }}</a>
+    {% endfor %}{% if not forloop.last %} • {% endif %}
+{% empty %}
+            none
+{% endfor %}
+    </div>
+</div>

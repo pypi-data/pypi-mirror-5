@@ -1,0 +1,33 @@
+{% extends 'weblog/base.html' %}
+{% load recurse %}
+{% load weblog_extras %}
+
+{% block title %}{{ block.super }} » Category » {{ category }}{% endblock %}
+{% block extra_head %}<link rel="alternate" type="application/atom+xml" title="{{ SITE.name }} » Category » {{ category }}" href="/feeds/category/{{ category.path }}" />{% endblock %}
+
+{% block content %}
+<div class="category">
+    <h2><div class="category-name">Category <em>{{ category.name }}</em></div>&nbsp;<div class="feed-icon"><a href="/feeds/category/{{ category.path }}" title="Category Feed">Atom feed</a></div></h2>
+    {% if category.description %}<p>{{ category.description|safe }}</p>{% endif %}
+    <div class="section">
+        <h3>Subcategories:</h3>
+        <dl>
+    {% for subcats in category.subcategories.all %}        
+        {% recurse category.subcategories.all with subcats as category %}
+            {% loop %}
+            <dt><a href="{% url weblog_category_detail category.path %}">{{ category.name }}</a> ({% post_count category=category %})</dt>
+            <dd><small>{{ category.description|safe }}</small>
+                <dl>{% child %}</dl></dd>
+            {% endloop %}
+        {% endrecurse %}
+    {% empty %}
+            <dt>None</dt>
+    {% endfor %}
+        </dl>
+    </div>
+</div>
+    {% category_posts category as posts %}
+    {% for post in posts %}
+        {% include 'weblog/_post_body.html' %}
+    {% endfor %}
+{% endblock content %}
