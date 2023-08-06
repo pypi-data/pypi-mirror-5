@@ -1,0 +1,151 @@
+Changelog
+---------
+
+Here you can see the full list of changes between each SQLAlchemy-i18n release.
+
+
+0.6.5 (2013-09-10)
+^^^^^^^^^^^^^^^^^^
+
+- Translation auto creation now sets not nullable translated columns without defaults as empty strings
+
+
+0.6.4 (2013-09-10)
+^^^^^^^^^^^^^^^^^^
+
+- Translation hybrid properties now fallback to default locale for empty strings
+
+
+0.6.3 (2013-08-15)
+^^^^^^^^^^^^^^^^^^
+
+- Added get_locale_fallback option
+
+
+0.6.2 (2013-08-13)
+^^^^^^^^^^^^^^^^^^
+
+- Fixed translation auto-creation
+
+
+0.6.1 (2013-08-13)
+^^^^^^^^^^^^^^^^^^
+
+- Added unified and easily overridable global configuration
+
+
+0.6.0 (2013-08-09)
+^^^^^^^^^^^^^^^^^^
+
+- Completely rewritten translation relationships
+
+
+0.5.1 (2013-06-26)
+^^^^^^^^^^^^^^^^^^
+
+- Translation auto creation listener added
+
+
+0.5.0 (2013-06-25)
+^^^^^^^^^^^^^^^^^^
+
+- Added TranslationManager
+
+
+0.4.1 (2013-06-11)
+^^^^^^^^^^^^^^^^^^
+
+- Base classes option no longer mandatory
+
+
+0.4.0 (2013-06-10)
+^^^^^^^^^^^^^^^^^^
+
+- New, more extendable syntax for setting up translatable models (make_translatable utility function)
+
+
+0.3.2 (2013-06-05)
+^^^^^^^^^^^^^^^^^^
+
+- Fixed current_translation proxy window building
+
+
+0.3.1 (2013-06-04)
+^^^^^^^^^^^^^^^^^^
+
+- Updated SQLAlchemy-Utils requirements to 0.12.4
+
+
+0.3.0 (2013-05-30)
+^^^^^^^^^^^^^^^^^^
+
+- Added force_locale
+- Rewrote current_translation schematics
+
+
+0.2.4 (2013-05-29)
+^^^^^^^^^^^^^^^^^^
+
+- Updated SQLAlchemy-Utils requirements to 0.12.2
+
+
+0.2.3 (2013-05-20)
+^^^^^^^^^^^^^^^^^^
+
+- Renamed __locale_getter__ to get_locale
+
+
+0.2.2 (2013-05-20)
+^^^^^^^^^^^^^^^^^^
+
+- Made __locale_getter__ a class attribute for more robust overriding
+
+
+0.2.1 (2013-05-19)
+^^^^^^^^^^^^^^^^^^
+
+- Added hybrid_property expressions for current_translation and translations
+
+
+0.2.0 (2013-05-17)
+^^^^^^^^^^^^^^^^^^
+
+- ProxyDict moved to SQLAlchemy-Utils
+- SQLAlchemy-Utils added as dependency
+- Completely rewritten inheritance handling
+
+
+0.1.5 (2013-05-16)
+^^^^^^^^^^^^^^^^^^
+
+- Column locale defined right after primary keys
+
+
+0.1.4 (2013-05-16)
+^^^^^^^^^^^^^^^^^^
+
+- Fixed translatable options handling when using common base class
+
+
+0.1.3 (2013-05-16)
+^^^^^^^^^^^^^^^^^^
+
+- Joined table inheritance support
+
+
+0.1.2 (2013-05-15)
+^^^^^^^^^^^^^^^^^^
+
+- Added base_classes configuration option
+
+
+0.1.1 (2013-05-15)
+^^^^^^^^^^^^^^^^^^
+
+- Generated translations class names now in format '[ParentClass]Translation'
+
+
+0.1.0 (2013-05-13)
+^^^^^^^^^^^^^^^^^^
+
+- Initial release
