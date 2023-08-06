@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Reception &mdash; Lino-Welfare User Manual 1.1.8 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <script type="text/javascript" src="_static/sidebar.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Lino-Welfare User Manual 1.1.8 documentation" href="index.html" />
+    <link rel="next" title="watch_tim" href="watch_tim.html" />
+    <link rel="prev" title="Contacts" href="contacts.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Index général"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="watch_tim.html" title="watch_tim"
+             accesskey="N">suivant</a> |</li>
+        <li class="right" >
+          <a href="contacts.html" title="Contacts"
+             accesskey="P">précédent</a> |</li>
+        <li><a href="index.html">Lino-Welfare User Manual 1.1.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  
+  <div class="section" id="reception">
+<span id="welfare-reception"></span><h1>Reception<a class="headerlink" href="#reception" title="Lien permanent vers ce titre">¶</a></h1>
+<p>The reception module of Lino-Welfare
+is for managing a reception desk and a waiting queue.
+Visitors are &#8220;checked in&#8221; as they present themselves at a
+reception desk (Empfangsschalter),
+and &#8220;checked out&#8221; when they leave again.
+Social assistants then have a possibility to see how many and which
+clients are waiting for them.</p>
+<p>A <strong>reception clerk</strong> is the user at the reception desk who welcomes
+visitors.
+In the public demo database there is a user &#8220;theresia&#8221; with that profile.
+Theresia&#8217;s first questions are usually
+&#8220;What&#8217;s your name?&#8221; or
+&#8220;Do you have an appointment with a social agent?&#8221;.</p>
+<p>Visitors must have a <a class="reference internal" href="clients.html#welfare-pcsw-client"><em>Client</em></a> account
+(technically a <a class="reference internal" href="contacts.html#welfare-contacts-partner"><em>Partenaire</em></a> account would be
+enough, but other visitors like suppliers or board members aren&#8217;t
+usually managed by the reception module).</p>
+<p>Lino must now automatically
+pop up a notification to read the client&#8217;s eID card
+if this is necessary, e.g. because
+&#8220;eID card has not yet been read!&#8221;
+or
+&#8220;Old eID card validity has expired!&#8221;</p>
+<p>Most visitors come at the open consultation hours.
+and don&#8217;t have an appointment with some user.
+In that case the reception clerk
+clicks &#8220;Create Appointment&#8221;.
+Lino suggests the Client&#8217;s primary coach as user of the appointment.
+Theresia may select another social worker.
+She also may specify a reason, a short one-line text.</p>
+<p>In any case, when the clerk then clicks the Checkin button of
+that appointment.</p>
+<p>The reception clerk then finally says
+&#8220;Please sit down and wait until the social agent comes.&#8221;</p>
+<div class="section" id="expected-guests">
+<span id="welfare-reception-expectedguests"></span><h2>Expected Guests<a class="headerlink" href="#expected-guests" title="Lien permanent vers ce titre">¶</a></h2>
+<p>Consult this table when checking in a partner who has an appointment.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="43%" />
+<col width="13%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>name</td>
+<td>type</td>
+<td>verbose name</td>
+<td>help text</td>
+</tr>
+<tr class="row-even"><td>partner</td>
+<td>ForeignKey to <a class="reference internal" href="contacts.html#welfare-contacts-partners"><em>Partenaire</em></a></td>
+<td>Partenaire</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>event__user</td>
+<td>RemoteField</td>
+<td>Responsible user</td>
+<td>None</td>
+</tr>
+<tr class="row-even"><td>event__summary</td>
+<td>RemoteField</td>
+<td>Résumé</td>
+<td>None</td>
+</tr>
+<tr class="row-odd"><td>workflow_buttons</td>
+<td>VirtualField</td>
+<td>Arbeitsablauf</td>
+<td>None</td>
+</tr>
+<tr class="row-even"><td>waiting_since</td>
+<td>DateTimeField</td>
+<td>Waiting since</td>
+<td>Time when the visitor arrived (checked in).</td>
+</tr>
+<tr class="row-odd"><td>waiting_until</td>
+<td>DateTimeField</td>
+<td>Waiting until</td>
+<td>Time when the visitor left (checked out).</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="waiting-guests">
+<span id="welfare-reception-waitingguests"></span><h2>Waiting Guests<a class="headerlink" href="#waiting-guests" title="Lien permanent vers ce titre">¶</a></h2>
+<p>Shows the visitors in the waiting room.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="43%" />
+<col width="13%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>name</td>
+<td>type</td>
+<td>verbose name</td>
+<td>help text</td>
+</tr>
+<tr class="row-even"><td>waiting_since</td>
+<td>DateTimeField</td>
+<td>Waiting since</td>
+<td>Time when the visitor arrived (checked in).</td>
+</tr>
+<tr class="row-odd"><td>partner</td>
+<td>ForeignKey to <a class="reference internal" href="contacts.html#welfare-contacts-partners"><em>Partenaire</em></a></td>
+<td>Partenaire</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>event__user</td>
+<td>RemoteField</td>
+<td>Responsible user</td>
+<td>None</td>
+</tr>
+<tr class="row-odd"><td>event__summary</td>
+<td>RemoteField</td>
+<td>Résumé</td>
+<td>None</td>
+</tr>
+<tr class="row-even"><td>workflow_buttons</td>
+<td>VirtualField</td>
+<td>Arbeitsablauf</td>
+<td>None</td>
+</tr>
+<tr class="row-odd"><td>waiting_until</td>
+<td>DateTimeField</td>
+<td>Waiting until</td>
+<td>Time when the visitor left (checked out).</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>As a social worker you consult this table to see:</p>
+<ul class="simple">
+<li>How many people are waiting for me?</li>
+<li>Who is waiting for me?</li>
+</ul>
+<p>For example you may decide &#8220;This guy gets quickly nervous, and it
+won&#8217;t take much time, so i&#8217;ll let him in before the others.&#8221;</p>
+</div>
+
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/lino-logo-2.png" alt="Logo"/>
+            </a></p><p align="center">
+  FR
+  <a href="../nl/reception.html">NL</a>
+  <a href="../de/reception.html">DE</a> 
+</p>
+<h3><a href="index.html">Table des matières</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="general.html">Concepts généraux</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clients.html">Clients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="newcomers.html">Nouveaux clients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cbss.html">Banque-carrefour</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cv.html">Curriculum vitae</a></li>
+<li class="toctree-l1"><a class="reference internal" href="courses.html">Cours de langues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="isip.html">Insertion sociale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jobs.html">Insertion socio-professionnelle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debts.html">Médiation de dettes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accounts.html">Comptes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="users.html">Gestion des utilisateurs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cal.html">Le module Calendrier</a></li>
+<li class="toctree-l1"><a class="reference internal" href="countries.html">Countries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contacts.html">Contacts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Reception</a></li>
+<li class="toctree-l1"><a class="reference internal" href="watch_tim.html">watch_tim</a></li>
+</ul>
+
+<div id="searchbox" style="display: none">
+  <h3>Recherche rapide</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Saisissez un mot clef ou un nom de module, classe ou fonction.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script><p align="center">
+<a href="http://code.google.com/p/lino-welfare/" target="_blank">code</a>
+<a href="http://pypi.python.org/pypi/lino-welfare" target="_blank">pypi</a>
+<br/>
+user |
+<a href="http://welfare.lino-framework.org" target="_blank">technical</a>
+
+
+</p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Index général"
+             >index</a></li>
+        <li class="right" >
+          <a href="watch_tim.html" title="watch_tim"
+             >suivant</a> |</li>
+        <li class="right" >
+          <a href="contacts.html" title="Contacts"
+             >précédent</a> |</li>
+        <li><a href="index.html">Lino-Welfare User Manual 1.1.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012-2013, Luc Saffre.
+      Last updated on Jul 22, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b1.    
+    <a href="http://code.google.com/p/lino-welfare/source/browse/docs/reception.rst"
+           rel="nofollow">Show Source</a>.
+    <a href="http://welfare.lino-framework.org/reception.html">Online Link</a>.
+    </div>
+  </body>
+</html>
