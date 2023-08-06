@@ -1,0 +1,31 @@
+{% extends "news/subbase.html" %}
+{% block head_title %}{{ block.super }} - {{ category_object.title }}{% endblock %}
+{% block head_more_links %}{{ block.super }}
+    <link rel="alternate" type="application/rss+xml" title="{{ category_object.title }} (RSS)" href="{% url news-category-feed category_object.slug %}"/>{% endblock %}
+
+{% block content %}
+    <h2><a href="{% url news-category-details category_object.slug %}">{{ category_object.title }}</a></h2>
+    {% if category_object.description %}<div class="category_description">{% wiki2xhtml category_object.description %}</div>{% endif %}
+    
+    <div class="entry_list_container">
+        <ul class="item_list">
+            {% for entry in object_list %}
+            <li class="entry_item {% cycle "row1" "row2" %}{% if forloop.first %} first{% endif %}{% if forloop.last %} last{% endif %}">
+                <p class="publish_date">{{ entry.publish_date|date:"l j F Y"|title }}</p>
+                <h4><a href="{% url news-entry-details category_object.slug entry.slug %}">{{ entry.title }}</a></h4>
+                {% if entry.introduction %}
+                <div class="intro">
+                    {% wiki2xhtml entry.introduction 'short' %}
+                    <p class="more_link"><a href="{% url news-entry-details category_object.slug entry.slug %}">Lire la suite</a></p>
+                </div>
+                {% else %}
+                <div class="content">{% wiki2xhtml entry.content %}</div>
+                {% endif %}
+            </li>
+            {% empty %}
+            <li class="empty">Aucun billet</li>
+            {% endfor %}
+        </ul>
+        {% pagination_tag %}
+    </div>
+{% endblock %}

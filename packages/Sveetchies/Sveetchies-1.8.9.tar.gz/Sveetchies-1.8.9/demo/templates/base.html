@@ -1,0 +1,73 @@
+{% load autobreadcrumb documents_utils %}<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    {% spaceless %}<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>{% block head_title %}{{ metas.name }}{% endblock %}</title>
+    <link rel="Stylesheet" title="Normal" media="screen" type="text/css" href="{{ STATIC_URL }}theme/css/base.css"/>
+    <link rel="Stylesheet" title="Normal" media="screen" type="text/css" href="{{ STATIC_URL }}theme/css/screen.css"/>
+    <link rel="Stylesheet" title="Normal" media="screen" type="text/css" href="{{ STATIC_URL }}theme/css/content.css"/>
+    {% block head_more_links %}{% endblock %}
+
+    {% block head_base_js %}
+    <script type="text/javascript" src="{{ STATIC_URL }}documents/js/jquery/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}jquery/equalizeCols.js"></script>
+    <script language="JavaScript" type="text/javascript">
+    //<![CDATA[
+    function equalize_layout_cols() {
+        $("#body_content, #menu_content .sub-layer").equalizeCols();
+    };
+    $(window).bind('resize', function(event){
+        equalize_layout_cols();
+    });
+    $(document).ready(function(){
+        equalize_layout_cols();
+    });
+    //]]>
+    </script>
+    {% endblock %}{% block head_more_js %}
+{% endblock %}{% endspaceless %}</head>
+
+<body{% block body_attr %}{% endblock %}>
+
+    <div id="root">
+        <div id="header">
+            <h1><a href="{{ metas.web_url }}" title="{{ metas.name }}"><span>{{ metas.name }}</span></a></h1>
+            <div class="cale"></div>
+        </div>
+        <div id="top-layer-hack"></div>
+        
+        {% if user.is_staff %}<div id="admins_menu">
+            <ul class="flat_bulletlist">
+                <li><a href="{% url admin:index %}">Admin Django</a></li>
+                <li{% currentwalkthroughto 'documents-board' %} class="active"{% endcurrentwalkthroughto %}><a href="{% url documents-board %}">Admin documents</a></li>
+            </ul>
+            <div class="cale"></div>
+        </div>{% endif %}
+        
+        {% block body_content %}<div class="{% block content_column_css %}columned cols-by-two{% endblock %}">
+            <div id="body_content">
+                {% block breadcrumbsroot %}<p id="breadcrumbs">{% block breadcrumbs %}{% autobreadcrumbs_links %}{% endblock %}</p>{% endblock %}
+                <div class="cale"></div>
+                {% block content %}{% endblock %}
+                {% block action_menu %}{% endblock %}
+                <div class="cale"></div>
+            </div>
+            
+            {% block context_menu %}<div id="menu_content">
+                <div class="sub-layer">
+                    <div id="menu">{% document_page_flatmenu 0 %}</div>
+                    {% block context_menu_content %}{% endblock %}
+                </div>
+            </div>{% endblock %}
+            <div class="cale"></div>
+        </div>{% endblock %}
+    </div>
+    
+    <div id="bottom-layer-hack"></div>
+    
+    <div id="footer">
+        <p>Thenon David © 2012 tous droits réservés</p>
+    </div>
+
+</body>
+</html>

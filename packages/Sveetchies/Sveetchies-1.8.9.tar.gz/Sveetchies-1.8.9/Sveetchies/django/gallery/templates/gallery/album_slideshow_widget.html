@@ -1,0 +1,58 @@
+{% load gallery_tags %}
+    <script type="text/javascript">
+    //<![CDATA[
+    $(document).ready(function(){
+        $("div.slides").slides({
+            preload: true,
+            preloadImage: "{{ metas.medias_url }}images/loading.gif",
+            play: 5000,
+            pause: 2500,
+            hoverPause: true,
+            animationStart: function(current){
+                $(".caption").animate({
+                    bottom:-35
+                },100);
+            },
+            animationComplete: function(current){
+                $(".caption").animate({
+                    bottom:0
+                },200);
+            },
+            slidesLoaded: function() {
+                $(".caption").animate({
+                    bottom:0
+                },200);
+            }
+        });
+        $("div.album_slideshow_widget div.slide a.thumb").vAlign();
+    });
+    //]]>
+    </script>
+    <div class="album_slideshow_widget">
+        <div class="slides">
+            {% comment %}{% if random_pictures_album_object %}
+            <h3><a href="{% url gallery-album-details random_pictures_album_object.slug %}">{{ random_pictures_album_object.title }}</a></h3>
+            {% endif %}{% endcomment %}
+            <div class="slides_sublayout">
+                <div class="slides_container">
+                    {% for picture in random_pictures_object_list %}
+                    <div class="slide">
+                        <a class="thumb" href="{% url gallery-album-details picture.album.slug %}" style="height:{% adapt_to_layout picture.large "Square(570x570)" "height" %}px;">
+                            {% comment %}<img src="{{ picture.large.url }}" width="570" height="427" alt="{{ picture.title }}"/>{% endcomment %}
+                            <img src="{{ picture.large.url }}" alt="{{ picture.title }}"{% adapt_to_layout picture.large "Square(570x570)" %}/>
+                        </a>
+                        <div class="caption"{% if forloop.first %} style="bottom:0"{% endif %}>
+                            <p>{{ picture.title }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty">Aucune image</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <a href="#" class="prev"><img src="{{ metas.medias_url }}images/prev.png" width="34" height="34" alt="Arrow Prev"/></a>
+            <a href="#" class="next"><img src="{{ metas.medias_url }}images/next.png" width="34" height="34" alt="Arrow Next"/></a>
+        </div>
+        <div class="cale"></div>
+    </div>
+    <div class="cale"></div>
