@@ -1,0 +1,69 @@
+=======
+liquify
+=======
+the Python 2 minifier behind liquen_
+almost totally based on minipy_ by Gareth Rees <http://garethrees.org/>
+
+Introduction
+------------
+**liquify** is a minifier for Python 2 focused on maintaining usability of the minified code as an imported module (which means it preserves functions and variables that could have been of use for external code calling the minified code). For example::
+
+    $ cat fib.py
+    cache = {0: 0, 1: 1, 2: 1, 3: 2}
+    def fibonacci(n):
+        """Return the nth Fibonacci number."""
+        if n not in cache:
+            a = n // 2
+            r = n % 2
+            m = (r * 2) - 1
+            cache[n] = fibonacci(a + 1) ** 2 + m * fibonacci(a + r - 1) ** 2
+        return cache[n]
+
+    $ liquify --module --docstrings fib.py
+    cache={0:0,1:1,2:1,3:2}
+    def fibonnacci(a):
+     if a not in b:d=a//2;e=a%2;f=e*2-1;b[a]=fibonnacci(d+1)**2+f*c(d+e-1)**2
+     return b[a]
+
+
+Command line
+------------
+::
+
+    Usage: liquify [options] [-o OUTPUT] FILE
+
+    Options:
+      --version             show program's version number and exit
+      -h, --help            show this help message and exit
+      -o OUTPUT, --output=OUTPUT
+                            output file (default: stdout)
+      -D, --docstrings      remove docstrings and other statements with no side
+                            effects (implies --noselftest)
+      -R, --rename          aggressively rename non-preserved variables
+      -i INDENT, --indent=INDENT
+                            number of spaces per indentation level
+      -p PRESERVE, --preserve=PRESERVE
+                            preserve words from renaming (separate by commas)
+      -m, --module          preserve top level object names (for use as imported
+
+      --nojoinlines         put each statement on its own line
+      --noselftest          skip the self-test
+      --debug               dump the parse tree
+
+
+License
+-------
+liquify is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the `GNU
+General Public License`_ for more details.
+
+
+.. _minipy: https://github.com/gareth-rees/minipy
+.. _liquen: http://liquen.herokuapp.com/
+.. _GNU General Public License: http://www.gnu.org/copyleft/gpl.html
