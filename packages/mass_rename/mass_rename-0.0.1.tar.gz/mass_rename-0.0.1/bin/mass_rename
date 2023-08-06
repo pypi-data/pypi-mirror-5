@@ -1,0 +1,190 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import argparse
+import tempfile
+import subprocess
+
+def red(string):
+    return '\033[91m%s\033[0m' % string
+def yellow(string):
+    return '\033[93m%s\033[0m' % string
+
+def query_yes_no(question, default="yes"):
+    valid = {"yes": True, "y": True, "ye": True, "no": False, "n" :False}
+    if default == None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+             return valid[choice]
+        else:
+           sys.stdout.write("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
+
+DOUBLE_EXTENSIONS = ['.svg.gz', '.tar.gz', '.tar.bz2',  '.tar.xz']
+
+class FileData():
+    def __init__(self, name, strip_extension = True):
+        self.strip_extension = strip_extension
+        self.original_name = name
+        self.name = name
+        if strip_extension:
+            found = False
+            for i in DOUBLE_EXTENSIONS:
+                if self.name.endswith(i):
+                    found = True
+                    self.extension = i
+                    self.basename = ''.join(self.name.split(i)[:-1])
+                    break
+            if not found:
+                if '.' in self.name:
+                    psplit = self.name.split(".")
+                    self.extension = ".%s" % psplit[-1]
+                    self.basename = '.'.join(psplit[:-1])
+                else:
+                    self.extension = ''
+                    self.basename = self.name
+        else:
+            self.basename = self.name
+            self.extension = ''
+
+    def short_name(self):
+        return self.basename if self.strip_extension else self.name
+
+    def ischanged(self):
+        return self.full_name() != self.original_name
+
+    def rename(self):
+        os.rename(self.original_name, self.full_name())
+
+    def full_name(self):
+       if self.strip_extension:
+            if self.extension == '':
+                return self.basename
+            else:
+                return "%s%s" % (self.basename, self.extension)
+       else:
+            return self.name
+
+    def update(self, new_name):
+        if self.strip_extension:
+            self.basename = new_name
+        else:
+            self.name = new_name
+
+    def __str__(self):
+        return self.basename
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description = "Command line parser for Mass Rename")
+    # Split, confirm, confirm single, skip extension
+    parser.add_argument("-s", "--split", action = "store_true", default = False, help = "Open vim in split mode, edit in the left view (force the use of vim instead of $EDITOR)")
+    parser.add_argument("-c", "--confirm", action = "store_true", default = False, help = "Print changes and wait for confirmation")
+    parser.add_argument("-C", "--confirm-all", action = "store_true", help = "Ask confirmation for each file")
+    parser.add_argument("-k", "--skip-extension", action = "store_true", help = "Skip extensions")
+    parser.add_argument("-v", "--verbose", action = "store_true", help = "Add verbosity")
+    # TODO: Future Add
+    # parser.add_argument("-e", "--extension", action = "append", nargs = 1, help = "Skip extensions")
+    parser.add_argument("-e", "--extension", action = "append", help = "Extra extensions if not recognized (can be specified more times)")
+    parser.add_argument("files", action = "store", nargs = "+", help = "List of files to be renamed")
+
+    args = parser.parse_args()
+
+
+    if args.extension:
+        for i in args.extension:
+            ex = i if i[0] == "." else ".%s" % i
+        if not ex in DOUBLE_EXTENSIONS:
+            DOUBLE_EXTENSIONS.append(ex)
+
+    # Store the file names
+    tfile = tempfile.NamedTemporaryFile(mode = 'w')
+    orig_file = None
+    if args.split:
+        # If displaying in split view, second file
+        orig_file = tempfile.NamedTemporaryFile(mode = 'w')
+
+    files = []
+    for i in args.files:
+        if not os.path.isfile(i):
+            sys.stderr.write(red("cannot stat '%s': No such file or directory\n" % i))
+            continue
+        fd = FileData(i, args.skip_extension)
+        files.append(fd)
+        tfile.write("%s\n" % fd.short_name())
+        if args.split:
+            orig_file.write("%s\n" % fd.original_name)
+    tfile.flush()
+    if len(files) == 0:
+        sys.stderr.write(red("No files left to rename.\n"))
+        sys.exit(1)
+
+
+    if args.split:
+        orig_file.flush()
+        subprocess.call("vim -O2 %s %s" % (tfile.name, orig_file.name), shell = True)
+    else:
+        subprocess.call("$EDITOR %s" % tfile.name, shell = True)
+
+    new_names = [i.strip() for i in open(tfile.name).readlines()]
+    if len(new_names) != len(files):
+        sys.stderr.write(red("Wrong number of lines found in file... Aborting\n"))
+        sys.exit()
+
+    for i in range(len(files)):
+        files[i].update(new_names[i])
+
+
+    if args.confirm and not args.confirm_all:
+        print("Going to move these files:")
+        any_difference = False
+        # for i in range(len(files)):
+        for file in files:
+            if file.ischanged():
+                print("       %s -> %s" % (file.original_name, file.full_name()))
+                any_difference = True
+            else:
+                print(yellow("       %s -> %s Skipping as identical" % (file.original_name, file.full_name())))
+        if query_yes_no("Confirm changes?"):
+            for file in files:
+                if not file.ischanged():
+                    continue
+                if args.verbose:
+                    print("Moving %s -> %s" % (file.original_name, file.full_name()))
+                file.rename()
+            sys.exit(0)
+        else:
+            print("Aborting operation")
+            sys.exit(0)
+
+    # for i in range(len(files)):
+    for file in files:
+        if not file.ischanged():
+            print(yellow("Skipping %s -> %s, identical name" % (file.original_name, file.full_name())))
+            continue
+        print("Moving %s -> %s" % (file.original_name, file.full_name()))
+        if args.confirm_all:
+            if query_yes_no("Confirm change?"):
+                file.rename()
+            else:
+                sys.stdout.write(yellow("Skipping this one\n"))
+        else:
+            file.rename()
+            pass
+
+
+    tfile.close()
+    if args.split:
+        orig_file.close()
+
