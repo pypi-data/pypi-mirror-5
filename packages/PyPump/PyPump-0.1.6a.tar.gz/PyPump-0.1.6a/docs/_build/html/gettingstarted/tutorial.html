@@ -1,0 +1,262 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; PyPump 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="PyPump 1.0.0 documentation" href="../index.html" />
+    <link rel="next" title="Introduction" href="authentication.html" />
+    <link rel="prev" title="Quick ‘n Dirty!" href="qnd.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="authentication.html" title="Introduction"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="qnd.html" title="Quick ‘n Dirty!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PyPump 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This tutorial is prep for an API that does not yet actually exist... we&#8217;re doing the documentation driven development route.  But this is what it should look like! ;)</p>
+</div>
+<div class="section" id="pypump-and-the-pump-api">
+<h2>PyPump and the Pump API<a class="headerlink" href="#pypump-and-the-pump-api" title="Permalink to this headline">¶</a></h2>
+<p>PyPump is tooling to implement and interface with the <a class="reference external" href="https://github.com/e14n/pump.io/blob/master/API.md">Pump API</a>, which is a
+federation protocol for the web.  You can read the actual Pump API
+docs to get a sense of all that, but here&#8217;s a high level overview.</p>
+<p>The Pump API is all about ActivityStreams and sending json-encoded
+descriptions of activities back and forth across different users on
+different sites.  At the highest conceptual level, it&#8217;s not too
+different from the idea of email servers sending emails back and
+forth, but the messages (activities here) are much more specific and
+cary more specific meaning about what &#8220;type&#8221; of message is being sent
+back and forth.  An activity can be a user &#8220;favoriting&#8221; something or
+&#8220;posting an image&#8221; or what have you.</p>
+<p>In the world of email, each user has an email address; in the world of
+Pump, each user has a <a class="reference external" href="http://code.google.com/p/webfinger/">webfinger</a>
+address.  It looks pretty similar, but it&#8217;s meant for the web.  For
+the sake of this tutorial, you don&#8217;t need to know how webfinger works;
+the PyPump API will handle that for you.</p>
+<p>Each user has two main feeds that are used for communication.  In the
+Pump API docs&#8217; own wording:</p>
+<ul class="simple">
+<li>An <strong>activity outbox</strong> (probably at /api/user/&lt;nickname&gt;/feed). This
+is where the user posts new activities, and where others can read
+the user&#8217;s activities.</li>
+<li>An <strong>activity inbox</strong> (probably at /api/user/&lt;nickname&gt;/inbox). This is
+where the user can read posts that were sent to him/her. Remote
+servers can post activities here to be delivered to the user.</li>
+</ul>
+<p>(We use the inbox/outbox convention fairly strongly in PyPump.)</p>
+<p>You should read the Pump spec, but sometimes coding examples are the
+best way to learn.  So, that said, let&#8217;s get into an example of using
+PyPump!</p>
+</div>
+<div class="section" id="a-quick-example">
+<h2>A quick example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s assume you already have a user with the webfinger id of
+<a class="reference external" href="mailto:mizbunny&#37;&#52;&#48;example&#46;org">mizbunny<span>&#64;</span>example<span>&#46;</span>org</a>.  We want to check what our latest messages
+are!  But before we can do that, we need to authenticate.  If this is
+your first time, you need to authenticate this client:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">PyPump.PyPump</span> <span class="kn">import</span> <span class="n">PyPump</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pump</span> <span class="o">=</span> <span class="n">PyPump</span><span class="p">(</span><span class="s">&quot;mizbunny@example.org&quot;</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="s">&quot;Test.io&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client_credentials</span> <span class="o">=</span> <span class="n">pump</span><span class="o">.</span><span class="n">get_registration</span><span class="p">()</span>
+<span class="go"># will return [&lt;token&gt;, &lt;secret&gt;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client_tokens</span> <span class="o">=</span> <span class="n">pump</span><span class="o">.</span><span class="n">get_token</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The PyPump call will try to verify with oauth, You may wish to override how it asks for authentication.
+PyPump by default writes to standard out a URL for the user to click and reads in from standard in for a verification
+code presented by the webserver.</p>
+<p>You should store the client credentials somewhere.  You can now
+reconnect like so:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pump</span> <span class="o">=</span> <span class="n">PyPump</span><span class="p">(</span>
+<span class="gp">... </span>         <span class="s">&quot;mizbunny@example.org&quot;</span><span class="p">,</span>
+<span class="gp">... </span>         <span class="n">key</span><span class="o">=</span><span class="n">client_credentials</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="c"># the client key</span>
+<span class="gp">... </span>         <span class="n">secret</span><span class="o">=</span><span class="n">client_credentials</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="c"># the client secret</span>
+<span class="gp">... </span>         <span class="n">token</span><span class="o">=</span><span class="n">client_tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="c"># the token key</span>
+<span class="gp">... </span>         <span class="n">token_secret</span><span class="o">=</span><span class="n">client_tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="c"># the token secret</span>
+<span class="gp">... </span>         <span class="p">)</span>
+</pre></div>
+</div>
+<p>Okay, we&#8217;re connected!  Next up, we want to check out what our last 30
+messages are.  PyPump supports python-style index slicing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">recent_messages</span> <span class="o">=</span> <span class="n">pump</span><span class="o">.</span><span class="n">inbox</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span>  <span class="c"># get last 30 messages</span>
+</pre></div>
+</div>
+<p>We could print out each of the most recent messages like so:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">recent_messages</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="n">message</span><span class="o">.</span><span class="n">content</span>
+</pre></div>
+</div>
+<p>Maybe we&#8217;re just looking at our most recent message, and see it&#8217;s from
+our friend Evan.  It seems that he wants to invite us over for a
+dinner party:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">message</span> <span class="o">=</span> <span class="n">recent_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span>
+<span class="go">&lt;Notice by evan at 04/05/2013&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span><span class="o">.</span><span class="n">author</span>
+<span class="go">&lt;User evan@e14n.com&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+<span class="go">&quot;Yo, want to come over to dinner?  We&#39;re making asparagus!&quot;</span>
+</pre></div>
+</div>
+<p>We can comment on the message saying we&#8217;d love to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">PyPump.models.comemnt</span> <span class="kn">import</span> <span class="n">Comment</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">our_reply</span> <span class="o">=</span> <span class="n">Comment</span><span class="p">(</span><span class="s">&quot;I&#39;d love to!&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span><span class="o">.</span><span class="n">comment</span><span class="p">(</span><span class="n">our_reply</span><span class="p">)</span> <span class="c"># this is evans message we got above!</span>
+</pre></div>
+</div>
+<p>(Since this Note activity is being instantiated, it needs a
+reference to our PyPump class instance.  Objects that you get back and
+forth from the API themselves will try to keep track of their own
+parent PyPump object for you.)</p>
+<p>We could even like/favourite the previous message:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">message</span><span class="o">.</span><span class="n">like</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We can also check to see what our buddy&#8217;s public feed is.  Maybe
+he&#8217;s said some interesting things?:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">evan</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">author</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">messages</span> <span class="ow">in</span> <span class="n">evan</span><span class="o">.</span><span class="n">inbox</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="n">message</span><span class="o">.</span><span class="n">content</span>
+</pre></div>
+</div>
+<p>Prehaps we want to know a bit about evan:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">evan</span><span class="o">.</span><span class="n">summery</span>
+</pre></div>
+</div>
+<p>Want to see what the model actually looks like?
+All activities in pump.io have a .seralize method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">message</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">{</span>
+<span class="go">&quot;id&quot;: &quot;http://coding.example/api/activity/bwkflwken&quot;,</span>
+<span class="go">&quot;actor&quot;: {</span>
+<span class="go">  &quot;id&quot;: &quot;acct:bwk@coding.example&quot;,</span>
+<span class="go">  &quot;objectType&quot;: &quot;person&quot;,</span>
+<span class="go">  &quot;displayName&quot;: &quot;Brian Kernighan&quot;</span>
+<span class="go">},</span>
+<span class="go">&quot;verb&quot;: &quot;follow&quot;,</span>
+<span class="go">&quot;to&quot;: [{</span>
+<span class="go">  &quot;id&quot;: &quot;acct:ken@coding.example&quot;,</span>
+<span class="go">  &quot;objectType&quot;: &quot;person&quot;</span>
+<span class="go">}],</span>
+<span class="go">&quot;object&quot;: {</span>
+<span class="go">  &quot;id&quot;: &quot;acct:ken@coding.example&quot;,</span>
+<span class="go">  &quot;objectType&quot;: &quot;person&quot;,</span>
+<span class="go">  &quot;displayName&quot;: &quot;Ken Thompson&quot;</span>
+<span class="go">},</span>
+<span class="go">&quot;published&quot;: &quot;1974-01-01T00:00:00&quot;,</span>
+<span class="go">&quot;links&quot;: [</span>
+<span class="go">    {&quot;rel&quot;: &quot;self&quot;, &quot;href&quot;: &quot;http://coding.example/api/activity/bwkflwken&quot;}</span>
+<span class="go">]</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+<p>(The indent attribute here is passed to  to give prettier output.)</p>
+<p>(similarly, all activity classes provide a unserialize class method).</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#pypump-and-the-pump-api">PyPump and the Pump API</a></li>
+<li><a class="reference internal" href="#a-quick-example">A quick example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="qnd.html"
+                        title="previous chapter">Quick &#8216;n Dirty!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="authentication.html"
+                        title="next chapter">Introduction</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/gettingstarted/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="authentication.html" title="Introduction"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="qnd.html" title="Quick ‘n Dirty!"
+             >previous</a> |</li>
+        <li><a href="../index.html">PyPump 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Jessica Tallon.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
