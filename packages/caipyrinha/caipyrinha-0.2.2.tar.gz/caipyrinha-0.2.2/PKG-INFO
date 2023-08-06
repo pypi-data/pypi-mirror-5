@@ -1,0 +1,77 @@
+Metadata-Version: 1.1
+Name: caipyrinha
+Version: 0.2.2
+Summary: Abstraction layer over argparse.
+Home-page: https://bitbucket.org/leliel12/caipyrinha
+Author: JBC
+Author-email: jbc dot develop at gmail dot com
+License: WISKEY License
+Download-URL: https://bitbucket.org/leliel12/caipyrinha/downloads/0.2.2-caipyrinha.tar.gz
+Description: Abstraction layer over argparse.
+        
+        Caipyrinha added 2 methods to argparse.ArgumentParser, ``callback`` and
+        ``parse_wc``. Also a Caipyrinha instance is callable and is  equal to use
+        ``parse_wc`` method.
+        
+        
+        Example of use:
+        
+        .. code-block:: python
+        
+            # ex.py
+        
+            import caipyrinha
+        
+            parser = caipyrinha.Caipyrinha(prog="Your Program")
+            parser.add_argument("--version", action='version', version="%(prog)s 0.1")
+        
+            @parser.callback(exit=0, exclusive="group1")
+            def first(flags, returns):
+                '''Execute this option and exit'''
+                print "bye bye"
+        
+            @parser.callback(action="store")
+            def second(flags, returns):
+                '''set his own return value with his parameter'''
+                return flags.second
+        
+            @parser.callback("--third", exclusive="group1")
+            def no_used_name(flags, returns):
+                '''you cant use this argument with first'''
+                print returns.second
+        
+            import sys
+            parser(sys.argv[1:])
+        
+        
+        **Usage**
+        
+        ::
+        
+            $ python ex.py --help
+            usage: Your Program [-h] [--version] [--first] [--second SECOND] [--third]
+        
+            optional arguments:
+              -h, --help       show this help message and exit
+              --version        show program's version number and exit
+              --first          Execute this option and exit
+              --second SECOND  set his own return value with his parameter
+              --third          you cant use this argument with first
+            $ python ex.py --first
+            bye bye
+            $ python ex.py --first --second "hello from second"
+            bye bye
+            $ python ex.py --first --second "hello from second" --third
+            usage: Your Program [-h] [--version] [--first] [--second SECOND] [--third]
+            Your Program: error: argument --third: not allowed with argument --first
+            $ python ex.py --second "hello from second" --third
+            hello from second
+        
+        
+        
+Keywords: cli argparse argument parser optparse getopt
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Topic :: Utilities
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2
