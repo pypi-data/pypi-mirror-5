@@ -1,0 +1,49 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+	xmlns:zcml="http://namespaces.zope.org/zcml"
+	xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="collective.stringinterp.text">
+
+   <i18n:registerTranslations directory="locales" />
+
+   <include package="plone.stringinterp" />
+
+   <adapter
+       for="*"
+       provides="plone.stringinterp.interfaces.IStringSubstitution"
+       factory=".adapters.TextSubstitution"
+       name="text"
+       />
+   <adapter
+       for="*"
+       provides="plone.stringinterp.interfaces.IStringSubstitution"
+       factory=".adapters.IndentedTextSubstitution"
+       name="indented_text"
+       />
+
+
+   <adapter
+       for="Products.Archetypes.interfaces.IBaseContent"
+       provides=".interfaces.ITextExtractor"
+       factory=".adapters.ATTextExtractor"
+       />
+   <adapter
+       zcml:condition="installed plone.app.discussion"
+       for="plone.app.discussion.interfaces.IComment"
+       provides=".interfaces.ITextExtractor"
+       factory=".adapters.PADiscussionTextExtractor"
+       />
+   <adapter
+       zcml:condition="installed plone.dexterity"
+       for="plone.dexterity.interfaces.IDexterityContent"
+       provides=".interfaces.ITextExtractor"
+       factory=".adapters.DexterityTextExtractor"
+       />
+   <adapter
+       for="*"
+       provides=".interfaces.ITextExtractor"
+       factory=".adapters.GeneralTextExtractor"
+       />
+
+
+</configure>
