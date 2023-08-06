@@ -1,0 +1,37 @@
+Description:
+	This is a framework to execute programs in multiple nodes concurrently.
+	It consists of two modules: controller and executor. The controller controls the whole process, it first dispatches the executor 
+and user-defined program files to all the nodes specified by the user. Then it starts the executor remotely and waits for all the executors 
+to end. The executor run the program specified by the user and reports to the controller peroidly. When it finishes, it notifys the 
+controller and then exits. After all the executors have reported their status or a speicified timeout is reached, the controller exits. 
+The user can then send another request to pull the results. 
+	To monitor every executor's status, the executor reports to the controller peroidly. When one executor fails to report in a 
+predefined timeout, the controller will mark it as dead. And if the controller receives the report later, it changes the status to be alive 
+again. The controller never waits for a dead node.
+
+Features:
+	Heart beat monitor
+	Complete parallel execution
+	Easy tool for cloning files
+	Agile and simple: 
+		unlike program in other languages, this is simple and the executor is only one single file.
+	Minimal resource exhaustion: 
+		the execution is distributed in all nodes, and the controller exausted little resource(mainly for monitor heartbeat)
+
+Environment:
+	This is just tested on python2.7 and python2.6 in linux environment.
+	And it based on ssh and scp for net communication, before your exection, you should authenticated your controller with all executors.
+
+Commands:
+	corunner-run:	to run program in multiple nodes concurrently.
+	corunner-cp:	to dispatch files from or to multiple nodes concurrently.
+
+Example:
+	1. Execute the myscript in all machines from 192.168.101 to 192.168.200 conrrently with heartbeat switched off:
+	   Run in controller: corunner-run -n 192.168.100.101..200 -f myscript -r "/tmp/corunner" -i 1 python /tmp/corunner/myscript
+	2. Collect all output files from above to the controller and put in seperated directory:
+	   Run in controller: corunner-cp -n 192.168.100.101..200 -i -s /tmp/corunner/ouput -d /temp/corunner/all --divide
+
+Other:
+	If you have any problem or suggestion, welcome to contact me, my email is zwsun<sun33170161@gmail.com>. I'm pleasant if it can help 
+you and improve your efficiency when working with many machines. 
