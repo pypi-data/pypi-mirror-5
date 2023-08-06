@@ -1,0 +1,153 @@
+`tmuxp` solves the panes / pains of managing workspaces.
+
+.. image:: https://travis-ci.org/tony/tmuxp.png?branch=master
+   :target: https://travis-ci.org/tony/tmuxp
+
+.. image:: https://badge.fury.io/py/tmuxp.png
+    :target: http://badge.fury.io/py/tmuxp
+
+.. figure:: https://raw.github.com/tony/tmuxp/master/doc/_static/tmuxp-dev-screenshot.png
+    :scale: 100%
+    :width: 65%
+    :align: center
+
+Open to testers
+---------------
+
+tmuxp is still **alpha** code and needs a few more weeks until stable.
+See the `Issues tracker`_ to see known issues and for any other concerns.
+
+Install
+"""""""
+
+- install ``tmux``, at least version **1.8**
+- libyaml is installed for your distribution.
+
+Install ``tmuxp``:
+
+.. code-block:: bash
+
+    $ pip install tmuxp
+    
+
+See: `Quickstart`_
+
+tmux bash completion
+""""""""""""""""""""
+
+tmuxp uses ``switch-client`` for you if already in a TMUX client.
+
+.. code-block:: bash
+
+    $ tmuxp attach-session<tab> # current sessions
+    $ tmuxp kill-session<tab> # current sessions
+
+Load a session configuration from a YAML or JSON file.
+
+.. code-block:: bash
+
+    $ tmuxp load<tab> # configs in config dir, current directory
+
+Convert a session config JSON <=> YAML:
+
+.. code-block:: bash
+
+    $ tmuxp convert<tab> # configs in config dir, current directory
+
+See: `bash completion`_
+
+load tmux sessions from yaml and json
+"""""""""""""""""""""""""""""""""""""
+
+Load from ``~/.tmuxp.yaml`` or ``~/.tmuxp.json`` in current directory.
+
+.. code-block:: bash
+
+    $ tmuxp load .
+
+Load ``myconfig.yaml``.
+
+.. code-block:: bash
+
+    $ tmuxp load myconfig.yaml
+
+``$ mkdir ~/.tmuxp`` and make a file ``~/.tmuxp/test.yaml``.
+
+.. code-block:: yaml
+
+    session_name: 2-pane-vertical
+    windows:
+      - window_name: my test window
+        panes:
+          - pwd
+          - pwd
+
+.. code-block:: bash
+
+    $ tmuxp load test.yaml
+
+or ``~/.tmuxp/test.json``:
+
+.. code-block:: json
+
+    {
+      "windows": [
+        {
+          "panes": [
+            "pwd", 
+            "pwd"
+          ], 
+          "window_name": "my test window"
+        }
+      ], 
+      "session_name": "2-pane-vertical"
+    }
+
+.. code-block:: bash
+
+    $ tmuxp load test.json
+
+See: `Examples`_
+
+==============  ==========================================================
+tmux support    1.8, 1.9-dev
+config support  yaml, json, python dict
+Travis          http://travis-ci.org/tony/tmuxp
+Docs            http://tmuxp.rtfd.org
+API             http://tmuxp.readthedocs.org/en/latest/api.html
+Changelog       http://tmuxp.readthedocs.org/en/latest/changes.html
+Issues          https://github.com/tony/tmuxp/issues
+Source          https://github.com/tony/tmuxp
+pypi            https://pypi.python.org/pypi/tmuxp
+License         `BSD`_.
+git repo        .. code-block:: bash
+
+                    $ git clone https://github.com/tony/tmuxp.git
+install dev     .. code-block:: bash
+
+                    $ git clone https://github.com/tony/tmuxp.git tmuxp
+                    $ cd ./tmuxp
+                    $ virtualenv .env
+                    $ source .env/bin/activate
+                    $ pip install -e .
+
+                See the `developing and testing`_ page in the docs for
+                more.
+tests           .. code-block:: bash
+
+                    $ python ./run_tests.py
+==============  ==========================================================
+
+.. _BSD: http://opensource.org/licenses/BSD-3-Clause
+.. _developing and testing: http://tmuxp.readthedocs.org/en/latest/developing.html
+.. _Examples: http://tmuxp.readthedocs.org/en/latest/examples.html
+.. _Quickstart: http://tmuxp.readthedocs.org/en/latest/quickstart.html
+.. _bash completion: http://tmuxp.readthedocs.org/en/latest/quickstart.html#bash-completion
+.. _Developing and Testing: http://tmuxp.readthedocs.org/en/latest/developing.html
+.. _tmuxinator: https://github.com/aziz/tmuxinator
+.. _teamocil: https://github.com/remiprev/teamocil
+.. _abstraction layer: http://en.wikipedia.org/wiki/Abstraction_layer
+.. _ORM: http://tmuxp.readthedocs.org/en/latest/quickstart.html#tmux-orm
+.. _tmux(1): http://tmux.sourceforge.net/
+.. _Issues tracker: https://github.com/tony/tmuxp/issues
+.. _python dict: http://docs.python.org/2/library/stdtypes.html#dict
