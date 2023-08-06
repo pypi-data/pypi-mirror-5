@@ -1,0 +1,972 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pydna.assembly2 &mdash; Pydna 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Pydna 0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pydna 0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pydna.assembly2</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="kn">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">from</span> <span class="nn">Bio.SeqFeature</span> <span class="kn">import</span> <span class="n">ExactPosition</span>
+<span class="kn">from</span> <span class="nn">Bio.SeqFeature</span> <span class="kn">import</span> <span class="n">FeatureLocation</span>
+<span class="kn">from</span> <span class="nn">Bio.SeqFeature</span> <span class="kn">import</span> <span class="n">SeqFeature</span>
+
+<span class="kn">from</span> <span class="nn">pydna</span> <span class="kn">import</span> <span class="n">Dseq</span>
+<span class="kn">from</span> <span class="nn">pydna</span> <span class="kn">import</span> <span class="n">Dseqrecord</span>
+<span class="kn">from</span> <span class="nn">pydna._simple_paths7</span> <span class="kn">import</span> <span class="n">all_circular_paths_edges</span>
+<span class="kn">from</span> <span class="nn">pydna._simple_paths8</span> <span class="kn">import</span> <span class="n">all_simple_paths_edges</span>
+<span class="kn">from</span> <span class="nn">findsubstrings_suffix_arrays_python</span> <span class="kn">import</span> <span class="n">common_sub_strings</span>
+<span class="kn">from</span> <span class="nn">findterminaloverlap_indexof_python</span> <span class="kn">import</span> <span class="n">terminal_overlap</span>
+
+<span class="k">def</span> <span class="nf">_add_tr_features</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">limit</span><span class="p">):</span>
+    <span class="c">#dsrecs=list(copy.deepcopy(dsrecs))</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">dsrec</span> <span class="ow">in</span> <span class="n">dsrecs</span><span class="p">:</span>
+        <span class="n">dsrec</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dsrec</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span><span class="o">!=</span><span class="s">&quot;overlap&quot;</span><span class="p">]</span>
+        <span class="n">dsrec</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">dsrec</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">fill_in</span><span class="p">()</span>
+    <span class="n">rcs</span> <span class="o">=</span> <span class="p">{</span><span class="n">dsrec</span><span class="p">:</span><span class="n">dsrec</span><span class="o">.</span><span class="n">rc</span><span class="p">()</span> <span class="k">for</span> <span class="n">dsrec</span> <span class="ow">in</span> <span class="n">dsrecs</span><span class="p">}</span>
+    <span class="n">matches</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">dsset</span><span class="o">=</span><span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">terminal_overlap</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> 
+                                 <span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> 
+                                 <span class="n">limit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">match</span><span class="p">))</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+        <span class="n">match</span> <span class="o">=</span> <span class="n">common_sub_strings</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                   <span class="nb">str</span><span class="p">(</span><span class="n">rcs</span><span class="p">[</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                                <span class="n">limit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">rcs</span><span class="p">[</span><span class="n">b</span><span class="p">],</span> <span class="n">match</span><span class="p">))</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">rcs</span><span class="p">[</span><span class="n">b</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span> 
+        <span class="k">for</span> <span class="n">start_in_a</span><span class="p">,</span> <span class="n">start_in_b</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">match</span><span class="p">:</span>
+    
+            <span class="n">chksum</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">start_in_a</span><span class="p">:</span><span class="n">start_in_a</span><span class="o">+</span><span class="n">length</span><span class="p">]</span><span class="o">.</span><span class="n">seguid</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">chksum</span> <span class="o">==</span> <span class="n">b</span><span class="p">[</span><span class="n">start_in_b</span><span class="p">:</span><span class="n">start_in_b</span><span class="o">+</span><span class="n">length</span><span class="p">]</span><span class="o">.</span><span class="n">seguid</span><span class="p">()</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fcol</span><span class="p">,</span> <span class="n">revcol</span> <span class="o">=</span> <span class="n">cols</span><span class="p">[</span><span class="n">chksum</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">fcol</span> <span class="o">=</span> <span class="s">&#39;#</span><span class="si">%02X%02X%02X</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">))</span>
+                <span class="n">rcol</span> <span class="o">=</span> <span class="s">&#39;#</span><span class="si">%02X%02X%02X</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">))</span>
+                <span class="n">cols</span><span class="p">[</span><span class="n">chksum</span><span class="p">]</span> <span class="o">=</span> <span class="n">fcol</span><span class="p">,</span><span class="n">rcol</span>
+            
+            <span class="n">qual</span>      <span class="o">=</span> <span class="p">{</span><span class="s">&quot;note&quot;</span>             <span class="p">:</span> <span class="p">[</span><span class="s">&quot;olp_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">chksum</span><span class="p">)],</span>
+                         <span class="s">&quot;chksum&quot;</span>           <span class="p">:</span> <span class="p">[</span><span class="n">chksum</span><span class="p">],</span>
+                         <span class="s">&quot;ApEinfo_fwdcolor&quot;</span> <span class="p">:</span> <span class="p">[</span><span class="n">fcol</span><span class="p">],</span>
+                         <span class="s">&quot;ApEinfo_revcolor&quot;</span> <span class="p">:</span> <span class="p">[</span><span class="n">rcol</span><span class="p">]}</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chksum</span> <span class="ow">in</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">qualifiers</span><span class="p">[</span><span class="s">&quot;chksum&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">a</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&quot;overlap&quot;</span><span class="p">]:</span>            
+                <span class="n">a</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">SeqFeature</span><span class="p">(</span> <span class="n">FeatureLocation</span><span class="p">(</span><span class="n">start_in_a</span><span class="p">,</span>
+                                                               <span class="n">start_in_a</span> <span class="o">+</span> <span class="n">length</span><span class="p">),</span>
+                                                               <span class="nb">type</span> <span class="o">=</span> <span class="s">&quot;overlap&quot;</span><span class="p">,</span>
+                                                               <span class="n">qualifiers</span> <span class="o">=</span> <span class="n">qual</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chksum</span> <span class="ow">in</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">qualifiers</span><span class="p">[</span><span class="s">&quot;chksum&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">b</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&quot;overlap&quot;</span><span class="p">]:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">SeqFeature</span><span class="p">(</span> <span class="n">FeatureLocation</span><span class="p">(</span><span class="n">start_in_b</span><span class="p">,</span>
+                                                               <span class="n">start_in_b</span> <span class="o">+</span> <span class="n">length</span><span class="p">),</span>
+                                                               <span class="nb">type</span> <span class="o">=</span> <span class="s">&quot;overlap&quot;</span><span class="p">,</span>
+                                                               <span class="n">qualifiers</span> <span class="o">=</span> <span class="n">qual</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">dsset</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">features</span><span class="p">],</span> <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s">&quot;location.start&quot;</span><span class="p">))</span> 
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">dsset</span><span class="p">)</span>
+    
+    
+
+<span class="k">def</span> <span class="nf">_add_hr_features</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">limit</span><span class="p">):</span>    
+    <span class="c">#dsrecs=list(copy.deepcopy(dsrecs))</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">dsrec</span> <span class="ow">in</span> <span class="n">dsrecs</span><span class="p">:</span>
+        <span class="n">dsrec</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dsrec</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span><span class="o">!=</span><span class="s">&quot;overlap&quot;</span><span class="p">]</span>
+        <span class="n">dsrec</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">dsrec</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">fill_in</span><span class="p">()</span>
+    <span class="c">#rcs = [dsrec.rc() for dsrec in dsrecs]</span>
+    <span class="n">rcs</span> <span class="o">=</span> <span class="p">{</span><span class="n">dsrec</span><span class="p">:</span><span class="n">dsrec</span><span class="o">.</span><span class="n">rc</span><span class="p">()</span> <span class="k">for</span> <span class="n">dsrec</span> <span class="ow">in</span> <span class="n">dsrecs</span><span class="p">}</span>
+    <span class="n">matches</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">dsset</span><span class="o">=</span><span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">common_sub_strings</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                                   <span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                                                <span class="n">limit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">match</span><span class="p">))</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+            
+        <span class="n">match</span> <span class="o">=</span> <span class="n">common_sub_strings</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                                   <span class="nb">str</span><span class="p">(</span><span class="n">rcs</span><span class="p">[</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                                                <span class="n">limit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">rcs</span><span class="p">[</span><span class="n">b</span><span class="p">],</span> <span class="n">match</span><span class="p">))</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">dsset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">rcs</span><span class="p">[</span><span class="n">b</span><span class="p">])</span>
+
+<span class="c">#    for a in set(dsrecs) - dsset:</span>
+<span class="c">#        for rc in rcs:</span>
+<span class="c">#            match = common_sub_strings(str(a.seq).upper(),</span>
+<span class="c">#                                       str(rc.seq).upper(),</span>
+<span class="c">#                                       limit)</span>
+<span class="c">#            if match:</span>
+<span class="c">#                matches.append((a, rc, match))</span>
+<span class="c">#                #matches.append((a.rc(), b, [(len(a)-sa-le, len(b)-sb-le, le) for sa,sb,le in match]))</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span> 
+        <span class="k">for</span> <span class="n">start_in_a</span><span class="p">,</span> <span class="n">start_in_b</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">match</span><span class="p">:</span>
+<span class="c">#            dsset.add(a)</span>
+<span class="c">#            dsset.add(b)</span>
+            <span class="n">chksum</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">start_in_a</span><span class="p">:</span><span class="n">start_in_a</span><span class="o">+</span><span class="n">length</span><span class="p">]</span><span class="o">.</span><span class="n">seguid</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">chksum</span> <span class="o">==</span> <span class="n">b</span><span class="p">[</span><span class="n">start_in_b</span><span class="p">:</span><span class="n">start_in_b</span><span class="o">+</span><span class="n">length</span><span class="p">]</span><span class="o">.</span><span class="n">seguid</span><span class="p">()</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fcol</span><span class="p">,</span> <span class="n">revcol</span> <span class="o">=</span> <span class="n">cols</span><span class="p">[</span><span class="n">chksum</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">fcol</span> <span class="o">=</span> <span class="s">&#39;#</span><span class="si">%02X%02X%02X</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">))</span>
+                <span class="n">rcol</span> <span class="o">=</span> <span class="s">&#39;#</span><span class="si">%02X%02X%02X</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span><span class="mi">255</span><span class="p">))</span>
+                <span class="n">cols</span><span class="p">[</span><span class="n">chksum</span><span class="p">]</span> <span class="o">=</span> <span class="n">fcol</span><span class="p">,</span><span class="n">rcol</span>
+            
+            <span class="n">qual</span>      <span class="o">=</span> <span class="p">{</span><span class="s">&quot;note&quot;</span>             <span class="p">:</span> <span class="p">[</span><span class="s">&quot;olp_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">chksum</span><span class="p">)],</span>
+                         <span class="s">&quot;chksum&quot;</span>           <span class="p">:</span> <span class="p">[</span><span class="n">chksum</span><span class="p">],</span>
+                         <span class="s">&quot;ApEinfo_fwdcolor&quot;</span> <span class="p">:</span> <span class="p">[</span><span class="n">fcol</span><span class="p">],</span>
+                         <span class="s">&quot;ApEinfo_revcolor&quot;</span> <span class="p">:</span> <span class="p">[</span><span class="n">rcol</span><span class="p">]}</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chksum</span> <span class="ow">in</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">qualifiers</span><span class="p">[</span><span class="s">&quot;chksum&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">a</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&quot;overlap&quot;</span><span class="p">]:</span>            
+                <span class="n">a</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">SeqFeature</span><span class="p">(</span> <span class="n">FeatureLocation</span><span class="p">(</span><span class="n">start_in_a</span><span class="p">,</span>
+                                                               <span class="n">start_in_a</span> <span class="o">+</span> <span class="n">length</span><span class="p">),</span>
+                                                               <span class="nb">type</span> <span class="o">=</span> <span class="s">&quot;overlap&quot;</span><span class="p">,</span>
+                                                               <span class="n">qualifiers</span> <span class="o">=</span> <span class="n">qual</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chksum</span> <span class="ow">in</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">qualifiers</span><span class="p">[</span><span class="s">&quot;chksum&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">b</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&quot;overlap&quot;</span><span class="p">]:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">SeqFeature</span><span class="p">(</span> <span class="n">FeatureLocation</span><span class="p">(</span><span class="n">start_in_b</span><span class="p">,</span>
+                                                               <span class="n">start_in_b</span> <span class="o">+</span> <span class="n">length</span><span class="p">),</span>
+                                                               <span class="nb">type</span> <span class="o">=</span> <span class="s">&quot;overlap&quot;</span><span class="p">,</span>
+                                                               <span class="n">qualifiers</span> <span class="o">=</span> <span class="n">qual</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">dsset</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">features</span><span class="p">],</span> <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s">&quot;location.start&quot;</span><span class="p">))</span>          
+
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">dsset</span><span class="p">)</span>
+    
+    
+    
+    
+    
+    
+    
+    
+
+<span class="k">def</span> <span class="nf">_create_graph</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">):</span>
+    
+    <span class="n">G</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">MultiDiGraph</span><span class="p">(</span> <span class="n">multiedges</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">selfloops</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span> <span class="s">&#39;5&#39;</span> <span class="p">)</span> <span class="c">#, sek=Dseqrecord(&#39;&#39;))</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span> <span class="s">&#39;3&#39;</span> <span class="p">)</span> <span class="c">#, sek=Dseqrecord(&#39;&#39;))</span>
+    
+    <span class="k">for</span> <span class="n">dsrec</span> <span class="ow">in</span> <span class="n">dsrecs</span><span class="p">:</span>
+        <span class="n">overlaps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">qualifiers</span><span class="p">[</span><span class="s">&#39;chksum&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dsrec</span><span class="o">.</span><span class="n">features</span> 
+                            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span><span class="o">==</span><span class="s">&#39;overlap&#39;</span><span class="p">}</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+                           <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s">&#39;location.start&#39;</span><span class="p">))</span>          
+
+        <span class="k">if</span> <span class="n">overlaps</span><span class="p">:</span>
+            <span class="n">overlaps</span> <span class="o">=</span> <span class="p">([</span><span class="n">SeqFeature</span><span class="p">(</span><span class="n">FeatureLocation</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+                         <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;overlap&#39;</span><span class="p">,</span>
+                         <span class="n">qualifiers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;chksum&#39;</span><span class="p">:[</span><span class="s">&#39;5&#39;</span><span class="p">]})]</span><span class="o">+</span>
+                         <span class="n">overlaps</span><span class="o">+</span>
+                        <span class="p">[</span><span class="n">SeqFeature</span><span class="p">(</span><span class="n">FeatureLocation</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dsrec</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">dsrec</span><span class="p">)),</span>
+                                    <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;overlap&#39;</span><span class="p">,</span>
+                                    <span class="n">qualifiers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;chksum&#39;</span><span class="p">:[</span><span class="s">&#39;3&#39;</span><span class="p">]})])</span>
+            
+            <span class="k">for</span> <span class="n">olp1</span><span class="p">,</span> <span class="n">olp2</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">overlaps</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                
+                <span class="n">n1</span> <span class="o">=</span> <span class="n">olp1</span><span class="o">.</span><span class="n">qualifiers</span><span class="p">[</span><span class="s">&#39;chksum&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">n2</span> <span class="o">=</span> <span class="n">olp2</span><span class="o">.</span><span class="n">qualifiers</span><span class="p">[</span><span class="s">&#39;chksum&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                
+                <span class="k">if</span> <span class="n">n1</span> <span class="o">==</span> <span class="s">&#39;5&#39;</span> <span class="ow">and</span> <span class="n">n2</span><span class="o">==</span><span class="s">&#39;3&#39;</span><span class="p">:</span>
+                    <span class="k">continue</span>   
+                
+                <span class="n">s1</span><span class="p">,</span><span class="n">e1</span><span class="p">,</span><span class="n">s2</span><span class="p">,</span><span class="n">e2</span> <span class="o">=</span> <span class="p">(</span><span class="n">olp1</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">position</span><span class="p">,</span>
+                               <span class="n">olp1</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">position</span><span class="p">,</span>
+                               <span class="n">olp2</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">position</span><span class="p">,</span>
+                               <span class="n">olp2</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">position</span><span class="p">,)</span>
+                
+                <span class="c">#start, end = olp1.location.end, olp2.location.start</span>
+                
+                <span class="c">#sek = dsrec[start:end]</span>
+                <span class="c">#sek = dsrec[e1:s2]</span>
+                
+                <span class="c">#begin, stop = int(olp1.location.start), int(olp2.location.end)</span>
+                
+                <span class="c">#processed_sek = dsrec[begin:stop]</span>
+                <span class="n">processed_sek</span> <span class="o">=</span> <span class="n">dsrec</span><span class="p">[</span><span class="n">s1</span><span class="p">:</span><span class="n">e2</span><span class="p">]</span>
+                    
+                <span class="n">processed_sek</span> <span class="o">=</span> <span class="n">Dseqrecord</span><span class="p">(</span><span class="n">Dseq</span><span class="p">(</span>
+                                <span class="n">watson</span> <span class="o">=</span> <span class="n">processed_sek</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">watson</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">processed_sek</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">watson</span><span class="p">)</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">olp2</span><span class="p">)],</span>
+                                <span class="n">crick</span>  <span class="o">=</span> <span class="n">processed_sek</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">crick</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">processed_sek</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">crick</span><span class="p">)</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">olp1</span><span class="p">)],</span>
+                                <span class="n">ovhg</span>   <span class="o">=</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">olp1</span><span class="p">)))</span>
+                
+                <span class="c">#if start&gt;end:</span>
+<span class="c">#                if e1&gt;s2:</span>
+<span class="c">#                    sek=Dseqrecord((e1-s2)*&#39;-&#39;) # tandem overlaps overlap with each other !</span>
+                        
+                <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="c">#sek=sek, </span>
+                                   <span class="n">dsrec</span><span class="o">=</span><span class="n">dsrec</span><span class="p">,</span> 
+                                   <span class="n">processed_sek</span> <span class="o">=</span> <span class="n">processed_sek</span><span class="p">,</span> 
+                                   <span class="n">start1</span><span class="o">=</span><span class="n">s1</span><span class="p">,</span>
+                                   <span class="n">end1</span><span class="o">=</span><span class="n">e1</span><span class="p">,</span>
+                                   <span class="n">start2</span><span class="o">=</span><span class="n">s2</span><span class="p">,</span>
+                                   <span class="n">end2</span><span class="o">=</span><span class="n">e2</span><span class="p">)</span>
+<span class="c">#                G.node[n1][&#39;sek&#39;] = olp1.extract(dsrec)</span>
+<span class="c">#                G.node[n2][&#39;sek&#39;] = olp2.extract(dsrec)        </span>
+    <span class="k">return</span> <span class="n">G</span>
+
+
+<span class="k">def</span> <span class="nf">_recombination_assembly</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">homology_alg</span><span class="p">,</span> <span class="n">limit</span><span class="p">):</span>
+    
+    <span class="n">assembly</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;assembly&#39;</span><span class="p">,</span> <span class="s">&#39;result source_fragments sticky_fragments source_offsets sticky_offsets overlap_sizes&#39;</span><span class="p">)</span>
+    
+    <span class="n">dsrecs</span> <span class="o">=</span> <span class="n">homology_alg</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span>
+    
+    <span class="n">max_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">)</span>
+
+<span class="c">#    for d in dsrecs:</span>
+<span class="c">#        import time</span>
+<span class="c">#        ape(d)</span>
+<span class="c">#        time.sleep(0.5)</span>
+<span class="c">#    import sys;sys.exit()</span>
+    
+    <span class="n">lG</span> <span class="o">=</span> <span class="n">_create_graph</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">)</span>    
+    <span class="n">cG</span> <span class="o">=</span> <span class="n">lG</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>    
+    <span class="n">cG</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">((</span><span class="s">&#39;5&#39;</span><span class="p">,</span><span class="s">&#39;3&#39;</span><span class="p">))</span>
+    <span class="n">circular_products</span><span class="o">=</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    
+<span class="c">#    all_circular_paths_edges_=[]                                        #</span>
+<span class="c">#    for path in all_circular_paths_edges(cG):                           #</span>
+<span class="c">#        all_circular_paths_edges_.append(path)                          #</span>
+<span class="c">#    all_circular_paths_edges_=[all_circular_paths_edges_[1],]           #</span>
+
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">all_circular_paths_edges</span><span class="p">(</span><span class="n">cG</span><span class="p">):</span>     
+
+        <span class="n">first_node</span><span class="p">,</span> <span class="n">second_node</span><span class="p">,</span> <span class="n">edgedict</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sticky_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start1&#39;</span><span class="p">]]</span>
+        <span class="n">source_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">],</span> <span class="p">]</span>
+        <span class="n">source_seqs</span><span class="o">=</span><span class="p">[</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">],]</span>
+        <span class="n">sticky_source_seqs</span><span class="o">=</span><span class="p">[</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;processed_sek&#39;</span><span class="p">],]</span>
+        <span class="c">#esek=edgedict[&#39;sek&#39;]</span>
+        <span class="n">overlap_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]]</span>
+        
+        <span class="c">#if esek.seq.watson == len(esek.seq.watson)*&#39;-&#39;:</span>
+        <span class="k">if</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span>
+            <span class="c">#result=cG.node[second_node][&#39;sek&#39;][len(esek):]</span>
+            <span class="c">#result=edgedict[&#39;dsrec&#39;][edgedict[&#39;start1&#39;]:edgedict[&#39;start1&#39;]+len(esek)]</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]):</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#result=esek+cG.node[second_node][&#39;sek&#39;]</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span>
+        
+        <span class="k">for</span> <span class="n">first_node</span><span class="p">,</span> <span class="n">second_node</span><span class="p">,</span> <span class="n">edgedict</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>            
+            <span class="c">#esek=edgedict[&#39;sek&#39;]</span>
+            <span class="n">source_seqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">])</span>
+            <span class="n">sticky_source_seqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;processed_sek&#39;</span><span class="p">])</span>
+            <span class="n">overlap_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">])</span>
+            <span class="c">#if esek.seq.watson == len(esek.seq.watson)*&#39;-&#39;:</span>
+            <span class="k">if</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span>
+                <span class="c">#result+=cG.node[second_node][&#39;sek&#39;][len(esek):]</span>
+                <span class="c">#print cG.node[second_node][&#39;sek&#39;][len(esek):]</span>
+                <span class="n">result</span><span class="o">+=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]):</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span>                
+                <span class="c">#raw_input(&quot;zzz&quot;)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c">#result+=e</span>
+                <span class="c">#result+=cG.node[second_node][&#39;sek&#39;]</span>
+                <span class="n">result</span><span class="o">+=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span>
+
+            <span class="c">#sticky_offsets.append( len(result) )</span>
+            <span class="c">#source_offsets.append( sticky_offsets[-2] - edgedict[&#39;start1&#39;] + hej )</span>
+            
+            <span class="n">sticky_offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">sticky_offsets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start1&#39;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">source_offsets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start1&#39;</span><span class="p">]</span>
+            <span class="n">source_offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">source_offsets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span> <span class="p">)</span>
+            
+        <span class="n">add</span><span class="o">=</span><span class="bp">True</span>
+        <span class="k">for</span> <span class="n">cp</span> <span class="ow">in</span> <span class="n">circular_products</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)]:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span>
+                <span class="ow">or</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">reverse_complement</span><span class="p">())</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="p">):</span>
+                <span class="n">add</span><span class="o">=</span><span class="bp">False</span>                
+        <span class="k">if</span> <span class="n">add</span><span class="p">:</span>
+            <span class="n">circular_products</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">assembly</span><span class="p">(</span><span class="n">Dseqrecord</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">circular</span> <span class="o">=</span> <span class="bp">True</span><span class="p">),</span> <span class="n">source_seqs</span><span class="p">,</span> <span class="n">sticky_source_seqs</span><span class="p">,</span> <span class="n">source_offsets</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">sticky_offsets</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">overlap_sizes</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="n">circular_products</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">circular_products</span><span class="p">[</span><span class="n">size</span><span class="p">]</span> <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">circular_products</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)))</span>
+    
+    <span class="n">linear_products</span><span class="o">=</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>    
+    <span class="n">pw</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sticky_source_seqs</span><span class="o">=</span><span class="p">[]</span>
+    
+<span class="c">#    for d in dsrecs:</span>
+<span class="c">#        import time</span>
+<span class="c">#        ape(d)</span>
+<span class="c">#        time.sleep(0.5)</span>
+<span class="c">#    import sys;sys.exit()</span>
+
+    
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">all_simple_paths_edges</span><span class="p">(</span><span class="n">lG</span><span class="p">,</span> <span class="s">&#39;5&#39;</span><span class="p">,</span> <span class="s">&#39;3&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">max_nodes</span><span class="p">):</span>
+<span class="c">#        sticky_offsets = [0]</span>
+<span class="c">#        source_offsets = []</span>
+<span class="c">#        source_seqs=[]</span>
+<span class="c">#        sticky_source_seqs=[]</span>
+<span class="c">#        result = Dseqrecord(&#39;&#39;)</span>
+        
+        
+        <span class="n">first_node</span><span class="p">,</span> <span class="n">second_node</span><span class="p">,</span> <span class="n">edgedict</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">edgedict</span> <span class="o">=</span> <span class="n">edgedict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="c">#print first_node, second_node, edgedict</span>
+        <span class="n">sticky_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start1&#39;</span><span class="p">]]</span>
+        <span class="n">source_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">],</span> <span class="p">]</span>
+        <span class="n">source_seqs</span><span class="o">=</span><span class="p">[</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">],]</span>
+        <span class="n">sticky_source_seqs</span><span class="o">=</span><span class="p">[</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;processed_sek&#39;</span><span class="p">],]</span>
+        <span class="c">#esek=edgedict[&#39;sek&#39;]</span>
+        <span class="n">overlap_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]]</span>
+        
+        <span class="c">#if esek.seq.watson == len(esek.seq.watson)*&#39;-&#39;:</span>
+        <span class="k">if</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span>
+            <span class="c">#result=cG.node[second_node][&#39;sek&#39;][len(esek):]</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]):</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#result=esek+cG.node[second_node][&#39;sek&#39;]</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span>
+            
+        <span class="k">for</span> <span class="n">first_node</span><span class="p">,</span> <span class="n">second_node</span><span class="p">,</span> <span class="n">ed</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            
+            <span class="n">edgedict</span><span class="o">=</span><span class="n">ed</span><span class="o">.</span><span class="n">values</span><span class="p">()</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="c">#e=edgedict[&#39;sek&#39;]</span>
+            <span class="n">source_seqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">])</span>
+            <span class="n">sticky_source_seqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;processed_sek&#39;</span><span class="p">])</span>
+            
+            <span class="c">#if e.seq.watson == len(e.seq.watson)*&#39;-&#39;:</span>
+            <span class="k">if</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span>
+                <span class="c">#result+=lG.node[second_node][&#39;sek&#39;][len(e):]</span>
+                <span class="n">result</span><span class="o">+=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]):</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c">#result+=e</span>
+                <span class="c">#result+=lG.node[second_node][&#39;sek&#39;]</span>
+                <span class="n">result</span><span class="o">+=</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;dsrec&#39;</span><span class="p">][</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end1&#39;</span><span class="p">]:</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]]</span>
+                
+<span class="c">#            sticky_offsets.append( len(result) - len(lG.node[second_node][&#39;sek&#39;]))</span>
+<span class="c">#            source_offsets.append( sticky_offsets[-2] - h[&#39;start1&#39;])</span>
+            <span class="n">sticky_offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">sticky_offsets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start1&#39;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">source_offsets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start1&#39;</span><span class="p">]</span>
+            <span class="n">source_offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">source_offsets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">overlap_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;end2&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">edgedict</span><span class="p">[</span><span class="s">&#39;start2&#39;</span><span class="p">])</span>
+            
+
+        <span class="n">add</span><span class="o">=</span><span class="bp">True</span>
+        <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">linear_products</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)]:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="ow">or</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">reverse_complement</span><span class="p">())</span><span class="o">.</span><span class="n">lower</span><span class="p">()):</span>
+                <span class="n">add</span><span class="o">=</span><span class="bp">False</span>
+        <span class="k">for</span> <span class="n">dsrec</span> <span class="ow">in</span> <span class="n">dsrecs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">dsrec</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="ow">or</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">dsrec</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">reverse_complement</span><span class="p">())</span><span class="o">.</span><span class="n">lower</span><span class="p">()):</span>
+                <span class="n">add</span><span class="o">=</span><span class="bp">False</span>
+        <span class="k">if</span> <span class="n">add</span><span class="p">:</span>
+            <span class="n">linear_products</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">assembly</span><span class="p">(</span> <span class="n">Dseqrecord</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">linear</span> <span class="o">=</span> <span class="bp">True</span><span class="p">),</span> <span class="n">source_seqs</span><span class="p">,</span> <span class="n">sticky_source_seqs</span><span class="p">,</span> <span class="n">source_offsets</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">sticky_offsets</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">overlap_sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="p">)</span>
+
+    <span class="n">linear_products</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">linear_products</span><span class="p">[</span><span class="n">size</span><span class="p">]</span> <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">linear_products</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)))</span>
+    
+    <span class="n">products</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;products&#39;</span><span class="p">,</span> <span class="s">&#39;linear circular&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">products</span><span class="p">(</span><span class="n">linear_products</span><span class="p">,</span> <span class="n">circular_products</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="gibson_assembly"><a class="viewcode-back" href="../../pydna.html#pydna.assembly2.gibson_assembly">[docs]</a><span class="k">def</span> <span class="nf">gibson_assembly</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Accepts a list of Dseqrecords and tries to assemble them into</span>
+<span class="sd">    linear or circular assemblies based on shared regions of homology at the </span>
+<span class="sd">    extremities of each fragment with a minimum length given by limit.</span>
+<span class="sd">    </span>
+<span class="sd">    This is a simulation of the DNA assembly method described in:</span>
+<span class="sd">    </span>
+<span class="sd">    Gibson DG, Young L, Chuang R-Y, Venter JC, Hutchison CA 3rd, Smith HO (2009)</span>
+<span class="sd">    Enzymatic assembly of DNA molecules up to several hundred kilobases. </span>
+<span class="sd">    Nat Methods 6:343–345. doi: 10.1038/nmeth.1318</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dsrecs : list</span>
+<span class="sd">        a list of Dseqrecord objects.</span>
+
+<span class="sd">    limit : int, optional</span>
+<span class="sd">        limit is set to 15 nucleotides by default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    linear, circular : tuple</span>
+<span class="sd">        Linear and circular are two lists containing linear </span>
+<span class="sd">        and circular assemblies.</span>
+
+<span class="sd">        Each object in linear or circular is a named tuple with the following</span>
+<span class="sd">        fields:</span>
+<span class="sd">        </span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | Field            | Type                | Contains                   | </span>
+<span class="sd">        +==================+=====================+============================+ </span>
+<span class="sd">        | result           | Dseqrecord          | Assembeled sequence        |</span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | fragments        | list of Dseqrecords | list of fragments          | </span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | offsets          | list of integers    | list of cumulative offsets |</span>
+<span class="sd">        |                  |                     | aligning each source       |</span>
+<span class="sd">        |                  |                     | fragment                   |</span>
+<span class="sd">        +------------------+------------+--------+----------------------------+      </span>
+<span class="sd">        | overlap_sizes    | list of integers    | list of the length of each |</span>
+<span class="sd">        |                  |                     | overlap joining the        |   </span>
+<span class="sd">        |                  |                     | sequences                  |</span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        </span>
+<span class="sd">        Source fragments are the double stranded blunt DNA fragments </span>
+<span class="sd">        originally added as the dsrecs argument. The parwise overlaps </span>
+<span class="sd">        found are added ar features to the source fragments.</span>
+<span class="sd">        </span>
+<span class="sd">        Offsets is a list with the cumulative stagger between </span>
+<span class="sd">        each fragment.</span>
+
+<span class="sd">        ::        </span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">                        &lt;--6-&gt;        &lt;--6-&gt;        overlap_sizes = [6,6]</span>
+<span class="sd">                        </span>
+<span class="sd">            cggcggcgggcc                            \\</span>
+<span class="sd">            gccgccgcccggACGGAG                      | </span>
+<span class="sd">                                                    |</span>
+<span class="sd">                        TGCCTCaccattgc              | sticky_fragments = [12,26]</span>
+<span class="sd">                              tggtaacgTTTTTT        |</span>
+<span class="sd">                                                    | </span>
+<span class="sd">                                      AAAAAAcatcata | </span>
+<span class="sd">                                            gtagtat /</span>
+<span class="sd">                                            </span>
+<span class="sd">            &lt;----------&gt;</span>
+<span class="sd">            &lt;------------------------&gt;              offsets</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    
+    
+    
+    <span class="n">pl</span><span class="p">,</span> <span class="n">pc</span> <span class="o">=</span> <span class="n">_recombination_assembly</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">_add_tr_features</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pl</span> <span class="ow">or</span> <span class="n">pc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="n">products</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;products&#39;</span><span class="p">,</span> <span class="s">&#39;linear circular&#39;</span><span class="p">)</span>
+    <span class="n">assembly</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;assembly&#39;</span><span class="p">,</span> <span class="s">&#39;result fragments offsets overlap_sizes&#39;</span><span class="p">)</span>
+    <span class="n">linear_results</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">circular_results</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">pl</span><span class="p">:</span>
+        <span class="n">linear_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">assembly</span><span class="p">(</span><span class="n">result</span>        <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">result</span><span class="p">,</span>
+                                        <span class="n">fragments</span>     <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span>
+                                        <span class="n">offsets</span>       <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">,</span>
+                                        <span class="n">overlap_sizes</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">:</span>
+        <span class="n">circular_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">assembly</span><span class="p">(</span><span class="n">result</span>        <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">result</span><span class="p">,</span>
+                                          <span class="n">fragments</span>     <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span>
+                                          <span class="n">offsets</span>       <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">,</span>
+                                          <span class="n">overlap_sizes</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">))</span>
+        
+    <span class="k">return</span> <span class="n">products</span><span class="p">(</span><span class="n">linear</span><span class="o">=</span><span class="n">linear_results</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="n">circular_results</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="recombination_assembly"><a class="viewcode-back" href="../../pydna.html#pydna.assembly2.recombination_assembly">[docs]</a><span class="k">def</span> <span class="nf">recombination_assembly</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">25</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Accepts a list of Dseqrecords and tries to assemble them into</span>
+<span class="sd">    linear and circular assemblies based on shared regions of homology </span>
+<span class="sd">    with a minimum length given by limit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    dsrecs : list</span>
+<span class="sd">        a list of Dseqrecord objects.</span>
+
+<span class="sd">    limit : int, optional</span>
+<span class="sd">        limit is set to 25 nucleotides by default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    linear, circular: tuple</span>
+<span class="sd">        Linear and circular are two lists containing linear </span>
+<span class="sd">        and circular assemblies.</span>
+
+<span class="sd">        Each object in linear or circular is a named tuple with the following</span>
+<span class="sd">        fields        </span>
+
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | Field            | Type                | Contains                   | </span>
+<span class="sd">        +==================+=====================+============================+ </span>
+<span class="sd">        | result           | Dseqrecord          | Assembeled sequence        |</span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | source_fragments | list of Dseqrecords | list of fragments          | </span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | sticky_fragments | list of Dseqrecords | list of processed fragments|</span>
+<span class="sd">        |                  |                     | with a single stranded 5&#39;  | </span>
+<span class="sd">        |                  |                     | cohesive end               |</span>
+<span class="sd">        +------------------+---------------------+----------------------------+</span>
+<span class="sd">        | source_offsets   | list of integers    | list of cumulative offsets |</span>
+<span class="sd">        |                  |                     | aligning each source       |</span>
+<span class="sd">        |                  |                     | fragment                   |</span>
+<span class="sd">        +------------------+------------+--------+----------------------------+</span>
+<span class="sd">        | sticky_offsets   | list of integers    | list of cumulative offsets |</span>
+<span class="sd">        |                  |                     | aligning each sticky       |</span>
+<span class="sd">        |                  |                     | fragment                   |</span>
+<span class="sd">        +------------------+------------+--------+----------------------------+       </span>
+<span class="sd">        | overlap_sizes    | list of integers    | list of the length of each |</span>
+<span class="sd">        |                  |                     | overlap joining the        |   </span>
+<span class="sd">        |                  |                     | sequences                  |</span>
+<span class="sd">        +------------------+---------------------+----------------------------+        </span>
+
+
+<span class="sd">        Source fragments are the double stranded blunt DNA fragments </span>
+<span class="sd">        originally added as the dsrecs argument. The parwise overlaps </span>
+<span class="sd">        found are added ar features to the source fragments.</span>
+<span class="sd">        </span>
+<span class="sd">        Sticky fragments are source fragments that have been processed </span>
+<span class="sd">        so that they can be ligated together by the homologous repair DNA</span>
+<span class="sd">        machinery (single-strand annealing pathway). This involves trimming </span>
+<span class="sd">        DNA fragments so that the fragments are flanked by a 5&#39; single stranded</span>
+<span class="sd">        overhang.   </span>
+<span class="sd">        </span>
+<span class="sd">        Source_offsets is a list with the cumulative stagger between </span>
+<span class="sd">        each source fragment. Source offsets are different from sticky </span>
+<span class="sd">        offsets when the overlapping sequences are located in the interior</span>
+<span class="sd">        of the fragments.</span>
+
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">            &lt;--------&gt;</span>
+<span class="sd">            &lt;---------------------&gt;                 source_offsets = [10,23]</span>
+<span class="sd">            </span>
+<span class="sd">            </span>
+<span class="sd">            cggcggcgggccTGCCTCtc                    \\</span>
+<span class="sd">            gccgccgcccggACGGAGag                    | </span>
+<span class="sd">                                                    |</span>
+<span class="sd">                      taTGCCTCaccattgcAAAAAAtt      |  source_fragments</span>
+<span class="sd">                      atACGGAGtggtaacgTTTTTTaa      |</span>
+<span class="sd">                                                    | </span>
+<span class="sd">                                   aatAAAAAAcatcata | </span>
+<span class="sd">                                   ttaTTTTTTgtagtat /</span>
+<span class="sd">            </span>
+<span class="sd">                        &lt;--6-&gt;        &lt;--6-&gt;        overlap_sizes = [6,6]</span>
+<span class="sd">                     </span>
+<span class="sd">            cggcggcgggcc                             \\</span>
+<span class="sd">            gccgccgcccggACGGAG                       | </span>
+<span class="sd">                                                     |</span>
+<span class="sd">                        TGCCTCaccattgc               | sticky_fragments = [12,26]</span>
+<span class="sd">                              tggtaacgTTTTTT         |</span>
+<span class="sd">                                                     | </span>
+<span class="sd">                                      AAAAAAcatcata  | </span>
+<span class="sd">                                            gtagtat  /</span>
+<span class="sd">            &lt;----------&gt;</span>
+<span class="sd">            &lt;------------------------&gt;               sticky_offsets</span>
+<span class="sd">        </span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">_recombination_assembly</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">_add_hr_features</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="fusion_pcr_assembly"><a class="viewcode-back" href="../../pydna.html#pydna.assembly2.fusion_pcr_assembly">[docs]</a><span class="k">def</span> <span class="nf">fusion_pcr_assembly</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Accepts a list of Dseqrecords and tries to assemble them into</span>
+<span class="sd">    linear assemblies based on shared regions of homology at the </span>
+<span class="sd">    extremities of each fragment with a minimum length given by limit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    dsrecs : list</span>
+<span class="sd">        a list of Dseqrecord objects.</span>
+
+<span class="sd">    limit : int, optional</span>
+<span class="sd">        limit is set to 15 nucleotides by default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    linear: list</span>
+<span class="sd">        Each object in linear is a named tuple with the following</span>
+<span class="sd">        fields:</span>
+<span class="sd">        </span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | Field            | Type                | Contains                   | </span>
+<span class="sd">        +==================+=====================+============================+ </span>
+<span class="sd">        | result           | Dseqrecord          | Assembeled sequence        |</span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | fragments        | list of Dseqrecords | list of fragments          | </span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        | offsets          | list of integers    | list of cumulative offsets |</span>
+<span class="sd">        |                  |                     | aligning each source       |</span>
+<span class="sd">        |                  |                     | fragment                   |</span>
+<span class="sd">        +------------------+------------+--------+----------------------------+      </span>
+<span class="sd">        | overlap_sizes    | list of integers    | list of the length of each |</span>
+<span class="sd">        |                  |                     | overlap joining the        |   </span>
+<span class="sd">        |                  |                     | sequences                  |</span>
+<span class="sd">        +------------------+---------------------+----------------------------+ </span>
+<span class="sd">        </span>
+<span class="sd">        Source fragments are the double stranded blunt DNA fragments </span>
+<span class="sd">        originally added as the dsrecs argument. The parwise overlaps </span>
+<span class="sd">        found are added ar features to the source fragments.</span>
+<span class="sd">        </span>
+<span class="sd">        Offsets is a list with the cumulative stagger between </span>
+<span class="sd">        each fragment.</span>
+
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">                        &lt;--6-&gt;        &lt;--6-&gt;         overlap_sizes = [6,6]</span>
+<span class="sd">                                    </span>
+<span class="sd">            cggcggcgggccTGCCTC                      \\</span>
+<span class="sd">            gccgccgcccggACGGAG                      | </span>
+<span class="sd">                                                    |</span>
+<span class="sd">                        TGCCTCaccattgcAAAAAA        | fragments</span>
+<span class="sd">                        ACGGAGtggtaacgTTTTTT        |</span>
+<span class="sd">                                                    | </span>
+<span class="sd">                                      AAAAAAcatcata | </span>
+<span class="sd">                                      TTTTTTgtagtat /</span>
+
+<span class="sd">            &lt;----------&gt;</span>
+<span class="sd">            &lt;-----------------------&gt;               offsets = [12,26]</span>
+<span class="sd">                        </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">_recombination_assembly</span><span class="p">(</span><span class="n">dsrecs</span><span class="p">,</span> <span class="n">_add_tr_features</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span><span class="o">.</span><span class="n">linear</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">assembly</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;assembly&#39;</span><span class="p">,</span> <span class="s">&#39;result fragments offsets overlap_sizes&#39;</span><span class="p">)</span>
+    <span class="n">results</span><span class="o">=</span><span class="p">[]</span>    
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">assembly</span><span class="p">(</span><span class="n">result</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">result</span><span class="p">,</span>
+                                 <span class="n">fragments</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">source_fragments</span><span class="p">,</span>
+                                 <span class="n">offsets</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">source_offsets</span><span class="p">,</span>
+                                 <span class="n">overlap_sizes</span> <span class="o">=</span>  <span class="n">a</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">))</span>            
+    <span class="k">return</span> <span class="n">results</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pydna_helper</span> <span class="kn">import</span> <span class="n">ape</span>
+    <span class="kn">from</span> <span class="nn">pydna</span> <span class="kn">import</span> <span class="n">Dseqrecord</span><span class="p">,</span> <span class="n">parse</span><span class="p">,</span> <span class="n">eq</span>
+    
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;atgatcagagTATCTATctTGCCTCATATAAA&quot;</span><span class="p">)</span>                                
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                    <span class="s">&quot;TGCCTCATATAAAaccaagcatctattagacgtgtatcta&quot;</span><span class="p">)</span>
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">fusion_pcr_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">),</span> <span class="mi">13</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">olp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">fragments</span><span class="p">,</span> 
+                             <span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">offsets</span><span class="p">,</span>
+                             <span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="s">&quot;|&quot;</span><span class="o">*</span><span class="n">olp</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+
+<span class="c">#    for d in (a,b):</span>
+<span class="c">#        import time</span>
+<span class="c">#        ape(d)</span>
+<span class="c">#        time.sleep(0.5)</span>
+<span class="c">#    import sys;sys.exit()</span>
+
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;atgatcagagTATCTATctTGCCTCATATAAA&quot;</span><span class="p">)</span>                                
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                    <span class="s">&quot;tagatacacgtctaatagatgcttggtTTTATATGAGGCA&quot;</span><span class="p">)</span>
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">fusion_pcr_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">),</span> <span class="mi">13</span><span class="p">)</span>
+       
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">olp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">fragments</span><span class="p">,</span> 
+                             <span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">offsets</span><span class="p">,</span>
+                             <span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="s">&quot;|&quot;</span><span class="o">*</span><span class="n">olp</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+
+
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;cggcggcgggccTGCCTC&quot;</span><span class="p">)</span>                                  
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>             <span class="s">&quot;TGCCTCaccattgcAAAAAA&quot;</span><span class="p">)</span>
+    <span class="n">c</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                           <span class="s">&quot;AAAAAAcatcata&quot;</span> <span class="p">)</span>
+                                                                      
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">gibson_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">),</span> <span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">linear</span>
+    
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">olp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">fragments</span><span class="p">,</span> 
+                             <span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">offsets</span><span class="p">,</span>
+                             <span class="n">prods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="s">&quot;|&quot;</span><span class="o">*</span><span class="n">olp</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;atgatcagagTATCTATctTGCCTCATATAAAc&quot;</span><span class="p">)</span>                                
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                   <span class="s">&quot;gTGCCTCATATAAAaccaagcatctattagacgtgtatcta&quot;</span><span class="p">)</span>
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">recombination_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">),</span> <span class="mi">13</span><span class="p">)</span>
+    
+    
+    
+    
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">olp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span> 
+                             <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">,</span>
+                             <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="s">&quot;|&quot;</span><span class="o">*</span><span class="n">olp</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">spc2</span><span class="p">,</span> <span class="n">olp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_fragments</span><span class="p">,</span> 
+                                   <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_offsets</span><span class="p">,</span>
+                                   <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">,</span>                 
+                                   <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc2</span><span class="o">+</span><span class="s">&quot;|&quot;</span><span class="o">*</span><span class="n">olp</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;atgatcagagTATCTATctTGCCTCATATAAAc&quot;</span><span class="p">)</span>                                
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;tagatacacgtctaatagatgcttggtTTTATATGAGGCAc&quot;</span><span class="p">)</span>
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">recombination_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">),</span> <span class="mi">13</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">olp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span> 
+                             <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">,</span>
+                             <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="s">&quot;|&quot;</span><span class="o">*</span><span class="n">olp</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">spc2</span><span class="p">,</span> <span class="n">olp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_fragments</span><span class="p">,</span> 
+                                   <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_offsets</span><span class="p">,</span>
+                                   <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">,</span>                 
+                                   <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc2</span><span class="o">+</span><span class="s">&quot;|&quot;</span><span class="o">*</span><span class="n">olp</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+    
+    <span class="k">print</span> <span class="n">prods</span><span class="o">.</span><span class="n">__class__</span>
+    <span class="k">print</span> <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">;</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;!!!&quot;</span><span class="p">)</span>
+        
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;cggcggcgggccTGCCTCtc&quot;</span><span class="p">)</span>                                  
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>            <span class="s">&quot;aTGCCTCaccattgcAAAAAAtt&quot;</span><span class="p">)</span>
+    <span class="n">c</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                          <span class="s">&quot;tAAAAAAcatcata&quot;</span> <span class="p">)</span>
+                                                                      
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">recombination_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">),</span> <span class="mi">6</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;cggcggcgggccTGCCTCaccattgcAAAAAAcatcata&quot;</span>
+    
+    <span class="k">print</span> <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">;</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;!!!&quot;</span><span class="p">)</span>
+    
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                    <span class="s">&quot;TATATCATATAAAnnGGGCGCGGGCGGC&quot;</span><span class="p">)</span>                                  
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                    <span class="s">&quot;GGGCGCGGGCGGCNNNTATATCATATAAA&quot;</span><span class="p">)</span>
+
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">gibson_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">),</span> <span class="mi">13</span><span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="n">eq</span><span class="p">(</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">Dseqrecord</span><span class="p">(</span><span class="s">&quot;TATATCATATAAAnnGGGCGCGGGCGGCNNN&quot;</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;------------</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">print</span> 
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        
+    <span class="k">print</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">;</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;!!!&quot;</span><span class="p">)</span>
+
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                    <span class="s">&quot;aaTATATCATATAAAnnGGGCGCGGGCGGCtt&quot;</span><span class="p">)</span>                                  
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                    <span class="s">&quot;ccGGGCGCGGGCGGCNNNTATATCATATAAAaa&quot;</span><span class="p">)</span>
+
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">recombination_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">),</span> <span class="mi">13</span><span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="n">eq</span><span class="p">(</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">Dseqrecord</span><span class="p">(</span><span class="s">&quot;TATATCATATAAAnnGGGCGCGGGCGGCNNN&quot;</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;------------</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">print</span> 
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        
+    <span class="n">a</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span> <span class="s">&quot;nGGGGGGatgatcagagTATCTATctTGCCTCtc&quot;</span><span class="p">)</span>                                  
+    <span class="n">b</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                          <span class="s">&quot;aTGCCTCaccatgcactTATCTATtgcAAAAAAtt&quot;</span><span class="p">)</span>
+    <span class="n">c</span><span class="o">=</span><span class="n">Dseqrecord</span><span class="p">(</span>                                                    <span class="s">&quot;tAAAAAAnncGGGGGGt&quot;</span> <span class="p">)</span>
+                                                                      
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">recombination_assembly</span><span class="p">(</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">),</span> <span class="mi">6</span><span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;accatgcactTATCTATtgcAAAAAAnncGGGGGGatgatcagagTATCTATctTGCCTC&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">spc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_fragments</span><span class="p">,</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_offsets</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="n">spc</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        
+    <span class="k">print</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">;</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;!!!&quot;</span><span class="p">)</span>
+        
+
+    <span class="n">text5</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;</span>
+
+<span class="s">    &gt;2577</span>
+<span class="s">    tcctgacgggtaattttgatttgcatgccgtccgggtgagtcatagcgtctggttgttttgccagattcagcagagtctgtgcaatgcggccgctgacagagtcttttgtaacgaccccgtctccaccaacttggtatgcttgaaatctcaaggccattacacattcagttatgtgaacgaaaggtctttatttaacgtagcataaactaaataatacaggttccggttagcctgcaatgtgttaaatctaaaggagcatacccaaaatgaactgaagacaaggaaatttgcttgtccagatgtgattgagcatttgaacgttaataacataacatttttatacttaactatagaaagacttgtataaaaactggcaaacgagatattctgaatattggtgcatatttcaggtagaaaagcttacaaaacaatctaatcataatattgagatgaagagaaagataaaagaaaaaacgataagtcagatgagattatgattgtactttgaaatcgaggaacaaagtatatacggtagtagttccccgagttataacgggagatcatgtaaattgagaaaccagataaagatttggtatgcactctagcaagaaaataaaatgatgaatctatgatatagatcacttttgttccagcgtcgaggaacgccaggttgcccactttctcactagtgacctgcagccgacgatcagatctttcaggaaagtttcggaggagatagtgttcggcagtttgtacatcatctgcgggatcaggtacggtttgatcaggttgtagaagatcaggtaagacatagaatcgatgtagatgatcggtttgtttttgttgatttttacgtaacagttcagttggaatttgttacgcagacccttaaccaggtattctacttcttcgaaagtgaaagactgggtgttcagtacgatcgatttgttggtagagtttttgttgtaatcccatttaccaccatcatccatgaaccagtatgccagagacatcggggtcaggtagttttcaaccaggttgttcgggatggtttttttgttgttaacgatgaacaggttagccagtttgttgaaagcttggtgtttgaaagtctgggcgccccaggtgattaccaggttacccaggtggttaacacgttcttttttgtgcggcggggacagtacccactgatcgtacagcagacatacgtggtccatgtatgctttgtttttccactcgaactgcatacagtaggttttaccttcatcacgagaacggatgtaagcatcacccaggatcagaccgatacctgcttcgaactgttcgatgttcagttcgatcagctgggatttgtattctttcagcagtttagagttcggacccaggttcattacctggttttttttgatgtttttcatatgcatggatccggggttttttctccttgacgttaaagtatagaggtatattaacaattttttgttgatacttttattacatttgaataagaagtaatacaaaccgaaaatgttgaaagtattagttaaagtggttatgcagtttttgcatttatatatctgttaatagatcaaaaatcatcgcttcgctgattaattaccccagaaataaggctaaaaaactaatcgcattatcatcctatggttgttaatttgattcgttcatttgaaggtttgtggggccaggttactgccaatttttcctcttcataaccataaaagctagtattgtagaatctttattgttcggagcagtgcggcgcgaggcacatctgcgtttcaggaacgcgaccggtgaagacgaggacgcacggaggagagtcttccttcggagggctgtcacccgctcggcggcttctaatccgtacttcaatatagcaatgagcagttaagcgtattactgaaagttccaaagagaaggtttttttaggctaagataatggggctctttacatttccacaacatataagtaagattagatatggatatgtatatggatatgtatatggtggtaatgccatgtaatatgattattaaacttctttgcgtccatccaacgagatctggcgcgccttaattaacccaacctgcattaatgaatcggccaacgcgcggattaccctgttatccctacatattgttgtgccatctgtgcagacaaacgcatcaggattcagtactgacaataaaaagattcttgttttcaagaacttgtcatttgtatagtttttttatattgtagttgttctattttaatcaaatgttagcgtgatttatattttttttcgcctcgacatcatctgcccagatgcgaagttaagtgcgcagaaagtaatatcatgcgtcaatcgtatgtgaatgctggtcgctatactgctgtcgattcgatactaacgccgccatccagtgtcgaaaacgagctcgaattcatcgatgatatcagatccactagtggcctatgcggccgcggatctgccggtctccctatagtgagtcgatccggatttacctgaatcaattggcgaaattttttgtacgaaatttcagccacttcacag</span>
+
+<span class="s">    &gt;2389</span>
+<span class="s">    tcctgacgggtaattttgatttgcatgccgtccgggtgagtcatagcgtctggttgttttgccagattcagcagagtctgtgcaatgcggccgctgaccacatacgatttaggtgacactatagaacgcggccgccagctgaagcttcgtacgctgcaggtcgacggatccccgggttaattaaggcgcgccagatctgtttagcttgccttgtccccgccgggtcacccggccagcgacatggaggcccagaataccctccttgacagtcttgacgtgcgcagctcaggggcatgatgtgactgtcgcccgtacatttagcccatacatccccatgtataatcatttgcatccatacattttgatggccgcacggcgcgaagcaaaaattacggctcctcgctgcagacctgcgagcagggaaacgctcccctcacagacgcgttgaattgtccccacgccgcgcccctgtagagaaatataaaaggttaggatttgccactgaggttcttctttcatatacttccttttaaaatcttgctaggatacagttctcacatcacatccgaacataaacaaccgtcgaggaacgccaggttgcccactttctcactagtgacctgcagccgacccaatcacatcacatccgaacataaacaaccatgggtaaaaagcctgaactcaccgcgacgtctgtcgagaagtttctgatcgaaaagttcgacagcgtctccgacctgatgcagctctcggagggcgaagaatctcgtgctttcagcttcgatgtaggagggcgtggatatgtcctgcgggtaaatagctgcgccgatggtttctacaaagatcgttatgtttatcggcactttgcatcggccgcgctcccgattccggaagtgcttgacattggggaattcagcgagagcctgacctattgcatctcccgccgtgcacagggtgtcacgttgcaagacctgcctgaaaccgaactgcccgctgttctgcagccggtcgcggaggccatggatgcgatcgctgcggccgatcttagccagacgagcgggttcggcccattcggaccgcaaggaatcggtcaatacactacatggcgtgatttcatatgcgcgattgctgatccccatgtgtatcactggcaaactgtgatggacgacaccgtcagtgcgtccgtcgcgcaggctctcgatgagctgatgctttgggccgaggactgccccgaagtccggcacctcgtgcacgcggatttcggctccaacaatgtcctgacggacaatggccgcataacagcggtcattgactggagcgaggcgatgttcggggattcccaatacgaggtcgccaacatcttcttctggaggccgtggttggcttgtatggagcagcagacgcgctacttcgagcggaggcatccggagcttgcaggatcgccgcggctccgggcgtatatgctccgcattggtcttgaccaactctatcagagcttggttgacggcaatttcgatgatgcagcttgggcgcagggtcgatgcgacgcaatcgtccgatccggagccgggactgtcgggcgtacacaaatcgcccgcagaagcgcggccgtctggaccgatggctgtgtagaagtactcgccgatagtggaaaccgacgccccagcactcgtccgagggcaaaggaataatcagtactgacaataaaaagattcttgtagggataacagggtaatcggagtgccatctgtgcagacaaacgcatcaggatagagtcttttgtaacgaccccgtctccaccaacttggtatgcttgaaatctcaaggccattacacattcagttatgtgaacgaaaggtctttatttaacgtagcataaactaaataatacaggttccggttagcctgcaatgtgttaaatctaaaggagcatacccaaaatgaactgaagacaaggaaatttgcttgtccagatgtgattgagcatttgaacgttaataacataacatttttatacttaactatagaaagacttgtataaaaactggcaaacgagatattctgaatattggtgcatatttcaggtagaaaagcttacaaaacaatctaatcataatattgagatgaagagaaagataaaagaaaaaacgataagtcagatgagattatgattgtactttgaaatcgaggaacaaagtatatacggtagtagttccccgagttataacgggagatcatgtaaattgagaaaccagataaagatttggtatgcactctagcaagaaaataaaatgatgaatctatgatatagatcacttttgttccagcatccggatttacctgaatcaattggcgaaattttttgtacgaaatttcagccacttcacag</span>
+<span class="s">   </span>
+<span class="s">    &gt;5681</span>
+<span class="s">    atccggatttacctgaatcaattggcgaaattttttgtacgaaatttcagccacttcacaggcggttttcgcacgtacccatgcgctacgttcctggccctcttcaaacaggcccagttcgccaataaaatcaccctgattcagataggagaggatcatttctttaccctcttcgtctttgatcagcactgccacagagcctttaacgatgtagtacagcgtttccgctttttcaccctggtgaataagcgtgctcttggatgggtacttatgaatgtggcaatgagacaagaaccattcgagagtaggatccgtttgaggtttaccaagtaccataagatccttaaatttttattatctagctagatgataatattatatcaagaattgtacctgaaagcaaataaattttttatctggcttaactatgcggcatcagagcagattgtactgagagtgcaccatatgcggtgtgaaataccgcacagatgcgtaaggagaaaataccgcatcaggcgctcttccgcttcctcgctcactgactcgctgcgctcggtcgttcggctgcggcgagcggtatcagctcactcaaaggcggtaatacggttatccacagaatcaggggataacgcaggaaagaacatgtgagcaaaaggccagcaaaagcccaggaaccgtaaaaaggccgcgttgctggcgtttttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaaggacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaagaagatcctttgatcttttctacggggtctgacgctcagtggaacgaaaactcacgttaagggattttggtcatgaggggtaataactgatataattaaattgaagctctaatttgtgagtttagtatacatgcatttacttataatacagttttttagttttgctggccgcatcttctcaaatatgcttcccagcctgcttttctgtaacgttcaccctctaccttagcatcccttccctttgcaaatagtcctcttccaacaataataatgtcagatcctgtagagaccacatcatccacggttctatactgttgacccaatgcgtctcccttgtcatctaaacccacaccgggtgtcataatcaaccaatcgtaaccttcatctcttccacccatgtctctttgagcaataaagccgataacaaaatctttgtcgctcttcgcaatgtcaacagtacccttagtatattctccagtagatagggagcccttgcatgacaattctgctaacatcaaaaggcctctaggttcctttgttacttcttctgccgcctgcttcaaaccgctaacaatacctgggcccaccacaccgtgtgcattcgtaatgtctgcccattctgctattctgtatacacccgcagagtactgcaatttgactgtattaccaatgtcagcaaattttctgtcttcgaagagtaaaaaattgtacttggcggataatgcctttagcggcttaactgtgccctccatggaaaaatcagtcaaaatatccacatgtgtttttagtaaacaaattttgggacctaatgcttcaactaactccagtaattccttggtggtacgaacatccaatgaagcacacaagtttgtttgcttttcgtgcatgatattaaatagcttggcagcaacaggactaggatgagtagcagcacgttccttatatgtagctttcgacatgatttatcttcgtttcctgcaggtttttgttctgtgcagttgggttaagaatactgggcaatttcatgtttcttcaacactacatatgcgtatatataccaatctaagtctgtgctccttccttcgttcttccttctgttcggagattaccgaatcaaaaaaatttcaaagaaaccgaaatcaaaaaaaagaataaaaaaaaaatgatgaattgaattgaaaagctagcttatcgatgataagctgtcaaagatgagaattaattccacggactatagactatactagatactccgtctactgtacgatacacttccgctcaggtccttgtcctttaacgaggccttaccactcttttgttactctattgatccagctcagcaaaggcagtgtgatctaagattctatcttcgcgatgtagtaaaactagctagaccgagaaagagactagaaatgcaaaaggcacttctacaatggctgccatcattattatccgatgtgacgctgcagcttctcaatgatattcgaatacgctttgaggagatacagcctaatatccgacaaactgttttacagatttacgatcgtacttgttacccatcattgaattttgaacatccgaacctgggagttttccctgaaacagatagtatatttgaacctgtataataatatatagtctagcgctttacggaagacaatgtatgtatttcggttcctggagaaactattgcatctattgcataggtaatcttgcacgtcgcatccccggttcattttctgcgtttccatcttgcacttcaatagcatatctttgttaacgaagcatctgtgcttcattttgtagaacaaaaatgcaacgcgagagcgctaatttttcaaacaaagaatctgagctgcatttttacagaacagaaatgcaacgcgaaagcgctattttaccaacgaagaatctgtgcttcatttttgtaaaacaaaaatgcaacgcgacgagagcgctaatttttcaaacaaagaatctgagctgcatttttacagaacagaaatgcaacgcgagagcgctattttaccaacaaagaatctatacttcttttttgttctacaaaaatgcatcccgagagcgctatttttctaacaaagcatcttagattactttttttctcctttgtgcgctctataatgcagtctcttgataactttttgcactgtaggtccgttaaggttagaagaaggctactttggtgtctattttctcttccataaaaaaagcctgactccacttcccgcgtttactgattactagcgaagctgcgggtgcattttttcaagataaaggcatccccgattatattctataccgatgtggattgcgcatactttgtgaacagaaagtgatagcgttgatgattcttcattggtcagaaaattatgaacggtttcttctattttgtctctatatactacgtataggaaatgtttacattttcgtattgttttcgattcactctatgaatagttcttactacaatttttttgtctaaagagtaatactagagataaacataaaaaatgtagaggtcgagtttagatgcaagttcaaggagcgaaaggtggatgggtaggttatatagggatatagcacagagatatatagcaaagagatacttttgagcaatgtttgtggaagcggtattcgcaatgggaagctccaccccggttgataatcagaaaagccccaaaaacaggaagattattatcaaaaaggatcttcacctagatccttttaaattaaaaatgaagttttaaatcaatctaaagtatatatgagtaaacttggtctgacagttaccaatgcttaatcagtgaggcacctatctcagcgatctgtctatttcgttcatccatagttgcctgactccccgtcgtgtagataactacgatacgggagcgcttaccatctggccccagtgctgcaatgataccgcgagacccacgctcaccggctccagatttatcagcaataaaccagccagccggaagggccgagcgcagaagtggtcctgcaactttatccgcctccatccagtctattaattgttgccgggaagctagagtaagtagttcgccagttaatagtttgcgcaacgttgttggcattgctacaggcatcgtggtgtcactctcgtcgtttggtatggcttcattcagctccggttcccaacgatcaaggcgagttacatgatcccccatgttgtgcaaaaaagcggttagctccttcggtcctccgatcgttgtcagaagtaagttggccgcagtgttatcactcatggttatggcagcactgcataattctcttactgtcatgccatccgtaagatgcttttctgtgactggtgagtactcaaccaagtcattctgagaatagtgtatgcggcgaccgagttgctcttgcccggcgtcaatacgggataatagtgtatcacatagcagaactttaaaagtgctcatcattggaaaacgttcttcggggcgaaaactctcaaggatcttaccgctgttgagatccagttcgatgtaacccactcgtgcacccaactgatcttcagcatcttttactttcaccagcgtttctgggtgagcaaaaacaggaaggcaaaatgccgcaaaaaagggaataagggcgacacggaaatgttgaatactcatactcttcctttttcaatattattgaagcatttatcagggttattgtctcatgagcggatacatatttgaatgtatttagaaaaataaacaaataggggttccgcgcacatttccccgaaaagtgccacctgctaagaaaccattattatcatgacattaacctataaaaataggcgtatcacgaggccctttcgtctcgcgcgtttcggtgatgacggtgaaaacctctgacacatgcagctcccggagacggtcacagcttgtctgtaagcggatgccgggagcagacaagcccgtcagggcgcgtcagcgggtgttggcgggtgtcggggctggcttaactatgcggcatcagagcagattgtactgagagtgcaccatagatcctgaggatcggggtgataaatcagtctgcgccacatcgggggaaacaaaatggcgcgagatctaaaaaaaaaggctccaaaaggagcctttcgcgctaccaggtaacgcgccactccgacgggattaacgagtgccgtaaacgacgatggttttaccgtgtgcggagatcaggttctgatcctcgagcatcttaagaattcgtcccacggtttgtctagagcagccgacaatctggccaatttcctgacgggtaattttgatttgcatgccgtccgggtgagtcatagcgtctggttgttttgccagattcagcagagtctgtgcaatgcggccgctgac</span>
+<span class="s">    </span>
+<span class="s">    &#39;&#39;&#39;</span>
+    
+    
+    <span class="n">lst</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="n">text5</span><span class="p">)</span>
+    <span class="n">prods</span> <span class="o">=</span> <span class="n">recombination_assembly</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">correct</span> <span class="o">=</span> <span class="s">&#39;tcgcgcgtttcggtgatgacggtgaaaacctctgacacatgcagctcccggagacggtcacagcttgtctgtaagcggatgccgggagcagacaagcccgtcagggcgcgtcagcgggtgttggcgggtgtcggggctggcttaactatgcggcatcagagcagattgtactgagagtgcaccatagatcctgaggatcggggtgataaatcagtctgcgccacatcgggggaaacaaaatggcgcgagatctaaaaaaaaaggctccaaaaggagcctttcgcgctaccaggtaacgcgccactccgacgggattaacgagtgccgtaaacgacgatggttttaccgtgtgcggagatcaggttctgatcctcgagcatcttaagaattcgtcccacggtttgtctagagcagccgacaatctggccaatttcctgacgggtaattttgatttgcatgccgtccgggtgagtcatagcgtctggttgttttgccagattcagcagagtctgtgcaatgcggccgctgaccacatacgatttaggtgacactatagaacgcggccgccagctgaagcttcgtacgctgcaggtcgacggatccccgggttaattaaggcgcgccagatctgtttagcttgccttgtccccgccgggtcacccggccagcgacatggaggcccagaataccctccttgacagtcttgacgtgcgcagctcaggggcatgatgtgactgtcgcccgtacatttagcccatacatccccatgtataatcatttgcatccatacattttgatggccgcacggcgcgaagcaaaaattacggctcctcgctgcagacctgcgagcagggaaacgctcccctcacagacgcgttgaattgtccccacgccgcgcccctgtagagaaatataaaaggttaggatttgccactgaggttcttctttcatatacttccttttaaaatcttgctaggatacagttctcacatcacatccgaacataaacaaccgtcgaggaacgccaggttgcccactttctcactagtgacctgcagccgacccaatcacatcacatccgaacataaacaaccatgggtaaaaagcctgaactcaccgcgacgtctgtcgagaagtttctgatcgaaaagttcgacagcgtctccgacctgatgcagctctcggagggcgaagaatctcgtgctttcagcttcgatgtaggagggcgtggatatgtcctgcgggtaaatagctgcgccgatggtttctacaaagatcgttatgtttatcggcactttgcatcggccgcgctcccgattccggaagtgcttgacattggggaattcagcgagagcctgacctattgcatctcccgccgtgcacagggtgtcacgttgcaagacctgcctgaaaccgaactgcccgctgttctgcagccggtcgcggaggccatggatgcgatcgctgcggccgatcttagccagacgagcgggttcggcccattcggaccgcaaggaatcggtcaatacactacatggcgtgatttcatatgcgcgattgctgatccccatgtgtatcactggcaaactgtgatggacgacaccgtcagtgcgtccgtcgcgcaggctctcgatgagctgatgctttgggccgaggactgccccgaagtccggcacctcgtgcacgcggatttcggctccaacaatgtcctgacggacaatggccgcataacagcggtcattgactggagcgaggcgatgttcggggattcccaatacgaggtcgccaacatcttcttctggaggccgtggttggcttgtatggagcagcagacgcgctacttcgagcggaggcatccggagcttgcaggatcgccgcggctccgggcgtatatgctccgcattggtcttgaccaactctatcagagcttggttgacggcaatttcgatgatgcagcttgggcgcagggtcgatgcgacgcaatcgtccgatccggagccgggactgtcgggcgtacacaaatcgcccgcagaagcgcggccgtctggaccgatggctgtgtagaagtactcgccgatagtggaaaccgacgccccagcactcgtccgagggcaaaggaataatcagtactgacaataaaaagattcttgtagggataacagggtaatcggagtgccatctgtgcagacaaacgcatcaggatagagtcttttgtaacgaccccgtctccaccaacttggtatgcttgaaatctcaaggccattacacattcagttatgtgaacgaaaggtctttatttaacgtagcataaactaaataatacaggttccggttagcctgcaatgtgttaaatctaaaggagcatacccaaaatgaactgaagacaaggaaatttgcttgtccagatgtgattgagcatttgaacgttaataacataacatttttatacttaactatagaaagacttgtataaaaactggcaaacgagatattctgaatattggtgcatatttcaggtagaaaagcttacaaaacaatctaatcataatattgagatgaagagaaagataaaagaaaaaacgataagtcagatgagattatgattgtactttgaaatcgaggaacaaagtatatacggtagtagttccccgagttataacgggagatcatgtaaattgagaaaccagataaagatttggtatgcactctagcaagaaaataaaatgatgaatctatgatatagatcacttttgttccagcgtcgaggaacgccaggttgcccactttctcactagtgacctgcagccgacgatcagatctttcaggaaagtttcggaggagatagtgttcggcagtttgtacatcatctgcgggatcaggtacggtttgatcaggttgtagaagatcaggtaagacatagaatcgatgtagatgatcggtttgtttttgttgatttttacgtaacagttcagttggaatttgttacgcagacccttaaccaggtattctacttcttcgaaagtgaaagactgggtgttcagtacgatcgatttgttggtagagtttttgttgtaatcccatttaccaccatcatccatgaaccagtatgccagagacatcggggtcaggtagttttcaaccaggttgttcgggatggtttttttgttgttaacgatgaacaggttagccagtttgttgaaagcttggtgtttgaaagtctgggcgccccaggtgattaccaggttacccaggtggttaacacgttcttttttgtgcggcggggacagtacccactgatcgtacagcagacatacgtggtccatgtatgctttgtttttccactcgaactgcatacagtaggttttaccttcatcacgagaacggatgtaagcatcacccaggatcagaccgatacctgcttcgaactgttcgatgttcagttcgatcagctgggatttgtattctttcagcagtttagagttcggacccaggttcattacctggttttttttgatgtttttcatatgcatggatccggggttttttctccttgacgttaaagtatagaggtatattaacaattttttgttgatacttttattacatttgaataagaagtaatacaaaccgaaaatgttgaaagtattagttaaagtggttatgcagtttttgcatttatatatctgttaatagatcaaaaatcatcgcttcgctgattaattaccccagaaataaggctaaaaaactaatcgcattatcatcctatggttgttaatttgattcgttcatttgaaggtttgtggggccaggttactgccaatttttcctcttcataaccataaaagctagtattgtagaatctttattgttcggagcagtgcggcgcgaggcacatctgcgtttcaggaacgcgaccggtgaagacgaggacgcacggaggagagtcttccttcggagggctgtcacccgctcggcggcttctaatccgtacttcaatatagcaatgagcagttaagcgtattactgaaagttccaaagagaaggtttttttaggctaagataatggggctctttacatttccacaacatataagtaagattagatatggatatgtatatggatatgtatatggtggtaatgccatgtaatatgattattaaacttctttgcgtccatccaacgagatctggcgcgccttaattaacccaacctgcattaatgaatcggccaacgcgcggattaccctgttatccctacatattgttgtgccatctgtgcagacaaacgcatcaggattcagtactgacaataaaaagattcttgttttcaagaacttgtcatttgtatagtttttttatattgtagttgttctattttaatcaaatgttagcgtgatttatattttttttcgcctcgacatcatctgcccagatgcgaagttaagtgcgcagaaagtaatatcatgcgtcaatcgtatgtgaatgctggtcgctatactgctgtcgattcgatactaacgccgccatccagtgtcgaaaacgagctcgaattcatcgatgatatcagatccactagtggcctatgcggccgcggatctgccggtctccctatagtgagtcgatccggatttacctgaatcaattggcgaaattttttgtacgaaatttcagccacttcacaggcggttttcgcacgtacccatgcgctacgttcctggccctcttcaaacaggcccagttcgccaataaaatcaccctgattcagataggagaggatcatttctttaccctcttcgtctttgatcagcactgccacagagcctttaacgatgtagtacagcgtttccgctttttcaccctggtgaataagcgtgctcttggatgggtacttatgaatgtggcaatgagacaagaaccattcgagagtaggatccgtttgaggtttaccaagtaccataagatccttaaatttttattatctagctagatgataatattatatcaagaattgtacctgaaagcaaataaattttttatctggcttaactatgcggcatcagagcagattgtactgagagtgcaccatatgcggtgtgaaataccgcacagatgcgtaaggagaaaataccgcatcaggcgctcttccgcttcctcgctcactgactcgctgcgctcggtcgttcggctgcggcgagcggtatcagctcactcaaaggcggtaatacggttatccacagaatcaggggataacgcaggaaagaacatgtgagcaaaaggccagcaaaagcccaggaaccgtaaaaaggccgcgttgctggcgtttttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaaggacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaagaagatcctttgatcttttctacggggtctgacgctcagtggaacgaaaactcacgttaagggattttggtcatgaggggtaataactgatataattaaattgaagctctaatttgtgagtttagtatacatgcatttacttataatacagttttttagttttgctggccgcatcttctcaaatatgcttcccagcctgcttttctgtaacgttcaccctctaccttagcatcccttccctttgcaaatagtcctcttccaacaataataatgtcagatcctgtagagaccacatcatccacggttctatactgttgacccaatgcgtctcccttgtcatctaaacccacaccgggtgtcataatcaaccaatcgtaaccttcatctcttccacccatgtctctttgagcaataaagccgataacaaaatctttgtcgctcttcgcaatgtcaacagtacccttagtatattctccagtagatagggagcccttgcatgacaattctgctaacatcaaaaggcctctaggttcctttgttacttcttctgccgcctgcttcaaaccgctaacaatacctgggcccaccacaccgtgtgcattcgtaatgtctgcccattctgctattctgtatacacccgcagagtactgcaatttgactgtattaccaatgtcagcaaattttctgtcttcgaagagtaaaaaattgtacttggcggataatgcctttagcggcttaactgtgccctccatggaaaaatcagtcaaaatatccacatgtgtttttagtaaacaaattttgggacctaatgcttcaactaactccagtaattccttggtggtacgaacatccaatgaagcacacaagtttgtttgcttttcgtgcatgatattaaatagcttggcagcaacaggactaggatgagtagcagcacgttccttatatgtagctttcgacatgatttatcttcgtttcctgcaggtttttgttctgtgcagttgggttaagaatactgggcaatttcatgtttcttcaacactacatatgcgtatatataccaatctaagtctgtgctccttccttcgttcttccttctgttcggagattaccgaatcaaaaaaatttcaaagaaaccgaaatcaaaaaaaagaataaaaaaaaaatgatgaattgaattgaaaagctagcttatcgatgataagctgtcaaagatgagaattaattccacggactatagactatactagatactccgtctactgtacgatacacttccgctcaggtccttgtcctttaacgaggccttaccactcttttgttactctattgatccagctcagcaaaggcagtgtgatctaagattctatcttcgcgatgtagtaaaactagctagaccgagaaagagactagaaatgcaaaaggcacttctacaatggctgccatcattattatccgatgtgacgctgcagcttctcaatgatattcgaatacgctttgaggagatacagcctaatatccgacaaactgttttacagatttacgatcgtacttgttacccatcattgaattttgaacatccgaacctgggagttttccctgaaacagatagtatatttgaacctgtataataatatatagtctagcgctttacggaagacaatgtatgtatttcggttcctggagaaactattgcatctattgcataggtaatcttgcacgtcgcatccccggttcattttctgcgtttccatcttgcacttcaatagcatatctttgttaacgaagcatctgtgcttcattttgtagaacaaaaatgcaacgcgagagcgctaatttttcaaacaaagaatctgagctgcatttttacagaacagaaatgcaacgcgaaagcgctattttaccaacgaagaatctgtgcttcatttttgtaaaacaaaaatgcaacgcgacgagagcgctaatttttcaaacaaagaatctgagctgcatttttacagaacagaaatgcaacgcgagagcgctattttaccaacaaagaatctatacttcttttttgttctacaaaaatgcatcccgagagcgctatttttctaacaaagcatcttagattactttttttctcctttgtgcgctctataatgcagtctcttgataactttttgcactgtaggtccgttaaggttagaagaaggctactttggtgtctattttctcttccataaaaaaagcctgactccacttcccgcgtttactgattactagcgaagctgcgggtgcattttttcaagataaaggcatccccgattatattctataccgatgtggattgcgcatactttgtgaacagaaagtgatagcgttgatgattcttcattggtcagaaaattatgaacggtttcttctattttgtctctatatactacgtataggaaatgtttacattttcgtattgttttcgattcactctatgaatagttcttactacaatttttttgtctaaagagtaatactagagataaacataaaaaatgtagaggtcgagtttagatgcaagttcaaggagcgaaaggtggatgggtaggttatatagggatatagcacagagatatatagcaaagagatacttttgagcaatgtttgtggaagcggtattcgcaatgggaagctccaccccggttgataatcagaaaagccccaaaaacaggaagattattatcaaaaaggatcttcacctagatccttttaaattaaaaatgaagttttaaatcaatctaaagtatatatgagtaaacttggtctgacagttaccaatgcttaatcagtgaggcacctatctcagcgatctgtctatttcgttcatccatagttgcctgactccccgtcgtgtagataactacgatacgggagcgcttaccatctggccccagtgctgcaatgataccgcgagacccacgctcaccggctccagatttatcagcaataaaccagccagccggaagggccgagcgcagaagtggtcctgcaactttatccgcctccatccagtctattaattgttgccgggaagctagagtaagtagttcgccagttaatagtttgcgcaacgttgttggcattgctacaggcatcgtggtgtcactctcgtcgtttggtatggcttcattcagctccggttcccaacgatcaaggcgagttacatgatcccccatgttgtgcaaaaaagcggttagctccttcggtcctccgatcgttgtcagaagtaagttggccgcagtgttatcactcatggttatggcagcactgcataattctcttactgtcatgccatccgtaagatgcttttctgtgactggtgagtactcaaccaagtcattctgagaatagtgtatgcggcgaccgagttgctcttgcccggcgtcaatacgggataatagtgtatcacatagcagaactttaaaagtgctcatcattggaaaacgttcttcggggcgaaaactctcaaggatcttaccgctgttgagatccagttcgatgtaacccactcgtgcacccaactgatcttcagcatcttttactttcaccagcgtttctgggtgagcaaaaacaggaaggcaaaatgccgcaaaaaagggaataagggcgacacggaaatgttgaatactcatactcttcctttttcaatattattgaagcatttatcagggttattgtctcatgagcggatacatatttgaatgtatttagaaaaataaacaaataggggttccgcgcacatttccccgaaaagtgccacctgctaagaaaccattattatcatgacattaacctataaaaataggcgtatcacgaggccctttcgtc&#39;</span>
+    
+    <span class="k">assert</span> <span class="n">eq</span><span class="p">(</span><span class="n">correct</span><span class="p">,</span><span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="k">print</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">overlap_sizes</span><span class="p">;</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;!!!&quot;</span><span class="p">)</span>
+    
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">prods</span><span class="o">.</span><span class="n">circular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sticky_fragments</span><span class="p">:</span>
+        <span class="n">ape</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    
+    
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prods</span><span class="o">.</span><span class="n">linear</span><span class="p">:</span>
+        <span class="k">print</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
+
+    
+<span class="c">#    for seq, spc in zip(prods.circular[0].sticky_fragments, prods.circular[0].sticky_offsets):</span>
+<span class="c">#        print &quot; &quot;*spc+str(seq.seq)</span>
+<span class="c">#    for seq, spc in zip(prods.circular[0].source_fragments, prods.circular[0].source_offsets):</span>
+<span class="c">#        print &quot; &quot;*spc+str(seq.seq)</span>
+    
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<span class="sd">sticky</span>
+
+<span class="sd">s    e        s     e</span>
+<span class="sd">1    1        2     2</span>
+<span class="sd">|    |        |     |</span>
+<span class="sd">      &lt;------&gt;</span>
+<span class="sd">%abA%%--2479--!!OmD!!                          </span>
+<span class="sd">                     &lt;--------------&gt;</span>
+<span class="sd">              !!OmD!!---5681---------=pX1=</span>
+<span class="sd">                                          &lt;------&gt;</span>
+<span class="sd">                                     =pX1=--2389--%%abA%%</span>
+<span class="sd">&lt;------------&gt;</span>
+
+
+
+<span class="sd">      s    e        s     e</span>
+<span class="sd">      1    1        2     2</span>
+<span class="sd">      |    |        |     |</span>
+<span class="sd">            &lt;------&gt;</span>
+<span class="sd">=pX1=%%abA%%--2577--!!OmD!!                          </span>
+<span class="sd">                           &lt;--------------&gt;</span>
+<span class="sd">            --------!!OmD!!---5681---------=pX1=</span>
+<span class="sd">                                                &lt;------&gt;</span>
+<span class="sd">                                           =pX1=--2389--%%abA%%!!OmD!!</span>
+
+
+
+<span class="sd">sticky</span>
+<span class="sd">0    (2479)</span>
+<span class="sd">2418 (5681)</span>
+<span class="sd">8001 (2389)</span>
+
+
+<span class="sd">source</span>
+<span class="sd">0    (2479)</span>
+<span class="sd">2516 (5681)</span>
+<span class="sd">8099 (2389)</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<span class="c">#    import subprocess</span>
+    
+<span class="c">#    import tempfile, os</span>
+<span class="c">#    with tempfile.NamedTemporaryFile() as temp:</span>
+<span class="c">#        temp.write(&#39;Some data&#39;)</span>
+<span class="c">#        temp.flush()</span>
+<span class="c">#        temp.seek(0)</span>
+<span class="c">#        print temp.name, os.path.isfile(temp.name)</span>
+<span class="c">#        print temp.read()</span>
+<span class="c">#        print &quot;gedit {}&quot;.format(temp.name)</span>
+<span class="c">#        p = subprocess.Popen( &quot;gedit {}&quot;.format(temp.name) )</span>
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pydna 0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Björn Johansson.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
