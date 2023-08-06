@@ -1,0 +1,35 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:zcml="http://namespaces.zope.org/zcml"  
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="collective.base64imagepatch"
+    >
+
+  <five:registerPackage package="." initialize=".initialize" />
+
+  <!-- -*- extra stuff goes here -*- -->
+  
+  <subscriber
+      zcml:condition="installed zope.lifecycleevent"
+      for="Products.CMFCore.interfaces.IContentish
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler=".subscribers.patch_base64_images_on_modifiy"
+      />
+      
+  <subscriber
+      zcml:condition="installed zope.lifecycleevent"
+      for="Products.CMFCore.interfaces.IContentish
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler=".subscribers.patch_base64_images_on_create"
+      />
+
+  <browser:page
+    name="patch_all"
+    permission="cmf.ManagePortal"
+    for="*"
+    class=".patch_all_view.PatchAllView"
+    />
+  
+</configure>
