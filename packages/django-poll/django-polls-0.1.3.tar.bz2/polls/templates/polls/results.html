@@ -1,0 +1,31 @@
+{% extends 'polls/base.html' %}
+{% load poll_tags %}
+
+{% block extra_head %}
+<script src="{{ STATIC_URL }}js/jqplot/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jqplot/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jqplot/plugins/jqplot.pieRenderer.js"></script>
+<link type="text/css" href="{{ STATIC_URL }}js/jqplot/jquery.jqplot.min.css" rel="stylesheet" />
+<script type="text/javascript">
+    $(document).ready(function(){
+        var data = {% get_data %};
+        $.jqplot ('chart', [data], { 
+            seriesDefaults: {
+                renderer: $.jqplot.PieRenderer, 
+                rendererOptions: {
+                    showDataLabels: true
+                }
+            }, 
+            legend: { show:true, location: 'e' }
+        }
+    );
+});
+</script>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div id="chart" class="jqplot-target"></div>
+    {% include 'polls/partial/navigation.html' %}
+    </div>
+{% endblock %}
