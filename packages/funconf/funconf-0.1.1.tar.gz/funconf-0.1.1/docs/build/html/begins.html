@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>funconf with begins &mdash; funconf 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="funconf 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Example webapp" href="bottle.html" />
+    <link rel="prev" title="Function Configuration module - funconf" href="funconf.html" />
+    <a href="https://github.com/mjdorma/funconf">
+        <img style="position: absolute; top: 0; right: 0; border: 0;"
+             src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+             alt="Fork me on GitHub">
+    </a>
+     
+
+  </head>
+  <body>
+      <div class="header"><h1 class="heading"><a href="index.html">
+          <span>funconf 0.1.0 documentation</span></a></h1>
+        <h2 class="heading"><span>funconf with begins</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="funconf.html">Function Configuration module - <tt class="docutils literal"><span class="pre">funconf</span></tt></a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="bottle.html">Example webapp</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="funconf-with-begins">
+<h1><a class="reference internal" href="funconf.html#module-funconf" title="funconf"><tt class="xref py py-mod docutils literal"><span class="pre">funconf</span></tt></a> with <a class="reference external" href="https://github.com/aliles/begins">begins</a><a class="headerlink" href="#funconf-with-begins" title="Permalink to this headline">¶</a></h1>
+<p>The motivation for <a class="reference internal" href="funconf.html#module-funconf" title="funconf"><tt class="xref py py-mod docutils literal"><span class="pre">funconf</span></tt></a> was to build a simple file configuration
+management capability that integrates with the command line interface tool
+<a class="reference external" href="https://github.com/aliles/begins">begins</a>.</p>
+<div class="section" id="walk-through">
+<h2>Walk through<a class="headerlink" href="#walk-through" title="Permalink to this headline">¶</a></h2>
+<p>Taking this example YAML configuration file <a class="reference external" href="https://github.com/mjdorma/funconf/blob/master/docs/source/examples/demo.conf">demo.conf</a>:</p>
+<div class="highlight-python"><pre>
+#
+# Foo
+#
+foo:
+  bar: 4
+  moo:
+  - how
+  - are
+  - you
+
+#
+# Bread
+#
+bread:
+  butter: win
+  milk: fail
+</pre>
+</div>
+<p>Applying it to this simple program <a class="reference external" href="https://github.com/mjdorma/funconf/blob/master/docs/source/examples/demo.py">demo.py</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">begin</span>
+<span class="kn">import</span> <span class="nn">funconf</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">funconf</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span><span class="s">&#39;demo.conf&#39;</span><span class="p">)</span>
+
+<span class="nd">@begin.subcommand</span>
+<span class="nd">@config.foo</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+    <span class="s">&quot;This is the foo code&quot;</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Foo got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Config is:&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<span class="nd">@begin.subcommand</span>
+<span class="nd">@config.bread</span>
+<span class="k">def</span> <span class="nf">bread</span><span class="p">(</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+    <span class="s">&quot;This is the bread code&quot;</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Bread got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Config is:&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<span class="nd">@begin.subcommand</span>
+<span class="nd">@config</span>
+<span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+    <span class="s">&quot;This is the run command that controls all&quot;</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Run got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Config is:&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<span class="nd">@begin.start</span>
+<span class="k">def</span> <span class="nf">entry</span><span class="p">():</span>
+    <span class="s">&quot;This is a super dooper program...&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>You will end up with the following help from the main:</p>
+<div class="highlight-python"><pre>$ python demo.py -h
+usage: demo.py [-h] {bread,foo,run} ...
+
+This is a super dooper program...
+
+optional arguments:
+  -h, --help       show this help message and exit
+
+Available subcommands:
+  {bread,foo,run}
+    bread          This is the bread code
+    foo            This is the foo code
+    run            This is the run command that controls all</pre>
+</div>
+<p>Now you can see how the <a class="reference internal" href="funconf.html#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">funconf.Config</span></tt></a> object has been bound to the
+<tt class="docutils literal"><span class="pre">run()</span></tt> function:</p>
+<div class="highlight-python"><pre>$ python demo.py run -h
+usage: demo.py run [-h] [--foo_bar FOO_BAR] [--bread_butter BREAD_BUTTER]
+                   [--foo_moo FOO_MOO] [--bread_milk BREAD_MILK]
+
+This is the run command that controls all
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --foo_bar FOO_BAR     (default: 4)
+  --bread_butter BREAD_BUTTER
+                        (default: win)
+  --foo_moo FOO_MOO, -f FOO_MOO
+                        (default: ['how', 'are', 'you'])
+  --bread_milk BREAD_MILK, -b BREAD_MILK
+                        (default: fail)</pre>
+</div>
+<p>Finally, to see how the <a class="reference internal" href="funconf.html#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">funconf.ConfigSection</span></tt></a> objects foo and bread
+have bound to their respective functions:</p>
+<div class="highlight-python"><pre>$ python demo.py foo --help
+usage: demo.py foo [-h] [--moo MOO] [--bar BAR]
+
+This is the foo code
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --moo MOO, -m MOO  (default: ['how', 'are', 'you'])
+  --bar BAR, -b BAR  (default: 4)</pre>
+</div>
+</div>
+<div class="section" id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h2>
+<p>The default values read into the <a class="reference internal" href="funconf.html#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">funconf.Config</span></tt></a> object from
+demo.conf will be overridden by <a class="reference external" href="https://github.com/aliles/begins">begins</a> when it passes in user defined option
+values from the command line.  As soon as your program entry has executed, you
+will now have a simple up to date global object which represents the programs
+configuration state.</p>
+<p>Find out more in the <a class="reference internal" href="funconf.html#module-funconf" title="funconf"><tt class="xref py py-mod docutils literal"><span class="pre">funconf</span></tt></a> module documentation.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      
+        <p>
+        «&#160;&#160;<a href="funconf.html">Function Configuration module - <tt class="docutils literal"><span class="pre">funconf</span></tt></a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="bottle.html">Example webapp</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2013, Michael Dorman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
