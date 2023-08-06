@@ -1,0 +1,31 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="collective.pdfpeek">
+
+    <five:registerPackage package="." initialize=".initialize" />
+
+    <!-- Load permissions -->
+    <include
+        zcml:condition="have plone-41"
+        package="Products.CMFCore"
+        file="permissions.zcml" />
+
+    <include package=".browser" />
+    <include file="genericsetup.zcml" />
+    <include file="controlpanel.zcml" />
+
+    <!-- Conditional include of dx and/or at folders -->
+    <include zcml:condition="installed Products.ATContentTypes" package=".at" />
+    <include zcml:condition="installed plone.dexterity" package=".dx" />
+    <include zcml:condition="installed collective.zamqp" package=".zamqp" />
+
+    <adapter
+        factory=".traversal.PDFPeekImageScaleTraverser"
+        name="images"
+        />
+
+</configure>
+
