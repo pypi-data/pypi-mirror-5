@@ -1,0 +1,160 @@
+<div xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+     i18n:domain="plone.app.hud"
+     tal:define="list view/get_list;
+                 root view/current_root;">
+
+    <table class="clickablepath">
+        <tr>
+            <th>
+                <span i18n:translate="">Path</span>
+            </th>
+            <td tal:repeat="button view/clickable_path_list">
+                <form action="" method="POST">
+                    <input
+                        type="hidden"
+                        name="go"
+                        tal:attributes="value button/path"/>
+                    <input class="sidebyside" type="submit" tal:attributes="value button/id"/>
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <p>&nbsp;</p>
+
+    <div class="tagdiv">
+        <p i18n:translate="">Container</p>
+        <table class="listing itemfont">
+            <tr>
+                <th i18n:translate="">Options</th>
+                <th i18n:translate="">ID</th>
+                <th i18n:translate="">Title</th>
+                <th i18n:translate="">Type</th>
+                <th i18n:translate="">Subitems</th>
+                <th i18n:translate="">Size</th>
+                <th i18n:translate="">Modified</th>
+                <th i18n:translate="">State</th>
+            </tr>
+
+            <tr>
+                <td>
+                    <form action="" method="POST">
+                        <input
+                            type="hidden"
+                            name="go"
+                            tal:attributes="value root/item/path"/>
+                        <input type="submit" value="Refresh" i18n:attributes="value"/>
+                    </form>
+                    <form tal:attributes="action python:root['item']['url'] + '/@@sharing'" method="POST">
+                        <input type="submit" value="Sharing" i18n:attributes="value"/>
+                    </form>
+                </td>
+                <td>
+                    <a tal:attributes="href root/item/url" tal:content="root/item/id" />
+                </td>
+                <td tal:content="root/item/title" />
+                <td tal:content="root/item/type" />
+                <td tal:content="root/countall" />
+                <td tal:content="root/item/size" />
+                <td tal:content="python: view.format_datetime_friendly_ago(root['item']['modified'])" />
+                <td tal:content="root/item/state" />
+            </tr>
+        </table>
+    </div>
+    <p>&nbsp;</p>
+
+
+    <div class="tagdiv">
+        <p i18n:translate="">Contents</p>
+        <table class="listing itemfont">
+            <tr>
+                <th i18n:translate="">Options</th>
+                <th i18n:translate="">ID</th>
+                <th i18n:translate="">Title</th>
+                <th i18n:translate="">Type</th>
+                <th i18n:translate="">Subitems</th>
+                <th i18n:translate="">Size</th>
+                <th i18n:translate="">Modified</th>
+                <th i18n:translate="">State</th>
+            </tr>
+            <tr tal:repeat="parent list">
+                <td>
+                    <form action="" method="POST">
+                        <input
+                            type="hidden"
+                            name="go"
+                            tal:attributes="value parent/item/path"/>
+                        <input type="submit" value="Go" i18n:attributes="value"/>
+                    </form>
+                    <form tal:attributes="action python:root['item']['url'] + '/@@sharing'" method="POST">
+                        <input type="submit" value="Sharing" i18n:attributes="value"/>
+                    </form>
+                </td>
+                <td>
+                    <a tal:attributes="href parent/item/url" tal:content="parent/item/id" />
+                </td>
+                <td tal:content="parent/item/title" />
+                <td tal:content="parent/item/type" />
+                <td tal:content="parent/countall" />
+                <td tal:content="parent/item/size" />
+                <td tal:content="python: view.format_datetime_friendly_ago(parent['item']['modified'])" />
+                <td tal:content="parent/item/state" />
+            </tr>
+
+        </table>
+    </div>
+
+    <p>&nbsp;</p>
+
+    <div tal:condition="python: view.page_numbers['first'] != view.page_numbers['last']">
+        <div class="sidebyside" tal:condition="view/page_numbers/first">
+            <form action="" method="POST">
+                <input type="hidden" name="go" tal:attributes="value root/item/path"/>
+                <input type="hidden" name="page_number" tal:attributes="value view/page_numbers/first">
+                <input type="submit" tal:attributes="value python: '<< ' + view.page_numbers['first']"/>
+            </form>
+        </div>
+        <div class="sidebyside" tal:condition="view/page_numbers/previous">
+            <form action="" method="POST">
+                <input type="hidden" name="go" tal:attributes="value root/item/path"/>
+                <input type="hidden" name="page_number" tal:attributes="value view/page_numbers/previous">
+                <input type="submit" tal:attributes="value python: '< ' + view.page_numbers['previous']"/>
+            </form>
+        </div>
+        <div class="sidebyside">
+            <form action="" method="POST">
+                <input type="hidden" name="go" tal:attributes="value root/item/path"/>
+                <input type="text" name="page_number" tal:attributes="value view/page_numbers/this">
+            </form>
+        </div>
+        <div class="sidebyside" tal:condition="view/page_numbers/next">
+            <form action="" method="POST">
+                <input type="hidden" name="go" tal:attributes="value root/item/path"/>
+                <input type="hidden" name="page_number" tal:attributes="value view/page_numbers/next">
+                <input type="submit" tal:attributes="value python: view.page_numbers['next'] + ' >'"/>
+            </form>
+        </div>
+        <div class="sidebyside" tal:condition="view/page_numbers/last">
+            <form action="" method="POST">
+                <input type="hidden" name="go" tal:attributes="value root/item/path"/>
+                <input type="hidden" name="page_number" tal:attributes="value view/page_numbers/last">
+                <input type="submit" tal:attributes="value python: view.page_numbers['last'] + ' >>'"/>
+            </form>
+        </div>
+        <p>&nbsp;</p>
+    </div>
+
+
+    <div tal:condition="view/process_time">
+        <p i18n:translate="">
+            Elapsed time is <span i18n:name="elapsed_seconds" tal:replace="view/process_time" /> seconds.
+        </p>
+        <br/>&nbsp;
+    </div>
+
+
+    <form action="" method="POST">
+        <input type="hidden" name="invalidate_cache">
+        <input type="submit" value="Invalidate Cache" i18n:attributes="value"/>
+    </form>
+</div>
