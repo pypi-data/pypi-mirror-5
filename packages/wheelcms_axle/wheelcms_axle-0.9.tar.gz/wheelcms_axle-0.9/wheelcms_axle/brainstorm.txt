@@ -1,0 +1,110 @@
+Je creeert content in je primaire taal. Dit bouwt een boom van nodes
+met associated content op
+
+vervolgens wil je vanuit content een vertaling maken. Dit betekent
+dat er mogelijk een vertaalde slug / path moet zijn, en een vertaalde
+instance van hetzelfde type.
+
+Geef nodes meerdere paden (per taal) en meerdere contents?
+
+nodes bestaan in / voor eidere taal (maar mogelijk geen attached content)
+attached content moet van zelfde type zijn
+(evt in node opslaan)
+
+resolven van nodes, parents, children kan dus in primaire taal (bijv),
+niet afhankelijk van taal.
+
+Dus node krijgt pad per taal, eerste node bepaalt taal / default voor
+andere vertalingen. E.g. find path, order by language pref.
+
+Node kan meerdere contents hebben, taal zit in content
+----
+
+Ga uit van 'naief' hierarchisch model. Iedere node heeft een aantal slugs 
+(per taal) en een parent (en een position)
+
+Dit maakt een directe query op pad inefficient, maar dat is grotendeels
+af te vangen met caching.
+
+Resolven van een pad is op basis van een taal. Uitgaande van de rootnode, de
+meest geschikte child gegeven slug en taal. Als je vastloopt -> 404
+
+Als node gevonden is, zoek dan bijbehorende content in taal (beste match)
+
+beste match is (vraag - gevonden):
+- perfecte match eerst (fr - fr)
+- anders fallback (nl - en)
+
+Moeten content/nodes expliciet meerdere talen hebben? Text is nagenoeg altijd
+een specifieke taal ("winter school is open"), maar images kunnen bijvoorbeeld
+'any' zijn. Of gewoon 'None', geen specifieke taal. (==any)
+
+--
+
+Leg basisstructuur vast in generieke paden (taal onafhankelijk), bijvoorbeeld
+/
+/1
+/1/2
+/1/3
+/2/2
+/2/3
+/2/3/4
+/2/3/5
+
+De id's kunnen zefs de node id's zijn? Paden resolven is dan kwestie van split()
+
+Op basis van deze paden kan de tree gebouwd worden, kan bekeken worden wie
+parent/child etc is
+
+Maak een tabel die paden mapt naar deze generieke paden, per taal
+
+nl: /advies/welkom -> /1/2
+en: /advice/welcome -> /1/2
+
+nl: /contact/route -> /2/2
+en: /contact/route -> /2/2
+
+de slug (in taalcontext) is laatste deel van pad
+
+Wat betekent dit voor move, copy?
+
+werkt get() op interne paden of taalpaden? Op zich een mooi scenario: pad komt
+binnen, resolve naar taal, nodepad, get pad. Alternatief, gooi pad in node en
+krijg node terug met taalcontext.
+
+frontend
+========
+
+Create maakt (altijd) de eerste taal en node aan. Vervolgens kan edit gebruikt
+worden om vertalingen aan te maken of te bewerken
+
+Vanuit Create kan geschakeld worden naar andere talen (toolbar of tabs)
+
+coerce() mapt paden naar nodes. Moet hierbij rekening gehouden worden met
+de taal? Eigenlijk wel, want /foo/bar kan andere content in NL zijn dan EN:
+
+/(en=foo, nl=bar)
+  /(en=bar, nl=foo) C1
+/(en=bar, nl=foo)
+  /(en=foo, nl=bar) C2
+
+Verschillende nodes voor zelfde pad, afhankelijk van taal.
+
+IDEE:
+Node.get(.., language=..)
+sla language op (in instance), gebruik dit als default voor content() indien niet specified
+
+paden gebruiken om taal context te bepalen kan nuttig zijn, maar betekent ook
+dat UI vertaald wordt. Wenselijk?
+
+--
+
+Hoe omdaan met file / link selection? Moet er een language dropdown komen in de
+modal?
+
+Zorgen dat er niet 2 vertalingen in dezelfde taal van content gemaakt kunnen
+worden. Dropdown mag alleen beschikbare talen tonen
+
+m3r.nl/m3r.eu bepaalt domein de taal. In admin zou dat betekenen dat je van
+domein switcht als je tussen talen schakelt. In admin mode dus via cookie
+aktieve taal zetten?
