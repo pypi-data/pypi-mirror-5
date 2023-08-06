@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+import getopt, imp, os, sys
+import bumpy
+
+if '.' not in sys.path:
+	sys.path.append('.')
+if 'bump' not in sys.path:
+	sys.path.append('bump')
+
+def _import(filename, module='__bumpy_main__'):
+	if os.path.exists(filename) and module not in sys.modules:
+		sys.modules[module] = imp.load_source(module, filename)
+		return sys.modules[module]
+
+
+if __name__ == '__main__':
+	module = None
+	args = sys.argv[1:]
+	show_help = False
+
+	if len(args):
+		if args[0] == '--version':
+			print 'bumpy v' + bumpy.__version__
+			sys.exit()
+		elif args[0] in ('--file', '-f'):
+			_import(args[1])
+			args = args[2:]
+		elif args[0] in ('--help', '-h'):
+			show_help = True
+		elif args[0] in ('--verbose', '-v'):
+			bumpy.VERBOSE = True
+			args = args[1:]
+
+	_import('bum.py')
+	_import('build.py')
+
+	if os.path.exists('bump'):
+		for filename in os.listdir('bump'):
+			basename, ext = os.path.splitext(filename)
+			if ext != '.py': continue
+			_import(os.path.join('bump', filename), basename)
+
+	bumpy._help() if show_help else bumpy.main(args)
