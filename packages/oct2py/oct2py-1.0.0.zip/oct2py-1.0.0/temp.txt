@@ -1,0 +1,34 @@
+diff --git a/oct2py/_matwrite.py b/oct2py/_matwrite.py
+index b3e7760..0c49e81 100644
+--- a/oct2py/_matwrite.py
++++ b/oct2py/_matwrite.py
+@@ -10,6 +10,7 @@ import sys
+ import os
+ from scipy.io import savemat
+ import numpy as np
++from scipy.sparse import csr_matrix
+ from ._utils import Oct2PyError, _create_file
+ 
+ 
+@@ -140,6 +141,8 @@ class MatWrite(object):
+         if (isinstance(data, str) or
+             (sys.version.startswith('2') and isinstance(data, unicode))):
+             return data
++        if isinstance(data, csr_matrix):
++            return data
+         try:
+             data = np.array(data)
+         except ValueError as err:
+diff --git a/oct2py/tests/test_oct2py.py b/oct2py/tests/test_oct2py.py
+index dff6e89..1d6adcc 100644
+--- a/oct2py/tests/test_oct2py.py
++++ b/oct2py/tests/test_oct2py.py
+@@ -509,7 +509,7 @@ class NumpyTest(TestCase):
+             assert test.nnz == incoming.nnz
+             assert np.allclose(test.todense(), incoming.todense())
+             assert test.dtype == incoming.dtype
+-            assert type_ == 'cell'
++            assert type_ == 'double'
+ 
+     def test_empty(self):
+         '''Test roundtrip empty matrices
