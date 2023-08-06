@@ -1,0 +1,48 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:tal="http://xml.zope.org/namespaces/tal"
+	xmlns:metal="http://xml.zope.org/namespaces/metal" xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+	metal:use-macro="context/main_template/macros/master" i18n:domain="wasgehtengine.contenttypes">
+	<body>
+
+		<metal:content-core fill-slot="main">
+			<metal:content-core define-macro="content-core">
+
+				<article>
+					<header>
+						<h1 tal:content="context/title"></h1>
+					</header>
+
+					<p>
+						<strong>Venue: </strong>
+						<a tal:attributes="href context/venue/to_object/absolute_url"
+							tal:content="context/venue/to_object/title"></a>
+					</p>
+
+					<p>
+						<strong>Last run:</strong>
+						<time tal:condition="context/last_run" tal:attributes="datetime context/last_run/isoformat"
+							tal:content="python:context.last_run.strftime('%A, %x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(context.last_run)">Never</span>
+					</p>
+					<p>
+						<strong>Last successful run without errors:</strong>
+						<time tal:condition="context/last_successful_run"
+							tal:attributes="datetime context/last_successful_run/isoformat; class python:'status-error' if context.last_successful_run != context.last_run else ''"
+							tal:content="python:context.last_successful_run.strftime('%A, %x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(context.last_successful_run)">Never</span>
+					</p>
+					<p>
+						<strong>Last successful run with imported or updated events:</strong>
+						<time tal:condition="context/last_run_with_events_imported"
+							tal:attributes="datetime context/last_run_with_events_imported/isoformat; class python:'status-warning' if context.last_successful_run != context.last_run else ''"
+							tal:content="python:context.last_run_with_events_imported.strftime('%A, %x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(context.last_run_with_events_imported)">Never</span>
+					</p>
+					<p>
+						<strong>Number of imported events at last run: </strong>
+						<span tal:content="context/imported_events_count" />
+					</p>
+				</article>
+			</metal:content-core>
+		</metal:content-core>
+	</body>
+</html>
