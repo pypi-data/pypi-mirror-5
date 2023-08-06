@@ -1,0 +1,40 @@
+{% extends "zinnia:zinnia/entry_search.html" %}
+{% load i18n zinnia_tags %}
+
+{% block content-title %}
+<h1>{% trans "Search results for" %} '{{ pattern }}'</h1>
+
+{% if error %}
+<p class="alert alert-error">{{ error }}</p>
+{% endif %}
+
+{% if object_list %}
+<p class="alert alert-success">
+  {% blocktrans count entry_count=paginator.count %}{{ entry_count }} entry found{% plural %}{{ entry_count }} entries found{% endblocktrans %}
+</p>
+{% endif %}
+{% endblock content-title %}
+
+{% block content-loop %}
+{% if not error %}
+{% for object in object_list %}
+  {% include object.content_template with object_content=object.html_preview continue_reading=1 %}
+{% empty %}
+<p class="alert alert-info">{% trans "Nothing found." %}</p>
+{% endfor %}
+{% endif %}
+{% endblock content-loop %}
+
+{% block content-related %}
+<div class="search">
+  <form method="get" id="main_searchform" action="{% url 'zinnia_entry_search' %}" class="well form-search">
+    <p>
+      <input type="text" value="{{ pattern }}" name="pattern" id="main_searchbox" class="search-query input-xlarge" />
+      <input type="submit" value="OK" class="btn" />
+      <a title="{% trans 'You can use - to exclude words or phrases, &quot;double quotes&quot; for exact phrases and the AND/OR boolean operators combined with parenthesis for complex queries.' %}">
+        <i class="icon-info-sign"></i>
+      </a>
+    </p>
+  </form>
+</div>
+{% endblock content-related %}
