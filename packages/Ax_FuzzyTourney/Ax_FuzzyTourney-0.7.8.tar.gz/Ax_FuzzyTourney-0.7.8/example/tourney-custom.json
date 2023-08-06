@@ -1,0 +1,85 @@
+{
+    "tournament": {
+        "name": "Demonstration of custom functions and advanced concepts",
+        "desc": "Shows how to integrate custom functions, reference lens data, and other advanced features.",
+        "input": {
+            "fn": "Text_Lines",
+            "config": { "src": "example/names.txt" }
+        },
+        "output": {
+            "fn": "Text_CSV",
+            "config": { "csv_header": "names", "dest": "-" },
+            "fields": [
+                {"fn": "Entrant", "config": {"id": "name", "name": "Name"}},
+                {"fn": "Criterion", "config": {"criterion": "score_numerology"}},
+                {"fn": "Criterion", "config": { "criterion": "special_magic",
+                    "format": "~ {0:0.0f} ~"
+                }},
+                {"fn": "Lens_Data", "config": { "name": "Magic Number",
+                    "lens_id": "lens_magic_numbers",
+                    "lens_indices": [0, 1, 2, 3, 4, 5]
+                }}
+            ]
+        },
+        "select": {
+            "fn": "TopNCriteria",
+            "config": { "n": 5, "sort": "desc", "criteria": ["score_numerology"] }
+        },
+        "criteria": [
+            {
+                "id": "score_numerology", "name": "Numerological Value", 
+                "init": 0,
+                "desc": "Numerological significant of name"
+            },
+            {
+                "id": "special_magic", "name": "Special Magical Number", 
+                "init": 0,
+                "desc": "Special magical number"
+            }
+        ],
+        "judges": [
+            {
+                "name": "Seer of Names",
+                "desc": "Inspects name and provides numerological equivalent using custom lens",
+                "heuristics": [
+                    {
+                        "name": "Letter breakdown",
+                        "desc": "Adds values of each letter in name",
+                        "lens": { "fn": "MyLensFunction_Numerology",
+                            "module": "axonchisel.fuzzytourney.contrib.example"
+                        },
+                        "maps": [],
+                        "reduce": { "fn": "Sum", "config": {} },
+                        "criterion": "score_numerology"
+                    }
+                ]
+            },
+            {
+                "name": "Master of Magic Numbers",
+                "desc": "Generates magic lucky numbers for output",
+                "heuristics": [
+                    {
+                        "name": "Magic numbers",
+                        "desc": "Chooses 6 random numbers (1-100), saves them, then creates special number from them",
+                        "lens": { "fn": "RandomInt", "config": { "count": 6, "min": 1, "max": 100 },
+                            "id": "lens_magic_numbers"
+                        },
+                        "maps": [
+                            { "fn": "MyMapFunction_MultipleMaker", "config": { "factor": 5 },
+                                "module": "axonchisel.fuzzytourney.contrib.example"
+                            }
+                        ],
+                        "reduce": { "fn": "MyReduceFunction_MostMagical", "config": { "special": [3, 7] },
+                            "module": "axonchisel.fuzzytourney.contrib.example"
+                        },
+                        "reduced_maps": [
+                            { "fn": "Scale", "config": { "factor": 5, "inverse": true } },
+                            { "fn": "Add", "config": { "offset": 10 } }
+                        ],
+                        "criterion": "special_magic"
+                    }
+                ]
+            }
+        ]
+    }
+}
