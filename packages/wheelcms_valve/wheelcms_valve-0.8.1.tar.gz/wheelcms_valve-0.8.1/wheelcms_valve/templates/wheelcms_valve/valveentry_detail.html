@@ -1,0 +1,47 @@
+{# link categories and tags to a filter on the main index view #}
+<div class="row">
+  <div class="span12">
+    <h3><a href="{{content.node.get_absolute_url}}">{{content.title}}</a></h3>
+    <span class="entry-info">{% if content.state == "private" %}<span class="badge badge-important">private</span>{%endif%}          Written by <i class="icon-user"></i>
+{{content.owner.get_full_name|default:content.owner}} on {{content.publication}} 
+        {% with categories=content.categories.all %}
+          {% if categories %}
+            in
+            {% for cat in categories %}
+              {{cat}}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+    </span>
+  </div>
+</div>
+<div class="row">
+  <div class="span12">
+    <div class="entry-content">
+      {{content.body|safe}}
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="span12">
+    <span class="entry-details-footer">{% if content.state == "private" %}<span class="badge badge-important">private</span>{%endif%} 
+    Last updated {{content.modified}} 
+    {% with categories=content.categories.all %}
+      {% if categories %}
+        | filed under
+        {% for cat in categories %}
+          <a href="{{cat.node.get_absolute_url}}">{{cat}}</a>{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% with tags=content.tags.all %}
+      {% if tags %}
+        | <i class="icon-tag"></i>
+        {% for tag in tags %}
+          <span class="label label-default">{{tag}}</span>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    </span>
+  </div>
+</div>
