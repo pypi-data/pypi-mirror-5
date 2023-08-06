@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import sys
+from optparse import OptionParser
+
+from pypackager.packager import Pypackager
+from pypackager.utils import unflatten_dict
+from pypackager.settings import DEFAULTS
+
+usage = """"""
+parser = OptionParser(usage=usage)
+parser.add_option("--author", dest="author-name",
+                  help="")
+parser.add_option("--author-name", dest="author-name",
+                  help="")
+parser.add_option("--author-email-address", dest="author-email",
+                  help="")
+parser.add_option("--force", dest="force",
+                  help="", action="store_true", default=False)
+parser.add_option("--index", dest="index",
+                  help="", default=DEFAULTS['index'])
+parser.add_option("--license", dest="license-type",
+                  help="")
+parser.add_option("--license-type", dest="license-type",
+                  help="")
+parser.add_option("--license-organization", dest="license-organization",
+                  help="")
+parser.add_option("--template", dest="template-dir",
+                  help="")
+parser.add_option("--template-dir", dest="template-dir",
+                  help="", default=DEFAULTS['template']['dir'])
+parser.add_option("--template-syntax", dest="template-syntax",
+                  help="", default=DEFAULTS['template']['syntax'])
+parser.add_option("--script", dest="script-prerender",
+                  help="")
+parser.add_option("--script-prerender", dest="script-prerender",
+                  help="")
+parser.add_option("--script-postrender", dest="script-postrender",
+                  help="")
+
+
+if __name__ == "__main__":
+    (options, args) = parser.parse_args()
+    kwargs = unflatten_dict(vars(options))
+    action = sys.argv[1]
+    arguments = sys.argv[2:]
+    packager = Pypackager(**kwargs)
+    packager.run(action, *arguments)
+    sys.exit(0)
