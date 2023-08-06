@@ -1,0 +1,12 @@
+=======================================
+django-crispy-bootstrap
+=======================================
+Fixes some crispy bootstrap3 look.
+
+Install
+=======
+`pip install django-crispy-bootstrap`
+
+Usage
+=====
+Add crispy_bootstrap to INSTALLED_APPS before crispy_forms
