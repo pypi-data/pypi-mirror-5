@@ -1,0 +1,625 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "AUTHPROGS" "1" "October 2013" "" ""
+.
+.SH "NAME"
+\fBauthprogs\fR \- SSH command authenticator
+.
+.SH "SYNOPSIS"
+\fBauthprogs \-\-run [options]\fR
+.
+.P
+\fBauthprogs \-\-install_key [options]\fR
+.
+.P
+\fBauthprogs \-\-dump_config [options]\fR
+.
+.P
+\fBauthprogs \-\-help\fR
+.
+.SH "DESCRIPTION"
+\fBauthprogs\fR is an SSH command authenticator\. It is invoked on an ssh server and decides if the command requested by the ssh client should be run or rejected based on logic in the \fBauthprogs\fR configuration file\.
+.
+.P
+Passwordless SSH using ssh identies or pubkeys can enable all sorts of wonderful automation, for example running unattended batch jobs, slurping down backups, or pushing out code\. Unfortunately a key, once trusted, is allowed by default to run anything on that system, not just the small set of commands you actually need\. If the key is compromised, you are at risk of a security breach\. This could be catastrophic, for example if the access is to the root account\.
+.
+.P
+Authprogs is run on the SSH server and compares the requested command against the \fBauthprogs\fR configuration file/files\. This enables \fBauthprogs\fR to make intelligent decisions based on things such as the command itself, the SSH key that was used, the client IP, and such\.
+.
+.P
+\fBauthprogs\fR is enabled by using the \fBcommand=\fR option in the \fBauthorized_keys\fR file\.
+.
+.SH "KEY INSTALLATION"
+You can install your ssh identities/pubkeys manually, or allow authprogs to do the work for you\.
+.
+.SH "MANUAL KEY INSTALLATION"
+You need to set up your \fB~/\.ssh/authorized_keys\fR file to force invocation of authprogs for the key or keys you wish to protect\.
+.
+.P
+A line of an unrestricted \fBauthorized_key\fR entry might look like this:
+.
+.IP "" 4
+.
+.nf
+
+ssh\-rsa AAAAB3NzaC1yc2E\.\.\.\.\.OgQ7Pm1X8= user@example\.com
+.
+.fi
+.
+.IP "" 0
+.
+.P
+When setting up this key to use authprogs, you add a \fBcommand=\fR option to the very beginning of that line that points to the location where authprogs lives\. For example if authprogs is in /usr/bin/authprogs, you would use this:
+.
+.IP "" 4
+.
+.nf
+
+command="/usr/bin/authprogs \-\-run" ssh\-rsa AAAAB3NzaC1yc2E\.\.\.\.\.OgQ7Pm1X8= user@example\.com
+.
+.fi
+.
+.IP "" 0
+.
+.P
+You must include \fB\-\-run\fR to let authprogs know it is running in SSH command mode\.
+.
+.P
+Authprogs has other commandline options you may wish to include as well, for example
+.
+.IP "" 4
+.
+.nf
+
+command="/usr/bin/authprogs \-\-keyname=backups \-\-run" ssh\-rsa AAAA\.\.\.Pm1X8= user@example\.com
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Lastly, if you wish, ssh offers a number of other helpful restrictions you may wish to include that are separate from authprogs\. These can be appended right after (or before) the command="" section if you wish\.
+.
+.IP "" 4
+.
+.nf
+
+command="/usr/bin/authprogs \-\-run",no\-port\-forwarding,no\-pty ssh\-rsa AAAA\.\.Pm1X8= user@example\.com
+.
+.fi
+.
+.IP "" 0
+.
+.P
+See the sshd(8) man page for more information about allowed \fBauthorized_keys\fR configuration options\.
+.
+.P
+AUTOMATED KEY INSTALLATION Authprogs is capable of adding your key to your \fBauthorized_keys\fR file (\fB~/\.ssh/authorized_keys\fR by default) programatically\. It also disableds ssh port forwarding by default for this key (a sensible default for most batch jobs\.)
+.
+.P
+authprogs will refuse to install a key that is already present in the \fBauthorized_keys\fR file\.
+.
+.P
+For example the following
+.
+.IP "" 4
+.
+.nf
+
+authprogs \-\-install_key /path/to/backups_key\.pub \-\-keyname=backups
+.
+.fi
+.
+.IP "" 0
+.
+.P
+would cause the following line to be added to your \fB~/\.ssh/authorized_keys\fR file:
+.
+.IP "" 4
+.
+.nf
+
+command="/usr/bin/authprogs \-\-keyname backups \-\-run",no\-port\-forwarding ssh\-rsa AAAA\.\.Pm1X8= user@example\.com
+.
+.fi
+.
+.IP "" 0
+.
+.SH "RUN MODE OPTIONS"
+Authprogs can run in several modes, depending on which of these command line switches you provide\.
+.
+.TP
+\fB\-\-run\fR
+Act in run mode, as from an \fBauthorized_keys\fR file\.
+.
+.TP
+\fB\-\-install_key filename\fR
+Install the key contained in the named file into your \fBauthorized_keys\fR file\.
+.
+.TP
+\fB\-\-dump_config\fR
+Dump the configuration in a python\-style view\. Helpful only for debugging\.
+.
+.TP
+\fB\-\-help\fR
+Show help information
+.
+.SH "OTHER OPTIONS"
+The folowing options may apply to multiple run modes, as appropriate\.
+.
+.TP
+\fB\-\-keyname key_name\fR
+This option \'names\' the key, for help in crafting your rules\. Since an account may have multiple keys allowed, this helps us differentiate which one was used so we can make sensible choices\.
+.
+.IP
+In run mode, this specifies which name is used when matching in the configuration, e\.g\.
+.
+.IP "" 4
+.
+.nf
+
+  command="/usr/bin/authprogs \-\-keyname backups \-\-run" \.\.\.
+.
+.fi
+.
+.IP "" 0
+.
+.IP
+In key installation mode, this adds the \fB\-\-keyname\fR option to the \fBauthorized_keys\fR entry\.
+.
+.IP
+\fBkey_name\fR may contain no whitespace\.
+.
+.TP
+\fB\-\-configfile\fR
+Specifies the authprogs configuration file to read\. Defaults to \fB~/\.ssh/authprogs\.yaml\fR\.
+.
+.IP
+In key installation mode, this adds the \fB\-\-configfile\fR option to the \fBauthorized_keys\fR entry\.
+.
+.TP
+\fB\-\-configdir\fR
+Specifies the authprogs configuration, in which multiple configuration files can be found\. Defaults to \fB~/\.ssh/authprogs\.d\fR if present\.
+.
+.IP
+Files in the configuration directory are read as rules in filename order\. See CONFIGURATION for more info\.
+.
+.SH "LIMITATIONS"
+Commands are executed via fork/exec, and are not processed through the shell\. This means you cannot have multiple commands separated by semicolons, pipelines, redirections, backticks, shell builtins, wildcards, variables, etc\.
+.
+.P
+Also, you cannot have spaces in any arguments your command runs\. This is because the SSH server takes the command that was specified by the client and squashes it into the \fBSSH_ORIGINAL_COMMAND\fR variable\. By doing this it makes it impossible for us to know what spaces in \fBSSH_ORIGINAL_COMAND\fR were between arguments and which were part of arguments\.
+.
+.P
+Here are some commands that would not work through authprogs:
+.
+.IP "\(bu" 4
+\fBssh host "rm /tmp/foo; touch /tmp/success"\fR
+.
+.IP "\(bu" 4
+\fBssh host "rm /tmp/*\.html"\fR
+.
+.IP "\(bu" 4
+\fBssh host "cut \-d: \-f 1 /etc/passwd > /tmp/users"\fR
+.
+.IP "\(bu" 4
+\fBssh host "touch \'/tmp/file with spaces\'"\fR
+.
+.IP "\(bu" 4
+\fBssh host "for file in /tmp/*\.html; do w3m \-dump $file > $file\.txt; done"\fR
+.
+.IP "" 0
+.
+.P
+You can work around these limitations by writing a shell script that does what you need and calling that from authprogs, rather than attempting to run complicated commandlines via ssh directly\.
+.
+.SH "CONFIGURATION FILES"
+authprogs configuration files are written as a series of yaml documents\. Each yaml document represents a single authprogs rule\. These rules allow you to decide whether the client\'s command should be run based on criteria such as the command itself, the client IP address, and ssh key in use\.
+.
+.P
+Rules can be read from a single file (\fB~/\.ssh/authprogs\.yaml\fR by default) or by putting files in a configuration directory (\fB~/\.ssh/authprogs\.d\fR)\. The configuration directory method is most useful when you want to be able to easily add or remove rules without manually editing a single configuration file\.
+.
+.P
+Rules are read and processed in the following order:
+.
+.IP "\(bu" 4
+rules in the configuration file, from top to bottom\.
+.
+.IP "\(bu" 4
+rules in the configuration directory, processed in asciibetical order
+.
+.IP "" 0
+.
+.P
+Dotfiles contained in a configuration directory are not processed\. The configuration directory is not recursed; only those files directly contained are processed\.
+.
+.P
+Each rule in the configuration file/files is tested in order and once a match is found, processing stops and the command is run\.
+.
+.P
+Rules are made of rule selection options (e\.g\. client IP address) and subrules (e\.g\. a list of allowed commands)\. All pieces must match for the command to be run\.
+.
+.P
+The general format of a rule is as follows:
+.
+.IP "" 4
+.
+.nf
+
+\-\-
+# Selection options
+#
+# All must match or we stop processing this rule\.
+selection_option_1: value
+selection_option_2: value
+
+# The allow block, aka subrules
+#
+# This lets us group a bunch of possible commands
+# into one rule\. Otherwise we\'d need a bunch of
+# rules where you repeat selection options\.
+allow:
+    \-
+    rule_type: value
+    rule_param_1: value
+    rule_param_2: value
+    \-
+    rule_type: value2
+    rule_param_1: value
+    rule_param_2: value
+\-\-
+
+# Next rule begins here
+selection_option_3: value
+\.\.\.
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Some of the keys take single arguments, while others may take lists\. See the definition of each to understand the values it accepts\.
+.
+.SH "RULE SELECTION OPTIONS"
+These configuration options apply to the entire rule, and help you limit under what conditions the rule matches\.
+.
+.IP "\(bu" 4
+from: This is a single value or list of values that define what SSH client IP addresses are allowed to match this rule\. The client IP address is gleaned by environment variables set by the SSH server\.
+.
+.IP "" 0
+.
+.P
+Examples:
+.
+.IP "" 4
+.
+.nf
+
+\-\-
+from: 192\.168\.1\.5
+\-\-
+from: [192\.168\.0\.1, 10\.0\.0\.3]
+\-\-
+from:
+    \- 192\.168\.0\.1
+    \- 10\.10\.0\.3
+.
+.fi
+.
+.IP "" 0
+.
+.IP "\(bu" 4
+keynames: This is a single value or list of values that define which SSH pubkeys are allowed to match this rule\. The keyname is specified by the \fB\-\-keyname foo\fR parameter in the authprogs command line in the entry in \fBauthorized_keys\fR\.
+.
+.IP "" 0
+.
+.P
+Examples:
+.
+.IP "" 4
+.
+.nf
+
+\-\-
+keynames: backups
+\-\-
+keynames: [repo_push, repo_pull]
+\-\-
+keynames:
+    \- repo_push
+    \- repo_pull
+.
+.fi
+.
+.IP "" 0
+.
+.SH "ALLOW SUBRULE SECTION"
+The allow section of a rule is a single subrule or list of subrules\.
+.
+.P
+Subrules can be simple, for example the explicit command match, or be more program\-aware such as scp support\. You specify which kind of subrule you want with the \fBrule_type\fR option:
+.
+.IP "" 4
+.
+.nf
+
+\-\-
+allow:
+    \-
+    rule_type: command
+    command: /bin/touch /tmp/timestamp
+    \-
+    command: /bin/rm /tmp/bar
+    \-
+    rule_type: scp
+    allow_upload: true
+    \.\.\.
+\-\-
+.
+.fi
+.
+.IP "" 0
+.
+.P
+See the separate subrules sections below for how to craft each type\.
+.
+.SH "COMMAND SUBRULES"
+This section applies if \fBrule_type\fR is set to \fBcommand\fR or is not present at all\.
+.
+.P
+The command requested by the client is compared to the command listed in the rule\. (Spaces are squashed together\.) If it matches, then the command is run\.
+.
+.P
+Note that the command must be \fIexactly\fR the same; authprogs is not aware of arguments supported by a comamnd, so it cannot realize that \fB"ls \-la"\fR and \fB"ls \-a \-l"\fR and \fB"ls \-al"\fR and \fB"ls \-l \-a"\fR are all the same\. You can list multiple commands to allow you to accept variants of a command if necessary\.
+.
+.P
+The simplest configuration looks like this:
+.
+.IP "" 4
+.
+.nf
+
+\-\-
+allow:
+    command: /bin/true
+        \-\-
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Or you can provide a list of commands:
+.
+.IP "" 4
+.
+.nf
+
+\-\-
+allow:
+    \- command: /bin/true
+    \- command: /bin/false
+\-\-
+.
+.fi
+.
+.IP "" 0
+.
+.P
+A number of optional settings can tweak how command matching is performed\.
+.
+.IP "\(bu" 4
+\fBallow_trailing_args: true\fR: This setting allows you to specify a partial command that will match as long as the command requested by the client is the same or longer\. This allows you to avoid listing every variant of a command that the client may wish to run\.
+.
+.IP
+Examples:
+.
+.IP "" 4
+.
+.nf
+
+  \-
+  allow:
+      \-
+      command: /bin/echo
+      allow_trailing_args: true
+      \-
+      command: /bin/ls
+      allow_trailing_args: true
+      \-
+      command: /bin/rm \-i
+      allow_trailing_args: true
+  \-
+.
+.fi
+.
+.IP "" 0
+
+.
+.IP "\(bu" 4
+\fBpcre_match: true\fR: Compare the command using pcre regular expressions, rather than doing an explicit match character by character\. The regex is \fInot\fR anchored at the beginning nor end of the string, so if you wish to anchor it is your responsibility to do so\.
+.
+.IP
+Caution: never underestimate the sneakiness of an adversary who may find a way to match your regex and still do something nasty\.
+.
+.IP
+Examples:
+.
+.IP "" 4
+.
+.nf
+
+  \-\-
+  allow:
+      \-
+          # Touch the foo file, allowing any
+          # optional command line params
+          # before the filename
+
+          command: ^touch\e\es+(\-\e\eS+\e\es+)*foo$
+          pcre_match: true
+      \-
+          # attempt to allow rm of files in /var/tmp
+          # but actually would fail to catch malicious
+          # commands e\.g\. /var/tmp/\.\./\.\./etc/passwd
+          #
+          # As I said, be careful with pcre matching!!!
+
+          command: ^/bin/rm\e\es+(\-\e\eS+\e\es+)*/var/tmp/\e\eS*$
+          pcre_match: true
+.
+.fi
+.
+.IP "" 0
+
+.
+.IP "" 0
+.
+.SH "SCP SUBRULES"
+authprogs has special support for scp file transfer\. You are not required to use this \- you could use a simple command subrules to match explicit scp commands \- but using an scp\-specific subrule offers you greater flexibility\.
+.
+.P
+To trigger scp mode, use \fBrule_type: scp\fR\.
+.
+.P
+The scp options are as follows\.
+.
+.IP "\(bu" 4
+\fBrule_type: scp\fR: This indicates that this is an scp subrule\.
+.
+.IP "\(bu" 4
+\fBallow_upload: true|false\fR: Allow files to be uploaded to the ssh server\. Defaults to false\.
+.
+.IP "\(bu" 4
+\fBallow_download: true|false\fR: Allow files to be downloaded from the ssh server\. Defaults to false\.
+.
+.IP "\(bu" 4
+\fBallow_recursion: true|false\fR: Allow recursive (\-r) file up/download\. Defaults to false\.
+.
+.IP "\(bu" 4
+\fBallow_permissions: true|false\fR: Allow scp to get/set the permissions of the file/files being transfered\. Defaults to false\.
+.
+.IP "\(bu" 4
+\fBfiles\fR: The files option allows you to specify which file or files are allowed to be tranfered\. If this is not specified then transfers are not restricted based on filename\.
+.
+.IP
+Examples:
+.
+.IP "" 4
+.
+.nf
+
+  \-\-
+  allow:
+      \- rule_type: scp
+        allow_download: true
+        files:
+            \- /etc/group
+            \- /etc/passwd
+      \- rule_type: scp
+        allow_upload: true
+        files: [/tmp/file1, /tmp/file2]
+.
+.fi
+.
+.IP "" 0
+
+.
+.IP "" 0
+.
+.SH "EXAMPLES"
+Here is a sample configuration file with multiple rules, going from simple to more complex\.
+.
+.IP "" 4
+.
+.nf
+
+\-\-
+# Simple commands, no IP restrictions\.
+allow:
+    \- command: /bin/tar czvf /backups/www\.tgz /var/www/
+    \- command: /usr/bin/touch /var/www/\.backups\.complete
+\-\-
+# Similar, but with IP restrictions
+from: [192\.168\.0\.10, 192\.168\.0\.15, 172\.16\.3\.3]
+allow:
+    \- command: git \-\-git\-dir=/var/repos/foo/\.git pull
+    \- command: sudo /etc/init\.d/apache2 restart
+\-\-
+# Some more complicated subrules
+from:
+    \- 10\.1\.1\.20
+    \- 10\.1\.1\.21
+    \- 10\.1\.1\.22
+    \- 10\.1\.1\.23
+allow:
+    # Allow unrestricted ls
+    \- command: /bin/ls
+      allow_trailing_args: true
+
+    # Allow any \'service apache2 (start|stop)\' commands via sudo
+    \- command: sudo service apache2
+      allow_trailing_args:true
+
+    # How about a regex? Allow wget of any https url, outputting
+    #  to /tmp/latest
+    \- command: ^/usr/bin/wget\e\es+https://\e\eS+\e\es+\-O\e\es+/tmp/latest$
+      pcre_match: true
+
+    # Allow some specific file uploads
+    \- rule_type: scp
+      allow_upload: true
+      files:
+          \- /srv/backups/host1\.tgz
+          \- /srv/backups/host2\.tgz
+          \- /srv/backups/host3\.tgz
+.
+.fi
+.
+.IP "" 0
+.
+.SH "FILES"
+.
+.IP "\(bu" 4
+\fB~/\.ssh/authorized_keys\fR: The default place your key should be installed and configured to call authprogs\. The actual location can differ if your administrator has changed it\.
+.
+.IP "\(bu" 4
+\fB~/\.ssh/authprogs\.yaml\fR: Default authprogs configuration file\. Override with \-\-configfile\.
+.
+.IP "\(bu" 4
+\fB~/\.ssh/authprogs\.d\fR: Default authprogs configuration directory\. Override with \-\-configdir\.
+.
+.IP "" 0
+.
+.SH "ENVIRONMENT"
+authprogs uses the following environment variables that are set by the sshd(8) binary:
+.
+.IP "\(bu" 4
+\fBSSH_CONNECTION\fR: This is used to determine the client IP address\.
+.
+.IP "\(bu" 4
+\fBSSH_CLIENT\fR: This is used to determine the client IP address if SSH_CONNECTION was not present\.
+.
+.IP "\(bu" 4
+\fBSSH_ORIGINAL_COMMAND\fR: The (squashed) original SSH command that was issued by the client\.
+.
+.IP "" 0
+.
+.SH "EXIT STATUS"
+authprogs returns 0 on success, non\-zero on errors\. In run mode it exits with the exit code of the command that was requested, or 126 on unexpected errors\.
+.
+.SH "LOGGING AND DEBUGGING"
+If a \fB\-\-logfile\fR is specified then it will be opened in append mode and a line about each command that is attempted to be run will be written to it\. The line itself is in the form of a python dictionary\.
+.
+.P
+If authprogs is run with \fB\-\-debug\fR, then this logfile will get increased debugging information, including the configuration, rule matching status as they are checked, etc\.
+.
+.SH "HISTORY"
+A perl version of authprogs was originally published at http://www\.hackinglinuxexposed\.com/articles/20030115\.html in 2003\. This is a complete rewrite in python, with a more extensible configuration, and avoiding some of the limitations of the former\.
+.
+.SH "SEE ALSO"
+ssh(1), sshd(8), scp(1)\.
+.
+.SH "AUTHOR"
+Bri Hatch \fIbri@ifokr\.org\fR
