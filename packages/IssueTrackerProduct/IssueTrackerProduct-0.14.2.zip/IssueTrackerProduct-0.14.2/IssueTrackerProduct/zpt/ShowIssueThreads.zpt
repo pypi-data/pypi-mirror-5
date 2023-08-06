@@ -1,0 +1,101 @@
+<div align="center"
+     tal:define="threads python:here.ListThreads();
+                 use_issue_notes here/useIssueNotes;
+                 in_completelist python:here.thisInURL('CompleteList');
+                 dummy python:request.RESPONSE.setHeader('Content-Type','text/html;; charset=%s'%here.UNICODE_ENCODING)"
+     tal:condition="threads">
+
+  <div tal:repeat="thread threads"
+       class="threadbox"
+       tal:attributes="id string:i${here/getId}__${thread/getId}"
+       >
+
+    <a tal:condition="in_completelist"
+       tal:attributes="name string:i-${thread/aq_parent/getId}-${repeat/thread/number}"></a>
+    <a tal:condition="not:in_completelist"
+       tal:attributes="name string:i${repeat/thread/number}"></a>
+    <div class="thead">
+
+    <a tal:condition="use_issue_notes"
+       tal:attributes="onclick string:return new_note(this, '${here/getId}__${thread/getId}')"
+       class="new-note" href="#" title="Click to add a new note">
+      <img border="0" src="/misc_/IssueTrackerProduct/new-issuenote.png" alt="New note"/>
+    </a>
+
+    <a tal:condition="use_issue_notes"
+       tal:repeat="note python:here.getYourNotes(threadID=thread.getId())"
+       href="#" class="old-note"
+       tal:attributes="title python:here.showDate(note.notedate)+'|'+note.showComment()"
+       ><img border="0" src="/misc_/IssueTrackerProduct/issuenote.png" alt="Note"/></a>
+
+     <b tal:content="structure python:here.colorizeThreadChange(thread.getTitle())">Title</b>
+
+    <a tal:condition="thread/hasEmailOriginal" rel="nofollow"
+       tal:attributes="href string:${thread/getId}/ShowOriginalEmail"><img tal:condition="python:thread.getSubmissionType()=='email'"
+     alt="Followup submitted via email" width="16" height="16" border="0"
+     src="/misc_/IssueTrackerProduct/emailicon.gif" /></a>
+     <img tal:condition="python:thread.getSubmissionType()=='email' and not thread.hasEmailOriginal()"
+     alt="Followup submitted via email" width="16" height="16"
+     src="/misc_/IssueTrackerProduct/emailicon.gif" />
+
+        &nbsp;&nbsp;-&nbsp;&nbsp;
+	<span tal:define="fromname thread/getFromname;email thread/getEmail"
+	     tal:replace="structure python:here.ShowNameEmail(fromname,email, encode=not request.get('no_email_encoding', False))">
+				Name and Email</span>
+
+    <a class="plink"
+       tal:condition="python:in_completelist"
+       tal:attributes="href string:#i-${thread/aq_parent/getId}-${repeat/thread/number}">permanent link</a>
+    <a class="plink"
+       tal:condition="not:in_completelist"
+       tal:attributes="href string:#i${repeat/thread/number}">permanent link</a>
+
+
+    </div>
+
+	<div class="trest">
+
+        <div class="tbody"
+             tal:define="comment thread/getComment"
+             tal:attributes="onclick python:test(path('repeat/thread/end'), 'clearAutoRefreshTitle()')">
+	    <div tal:condition="comment"
+			tal:replace="structure python:thread.showComment()">
+			    COMMENT here
+	    </div>
+	    <p tal:condition="not:comment"><em>No comment.</em></p>
+        </div>
+
+        <div class="threaddate" tal:content="structure python:here.showDate(thread.getThreadDate())">date</div>
+        <div class="threadactualhours"
+             tal:define="hours thread/getActualTimeHours"
+             tal:condition="python:hours and not request.get('edit-actual-time')==thread.getId()">
+             <strong>Actual time:</strong> <br tal:replace="python:here.showTimeHours(hours, show_unit=1)"/>
+	     <a class="editlink"
+                tal:condition="python:not in_completelist and here.isAllowedToChangeIssues() and thread.canEditActualTime()"
+	        tal:attributes="href string:?edit-actual-time=${thread/getId}"
+		>edit</a>
+
+        </div>
+        <div class="threadactualhours"
+             tal:define="hours thread/getActualTimeHours"
+             tal:condition="python:hours and request.get('edit-actual-time')==thread.getId()">
+             <form method="post" action=".">
+             <input type="hidden" name="edit-actual-time" tal:attributes="value thread/getId"/>
+             <strong>Actual time:</strong>
+
+             <input name="actual_time_hours" size="7" tal:attributes="value request/actual_time_hours|thread/actual_time_hours|nothing"/> (hours)
+             <input type="submit" value="Save" class="smallbutton" />
+	     <br/>
+             </form>
+             <a class="editlink"
+                tal:attributes="href string:#i${repeat/thread/number}"
+		>cancel</a>
+
+        </div>
+        <div class="threadfiles" tal:content="structure thread/showThreadFileattachments"></div>
+        <div class="clearerR">&nbsp;</div>
+
+    </div>
+
+  </div>
+</div>

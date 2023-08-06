@@ -1,0 +1,116 @@
+<script type="text/javascript"><!--
+function swapFilterLogic() {
+  var hidden = document.filter.Filterlogic
+  var was = hidden.value;
+  if (was=='show') {
+    hidden.value='block';
+    $('#currentfilterlogic').html('Do not show');
+    $('#changefilterlogic').attr("href", function(){
+      return this.href.replace('=show','=block');
+    }).html('Only show...');
+  } else {
+    hidden.value='show';
+    $('#currentfilterlogic').html('Only show');
+    $('#changefilterlogic').attr("href", function(){
+      return this.href.replace('=block','=show');
+    }).html('Do not show...');
+  }
+}
+
+var _loaded_filteroptions = false;
+function loadfilteroptions(f) {
+  if (_loaded_filteroptions) {
+    //alert('not loading again');
+    return false;
+    }
+
+  var d = 'force_filtervaluer_update=1&';
+  for (i=0;i < f.elements.length;i++) {
+    ob = f.elements[i];
+    if (ob.type=='text'||ob.type=='hidden') d += ob.name +'='+ escape(ob.value) +'&';
+  }
+  var url = f.action.replace(/\/ListIssues|\/CompleteList/,'/filter_options').split('?')[0];
+  if (url.indexOf('?')>-1) { d += url.substring(url.indexOf('?')+1, url.length-1); url = url.substring(0, url.indexOf('?')); }
+  $('#filteroptions').load(url + '?' + d);
+  _loaded_filteroptions = true;
+  return false;
+}
+
+function unloadfilteroptions(f) {
+  $('#filteroptions').load(f.action+'filter_options?ShowFilterOptions:int=0&');
+  _loaded_filteroptions = false;
+  return false;
+}
+//--></script>
+<div tal:condition="not:request/ShowFilterOptions|nothing" id="filteroptions">
+<form
+tal:define="start python:request.get('start');
+            action python:here.BatchedQueryString(test(start,{'start':start},{}))"
+tal:attributes="action action">
+
+ <div style="float:right">
+
+<tal:block tal:define="saved_filter_id python:here.getCurrentlyUsedSavedFilter(request_only=0)">
+  <em class="filter-title" tal:condition="saved_filter_id" tal:content="python:here.getSavedFilterObject(saved_filter_id).getTitle()"></em>
+  <em class="filter-title" tal:condition="python:not saved_filter_id and here.hasFilter()">Filters are currently being used</em>
+</tal:block>
+
+<input type="hidden" name="ShowFilterOptions" value="1" />
+<input type="hidden" name="i" tal:condition="request/i|nothing"
+ tal:attributes="value request/i"/>
+<input type="hidden" name="report" tal:condition="request/report|nothing"
+ tal:attributes="value request/report"/>
+  <input type="submit" value="Show filter options"
+   onclick="this.value='Opening options...';return loadfilteroptions(this.form)"
+   onkeypress="this.value='Opening options...';return loadfilteroptions(this.form)" />
+
+  </div>
+
+</form>
+</div>
+
+
+
+<div tal:condition="request/ShowFilterOptions|nothing" id="filteroptions">
+<tal:block tal:define="dummy here/getAndSetContentType; dummy here/StopCache" tal:replace="nothing">
+  If this template is called on its own from AJAX, we have to make sure the content-type is set.
+</tal:block>
+<tal:block condition="request/force_filtervaluer_update|nothing">
+  <span tal:define="dummy here/forceFilterValuerUpdate"
+      tal:replace="nothing">
+  <!--
+  This is a bit of a hack. Every time you load ListIssues or CompleteList it makes a
+  call to ListIssuesFiltered() which subsequently calls _filterIssues(). That method
+  will make sure that if there is a sessioned savedfilter (key='last_savedfilter_id')
+  this saved filter's values are populated in the REQUEST. If you run filter_options
+  without having previously run ListIssuesFiltered() in the same request your REQUEST
+  will NOT have the right copy of the filter values which will result in this form
+  below appearing unused.
+  If the request variable 'force_filtervaluer_update' is true, we are instructed to make
+  a call to forceFilterValuerUpdate() which basically finds any last used filtervaluer
+  from the session and populates it's values into our current REQUEST object.
+  -->
+  </span>
+</tal:block>
+
+<a name="filteroptions"></a>
+
+
+
+<form method="get" name="filter"
+ tal:define="rooturl here/getRootURL;
+             page python:test(here.whichList()=='CompleteList','CompleteList', 'ListIssues');
+             filterlogic here/getFilterlogic" name="foptions"
+ tal:attributes="action string:${rooturl}/">
+
+<input type="hidden" name="i" tal:condition="request/i|nothing"
+ tal:attributes="value request/i"/>
+<input type="hidden" name="report" tal:condition="request/report|nothing"
+ tal:attributes="value request/report"/>
+
+
+<table metal:use-macro="here/listissues_macros/macros/filteroptionstable"></table>
+
+
+</form>
+</div>

@@ -1,0 +1,54 @@
+<div tal:define="b_start here/getBatchStart;
+                 b_size here/getBatchSize;
+                 filteredissues options/filteredissues|here/ListIssuesFiltered;
+                 global filteredissues_len python:len(filteredissues);
+                 global total_actual_hours python:here.UseActualTime() and sum([x.getActualTimeHours() for x in filteredissues if x.getActualTimeHours()]);
+                 Batch python:modules['ZTUtils'].Batch;
+                 global batch python:Batch(filteredissues, b_size, b_start, orphan=1);
+		 dummy python:here.setWhichList('ListIssues')"
+     tal:replace="nothing"     
+/><html metal:use-macro="here/getHeader">
+<style type="text/css" metal:fill-slot="extracss">
+.bd { font-size:90%}
+table#richlist {
+  border:1px solid #ccc
+  width:98%;
+}
+</style>
+
+<metal:block tal:condition="here/useIssueNotes"
+             fill-slot="extrajs">
+<script type="text/javascript" src="/misc_/IssueTrackerProduct/issuenotes-list.js"></script>
+</metal:block>
+
+<div metal:fill-slot="body" tal:omit-tag="">
+
+
+<span tal:replace="structure here/filter_options"/>
+
+<h3 class="pagetitle" tal:content="here/getListPageTitle">List Issues</h3>
+<a tal:condition="request/report|nothing" tal:attributes="href string:${here/getRootURL}/Reports">All reports</a>
+
+
+
+<span tal:replace="structure python:here.list_issues_top_bar(filteredissues_len=filteredissues_len,
+                                                             batch=batch, 
+                                                             total_actual_hours=total_actual_hours
+                                                             )"></span>
+
+
+<table tal:define="sublist here/whichSubList; 
+                   tmpl python:here.getListIssuesList(sublist)"
+tal:replace="structure python:tmpl(batch=batch)"></table>
+
+
+<span tal:replace="structure python:here.list_issues_top_bar(filteredissues_len=filteredissues_len, 
+                                                             batch=batch, 
+                                                             total_actual_hours=total_actual_hours, 
+                                                             nosum=1, 
+                                                             showSubListOptions=1)"></span>
+
+<br /><br />
+
+</div>
+</html>
