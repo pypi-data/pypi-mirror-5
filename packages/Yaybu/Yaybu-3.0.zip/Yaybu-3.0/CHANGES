@@ -1,0 +1,429 @@
+Changelog for yaybu
+===================
+
+3.0 (2013-09-04)
+----------------
+
+- New line of development based upon the latest iteration of yay (yay3).
+
+- Refactor provisioner backend to use "transports" (rather than starting a
+  remote copy of yaybu that communicates with the local yaybu)
+
+- Refactor the libcloud code to integrate with the yay3 "graph" - so that nodes
+  are started on demand and ordering is implicit.
+
+
+0.2.4 (unreleased)
+------------------
+
+- Add a subclass of ``yay.config.Config`` that helps adapt yay for use in
+  Yaybu..
+
+- Depend on at least 0.11.4 of libcloud to avoid hanging on S3 access.
+
+- Drop dependency on boto.
+
+
+0.2.3 (2012-10-25)
+------------------
+
+- Update workaround to avoid conflicts with boto (which has a HTTPResponse
+  subclass).
+
+- Remove some of the more pointless logging.
+
+
+0.2.2 (2012-10-24)
+------------------
+
+- Workaround a bug in python2.6 that causes certain Amazon S3 operations to
+  hang.
+
+
+0.2.1 (2012-10-23)
+------------------
+
+- Fixed MANIFEST to include recipes
+
+
+0.2.0 (2012-10-23)
+------------------
+
+- Add new commands for dealing with collections of nodes on cloud providers:
+  ``addnode``, ``rmnode``, ``status`` and ``provision``.
+
+- NB: 0.2.0 is API incompatible with earlier versions
+
+- Mark "static" file content retrieved over a gpg stream as secret to prevent
+  the content appearing in the logs.
+
+- Depend on yay >= 0.0.57 for latest bug fixes.
+
+- Add a new ``yaybu bootstrap`` to simplify setup on Ubuntu boxes.
+  If you are running a development build of Yaybu then the bootstrap will be of
+  the latest code pushed to master on GitHub.
+
+
+0.1.28 (2012-10-13)
+-------------------
+
+- Add a new ``Checkout`` provider for use with Vagrant-like environments::
+
+      resources.append:
+        - Checkout:
+            name: /vagrant
+            scm: mount
+
+  This pattern allows recipes to treat shared folders in VM's (like
+  ``/vagrant``) as checkouts. They can then be upgraded/substituted for git or
+  subversion checkouts when deploying to a real server.
+
+  Any files that are watched in the checkout will be treated as though they
+  have changed.
+
+
+0.1.27 (2012-08-14)
+-------------------
+
+- Fix yaybu.core.shell bug where the communicate implementation waited for file
+  handles to disappear even when the underlying process had terminated.
+
+
+0.1.26 (2012-08-05)
+-------------------
+
+- Restore previous verbosity (will review properly during 0.2.x).
+
+
+0.1.25 (2012-08-02)
+-------------------
+
+- Fix default verbosity to not be debug mode
+
+- Use context log features of latest yay version to provide better error
+  messages when yay parsing fails. These are only shown when verbosity is at
+  debug level.
+
+
+0.1.24 (2012-07-30)
+-------------------
+
+- Fix etag request headers so that etags can be back from a yaybu running in
+  remote mode.
+
+
+0.1.23 (2012-07-30)
+-------------------
+
+- Fix etag registry to actually store etags
+
+
+0.1.22 (2012-07-22)
+-------------------
+
+ - Now depends on yay >= 0.0.53 to support etags (which reduces the amount of
+   network traffic when files haven't changed) and to support fetching of
+   cookbooks packaged as python eggs from code repositories.
+
+ - Fix logging typos
+
+ - If there is a ```~/.yaybu/defaults.yay``` or ```~/.yaybu/defaults.yay.gpg```
+   it will be loaded.
+
+
+0.1.21 (2012-03-16)
+-------------------
+
+- Fix simulate error
+
+
+0.1.20 (2012-03-16)
+-------------------
+
+- Generate proper exceptions when trying to lookup users and groups that don't
+  exist.
+
+- Refactor 'passthru' commands as 'inert' commands as it better reflects the
+  intention.
+
+- Remove 'exceptions' option from shell.execute
+
+- #63 Simulate fails on Execute when user missing from /etc/passwd. Code
+  refactored to work around this.
+
+- Experimental Paramiko support.
+
+
+0.1.19 (2012-03-13)
+-------------------
+
+- Improved validation for scripts in cwd.
+
+
+0.1.18 (2012-03-13)
+-------------------
+
+- #66, fix ordering of permission dropping so that we can actually drop group
+  permissions.
+
+- #65, add a umask option to Execute.
+
+- #64, proper error handling when assigning to an invalid property.
+
+- After parsing a shell command, verify that the command exists (searching on
+  PATH if needed).
+
+- Make sure errors from Yay are wrapped in ParseError so they are presented
+  properly.
+
+
+0.1.17 (2012-03-12)
+-------------------
+
+- Support a ``running`` option for ``Service``. This is a command that should
+  return an exit code of 0 if all services are running. If used with a buildout
+  generated ``isotoma.recipe.cluster`` symlinked into ``/etc/init.d`` this
+  might look like this::
+
+      resources.append:
+        - Service:
+            name: cluster
+            running: /etc/init.d/cluster running
+
+
+0.1.16 (2012-01-16)
+-------------------
+
+- Fix handling of broken links when replacing them.
+- Fix handling of broken links for Link remove policy.
+
+
+0.1.15 (2012-01-08)
+-------------------
+
+- If remote process dies before we SIGKILL it, swallow any errors.
+
+- The RemoteRunner object can now set SSH settings in its ssh_options
+  dictionary. For example::
+
+    runner.ssh_options["IdentitiesOnly"] = "yes"
+
+
+0.1.14 (2012-01-01)
+-------------------
+
+- Better error handling. Proper detection of resource redefinition and of
+  undefined resource type use. Yay node graph is walked lazily so Yaybu
+  errors can access line numbers and other metadata. The resource bundle
+  is parsed and error checked before we even try and connect to server.
+
+- Exit code ``254`` is now used when no changes have been made. ``253`` is
+  used for unknown errors. ``255`` is now a connection errror.
+
+- Refactor template handling to allow ``{% extends "index.html" %}``. You can
+  refer to templates on the ``YAYBUPATH``, and you can override templates by
+  putting new templates higher up the ``YAYBUPATH`` search.
+
+- Yaybu hackers now have additional ways of invoking the debugger, including
+  an equivalent to the pdb ``pm()`` and ``set_trace()`` methods..
+
+- File creation is now more secure: permissions are set before content
+  is written.
+
+- We now use Yay 0.0.41 as it has a cleaner API for injecting Python objects.
+
+
+0.1.13 (2011-12-02)
+-------------------
+
+- Initial subversion checkouts are no longer quiet - to match 'svn up'
+  behaviour - this is useful for large checkouts when you arent sure if the
+  checkout has hung.
+
+- Use of 'svn' without having subversion installed will trigger a propper error
+  instead of a traceback. Both this and the rsync checks now have a proper
+  exception for reporting missing dependencies.
+
+- Service[] now parses the output of ``/sbin/status`` to determine if an
+  upstart job is running or not. It considers the goal of the job to determine
+  if it needs to adjust the job. For example, we might want to start a job and
+  that job isn't running, but it is starting. That is good enough, so Yaybu
+  wouldn't take any action.
+
+  A side effect of implementing proper state detection is that when trying to
+  restart an upstart job that was stopped now just starts the job directly.
+
+- Adds version information to the command line interface
+
+- The protocol Yaybu uses for communicating over SSH has grown some version
+  metadata. This will be used to ensure better interoperability between Yaybu
+  clients and targets.
+
+  **WARNING** You will need to ensure your clients and servers are running at
+  least this version as this is (hopefully the last) protcol breaking change.
+
+- Reclassifies some log output as debug information for quieter deployments
+  when nothing has changed.
+
+
+0.1.12 (2011-11-30)
+-------------------
+
+- Add a dummy Checkout provider that uses rsync. The primary use case for this
+  feature is vagrant where you can do something like this::
+
+      resources.append:
+        - Checkout:
+            name: /var/checkouts/my-site
+            repository: /vagrant
+            scm: rsync
+            user: vagrant
+
+        - Execute:
+            name: buildout
+            command: ./buildout
+            cwd: /var/checkouts/my-site
+            policy:
+              execute:
+                - when: sync
+                  on: Checkout[/var/checkouts/my-site]
+
+  There are 2 advantages here: firstly, your production config will likely
+  deploy from Git, but Vagrant always gives you a /vagrant directory without
+  having to have a seperate Git checkout. With this change you can still use a
+  Checkout resource for your /vagrant sourced code, keeping your recipes as
+  similar as possible. Secondly, your ``vagrant provision`` will be able to
+  detect code changes just like a real Checkout. For example, you can add
+  watches to restart services when you change a particular script or asset in
+  your 'checkout'.
+
+- The default mode for directories is now 0755.
+
+- Improve cross-platform support by not making assumptions about the value of
+  sys.maxunicode.
+
+- Use yay 0.0.39 to avoid some pickle issues.
+
+
+0.1.11 (2011-11-19)
+-------------------
+
+- A Subversion checkout will now understand and happily use data passed to it
+  as String objects. This means if you use the ``scm_password``  attribute it
+  won't leak your password into the logs.
+
+- We now depend on Yay 0.0.35 for the improved ``String`` API.
+
+- The subprocess abstraction natively supports ``String`` instances and will
+  mask any secrets in log output. It now also supports native strings and
+  will shlex.split them automatically.
+
+
+0.1.10 (2011-11-10)
+-------------------
+
+- Yabyu now depends on Yay 0.0.33 and the improved ``Openers()`` API. This means
+  that cookbook assets can be fetched from any location that Yay can be fetched
+  from, including http and https.
+
+- This change also means that Yay loading also respects the YAYBUPATH, and that
+  http content can be on the YAYBUPATH.
+
+- Fix python-magic fallback - in previous version the fallback was inverted and
+  claiming all text was binary
+
+
+0.1.9 (2011-11-07)
+------------------
+
+- Add a basic docs for Vagrant provisioner.
+- Add a better fallback for when 'python-magic' isn't installed
+
+
+0.1.8 (2011-11-04)
+------------------
+
+- Allow ``set_interactive`` call on RemoteRunner for batch processing use cases
+- Allow API users to set a particular identity file with set_identity_file
+- Change Context object to parse user@host:port into individual variables
+  This fixes ${yaybu.host} containing user and ports details.
+
+
+0.1.7 (2011-10-18)
+------------------
+
+- Add some toys for people driving Yaybu from code without Yay
+- Improve quick start documentation to stress idempotence
+- Don't import yaybu.resources or yaybu.providers from yaybu package any more
+- yaybu is now a namespace package
+- You can declare your own resources and providers using the yaybu.resources
+  yaybu.providers entry points
+
+
+0.1.6 (2011-07-26)
+------------------
+
+- A variable called yaybu.host is available from your configs
+- Add Git support
+- Added minimal RemoteRunner API
+- --expand-only only shows resources key (more useful)
+- More test coverage
+- Documentation updates
+- Support '.import: - ${foo}'
+
+
+0.1.5 (2011-07-06)
+------------------
+
+- Logging is now via python logging module
+- Audit log to syslog is working again
+- Audit log is configurable through /etc/yaybu
+- Added yaybu.core.debug to assist debugging yaybu in remote mode
+- Can run network tests with TEST_NETWORK=1 ./bin/test discover
+- New yaybu.harness module to house testing harness related code
+- Tests have moved into sensible locations within yaybu module
+
+0.1.4 (2011-06-16)
+------------------
+
+- EventState removes successfully applied updates on the fly, not just at the end
+- Remove the simlog API and be as 'full-fat' as possible in simulate mode
+- File provider will no longer log diffs when updating encrypted files ;)
+- Every test that uses check_apply will also be tested for simulation
+- Better use of python-magic: Use mimetypes and look for text/
+- Use a stricter glob for identifying currently active sysv services
+- EventState now records against id rather than home
+- Test harness now enforces idempotence of check_apply
+- Test harness now manages fakeroot by itself
+- Fix logging issue for long resource ids
+- More sensible default PATH
+- Don't consider empty files to be binary
+- Simplify logging, and fix logging of diffs
+- Set environment from preexec function
+- Lock down environment - don't leak environment from user
+- Be more forgiving of mising PID files (Service provider)
+- Better error handling in remote mode
+
+0.1.3 (2011-05-26)
+------------------
+
+- RemoteRunner fixes
+- Fix catching errors in remote
+- Fix passing --resume and --no-resume to remote
+
+0.1.2 (2011-05-22)
+------------------
+
+- Basic upstart, debian and 'simple' service providers
+- Catches yay.errors.Error
+- Add 'live logging' of shell steps (so you can see buildout progress)
+- Add ability to watch files that might be updated by other providerss
+- More tests
+- Test env deals with races from cow-shell automatically
+- Fix comment field of User provider
+- Fix group and user bit of File/Directory/etc
+- Resources are now referred to as Type[name] as otherwise Group and
+  User can very easily crash
+- Jinja use is now more tolerant of unicode dictionary keys
+- Observation state is now preserved on failure
+
