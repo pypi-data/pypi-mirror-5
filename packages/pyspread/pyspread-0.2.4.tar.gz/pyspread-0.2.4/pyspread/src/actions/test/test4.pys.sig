@@ -1,0 +1,7 @@
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iF4EABEIAAYFAlHlqTIACgkQOipFccilpPOoggD+L+js+as5N9EMKeNjvhhIHZxt
+BSc8rRnBnsHd3RWPm4IA/Az3r/6bNwG9HyCTnLPnxFKj3z57fUWWcpWVvoqZgL4U
+=i47X
+-----END PGP SIGNATURE-----
