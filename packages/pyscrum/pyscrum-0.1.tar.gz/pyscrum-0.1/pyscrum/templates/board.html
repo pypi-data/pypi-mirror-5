@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ '%2.0f'|format(board.progress) }}% {{ board.title }}{% endblock %}
+
+{% block css %}
+<style>
+    .story .accordion-toggle {
+        display: block;
+        padding: 5px 10px;
+    }
+    .story .accordion-toggle .panel-title {
+        font-size: 14px;
+        line-height: 1.4;
+        color: #000;
+    }
+    .panel-heading {
+        padding: 0;
+    }
+    .panel-body {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .task-row {
+        width: 26%;
+    }
+    ul.tasks, ul.tasks li {
+        list-style: none;
+    }
+    ul.tasks {
+        overflow: hidden;
+        margin: -5px -5px 0;
+        padding: 0;
+    }
+    ul.tasks li {
+        float: left;
+        padding: 5px;
+        width: 50%;
+    }
+    ul.tasks > li:nth-child(2n+1) {
+        clear: both;
+    }
+    ul.tasks li > span {
+        text-decoration: none;
+        color: #000;
+        background: #ffc;
+        display: block;
+        padding: 10px;
+        -moz-box-shadow: 0px 3px 6px rgba(0,0,0,0.2);
+        -webkit-box-shadow: 0px 3px 6px rgba(0,0,0,0.2);
+        box-shadow: 0px 3px 6px rgba(0,0,0,0.2);
+    }
+    ul.tasks li > span > *:last-child {
+        margin-bottom: 0;
+    }
+    ul.tasks h4 {
+        margin-top: 0;
+        margin-bottom: 5px;
+        font-size: 13px;
+        font-weight: bold;
+        line-height: 1.3;
+    }
+    ul.tasks .status {
+        height: 3px;
+        margin-bottom: 7px;
+    }
+    .new {
+        background-color: red;
+    }
+    .inwork {
+        background-color: gold;
+    }
+    .success {
+        background-color: green;
+    }
+    th.new-row {
+        border-bottom-color: red !important;
+    }
+    th.inwork-row {
+        border-bottom-color: gold !important;
+    }
+    th.success-row {
+        border-bottom-color: green !important;
+    }
+    .table > tbody > tr > td {
+        padding: 10px;
+        border-right: 1px dotted #DDD;
+    }
+    .table > tbody > tr > td:last-child {
+        border-right: 0 none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{{ board.title }}: {{ '%2.0f'|format(board.progress) }}% ({{ board.done_points }} из {{ board.points }} points)</h1>
+<table class="table table-hover">
+    <thead>
+        <th></th>
+        <th class="task-row new-row">В планах <span class="badge">{{ board.new_points|default('', True) }}</span></th>
+        <th class="task-row inwork-row">В работе <span class="badge">{{ board.work_points|default('', True) }}</span></th>
+        <th class="task-row success-row">Готово <span class="badge">{{ board.done_points|default('', True) }}</span></th>
+    </thead>
+    {% for story in board.stories %}
+    <tr{% if story.is_done %}{% endif %}>
+        <td>
+            {% set story_index = loop.index %}
+            {% include 'partial/_storycard.html' %}
+        </td>
+        <td>
+            <ul class="tasks">
+            {% for task in story.new_tasks %}
+                {% set task_status = ' new' %}
+                {% include 'partial/_task.html' %}
+            {% endfor %}
+            </ul>
+        </td>
+        <td>
+            <ul class="tasks">
+            {% for task in story.work_tasks %}
+                {% set task_status = ' inwork' %}
+                {% include 'partial/_task.html' %}
+            {% endfor %}
+            </ul>
+        </td>
+        <td>
+            <ul class="tasks">
+            {% for task in story.done_tasks %}
+                {% set task_status = ' success' %}
+                {% include 'partial/_task.html' %}
+            {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Burndown: {{ title }}{% endblock %}
+
+{% block content %}
+  <h1 class="text-center">{{ title }}</h1>
+  <div id="chart" style="width: 100%; height: 700px;"></div>
+{% endblock %}
+
+{% block js %}
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/flot/0.8.1/jquery.flot.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function() {
+          $.plot($('#chart'),
+              [
+              {'lines': {'show': 'true', 'lineWidth': 1}, 'data': {{ ideal }}, 'label': 'Ideal Burndown'},
+                  {'lines': {'show': 'true', 'lineWidth': 4, 'fill': 'true'}, 'points': {'show': 'true'}, 'data': {{ actual }}, 'label': 'Actual Burndown'},
+                  {% if projection %}
+                  {'lines': {'show': 'true', 'lineWidth': 1}, 'data': {{ projection }}, 'label': 'Projection', shadowSize: 0},
+                  {% endif %}
+              ],
+              {'xaxis': {'ticks': {{ days }}}, 'legend': {'position': 'sw'}, 'colors': ['#cccccc', '#99ff99', '#99ff99'], shadowSize: 0}
+            );
+          });
+      </script>
+{% endblock %}
