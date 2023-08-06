@@ -1,0 +1,184 @@
+#!/usr/bin/env python
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+# Author: "Chris Ward <cward@redhat.com>
+
+'''
+metrique-server.py contains a CLI for metrique server.
+
+    It is possible to start, stop, restart and request
+    current running status for metriqued
+
+    # ... ^^^ cube class definition above ^^^ ...
+    if __name__ == '__main__':
+        from metrique.argparsers import cube_cli
+        obj, args = cube_cli(Bug)
+        obj.extract(force=args.force)
+
+'''
+
+import os
+import time
+import traceback
+import signal
+
+from metriqued.config import PID_FILE, metrique
+from metriqued.tornadohttp import TornadoHTTPServer
+from metriqued.utils import get_pid_from_file, remove_pid_file
+
+
+def stop(pid, pid_file, kill=False):
+    code = 1  # not OK
+    if pid and not status(pid):
+        print "WARNING: pid file and pid found (%s)" % pid
+        print "... but no process with that id is running"
+    elif pid <= 0:
+        print 'WARNING: invalid pid (%s)' % pid
+    else:
+        try:
+            if kill:
+                print "Sending SIGINT to (%s)" % pid
+                os.kill(pid, signal.SIGINT)
+            else:
+                print "Sending SIGTERM to (%s)" % pid
+                os.kill(pid, signal.SIGTERM)
+            code = 0  # OK!
+        except OSError as e:
+            print 'STOP ERROR: %s' % e
+            raise
+    remove_pid_file(pid_file)
+    return code
+
+
+def start(fork=False, **kwargs):
+    pid = kwargs.get('pid')
+    pid_file = kwargs.get('pid_file')
+    code = 1
+
+    if pid and status(pid):
+        raise SystemExit("process already running... (%s)" % pid)
+
+    metriqued = TornadoHTTPServer(**kwargs)
+    try:
+        metriqued.start(fork=fork)
+    except RuntimeError as e:
+        # already started...
+        print 'START ERROR: metriqued already started; %s' % e
+        print traceback.format_exc(e)
+        # a pid file was possibly created; clean up
+        stop(pid, pid_file)
+    except Exception as e:
+        # a pid file was possibly created; clean up
+        print 'START ERROR: %s' % e
+        print traceback.format_exc(e)
+        stop(pid, pid_file)
+    else:
+        code = 0  # OK
+    return code
+
+
+def restart(pid, pid_file, kill=False, timeout=None, fork=False):
+    if timeout is None:
+        timeout = -1
+    if status(pid):
+        stop(pid, pid_file, kill)
+    print "Waiting for process to stop..."
+    while status(pid):
+        time.sleep(1)
+        timeout -= 1
+        if timeout == 0:
+            print ('RESTART ERROR: timed out waiting for running '
+                   'process to stop')
+            break
+    else:
+        remove_pid_file(pid_file)
+        return start(fork=fork, **kwargs)
+
+
+def status(pid, quiet=True):
+    _pid = str(pid)
+    pids = [p for p in os.listdir('/proc') if p.isdigit()]
+    if pid and _pid in pids:
+        if not quiet:
+            print '[%s] Running' % pid
+        return 1
+    else:
+        if not quiet:
+            print '[%s] Not Running' % pid
+        return 0
+
+
+if __name__ == '__main__':
+    import argparse
+
+    _args = argparse.ArgumentParser(description='metrique server CLI')
+
+    __cmds__ = ['start', 'stop', 'kill', 'restart', 'killstart', 'status']
+    _args.add_argument('command', type=str, choices=__cmds__)
+
+    _args.add_argument('-d', '--debug',
+                       type=int, default=True)
+    _args.add_argument('-a', '--async-off',
+                       action='store_true')
+    _args.add_argument('-f', '--fork',
+                       action='store_true')
+
+    _args.add_argument('-c', '--server-config-file', type=str)
+
+    _args.add_argument('-H', '--host', type=str)
+    _args.add_argument('-P', '--port', type=str)
+
+    _args.add_argument('-i', '--pid-file', type=str, default=PID_FILE)
+
+    # FIXME: in the near future, we'll be able to start up
+    # multiple servers in parallel; instance-id would
+    # be a integer representing which instance you'd
+    # like to interact with...
+    #_args.add_argument('-iid', '--instance-id',
+    #                   type=int, default=1)
+
+    # parse sys.argv
+    args = _args.parse_args()
+
+    # shorten varnames
+    cmd = args.command
+    debug = args.debug
+    async_off = args.async_off
+    pid_file = os.path.expanduser(args.pid_file)
+
+    server_config_file = args.server_config_file
+    m_conf = metrique(config_file=server_config_file)
+
+    if not args.host:
+        host = m_conf.host
+    else:
+        host = args.host
+
+    if not args.port:
+        port = m_conf.port
+    else:
+        port = args.port
+
+    async = not async_off
+    fork = args.fork
+
+    kwargs = dict(host=host, port=port, debug=debug, async=async)
+    print
+
+    pid = None
+    if cmd != 'start':
+        pid = get_pid_from_file(pid_file)
+
+    if cmd == 'start':
+        code = start(fork=fork, **kwargs)
+    elif cmd == 'stop':
+        code = stop(pid, pid_file)
+    elif cmd == 'kill':
+        code = stop(pid, pid_file, kill=True)
+    elif cmd == 'restart':
+        code = restart(pid, pid_file, fork=fork)
+    elif cmd == 'killstart':
+        code = restart(pid, pid_file, kill=True, fork=fork)
+    elif cmd == 'status':
+        status(pid, quiet=False)
+    else:
+        print 'Not sure what to say, honestly to %s... Try --help ?' % cmd
