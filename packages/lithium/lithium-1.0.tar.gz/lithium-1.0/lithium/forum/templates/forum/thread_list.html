@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n forum %}
+
+{% block title %}{{ forum }}{% endblock %}
+
+{% block content %}
+{% if forum %}{% render_parent_list forum.get_parent_list %}{% endif %}
+<h2>{% if forum %}{{ forum }}{% else %}All threads{% endif%}</h2>
+
+{% if forum.has_children %}
+<h3>Sub-forums</h3>
+{% render_forum_list forum.children.all %}
+{% endif %}
+
+{% if not forum.is_category %}
+<table>
+    <thead>
+        <tr>
+            <th class="thread">Thread {% if not forum.is_category and can_create %}<a href="{{ forum.get_create_thread_url }}"    >(create)</a>{% endif %}</th>
+            <th>Last modified</th>
+            <th>Posts</th>
+        </tr>
+    </thead>
+
+    <tbody>
+      {% for thread in thread_list %}
+        <tr class="{% cycle 'odd' 'even' %} {% if thread.is_locked %}locked{% endif %}{% if thread.is_sticky %} sticky{% endif %}">
+            <td class="thread"><a href="{{ thread.get_absolute_url }}">{{ thread }}</a></td>
+            <td class="last-modified">{{ thread.last_post_date|date:"h:i A" }}</a></td>
+            <td class="posts">{{ thread.post_count }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% endblock %}
