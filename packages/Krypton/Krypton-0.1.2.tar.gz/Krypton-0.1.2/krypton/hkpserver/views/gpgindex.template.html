@@ -1,0 +1,52 @@
+{% extends "themes/default.theme.html" %}
+{% block title %}Public Key Server -- Search {{ searchString }}{% end %}
+
+{% block body %}
+    <h1>Search results for '{{ searchString }}'</h1>
+    <div class="row">
+        <div class="col-md-1">Type</div>
+        <div class="col-md-2">bits/keyID</div>
+        <div class="col-md-2">Date</div>
+        <div class="col-md-4">User ID</div>
+    </div>
+<ul class="list-group">
+    {% for gpgkey in gpgkeys %}
+    <li class="list-group-item">
+        <div class="row">
+            <div class="col-md-1"><span class="glyphicon glyphicon-lock"></span>pub</div>
+            <div class="col-md-2">{{ gpgkey["key_lenght"] }}R/<a href="/pks/lookup?op=get&search=0x{{ gpgkey["key_id"] }}">{{ gpgkey["key_id_32"] }}</a></div>
+            <div class="col-md-2">{{ gpgkey["creation_time"] }}</div>
+            <div class="col-md-4"><a href="/pks/lookup?op=vindex&search=0x{{ gpgkey["key_id"] }}">{{ gpgkey["primary_UserIDPacket"] }}</a></div>
+        </div>
+        {% for userid in gpgkey['UserIDPacket'] %}
+            <div class="row">
+                <div class="col-md-2">&nbsp;</div>
+                <div class="col-md-4">{{ userid['user'] }}</div>
+            </div>
+        {% end %}
+
+        {% if "UserAttributePacket" in gpgkey %}
+        {% for userattribute in gpgkey['UserAttributePacket'] %}
+            <div class="row">
+                <div class="col-md-2">&nbsp;</div>
+                <div class="col-md-4">[user attribute packet]</div>
+            </div>
+        {% end %}
+        {% end %}
+
+        {% if showFingerprint %}
+            <div class="row">
+                <div class="col-md-2">&nbsp;</div>
+                <div class="col-md-4">Fingerprint={{ gpgkey['fingerprint'] }}</div>
+            </div>
+        {% end %}
+        {% if showHash %}
+            <div class="row">
+                <div class="col-md-2">&nbsp;</div>
+                <div class="col-md-4">Hash={{ gpgkey['hash'] }}</div>
+            </div>
+        {% end %}
+    </li>
+    {% end %}
+</ul>
+{% end %}
