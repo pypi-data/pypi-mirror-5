@@ -1,0 +1,58 @@
+{% extends 'settings.html' %}
+
+{% block tab_general %}active{% end %}
+
+{% block section_active %}general{% end %}
+
+{% block section %}
+<div class="row-fluid">
+    <fieldset>
+        <legend>{{_("Client credentials")}}</legend>
+        <div class="row-fluid">
+            <table class="table table-striped">
+                <tr>
+                    <td>{{_("Project Id")}}</td>
+                    <td><span class="credential">{{project['_id']}}</span></td>
+                </tr>
+                <tr>
+                    <td>{{_("Secret Key")}}</td>
+                    <td><span class="credential">{{project['secret_key']}}</span></td>
+                </tr>
+            </table>
+            <form method="post" action="" class="pull-right">
+                {% raw xsrf_form_html() %}
+                <button type="submit" name="submit" value="regenerate_secret" class="btn btn-danger pull-right">
+                    {{_("Regenerate secret key")}}
+                </button>
+            </form>
+        </div>
+    </fieldset>
+</div>
+
+<div class="row-fluid" style="margin-top: 20px;">
+    <fieldset>
+        <legend>{{_("Namespaces")}}</legend>
+        <div class="row-fluid">
+            <a class="btn btn-primary" href="{{ handler.reverse_url("namespace_create", project['name']) }}">{{_("Create new namespace")}}</a>
+            <br /><br />
+            <table class="table table-striped">
+                {% for namespace in namespaces %}
+                    <tr class="project-namespace">
+                        <td class="col-lg-11">
+                            <h4>{{namespace['name']}}</h4>
+                        </td>
+                        <td class="col-lg-1">
+                            <a href="{{ handler.reverse_url("namespace_edit", project['name'], namespace['name']) }}" class="btn btn-primary">{{_("Edit")}}</a>
+                            <!--<form action="" method="post" class="pull-right form-delete">
+                                {% raw xsrf_form_html() %}
+                                <input type="hidden" name="namespace_name" value="{{namespace['name']}}" />
+                                <button type="submit" name="submit" value="namespace_del" class="btn btn-default">{{_("delete")}}</button>
+                            </form>-->
+                        </td>
+                    </tr>
+                {% end %}
+            </table>
+        </div>
+    </fieldset>
+</div>
+{% end %}
