@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="collective.exhibit">
+
+  <!-- register import steps -->
+  <genericsetup:importStep
+      name="exhibit-setup"
+      handler="collective.exhibit.setuphandlers.exhibitSetup"
+      title="Exhibit Setup"
+      description="Additional configuration steps">
+   <depends name="keywords" />
+  </genericsetup:importStep>
+
+  <genericsetup:importStep
+      name="add-facetednav"
+      handler="collective.exhibit.setuphandlers.faceted_navigation"
+      title="Faceted Nav"
+      description="Adds faceted navigation search template">
+   <depends name="exhibit-setup" />
+  </genericsetup:importStep>
+
+  <genericsetup:importStep
+      name="add-facetednav-ex-bib"
+      handler="collective.exhibit.setuphandlers.bibliography_faceted_navigation"
+      title="Faceted Nav"
+      description="Adds faceted navigation search template for bibliography">
+   <depends name="exhibit-setup" />
+  </genericsetup:importStep>
+
+  <!-- Register the installation GenericSetup extension profile -->
+  <genericsetup:registerProfile
+      name="default"
+      title="Exhibit"
+      directory="profiles/default"
+      description=""
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- Upgrade steps -->
+  <genericsetup:upgradeSteps
+      source="1000"
+      destination="1001"
+      sortkey="1"
+      profile="collective.exhibit:default">
+    <upgradeDepends
+        title="Add control panel"
+        import_steps="plone.app.registry controlpanel"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      source="1001"
+      destination="1002"
+      sortkey="2"
+      profile="collective.exhibit:default">
+    <upgradeDepends
+        title="Update addable types"
+        import_steps="typeinfo"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      source="1002"
+      destination="1003"
+      sortkey="2"
+      profile="collective.exhibit:default">
+    <upgradeDepends
+        title="Update css and resources"
+        import_steps="cssregistry typeinfo controlpanel"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      source="1003"
+      destination="1004"
+      sortkey="3"
+      profile="collective.exhibit:default">
+    <upgradeDepends
+        title="Update exhibit behaviors"
+        import_steps="typeinfo"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      source="1004"
+      destination="1005"
+      sortkey="3"
+      profile="collective.exhibit:default">
+    <upgradeDepends
+        title="Update exhibititem categorization"
+        import_steps="typeinfo"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      source="1005"
+      destination="1006"
+      sortkey="3"
+      profile="collective.exhibit:default">
+    <upgradeDepends
+        title="Allow exhibit sections as default pages"
+        import_steps="propertiestool"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      source="1006"
+      destination="1007"
+      sortkey="1"
+      profile="collective.exhibit:default">
+    <upgradeDepends
+        title="Add CSS Viewlet"
+        import_steps="viewlets"
+        />
+  </genericsetup:upgradeSteps>
+
+
+</configure>

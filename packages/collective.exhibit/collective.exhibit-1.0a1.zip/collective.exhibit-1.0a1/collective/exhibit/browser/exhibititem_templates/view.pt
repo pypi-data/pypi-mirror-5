@@ -1,0 +1,117 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      tal:define="item_url context/referenced_item_url|nothing;"
+      i18n:domain="plone">
+<head>
+  <metal:js fill-slot="javascript_head_slot">
+    <script>
+      var exhibit_item_url;
+    </script>
+    <script tal:define="item_url context/referenced_item_url|nothing;"
+            tal:condition="item_url"
+            tal:content="string:exhibit_item_url = '${item_url}/view';">
+    </script>
+    <script>
+      $(function () {
+        var map_init = false;
+        $('.ExhibitItemPreview').tooltip({ position: "bottom right",
+                                           relative: true,
+                                           effect: "fade",
+                                           offset: [-10,0]});
+        $('.FullExhibitItemLink').click(function() { 
+            $('#ExhibitItemView').slideDown(1000,
+                function () {
+                    // init any maps on slidedown, they get distorted otherswise
+                    map_init == false && typeof mapsGoogleMaps != 'undefined' && mapsGoogleMaps.init();
+                    map_init = true;
+                }
+            );
+            $('.FullExhibitItemLink').hide();
+            $('.CloseExhibitItemLink').show();
+            return false;
+        });
+        $('.CloseExhibitItemLink').click(function() { 
+            $('#ExhibitItemView').slideUp(1000);
+            $('.FullExhibitItemLink').show();
+            $('.CloseExhibitItemLink').hide();
+            return false;
+        });
+      });
+      // Do this onload so we don't load any included google maps prematurely
+      if (exhibit_item_url) {
+          $(window).load(function () {
+                $('#ExhibitItemView').load(exhibit_item_url + ' #content > *');
+          });
+      }
+    </script>
+  </metal:js>
+</head>
+
+<body>
+
+<metal:main fill-slot="content-core"
+            tal:define="show_image context/show_image|nothing;
+                        image_view context/@@images;
+                        image_preview image_view/image/large|nothing;
+                        item_url context/referenced_item_url|nothing;
+                        image_url string:${context/absolute_url}/@@images/image">
+  <a href=""
+     class="ExhibitItemImage"
+     tal:condition="python:show_image and image_preview"
+     tal:attributes="href image_url;
+                     title context/Title"
+     tal:content="structure image_preview">
+    <img src="some_image.jpg" alt="title" />
+  </a>
+  <div class="ExhibitItemText" tal:content="structure context/getText">
+    Full Text
+  </div>
+  <div class="visualClear">&nbsp;</div>
+  <a class="ReferencedItemLink"
+     tal:attributes="href string:${item_url}/view"
+     tal:condition="python:item_url and checkPermission('Modify portal content', context)">Go To Referenced Item</a>
+  <a class="FullExhibitItemLink"
+     href="#"
+     tal:attributes="href item_url"
+     tal:condition="python:item_url">More information ...</a>
+  <a class="CloseExhibitItemLink"
+     href="#" style="display: none;"
+     tal:condition="python:item_url">Close</a>
+
+<div id="ExhibitItemView" style="display: none;">
+</div>
+
+<div class="ExhibitItemListing">
+  <h3>More Exhibit Items</h3>
+  <tal:listing repeat="item python:context.listFolderContents({'portal_type': 'collective.exhibit.exhibititem'})">
+  <div tal:attributes="class python:'ListingItem%s' % (context == item and ' CurrentListingItem' or '')"
+       tal:define="image_view item/@@images;
+                   item_title item/Title|nothing;
+                   item_url item/absolute_url;
+                   image_preview image_view/image/thumb|nothing;"
+       tal:condition="image_preview">
+    <script tal:condition="python:context == item" tal:content="python:'var current_exhibit_item_index=%d' % repeat['item'].index">
+    </script>
+
+    <a class="ExhibitItemPreview"
+       tal:attributes="href item_url">
+      <img class="ExhibitItemThumb"
+           tal:attributes="src string:${item_url}/@@images/image/thumb;
+                           alt item_title;" />
+    </a>
+    <div class="tooltip">
+      <div class="ExhibitItemTitle" tal:content="item_title">Title</div>
+      <p tal:content="item/Description">Description</p>
+    </div>
+  </div>
+  </tal:listing>
+</div>
+
+</metal:main>
+
+</body>
+</html>

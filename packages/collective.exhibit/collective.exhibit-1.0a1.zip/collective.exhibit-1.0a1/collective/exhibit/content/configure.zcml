@@ -1,0 +1,50 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:grok="http://namespaces.zope.org/grok"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="collective.exhibit">
+
+  <!-- configure your content components here -->
+  <grok:grok package="." />
+
+    <plone:behavior
+        title="Bulk Exibit Item Add"
+        description="Adds exhibit items from a list of references"
+        provides=".exhibitsection.IBulkItemAdd"
+        factory=".exhibitsection.BulkItemAdd"
+        for=".exhibitsection.IExhibitSection"
+        />
+
+    <plone:behavior
+        title="Initial Exhibit Sections"
+        description="Adds empty exhibit sections from a list of names"
+        provides=".exhibit.IInitialSections"
+        factory=".exhibit.InitialSections"
+        for=".exhibit.IExhibit"
+        />
+    <plone:behavior
+        title="Categorization"
+        description="Adds keywords and language setting (with keyword widget)"
+        provides=".exhibititem.IKeywordCategorization"
+        factory="plone.app.dexterity.behaviors.metadata.Categorization"
+        for="plone.dexterity.interfaces.IDexterityContent"
+        />
+    <browser:page
+      name="images"
+      for=".exhibititem.IExhibitItem"
+      class=".exhibititem.ExhibitItemScaling"
+      allowed_attributes="scale redirector image_url"
+      permission="zope2.View"
+      />
+  
+  <!-- -*- extra stuff goes here -*- -->
+
+  <utility
+      name="collective.exhibit.bibliography_types"
+      component=".exhibit.bibliography_types"
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      />
+
+</configure>

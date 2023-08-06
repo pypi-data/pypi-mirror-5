@@ -1,0 +1,70 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="plone">
+<head>
+  <metal:js fill-slot="javascript_head_slot">
+  </metal:js>
+</head>
+
+<body>
+
+<metal:main fill-slot="content-core"
+            tal:define="show_image context/show_image|nothing;
+                        image_view context/@@images;
+                        image_preview image_view/image/portrait|nothing;
+                        item_url context/referenced_item_url|nothing;
+                        image_url string:${context/absolute_url}/@@images/image">
+  <div class="ExhibitSectionImage"
+     tal:condition="python:show_image and image_preview"
+     tal:content="structure image_preview">
+    <img src="some_image.jpg" alt="title" />
+  </div>
+  <div class="ExhibitSectionText"
+       tal:content="structure context/text/output|nothing">
+    Full text
+  </div>
+  <div class="visualClear">&nbsp;</div>
+  <h3>Exhibit Items</h3>
+  <tal:block define="items python:context.listFolderContents({'portal_type': 'collective.exhibit.exhibititem'})">
+  <div id="exhibit-section-items" tal:condition="items"
+       tal:attributes="class python:context.section_display=='Slider' and 'exhibit-section-items-scroller' or ''">
+    <tal:items tal:repeat="item items">
+      <div tal:attributes="class python:context.section_display!='List' and 'ExhibitItem' or 'ExhibitListItem'"
+           tal:define="item_url item/absolute_url;
+	   item_title item/Title|string:;
+	   item_desc item/Description|string:;
+	   item_title_desc python:'%s %s' % (item_title, item_desc)"
+          tal:condition="item_title">
+        <div class="ExhibitItemImage"
+             tal:define="image item/@@images/image/mini|nothing">
+          <a href="#"
+             tal:attributes="href item_url;">
+            <img class="ExhibitItemThumb"
+                 tal:condition="nocall:image"
+                 tal:attributes="src string:${item_url}/@@images/image/mini;
+		                 class python:context.section_display!='Grid' and 'ExhibitItemThumb' or 'ExhibitGridItemThumb';
+                                 alt item_title;
+                                 title item_title_desc" />
+          </a>
+        </div>
+        <div class="ExhibitItemDescription" tal:condition="python:context.section_display!='Grid'">
+          <a href="#"
+             class="ExhibitItemTitle"
+             tal:attributes="href item_url;"
+             tal:content="item_title">
+            Title
+          </a>
+          <p tal:content="item/Description">Description</p>
+        </div>
+      </div>
+    </tal:items>
+  </div>
+  </tal:block>
+</metal:main>
+
+</body>
+</html>
