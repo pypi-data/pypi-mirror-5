@@ -1,0 +1,6 @@
+``pants``
+*********
+
+.. automodule:: pants
+
+
