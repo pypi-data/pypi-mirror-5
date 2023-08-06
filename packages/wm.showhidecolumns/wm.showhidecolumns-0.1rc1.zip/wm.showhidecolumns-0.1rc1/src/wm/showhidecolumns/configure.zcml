@@ -1,0 +1,39 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml">
+    i18n_domain="wm.showhidecolumns">
+
+  <genericsetup:registerProfile
+      name="default"
+      title="wm.showhidecolumns"
+      directory="profiles/default"
+      description="Installs the wm.showhidecolumns package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+      
+    <!-- -*- extra stuff goes here -*- -->
+    
+    <i18n:registerTranslations directory="locales" />
+    
+    <adapter factory=".extender.ColumnsSchemaExtender"
+        provides="archetypes.schemaextender.interfaces.ISchemaExtender"
+        />
+
+    <!-- make ATDocuments implement IControlColumns -->
+    <class class="Products.ATContentTypes.content.document.ATDocument">
+        <implements interface=".interfaces.IControlColumns" />
+    </class>
+
+    <!-- make raptus articles implement IControlColumns -->
+    <class class="raptus.article.core.content.article.Article"
+        zcml:condition="installed raptus.article.core">
+        <implements interface=".interfaces.IControlColumns" />
+    </class>
+    
+    
+    <include package=".browser" />
+    
+</configure>
