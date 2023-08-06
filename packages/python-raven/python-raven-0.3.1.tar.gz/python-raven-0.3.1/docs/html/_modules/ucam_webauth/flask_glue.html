@@ -1,0 +1,596 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ucam_webauth.flask_glue &mdash; python-raven 0.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within python-raven 0.3 documentation"
+          href="../../_static/opensearch.xml"/>
+    <link rel="top" title="python-raven 0.3 documentation" href="../../index.html" />
+    <link rel="up" title="ucam_webauth" href="../ucam_webauth.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">python-raven 0.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../ucam_webauth.html" accesskey="U">ucam_webauth</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for ucam_webauth.flask_glue</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2013 Daniel Richman</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-raven</span>
+<span class="c">#</span>
+<span class="c"># python-raven is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU General Public License as published by</span>
+<span class="c"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># python-raven is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c"># You should have received a copy of the GNU General Public License</span>
+<span class="c"># along with python-raven.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="sd">&quot;&quot;&quot;This module provides glue to make using python-raven with Flask easy&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+
+<span class="kn">from</span> <span class="nn">calendar</span> <span class="kn">import</span> <span class="n">timegm</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span> <span class="k">as</span> <span class="n">time_float</span>
+<span class="n">time</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">time_float</span><span class="p">())</span>
+
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">request</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">abort</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;ucam_webauth.flask_glue&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AuthDecorator"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator">[docs]</a><span class="k">class</span> <span class="nc">AuthDecorator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An instance of this class decorates views to add authentication.</span>
+
+<span class="sd">    To use it, you&#39;ll need to subclass it and set response_class,</span>
+<span class="sd">    request_class and logout_url (see :class:`raven.flask.AuthDecorator`).</span>
+<span class="sd">    Then::</span>
+
+<span class="sd">        auth_decorator = AuthDecorator() # settings, e.g., desc=&quot;...&quot; go here</span>
+
+<span class="sd">        @app.route(&quot;/some_url&quot;)</span>
+<span class="sd">        @auth_decorator</span>
+<span class="sd">        def my_view():</span>
+<span class="sd">            return &quot;You are &quot; + auth_decorator.principal</span>
+
+<span class="sd">    Note that since it uses flask.session, you&#39;ll need to set</span>
+<span class="sd">    :attr:`app.secret_key`.</span>
+
+<span class="sd">    This tries to emulate the feel of applying mod_ucam_webauth to a file.</span>
+
+<span class="sd">    The decorator wraps the view in a function that:</span>
+
+<span class="sd">    * checks if there is a response from the WLS</span>
+
+<span class="sd">      * checks if the current URL matches that which the WLS said it</span>
+<span class="sd">        redirected to (avoid an evil admin of another site replaying</span>
+<span class="sd">        successful authentications)</span>
+<span class="sd">      * checks if ``flask.session`` is empty - if so, then we deduce that</span>
+<span class="sd">        the user has cookies disabled, and must abort immediately with</span>
+<span class="sd">        403 Forbidden, or we will start a redirect loop</span>
+<span class="sd">      * checks if the authentication method used is permitted by `aauth`</span>
+<span class="sd">        and user-interaction respected `iact` - if not, abort with</span>
+<span class="sd">        400 Bad Request</span>
+<span class="sd">      * updates the state with the response: updating the `principal`,</span>
+<span class="sd">        `ptags` and `issue` information if it was a success, or</span>
+<span class="sd">        clearing them (but setting a flag - see below: 401 Authentication</span>
+<span class="sd">        Required will be thrown after redirect) if it was a failure</span>
+<span class="sd">      * redirects, to remove ``WLS-Response`` from ``request.args``</span>
+
+<span class="sd">    * checks if the &quot;response was an authentication failure&quot; flag is set in</span>
+<span class="sd">      ``flask.session`` - if so, clears the flag and aborts with</span>
+<span class="sd">      401 Authentication Required</span>
+
+<span class="sd">    * checks to see if we are authenticated (and the session hasn&#39;t expired)</span>
+
+<span class="sd">      * if not, sends the user to the WLS to authenticate</span>
+
+<span class="sd">    * checks to see if the `principal` / `ptags` are permitted</span>
+
+<span class="sd">      * if not, aborts with a 403 Forbidden</span>
+
+<span class="sd">    * updates the &#39;last used&#39; time in the state (to implement</span>
+<span class="sd">      `inactive_timeout`)</span>
+
+<span class="sd">    * calls the original view function</span>
+
+<span class="sd">    You may wish to catch the 401 and 403 aborts with :attr:`app.errorhandler`.</span>
+
+<span class="sd">    The :attr:`principal`, their :attr:`ptags`, the :attr:`issue` and</span>
+<span class="sd">    :attr:`life` from the WLS are available as attributes of the</span>
+<span class="sd">    :class:`AuthDecorator` object</span>
+<span class="sd">    (magic properties that retrieve the current values from ``flask.session``).</span>
+<span class="sd">    Further, the attributes :attr:`expires` and :attr:`expires_all` give</span>
+<span class="sd">    information on when the ucam_webauth session will expire.</span>
+
+<span class="sd">    For the `desc`, `aauth`, `iact`, `msg` parameters, see</span>
+<span class="sd">    :class:`ucam_webauth.Request`.</span>
+
+<span class="sd">    Note that the `max_life`, `use_wls_life` and `inactive_timeout` parameters</span>
+<span class="sd">    deal with the ucam_webauth session `only`; they only affect</span>
+<span class="sd">    ``flask.session[&quot;_ucam_webauth&quot;]``. Flask&#39;s session expiry, cookie</span>
+<span class="sd">    lifetimes, etc. are independent.</span>
+
+<span class="sd">    :type max_life: :class:`int` (seconds) or ``None``</span>
+<span class="sd">    :param max_life: upper bound on how long a successful authentication can</span>
+<span class="sd">                     last before it expires and the user must reauthenticate</span>
+<span class="sd">    :type use_wls_life: :class:`bool`</span>
+<span class="sd">    :param use_wls_life: should we lower the life of the session to the life</span>
+<span class="sd">                         reported by the WLS, if it is less than `max_life`?</span>
+<span class="sd">    :type inactive_timeout: :class:`int` (seconds) or ``None``</span>
+<span class="sd">    :param inactive_timeout: expire the session if no request is processed</span>
+<span class="sd">                             via this decorator in `inactive_timeout` seconds</span>
+<span class="sd">    :type issue_bounds: :class:`tuple`: (:class:`int`, :class:`int`) (seconds)</span>
+<span class="sd">    :param issue_bounds: a tuple, (lower, upper) - how close the `issue`</span>
+<span class="sd">                         (datetime that the WLS says the authentication</span>
+<span class="sd">                         happened at) must be to `now`</span>
+<span class="sd">                         (i.e., require ``now - lower &lt; issue &lt; now + upper``;</span>
+<span class="sd">                         this is a combination of two settings found in</span>
+<span class="sd">                         mod_ucam_webauth: `clock skew` and `response timeout`,</span>
+<span class="sd">                         ``issue_bounds=(clock_skew + response_timeout,</span>
+<span class="sd">                         clock_skew)`` is equivalent)</span>
+<span class="sd">    :type require_principal: :class:`set` of :class:`str`, or ``None``</span>
+<span class="sd">    :param require_principal: require the principal to be in the set</span>
+<span class="sd">    :type require_ptags: :class:`set` of :class:`str`, or ``None``</span>
+<span class="sd">    :param require_ptags: require the ptags to contain `any` string in</span>
+<span class="sd">                          `require_ptags` (i.e., non empty intersection)</span>
+
+<span class="sd">    More complex customisation is possible:</span>
+
+<span class="sd">    * override :meth:`check_authorised` to do more complex</span>
+<span class="sd">      checking than `require_principal`, `require_ptags`</span>
+<span class="sd">      (note that this replaces checking `require_principal`, `require_ptags`)</span>
+
+<span class="sd">    * override :meth:`session_new`</span>
+
+<span class="sd">      The :class:`AuthDecorator` only touches</span>
+<span class="sd">      ``flask.session[&quot;_ucam_webauth&quot;]``.</span>
+<span class="sd">      If you&#39;ve saved other (important) things to the session object, you</span>
+<span class="sd">      may want to clear them out when the state changes.</span>
+
+<span class="sd">      You can do this by subclassing and overriding session_new. It is called</span>
+<span class="sd">      whenever a response is received from the WLS, except if the response</span>
+<span class="sd">      is a successful re-authentication after session expiry, with the same</span>
+<span class="sd">      `principal` and `ptags` as before.</span>
+
+<span class="sd">    To log the user out, call :meth:`logout`, which will clear the session</span>
+<span class="sd">    state. Further, :meth:`logout` returns a :meth:`flask.redirect` to the</span>
+<span class="sd">    Raven logout page. Be aware that the default flask session handlers are</span>
+<span class="sd">    susceptibleto replay attacks.</span>
+
+<span class="sd">    POST requests:</span>
+<span class="sd">    Since it will redirect to the WLS and back, the auth decorator will</span>
+<span class="sd">    discard any POST data in the process. You may wish to either work</span>
+<span class="sd">    around this (by subclassing and saving it somewhere before redirecting)</span>
+<span class="sd">    or ensure that when it returns (with a GET request) to the URL, a</span>
+<span class="sd">    sensible page is displayed (the form, or an error message).</span>
+
+<span class="sd">    .. automethod:: __call__</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">request_class</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">response_class</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">logout_url</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">aauth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">iact</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">max_life</span><span class="o">=</span><span class="mi">7200</span><span class="p">,</span> <span class="n">use_wls_life</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                    <span class="n">inactive_timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">issue_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span>
+                    <span class="n">require_principal</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">require_ptags</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">([</span><span class="s">&quot;current&quot;</span><span class="p">])):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">desc</span> <span class="o">=</span> <span class="n">desc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aauth</span> <span class="o">=</span> <span class="n">aauth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iact</span> <span class="o">=</span> <span class="n">iact</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_life</span> <span class="o">=</span> <span class="n">max_life</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_wls_life</span> <span class="o">=</span> <span class="n">use_wls_life</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inactive_timeout</span> <span class="o">=</span> <span class="n">inactive_timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">issue_bounds</span> <span class="o">=</span> <span class="n">issue_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">require_principal</span> <span class="o">=</span> <span class="n">require_principal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">require_ptags</span> <span class="o">=</span> <span class="n">require_ptags</span>
+
+<div class="viewcode-block" id="AuthDecorator.__call__"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view_function</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wraps `view_function` with the auth decorator</span>
+
+<span class="sd">        (:class:`AuthDecorator` objects are callable so that they can be used</span>
+<span class="sd">        as function decorators.)</span>
+
+<span class="sd">        Calling it returns a &#39;wrapper&#39; view function that ensures the client</span>
+<span class="sd">        is logged into raven before calling and returning the value of the</span>
+<span class="sd">        original function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">**</span><span class="n">view_args</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped</span><span class="p">(</span><span class="n">view_function</span><span class="p">,</span> <span class="n">view_args</span><span class="p">)</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">update_wrapper</span><span class="p">(</span><span class="n">wrapper</span><span class="p">,</span> <span class="n">view_function</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+</div>
+    <span class="k">def</span> <span class="nf">_prop_helper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AuthDecorator.principal"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.principal">[docs]</a>    <span class="k">def</span> <span class="nf">principal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The current principal, or ``None``&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prop_helper</span><span class="p">(</span><span class="s">&quot;principal&quot;</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AuthDecorator.ptags"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.ptags">[docs]</a>    <span class="k">def</span> <span class="nf">ptags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The current ptags, or ``None``&quot;&quot;&quot;</span>
+        <span class="n">ptags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prop_helper</span><span class="p">(</span><span class="s">&quot;ptags&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ptags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ptags</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">ptags</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ptags</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AuthDecorator.issue"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.issue">[docs]</a>    <span class="k">def</span> <span class="nf">issue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        When the last WLS response was issued</span>
+
+<span class="sd">        `issue` is converted to a unix timestamp (:class:`int`), rather than</span>
+<span class="sd">        the :class:`datetime` object used by :class:`ucam_webauth.Response`.</span>
+<span class="sd">        (`issue` is ``None`` if there is no current session.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prop_helper</span><span class="p">(</span><span class="s">&quot;issue&quot;</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AuthDecorator.life"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.life">[docs]</a>    <span class="k">def</span> <span class="nf">life</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;life of the last WLS response (:class:`int` seconds), or ``None``&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prop_helper</span><span class="p">(</span><span class="s">&quot;life&quot;</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AuthDecorator.last"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.last">[docs]</a>    <span class="k">def</span> <span class="nf">last</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Time (:class:`int` unix timestamp) of the last decorated request&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prop_helper</span><span class="p">(</span><span class="s">&quot;last&quot;</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AuthDecorator.expires"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.expires">[docs]</a>    <span class="k">def</span> <span class="nf">expires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;When (:class:`int` unix timestamp) the current auth. will expire&quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="s">&quot;principal&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">expires</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_expires</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expires</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">when</span> <span class="k">for</span> <span class="n">reason</span><span class="p">,</span> <span class="n">when</span> <span class="ow">in</span> <span class="n">expires</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AuthDecorator.expires_all"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.expires_all">[docs]</a>    <span class="k">def</span> <span class="nf">expires_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A list of all things that could cause the current auth. to expire</span>
+
+<span class="sd">        A list of (:class:`str`, :class:`int` unix timestamp) tuples;</span>
+<span class="sd">        (`reason`, `when`).</span>
+
+<span class="sd">        `reason` will be one of &quot;config max life&quot;, &quot;wls life&quot; or &quot;inactive&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="s">&quot;principal&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_expires</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="AuthDecorator.logout"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.logout">[docs]</a>    <span class="k">def</span> <span class="nf">logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear the auth., and return a redirect to the WLS&#39; logout page&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&quot;_ucam_webauth&quot;</span> <span class="ow">in</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">modified</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">del</span> <span class="n">session</span><span class="p">[</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logout_url</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="mi">303</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_wrapped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view_function</span><span class="p">,</span> <span class="n">view_args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decorated functions are replaced with this function&quot;&quot;&quot;</span>
+
+        <span class="c"># we always modify the session. Changes to mutable objects (our</span>
+        <span class="c"># state dict) aren&#39;t automatically picked up</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">modified</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">if</span> <span class="s">&quot;WLS-Response&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">!=</span> <span class="s">&quot;GET&quot;</span><span class="p">:</span>
+                <span class="n">abort</span><span class="p">(</span><span class="mi">405</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s">&quot;WLS-Response&quot;</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">abort</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s">&quot;_ucam_webauth&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">session</span><span class="p">:</span>
+                <span class="c"># we set this before redirecting - so the user has cookies</span>
+                <span class="c"># disabled. avoid a redirect loop</span>
+                <span class="n">abort</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
+
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_class</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s">&quot;WLS-Response&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_response</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s">&quot;_ucam_webauth&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">session</span><span class="p">[</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">session</span><span class="p">[</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;response_failure&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
+            <span class="k">del</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;response_failure&quot;</span><span class="p">]</span>
+            <span class="n">abort</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s">&quot;principal&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;unauthenticated: redirecting to WLS&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_to_wls</span><span class="p">()</span>
+
+        <span class="n">ok</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_expires</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;session expired (</span><span class="si">%s</span><span class="s">): redirecting to WLS&quot;</span><span class="p">,</span> <span class="n">reason</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_to_wls</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_authorised</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s">&quot;principal&quot;</span><span class="p">],</span>
+                                     <span class="nb">frozenset</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s">&quot;ptags&quot;</span><span class="p">])):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;not authorised: bad principal (</span><span class="si">%s</span><span class="s">) or ptags (</span><span class="si">%r</span><span class="s">)&quot;</span><span class="p">,</span>
+                        <span class="n">state</span><span class="p">[</span><span class="s">&quot;principal&quot;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;ptags&quot;</span><span class="p">])</span>
+            <span class="n">abort</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
+
+        <span class="n">state</span><span class="p">[</span><span class="s">&quot;last&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">view_function</span><span class="p">(</span><span class="o">**</span><span class="n">view_args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_handle_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deal with a response in the query string of this request</span>
+
+<span class="sd">        * checks `url`, `iact`, `aauth` and `issue`</span>
+<span class="sd">        * starts a new session if necessary (see :meth:`session_new`)</span>
+<span class="sd">        * sets the &#39;auth failed&#39; flag if necessary</span>
+<span class="sd">        * redirects to remove ``WLS-Response`` from the url/query string</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">url_without_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_url</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url_without_response</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">abort</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">check_iact_aauth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iact</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aauth</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;response.check_iact failed: &quot;</span>
+                               <span class="s">&quot;auth=</span><span class="si">%s</span><span class="s"> sso=</span><span class="si">%s</span><span class="s"> iact=</span><span class="si">%s</span><span class="s"> aauth=</span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
+                               <span class="n">response</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">sso</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">iact</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aauth</span><span class="p">)</span>
+                <span class="n">abort</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+
+            <span class="n">issue</span> <span class="o">=</span> <span class="n">timegm</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">issue</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_issue</span><span class="p">(</span><span class="n">issue</span><span class="p">):</span>
+                <span class="n">abort</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_new_session</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;new session&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">session_new</span><span class="p">()</span>
+
+            <span class="n">session</span><span class="p">[</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="p">{</span><span class="s">&quot;principal&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">principal</span><span class="p">,</span>
+                     <span class="s">&quot;ptags&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">ptags</span><span class="p">),</span>
+                     <span class="s">&quot;issue&quot;</span><span class="p">:</span> <span class="n">issue</span><span class="p">,</span> <span class="s">&quot;life&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">life</span><span class="p">,</span>
+                     <span class="s">&quot;last&quot;</span><span class="p">:</span> <span class="n">time</span><span class="p">()}</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">session</span><span class="p">[</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;response_failure&quot;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_without_response</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="mi">303</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wls_response_url</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if the response from the WLS was intended for us</span>
+
+<span class="sd">        Checks that the current requested url (``flask.request.url``) matches</span>
+<span class="sd">        the URL in the WLS&#39; response, which is equal to the URL specified</span>
+<span class="sd">        in the request to the WLS and is the URL to which the client was</span>
+<span class="sd">        redirected after authentication.</span>
+
+<span class="sd">        This is necessary to avoid an evil administrator of another website</span>
+<span class="sd">        capturing and replaying successful authentications to his website to</span>
+<span class="sd">        us.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">actual_url</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span>
+
+        <span class="c"># note: mod_ucam_webauth simply strips everything up to a ?</span>
+        <span class="c"># from both urls and compares.</span>
+
+        <span class="c"># see waa2wls-protocol.txt - the WLS appends (?|&amp;)WLS-Response=</span>
+        <span class="c"># so, removing that from the end of the string should recover</span>
+        <span class="c"># the exact url sent in the request</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">actual_url</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&quot;?WLS-Response=&quot;</span><span class="p">),</span>
+                    <span class="n">actual_url</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&quot;&amp;WLS-Response=&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;have args[&#39;WLS-Response&#39;] but &quot;</span>
+                           <span class="s">&quot;(?|&amp;)WLS-Response not in request.url?&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="c"># check that nothing funny is going on (that the dumb parsing done</span>
+        <span class="c"># above is correct)</span>
+        <span class="n">response_start</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="s">&quot;.WLS-Response=&quot;</span><span class="p">)</span>
+        <span class="n">response_part</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">unquote_plus</span><span class="p">(</span><span class="n">actual_url</span><span class="p">[</span><span class="n">response_start</span><span class="p">:])</span>
+        <span class="k">if</span> <span class="n">response_part</span> <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s">&quot;WLS-Response&quot;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;WLS-Response removal failed &quot;</span>
+                         <span class="s">&quot;(removed: </span><span class="si">%r</span><span class="s">, request.args: </span><span class="si">%r</span><span class="s">)&quot;</span><span class="p">,</span>
+                         <span class="n">response_part</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s">&quot;WLS-Response&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="c"># finally check that they agree.</span>
+        <span class="n">actual_url</span> <span class="o">=</span> <span class="n">actual_url</span><span class="p">[:</span><span class="n">start</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">wls_response_url</span> <span class="o">!=</span> <span class="n">actual_url</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;response.url did not match url visited &quot;</span>
+                         <span class="s">&quot;(replay of WLS-Response to other website?) &quot;</span>
+                         <span class="s">&quot;response.url=</span><span class="si">%r</span><span class="s"> request.url=</span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span>
+                         <span class="n">wls_response_url</span><span class="p">,</span> <span class="n">actual_url</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="k">return</span> <span class="n">wls_response_url</span>
+
+    <span class="k">def</span> <span class="nf">_check_issue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">issue</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check that `issue` (from a response) is in an acceptable range&quot;&quot;&quot;</span>
+
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="n">lower</span> <span class="o">=</span> <span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">lower</span> <span class="o">&lt;=</span> <span class="n">issue</span> <span class="o">&lt;=</span> <span class="n">upper</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;response had bad issue: &quot;</span>
+                         <span class="s">&quot;now=</span><span class="si">%s</span><span class="s"> issue=</span><span class="si">%s</span><span class="s"> lower=</span><span class="si">%s</span><span class="s"> upper=</span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
+                         <span class="n">now</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">_is_new_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Is this a new session, or reauthentication (after expiry)?&quot;&quot;&quot;</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">session</span><span class="p">[</span><span class="s">&quot;_ucam_webauth&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&quot;principal&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="n">principal</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;principal&quot;</span><span class="p">]</span>
+        <span class="n">ptags</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s">&quot;ptags&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">principal</span> <span class="o">==</span> <span class="n">principal</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">ptags</span> <span class="o">==</span> <span class="n">ptags</span>
+
+    <span class="k">def</span> <span class="nf">_redirect_to_wls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a request and return a redirect to the WLS&quot;&quot;&quot;</span>
+        <span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_class</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aauth</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">iact</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">req</span><span class="p">),</span> <span class="n">code</span><span class="o">=</span><span class="mi">303</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_expires</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a list of (reason, when) tuples describing expiration times&quot;&quot;&quot;</span>
+        <span class="n">expires</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_life</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">expires</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&quot;config max life&quot;</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;issue&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_life</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_wls_life</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;life&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">expires</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&quot;wls life&quot;</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;issue&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;life&quot;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inactive_timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">expires</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&quot;inactive&quot;</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="s">&quot;last&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inactive_timeout</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">expires</span>
+
+    <span class="k">def</span> <span class="nf">_check_expires</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check whether the current authentication has expired&quot;&quot;&quot;</span>
+        <span class="n">expires</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_expires</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">reason</span><span class="p">,</span> <span class="n">when</span> <span class="ow">in</span> <span class="n">expires</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">when</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="n">reason</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="AuthDecorator.check_authorised"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.check_authorised">[docs]</a>    <span class="k">def</span> <span class="nf">check_authorised</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">principal</span><span class="p">,</span> <span class="n">ptags</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an authenticated user is authorised.</span>
+
+<span class="sd">        The default implementation requires the principal to be in</span>
+<span class="sd">        the whitelist :attr:`require_principal` (if it is not ``None``, in</span>
+<span class="sd">        which case any principal is allowed) and the intersection of</span>
+<span class="sd">        :attr:`require_ptags` and `ptags` to be non-empty (unless</span>
+<span class="sd">        :attr:`require_ptags` is ``None``, in which case any ptags</span>
+<span class="sd">        (or no `ptags` at all) is permitted).</span>
+
+<span class="sd">        Note that the default value of :attr:`require_ptags` in</span>
+<span class="sd">        :class:`raven.flask_glue.AuthDecorator` is ``{&quot;current&quot;}``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_principal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">principal</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_principal</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_ptags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_ptags</span> <span class="o">&amp;</span> <span class="n">ptags</span> <span class="o">==</span> <span class="nb">set</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="AuthDecorator.session_new"><a class="viewcode-back" href="../../ucam_webauth.html#ucam_webauth.flask_glue.AuthDecorator.session_new">[docs]</a>    <span class="k">def</span> <span class="nf">session_new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called when a new user authenticates</span>
+
+<span class="sd">        More specifically, when :attr:`principal` or :attr:`ptags` changes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">python-raven 0.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../ucam_webauth.html" >ucam_webauth</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel Richman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
