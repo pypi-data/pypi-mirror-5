@@ -1,0 +1,51 @@
+<section id="eventimportstatusfolder-viewlet" i18n:domain="wasgehtengine.contenttypes" tal:define="items view/children">
+
+	<header>
+		<h2>Event import status</h2>
+	</header>
+	
+	<p>
+		<span tal:content="python: len(items)" /> event imports.
+	</p>
+
+	<div id="eventimportstatus-list">
+
+		<table>
+			<thead>
+				<tr>
+					<th>Venue</th>
+					<th>Last run</th>
+					<th>Last sucessful run</th>
+					<th>Last run with events</th>
+					<th>#events</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr tal:repeat="item items">
+					<td>
+						<a tal:attributes="href item/absolute_url" tal:content="item/venue/to_object/title" />
+					</td>
+					<td>
+						<time tal:condition="item/last_run" tal:attributes="datetime item/last_run/isoformat"
+							tal:content="python:item.last_run.strftime('%x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(item.last_run)">Never</span>
+					</td>
+					<td>
+						<time tal:condition="item/last_successful_run"
+							tal:attributes="datetime item/last_successful_run/isoformat; class python:'status-error' if item.last_successful_run != item.last_run else ''"
+							tal:content="python:item.last_successful_run.strftime('%x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(item.last_successful_run)">Never</span>
+					</td>
+					<td>
+						<time tal:condition="item/last_run_with_events_imported"
+							tal:attributes="datetime item/last_run_with_events_imported/isoformat; class python:'status-warning' if item.last_run_with_events_imported != item.last_run else ''"
+							tal:content="python:item.last_run_with_events_imported.strftime('%x %H:%M')" />
+						<span class="status-error" tal:condition="python: not(item.last_run_with_events_imported)">Never</span>
+					</td>
+					<td tal:content="item/imported_events_count">
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</section>
