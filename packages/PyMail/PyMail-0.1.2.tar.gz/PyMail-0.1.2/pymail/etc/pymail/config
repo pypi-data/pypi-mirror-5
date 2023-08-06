@@ -1,0 +1,95 @@
+# Example configuration
+
+# Default description
+# This will appear in the mail exchange protocol in the greeting message (220)
+description: SMTP Service
+
+# Default advertised address
+# Will appear as the official contact address in several places
+address: mymail.com
+
+# Local domain
+# E-mail addresses without the @domain part will have this appended in order
+# to determine its destination. Should correspond to a domain entry in a subsection
+# of the destinations section
+domain: local
+
+# The path to the directory where to put mail ready to be taken up by the spooler
+spoolfile: /var/spool/pymail
+
+# POSIX systems only: the name of user to change to
+user: mail
+
+# POSIX systems only: the name of the group to change to
+group: mail
+
+# Default TLS configuration
+# Replace key and certificate with your own (self-generated or purchased) ones
+tls:
+    enabled: True
+    starttls: True
+    key: /etc/pymail/key.pem
+    certificate: /etc/pymail/cert.pem
+
+# Service interface definition section
+servers:
+    # A mail relay service (server to server)
+    smtp:
+        port: 25
+        description: Mail Relay Service
+    # A mail injection service (client to server)
+    smtp:
+        port: 587
+        description: Mail Injection Service
+    # An old-style secure TLS-only service
+    smtps:
+        port: 465
+        description: Secure Mail Service
+        # default tls section overidden to set starttls to false
+        tls:
+            enabled: True
+            starttls: False
+            key: mailkey.pem
+            certificate: mailcert.pem
+
+# User accounts
+authorisation:
+    # A sample insecure user definition section for testing purposes only
+    users:
+        john: password
+        jack: jackpot
+
+# Mail destination section
+destinations:
+    # A destination to send the mail to remote SMTP servers, either at the
+    # address specified by a MX record or the domain in the mail address
+    internet:
+        # no priority means lowest possible
+        # no domain means any domains
+        type: smtp
+    # A local MailDir mailbox
+    local:
+        priority: 1
+        domain: local
+        type: maildir
+        # {user} is replaced by the username
+        directory: /home/{user}/.maildir
+
+# Logging
+# Leave this unchanged except for the level entry
+logging:
+    version: 1
+    formatters:
+        default:
+            format: '%(asctime)s:%(name)-24s:%(levelname)s: %(message)s'
+    handlers:
+        default:
+            class: logging.handlers.RotatingFileHandler
+            formatter: default
+            filename: /var/log/pymail
+            backupCount: 16
+            maxBytes: 4194304
+    loggers:
+        pymail:
+            handlers: [default]
+            level: INFO # change to DEBUG for more detailed logging

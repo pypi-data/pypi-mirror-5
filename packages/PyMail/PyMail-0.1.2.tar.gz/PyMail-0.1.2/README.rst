@@ -1,0 +1,88 @@
+PyMail
+======
+
+PyMail is a simple `SMTP <http://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol>`_ server capable of handling the most
+usual scenarios in local domains. The aim is to have a feature-complete mail solution with minimal demands on system
+performance.
+
+Installation
+============
+
+Linux, Unix Systems
+-------------------
+
+System requirements
+~~~~~~~~~~~~~~~~~~~
+
+* Python 2.7 or later
+* C/C++ compiler (if *eventlet* package is not already integrated)
+
+From pip
+~~~~~~~~
+
+If you have *pip* installed, just type::
+
+   pip install PyMail
+
+Similarly, if you have *easy_install*, it would be::
+
+   easy_install PyMail
+
+Configuration
+~~~~~~~~~~~~~
+
+In the package directory there is a directoy ``etc`` containing a file ``pymail``. You can take this as a starting point for
+your configuration. Copy this file to ``/etc`` and edit it to your needs. Putting it into ``/etc`` has the advantage of not
+having to specify the path on the command line when starting pymail. See the file ``doc/configuration.rst`` for a guide.
+
+Finding the package directory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The pymail package is installed in directory ``site-packages`` of your Python environment. If you have difficulties finding the
+``site-packages`` directory you can do as follows::
+
+   $ python
+   Python 2.7.3 (default, May  5 2013, 17:16:24)
+   [GCC 4.6.3] on linux2
+   Type "help", "copyright", "credits" or "license" for more information.
+   >>> import sys
+   >>> print '\n'.join(sys.path)
+
+   /usr/lib64/python2.7/site-packages/beautifulsoup4-4.1.3-py2.7.egg
+   /usr/lib64/python2.7/site-packages/teleboy-0.2-py2.7.egg
+   /usr/lib64/python27.zip
+   /usr/lib64/python2.7
+   /usr/lib64/python2.7/plat-linux2
+   /usr/lib64/python2.7/lib-tk
+   /usr/lib64/python2.7/lib-old
+   /usr/lib64/python2.7/lib-dynload
+   /usr/lib64/python2.7/site-packages
+   /usr/lib64/python2.7/site-packages/gtk-2.0
+   /usr/lib64/python2.7/site-packages/wx-2.8-gtk2-unicode
+   /usr/lib64/portage/pym
+   >>>
+
+The line ending in ``site-packages`` contains the path of the directory where pymail is installed.
+
+Installing from source on bitbucket.org
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Either clone the project with Mercurial::
+
+    $ hg clone https://JohnnyWezel@bitbucket.org/JohnnyWezel/pymail
+    
+or download the source as a compressed tar file from the project site (https://bitbucket.org/JohnnyWezel/pymail) and then type::
+
+    $ ./setup.py install
+
+You probably first want to prepare a `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs.html>`_.
+
+To Do / Roadmap
+===============
+
+See TODO.rst
+
+Development
+===========
+
+If you want to help with development, the Mercurial project is on bitbucket.org: https://bitbucket.org/JohnnyWezel/pymail.
