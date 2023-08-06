@@ -1,0 +1,69 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:tal="http://xml.zope.org/namespaces/tal"
+	xmlns:metal="http://xml.zope.org/namespaces/metal" xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+	metal:use-macro="context/main_template/macros/master" i18n:domain="wasgehtengine.contenttypes">
+
+	<body>
+
+		<metal:content-core fill-slot="main">
+			<metal:content-core define-macro="content-core">
+
+				<article>
+					<header>
+						<h1 id="venueName" tal:content="context/title">Kult41</h1>
+					</header>
+
+					<section id="venue-metainfo" tal:define="address context/postal_address">
+						<div class="vcard">
+							<span id="venueStreet" class="street-address" tal:condition="python: address and 'street' in address"
+								tal:content="python:address['street']">Musterstraße</span>
+							<span id="venueHousenumber" class="street-address"
+								tal:condition="python: address and 'housenumber' in address" tal:content="python:address['housenumber']">666
+							</span>
+							<br />
+							<span id="venuePostcode" class="street-address"
+								tal:condition="python: address and 'postcode' in address" tal:content="python:address['postcode']">12345
+							</span>
+							<span id="venueCity" class="street-address" tal:condition="python: address and 'city' in address"
+								tal:content="python:address['city']">Musterstadt</span>
+							<br />
+							<a id="venueUrl" class="url external" tal:condition="context/website"
+								tal:attributes="href context/website" tal:content="context/website" />
+							<div tal:condition="context/phone_number">
+								<span>Telefon: </span>
+								<span tal:content="context/phone_number">+49 228 123456789</span>
+							</div>
+						</div>
+
+						<div id="map" />
+
+						<!-- <div id="osm-element-tags"> <h3 for="osm-element-tags" i18n:translate="label_venue_osm-element-tags">OSM 
+							Element Tags:</h3> <ul> <li tal:repeat="key context/osmReference/osmElementTags/keys"> 
+							<span tal:content="key" /> <span>: </span> <span tal:content="python:context.osmReference.osmElementTags[key]" 
+							/> </li> </ul> </div> -->
+
+						<div id="geo-position" tal:condition="context/latitude">
+							<h3 i18n:translate="label_venue_geo-position">Geographic Position:</h3>
+							<span id="latitude" tal:content="context/latitude" />
+							<span>,</span>
+							<span id="longitude" tal:content="context/longitude" />
+						</div>
+					</section>
+
+					<section id="venue-events" tal:define="events view/upcoming_events">
+						<h1>Nächste Veranstaltungen</h1>
+						<p tal:condition="python: len(events) < 1">Keine kommenden Veranstaltungen bekannt.</p>
+						<ul>
+							<li tal:repeat="event events">
+								<time tal:attributes="datetime python:event.start.isoformat()"
+									tal:content="python:event.start.strftime('%x')" />
+								<a tal:define="title python: unicode(event.title)"
+									tal:attributes="href event/absolute_url" tal:content="python: title[:50] + (title[50:] and '...')" />
+							</li>
+						</ul>
+					</section>
+				</article>
+			</metal:content-core>
+		</metal:content-core>
+
+	</body>
+</html>
