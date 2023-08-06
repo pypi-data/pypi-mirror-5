@@ -1,0 +1,38 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:use-macro="context/main_template/macros/master">
+
+    <metal:block fill-slot="main">
+      <div tal:define="contentTransformed python:here.transform(); contentPre python:here.getContentPre(); contentPost python:here.getContentPost();">
+          <div tal:define="isError python:here.isError; errorMessage python:here.errorMessage">
+              <tal:fields tal:define="field_macro here/widgets/field/macros/view; field python:here.Schema()['title']">
+
+                   <tal:if_visible define="mode string:view;
+                                visState python:field.widget.isVisible(here, mode);
+                                visCondition python:field.widget.testCondition(context.aq_inner.aq_parent, portal, context);
+                                title context/title"
+                                condition="python:visState == 'visible' and visCondition">
+                       <h1 tal:content="title">
+                          <!--<metal:use_field use-macro="field_macro" />-->
+                       </h1>
+                   </tal:if_visible>
+              </tal:fields>
+              <tal:if condition="not: isError">
+                  <div tal:replace="structure contentPre" />
+                  <div tal:replace="structure contentTransformed" />
+                  <div tal:replace="structure contentPost" />
+             </tal:if>
+              <tal:if condition="isError">
+                  <div tal:define="contentError python:here.getContentError();" tal:replace="structure contentError" />
+              </tal:if>
+          </div>
+      </div>
+      <div tal:condition="not: here/portal_membership/isAnonymousUser">
+          <div metal:use-macro="here/global_statusmessage/macros/portal_message">
+          Show "Portal status message" if they exist and it's not the anonymous user
+          </div>
+      </div>
+    </metal:block>
+
+</html>
