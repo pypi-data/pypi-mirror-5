@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# stop the services
+# stop the services (if running)
+{% for package in package_service_dependencies %}
+initctl emit {{ package | upper }}_STOP_ALL
+{% endfor %}
+
+{% if settings.debian_scripts and settings.debian_scripts.prerm %}
+{% for script in settings.debian_scripts.prerm %}
+{{ script }}
+{% endfor %}
+{% endif %}
