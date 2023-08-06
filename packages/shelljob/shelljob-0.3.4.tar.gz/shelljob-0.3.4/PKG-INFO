@@ -1,0 +1,81 @@
+Metadata-Version: 1.1
+Name: shelljob
+Version: 0.3.4
+Summary: Run multiple subprocesses asynchronous/in parallel with streamed output/non-blocking reading
+Home-page: https://pypi.python.org/pypi/shelljob
+Author: edA-qa mort-ora-y
+Author-email: eda-qa@disemia.com
+License: GPLv3
+Description: shelljob
+        ========
+        
+        A simple way to manage several parallel subprocesses. This provides for
+        asynchronous processes and non-blocking reading of their output.
+        
+        Parallel Subprocesses
+        =====================
+        
+        Using the Job system is the quickest approach to just run processes and
+        log their output (by default in files named '/tmp/job\_ID.log')
+        
+        ::
+        
+            from shelljob import job
+        
+            jm = job.FileMonitor()
+            jm.run([
+                [ 'ls', '-alR', '/usr/local' ],
+                [ 'my_prog' ],
+                [ 'build', 'output', 'input' ],
+            ])
+        
+        Note the command items are lists passed directly to
+        ``subprocess.Popen``.
+        
+        The lower level ``Group`` class provides a simple container for more
+        manual job management.
+        
+        ::
+        
+            from shelljob import proc
+        
+            g = proc.Group()
+            p1 = g.run( [ 'ls', '-al', '/usr/local' ] )
+            p2 = g.run( [ 'program', 'arg1', 'arg2' ] )
+        
+            while g.is_pending():
+                lines = g.readlines()
+                for proc, line in lines:
+                    sys.stdout.write( "{}:{}".format( proc.pid, line ) )
+        
+        Simple Subprocess calls
+        =======================
+        
+        A simplified ``call`` function allows timeouts on subprocesses and easy
+        acces to their output.
+        
+        ::
+        
+            from shelljob import proc
+        
+            # capture the output
+            output = proc.call( 'ls /tmp' )
+            # this raises a proc.Timeout exception
+            proc.call( 'sleep 10', timeout = 0.1 )
+        
+        Issues
+        ======
+        
+        You can use my `Launchpad
+        project <https://bugs.launchpad.net/mortoray.com>`_ to submit issues.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Programming Language :: Python
+Classifier: Intended Audience :: Developers
+Classifier: Environment :: Console
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Terminals
+Classifier: Topic :: System
+Classifier: Topic :: Software Development :: Build Tools
