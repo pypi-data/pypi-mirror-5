@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block tools %}
+<a class="btn btn"
+   href="{% url 'edit_sla' sla.pk %}"><i class="icon-pencil"></i> Edit</a>  
+<a class="btn btn btn-danger"
+   href="{% url 'delete_sla' sla.pk %}"><i class="icon-remove"></i> Delete</a>
+{% endblock %}
+
+{% block content %}
+
+<header>
+  <h2>{{ object }}</h2>
+</header>
+
+<table class="table well">
+  <thead>
+    <th># Issues</th>
+    <th># Issues late</th>
+    <th>% Issues late</th>
+  </thead>
+  <tbody>
+    <td>{{ view.nr_of_issues }}</td>
+    <td>{{ view.nr_of_issues_late }}</td>
+    <td>{{ view.perc_of_issues_late }}%</td>
+  </tbody>
+</table>
+
+<div class="viewlet well">
+  <header>
+    <h2>Contacts</h2>
+  </header>
+    
+  {% if not view.list_contacts %}
+  <div class="alert warning">No contacts defined yet!</div>
+  {% endif %}
+  
+  <ul id="contacts">
+    {% for contact in view.list_contacts %}
+    {% include "snippets/contact.html" with object=contact %}
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="viewlet well">
+  <header>
+    <h2 class="pull-left">Services</h2>
+    <span class="controls pull-right">
+      <a class="add-inline btn btn-success btn-mini"
+         target="#services"
+         href="{% url 'create_service_json' sla.pk %}"
+         ><i class="icon-plus"></i></a>
+    </span>
+  </header>
+  
+  {% if not view.list_services %}
+  <div class="alert warning">No services defined yet!</div>
+  {% endif %}
+  
+  <ul id="services">
+    {% for service in view.list_services %}
+    {% include "snippets/service.html" with object=service %}
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="viewlet well">
+  <header> 
+    <h2 class="pull-left">Rules</h2> 
+    <span class="controls pull-right">
+      <a class="add-inline btn btn-success btn-mini"
+         target="#rules"
+         href="{% url 'create_rule_json' sla.pk %}"
+         ><i class="icon-plus"></i></a>
+    </span>
+  </header>
+
+  <p class="text-info">
+    Add matching rules for incoming mail. If a rule matches, this SLA
+    will be the one!
+  </p>
+  
+  {% if not view.list_rules %}
+  <div class="alert warning">No rules defined yet!</div>
+  {% endif %}
+
+  <ul id="rules">
+    {% for rule in view.list_rules %}
+    {% include "snippets/rule.html" with object=rule %}
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}
