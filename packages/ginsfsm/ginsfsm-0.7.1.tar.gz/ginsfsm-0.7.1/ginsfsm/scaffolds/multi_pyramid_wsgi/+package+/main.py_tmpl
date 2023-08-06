@@ -1,0 +1,136 @@
+# -*- encoding: utf-8 -*-
+"""
+{{package}}
+{{len(package)*'='}}
+
+It uses :class:`ginsfsm.protocols.wsgi.server.c_wsgi_server.GWsgiServer`.
+
+.. autofunction:: main
+
+"""
+
+from ginsfsm.gaplic import GAplic
+from ginsfsm.globals import (
+    set_global_app,
+    set_global_main_gaplic,
+)
+from ginsfsm.protocols.wsgi.server.c_wsgi_server import GWsgiServer
+from {{package}}.applic10 import applic10_wsgi_app
+
+
+#===============================================================
+#       Paste app's factory.
+#       To run with gserve {{package}}.ini
+#===============================================================
+def admin_paste_factory(global_config, **local_conf):
+    """ TODO
+    """
+    def admin_wsgi(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        yield b'Hello Admin!\n'
+
+    return admin_wsgi
+
+
+def applic10_paste_factory(global_config, **local_conf):
+    """ Returns the applic10 WSGI application.
+    """
+    return applic10_wsgi_app(global_config, **local_conf)
+
+
+def applic20_paste_factory(global_config, **local_conf):
+    """ TODO
+    """
+    def applic20_wsgi(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        yield b'Hello applic20!\n'
+    return applic20_wsgi
+
+
+#===============================================================
+#                   Main
+#===============================================================
+def main(global_config, **local_conf):
+    """ Entry point to run with gserve (PasteDeploy)
+    """
+    if 'application' in local_conf:
+        application = local_conf.pop('application')
+    else:
+        raise Exception('You must supply a wsgi application in local_conf.')
+
+    if 'gaplic_name' in local_conf:
+        gaplic_name = local_conf.pop('gaplic_name')
+    else:
+        raise Exception('You must supply a gaplic name in local_conf.')
+
+    if 'wsgi_server_name' in local_conf:
+        wsgi_server_name = local_conf.pop('wsgi_server_name')
+    else:
+        raise Exception('You must supply a wsgi server name in local_conf.')
+
+    ga = GAplic(name=gaplic_name, roles='', **local_conf)
+    set_global_main_gaplic(ga)
+    ga.create_gobj(
+        wsgi_server_name,
+        GWsgiServer,
+        ga,
+        application=application,
+    )
+    return ga
+
+
+if __name__ == "__main__":
+    """ You can run directly this file as main, without gserve.
+    """
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+
+    # simulate running from ini file
+
+    from ginsfsm.protocols.wsgi.common.urlmap import (
+        URLMap,
+        parse_path_expression,
+    )
+
+    local_conf = {
+        'GObj.trace_mach': True,
+        'GObj.logger': logging,
+        'GSock.trace_dump': True,
+        'wsgi-server.host': '0.0.0.0',
+        'wsgi-server.port': 8000,
+        'application': 'wsgi-application',
+        'gaplic_name': 'main_gaplic',
+        'wsgi_server_name': 'wsgi-server',
+    }
+
+    ga = main({}, **local_conf)
+
+    applic10_settings = {
+        'pyramid.reload_templates': True,
+        'pyramid.debug_authorization': False,
+        'pyramid.debug_notfound': False,
+        'pyramid.debug_routematch': False,
+        'pyramid.debug_templates': True,
+        'pyramid.default_locale_name': 'en',
+        'gaplic': 'main_gaplic'
+    }
+    route_apps = {
+        '/': applic10_paste_factory({}, **applic10_settings),
+        '/admin': admin_paste_factory({}),
+        '/app': applic20_paste_factory({})
+    }
+
+    urlmap = URLMap()
+    for path, app in route_apps.items():
+        path = parse_path_expression(path)
+        urlmap[path] = app
+
+    set_global_app(
+        'wsgi-application',
+        urlmap,
+    )
+
+    try:
+        ga.start()
+    except (KeyboardInterrupt, SystemExit):
+        print('Program stopped')

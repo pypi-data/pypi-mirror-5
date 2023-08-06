@@ -1,0 +1,100 @@
+# -*- encoding: utf-8 -*-
+"""
+applic10
+=======
+
+Applic 10
+
+"""
+from pyramid.response import Response
+from pyramid.view import view_config
+from pyramid.security import (
+    Allow,
+    Authenticated,
+    Everyone,
+    DENY_ALL,
+)
+
+from ginsfsm.gobj import GObj
+from ginsfsm.c_timer import GTimer
+
+
+#----------------------------------------------------------------------#
+#                           Applic1
+#----------------------------------------------------------------------#
+
+#-------------------------------------------#
+#               Actions
+#-------------------------------------------#
+def ac_timeout(self, event):
+    self.config.counter += 1
+    self.send_event(self.timer, 'EV_SET_TIMER', seconds=self.config.seconds)
+
+
+GAPPLIC10_FSM = {
+    'event_list': (
+        'EV_SET_TIMER: bottom output',
+        'EV_TIMEOUT: bottom input',
+    ),
+    'state_list': (
+        'ST_IDLE',
+    ),
+    'machine': {
+        'ST_IDLE':
+        (
+            ('EV_TIMEOUT', ac_timeout, 'ST_IDLE'),
+        ),
+    }
+}
+
+GAPPLIC10_GCONFIG = {
+    'pyramid_config': [None, None, 0, None, "Pyramid config, to create views"],
+    'seconds': [int, 1, 0, None, "Timer to increment the counter."],
+    'counter': [int, 0, 0, None, "Counter to display."],
+}
+
+
+class GApplic10(GObj):
+    """  Root resource for Applic10.
+
+    .. ginsfsm::
+       :fsm: GAPPLIC10_FSM
+       :gconfig: GAPPLIC10_GCONFIG
+
+    *Input-Events:*
+        * :attr:`'EV_TIMEOUT'`: Timer over.
+
+    """
+    __acl__ = [
+        (Allow, Everyone, 'view'),
+        (DENY_ALL),
+    ]
+
+    def __init__(self):
+        GObj.__init__(self, GAPPLIC10_FSM, GAPPLIC10_GCONFIG)
+
+    def start_up(self):
+        """ Initialization zone.
+
+        # You could use declarative:
+        self.config.pyramid_config.add_view(
+            default_view,
+            context=GApplic1,
+            permission='view',
+        )
+        """
+
+        self.timer = self.create_gobj(
+            None,       # unnamed gobj
+            GTimer,     # gclass
+            self        # parent
+        )
+        self.send_event(self.timer, 'EV_SET_TIMER', seconds=self.config.seconds)
+
+
+#-------------------------------------------#
+#               Views
+#-------------------------------------------#
+@view_config(context=GApplic10, permission='view')
+def default_view(self, request):
+    return Response('Counter = %d! <br/> Refresh me, please!!'% self.config.counter)

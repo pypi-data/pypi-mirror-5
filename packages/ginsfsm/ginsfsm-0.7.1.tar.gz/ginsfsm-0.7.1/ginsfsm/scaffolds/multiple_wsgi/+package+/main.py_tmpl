@@ -1,0 +1,103 @@
+# -*- encoding: utf-8 -*-
+"""
+{{package}}
+{{len(package)*'='}}
+
+It uses :class:`ginsfsm.protocols.wsgi.server.c_wsgi_server.GWsgiServer`.
+
+.. autofunction:: main
+
+"""
+
+from ginsfsm.gaplic import GAplic
+from ginsfsm.globals import (
+    set_global_app,
+    set_global_main_gaplic,
+)
+from ginsfsm.protocols.wsgi.server.c_wsgi_server import GWsgiServer
+
+
+#===============================================================
+#       Paste app's factory.
+#       To run with gserve {{package}}.ini
+#===============================================================
+from {{package}}.apps import application1
+from {{package}}.apps import application2
+from {{package}}.apps import application3
+
+
+def paste_app_factory1(global_config, **local_conf):
+    return application1
+
+
+def paste_app_factory2(global_config, **local_conf):
+    return application2
+
+
+def paste_app_factory3(global_config, **local_conf):
+    return application3
+
+
+#===============================================================
+#                   Main
+#===============================================================
+def main(global_config, **local_conf):
+    """ Entry point to run with gserve (PasteDeploy)
+    """
+    if 'application' in local_conf:
+        application = local_conf.pop('application')
+    else:
+        raise Exception('You must supply an wsgi application.')
+    ga = GAplic(name='Wsgi-Example', roles='', **local_conf)
+    set_global_main_gaplic(ga)
+    ga.create_gobj(
+        'wsgi-server',
+        GWsgiServer,
+        ga,
+        application=application,
+    )
+    return ga
+
+
+if __name__ == "__main__":
+    """ You can run directly this file, without gserve.
+    """
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+
+    # simulate running from ini file
+
+    from ginsfsm.protocols.wsgi.common.urlmap import (
+        URLMap,
+        parse_path_expression,
+    )
+    route_apps = {
+        '/': paste_app_factory1({}),
+        '/app2': paste_app_factory2({}),
+        '/app3': paste_app_factory3({}),
+    }
+
+    urlmap = URLMap()
+    for path, app in route_apps.items():
+        path = parse_path_expression(path)
+        urlmap[path] = app
+
+    local_conf = {
+        'GObj.trace_mach': True,
+        'GObj.logger': logging,
+        'GSock.trace_dump': True,
+        'host': '0.0.0.0',
+        'port': 8002,
+        'application': 'wsgi-application',
+    }
+    set_global_app(
+        'wsgi-application',
+        urlmap,
+    )
+
+    ga = main({}, **local_conf)
+
+    try:
+        ga.start()
+    except (KeyboardInterrupt, SystemExit):
+        print('Program stopped')

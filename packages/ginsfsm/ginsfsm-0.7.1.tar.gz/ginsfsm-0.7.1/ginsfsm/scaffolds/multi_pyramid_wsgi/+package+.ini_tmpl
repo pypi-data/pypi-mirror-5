@@ -1,0 +1,76 @@
+[composite:main]
+use = call:ginsfsm.gaplic:gaplic_factory
+main = wsgi-server
+wsgi = wsgi-application
+
+[composite:wsgi-application]
+use = call:ginsfsm.protocols.wsgi.common.urlmap:urlmap_factory
+/ = applic10
+/admin = admin
+/app = applic20
+
+[app:wsgi-server]
+#use = call:{{package}}.main:main
+use = egg:{{package}}#main
+gaplic_name = main_gaplic
+wsgi_server_name = wsgi-server
+
+wsgi-server.host = 0.0.0.0
+wsgi-server.port = 8000
+application = wsgi-application
+GSock.trace_dump = false
+GObj.trace_mach = false
+#GServerSock.use_named_clisrv = true
+
+[app:admin]
+#use = call:{{package}}.main:admin_paste_factory
+use = egg:{{package}}#admin
+gaplic = main_gaplic
+
+[app:applic10]
+#use = call:{{package}}.main:applic10_paste_factory
+use = egg:{{package}}#applic10
+gaplic = main_gaplic
+
+pyramid.reload_templates = true
+pyramid.debug_authorization = true
+pyramid.debug_notfound = false
+pyramid.debug_routematch = false
+pyramid.debug_templates = true
+pyramid.default_locale_name = en
+
+[app:applic20]
+#use = call:{{package}}.main:applic20_paste_factory
+use = egg:{{package}}#applic20
+gaplic = main_gaplic
+
+# Begin logging configuration
+
+[loggers]
+keys = root, ginsfsm
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = DEBUG
+handlers = console
+
+[logger_ginsfsm]
+level = DEBUG
+handlers =
+qualname = ginsfsm
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(message)s
+
+# End logging configuration
