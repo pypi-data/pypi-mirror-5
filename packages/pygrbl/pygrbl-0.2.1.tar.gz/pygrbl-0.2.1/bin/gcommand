@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+# command.py : A simple command prompt
+# [2012.08.02] - Mendez: cleaned up using my libraries
+# [2012.01.10] - SJK: original version
+
+# [System]
+import readline
+
+# [Package]
+from pygrbl import argv
+from pygrbl.communicate import Communicate
+
+# [Constants]
+DESC = 'Simple python grbl command prompt for debuging the GRBL'
+
+
+if __name__ == '__main__':
+  # Initialize the args
+  args = argv.arg(description=DESC)
+
+  # get a serial device and wake up the grbl
+  with Communicate(args.device, args.speed, 
+                   timeout=args.timeout,
+                   debug=args.debug,
+                   quiet=args.quiet) as serial:
+    while True:
+      # Get some command
+      try:
+        x = raw_input('grbl> ').strip()
+      except KeyboardInterrupt:
+        x = 'quit'
+    
+      # good bye!
+      if x in ['q','exit','quit']:
+          break
+  
+      # run it if is not a quit switch
+      serial.run(x)
