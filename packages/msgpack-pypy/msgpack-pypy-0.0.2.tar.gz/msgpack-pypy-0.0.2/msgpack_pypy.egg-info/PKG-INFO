@@ -1,0 +1,72 @@
+Metadata-Version: 1.1
+Name: msgpack-pypy
+Version: 0.0.2
+Summary: A msgpack extension with special optimizations for PyPy
+Home-page: http://bitbucket.org/antocuni/msgpack-pypy
+Author: Antonio Cuni
+Author-email: anto.cuni@gmail.com
+License: BSD
+Description: msgpack-pypy: a msgpack extension with special optimizations for PyPy
+        =====================================================================
+        
+        PyPy has a special optimization to store lists of ``ints`` and ``floats`` in a
+        compact way, as they were C arrays of ``longs`` and ``doubles``.
+        
+        msgpack-pypy is an extension for msgpack which exploits this optimization to
+        provide a very fast packing/unpacking of those. Essentially, it serializes a
+        Python list of ints/floats by copying the whole array at once.
+        
+        Note that such lists are serialized using the "ext types" mechanism provided
+        by msgpack 2.0, which means that if you pack an object like ``[1, 2, 3]`` with
+        msgpack-pypy, you **cannot** unpack it using the plain msgpack-python module,
+        because the ext types are not recognized. You need msgpack-pypy to unpack it.
+        
+        Despite the name, msgpack-pypy **does** work on CPython, although it does not
+        bring any speed benefit there. It is useful if you have a system in which a
+        PyPy process packs and object and a CPython process needs to unpack it.
+        
+        
+        Performance
+        -----------
+        
+        For best performance, you should use a nightly PyPy built after Oct 21, 2013,
+        as it contains a special optimization to read/write all the bytes representing
+        the Python list at once.
+        
+        Here are the results got by running this benchmark:
+        https://bitbucket.org/antocuni/msgpack-pypy/src/default/benchmark.py
+        
+        ::
+        
+            list of ints
+              CPython/msgpack:   dump: 0.2287 ms     load: 0.2075 ms
+              PyPy/msgpack:      dump: 0.2019 ms     load: 0.2447 ms
+              PyPy/msgpack_pypy: dump: 0.1321 ms     load: 0.0391 ms
+        
+            list of floats
+              CPython/msgpack:   dump: 0.2295 ms     load: 0.2096 ms
+              PyPy/msgpack:      dump: 1.1049 ms     load: 1.9803 ms
+              PyPy/msgpack_pypy: dump: 0.1373 ms     load: 0.0392 ms
+        
+        As you can see, dumping is 1.73x faster for ints and 8x faster for floats. The
+        speedup for loading is even more impressive, as it is 6.2x faster for ints and
+        50x (fifty!) faster for floats.
+        
+        If you use an older version of PyPy (such as the last stable release, 2.1),
+        you still get a small speedup compared to the plain msgpack, but not as
+        impressive. Dumping is 1.66x **slower** for ints and 1.67x **faster** for
+        floats. Loading is 4x faster for ints and 16x faster for floats.
+        
+Keywords: msgpack PyPy
+Platform: unix
+Platform: linux
+Platform: osx
+Platform: cygwin
+Platform: win32
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: POSIX
+Classifier: Topic :: Utilities
