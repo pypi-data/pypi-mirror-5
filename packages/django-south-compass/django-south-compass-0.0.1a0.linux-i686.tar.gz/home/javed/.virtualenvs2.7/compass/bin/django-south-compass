@@ -1,0 +1,155 @@
+#!/home/javed/.virtualenvs2.7/compass/bin/python
+
+import os
+import re
+import sys
+
+from itertools import groupby
+from optparse import OptionParser
+
+STATUSES = {
+    'A': 'added',
+    'D': 'deleted',
+    'M': 'modified'
+}
+
+DIRECTIONS = {
+    'F': 'forward',
+    'B': 'backward',
+}
+
+CMD, _ = os.path.splitext(__file__)
+
+def display_status(status):
+    return STATUSES.get(status)
+
+def display_direction(direction):
+    return DIRECTIONS.get(direction)
+
+class MigrationList(object):
+
+    def __init__(self, items=None):
+        if items:
+            self.items = items
+        self.items = []
+
+    def add(self, migration):
+        return self.items.append(migration)
+
+    def remove(self, migration):
+        return self.items.remove(migration)
+
+    def plan(self):
+        self.items.sort(key=lambda x: (x.app, x.direction, x.migration))
+        # TODO: migrate to the last point of the group
+        for key, group in groupby(self.items, lambda x: x.app):
+            for item in group:
+                print item
+
+    def migrate_all(self):
+        for item in self.items:
+            item.migrate()
+
+class Migration(object):
+
+    manage_cmd = 'python manage.py'
+
+    def __init__(self, app, migration, direction="F", **kwargs):
+        self.app = app
+        if not direction in DIRECTIONS.keys():
+            raise ValueError('Invalid value for direction')
+        self.direction = direction
+        self.old = kwargs.pop('old', None)
+        self.migration = migration
+        self.prefix = kwargs.pop('prefix', '')
+        self.options = kwargs.pop('options', None)
+        if self.options.manage:
+            self.manage_cmd = 'python %s' %self.options.manage
+        if self.options.settings:
+            self.manage_cmd += ' %s' %self.options.settings
+        if self.direction == 'B':
+            self.migration = str(int(migration.lstrip('0'))-1).zfill(4)
+
+    def __str__(self):
+        return 'migrate %s %s to %s' % (self.app,
+                display_direction(self.direction),
+                self.migration)
+
+    def migrate(self):
+        if self.direction == 'B':
+            os.system('git checkout %s %s%s/migrations' % (self.old, self.prefix, self.app))
+        cmd = '%s migrate %s %s' % (self.manage_cmd, self.app, self.migration)
+        print cmd
+        os.system(cmd)
+        if self.direction == 'B':
+            os.system('git reset HEAD %s %s%s/migrations' % (self.old, self.prefix, self.app))
+            os.system('git clean -f %s %s%s/migrations' %(self.old, self.prefix, self.app))
+
+
+def post_checkout(old, new, options):
+
+    migrations = MigrationList()
+
+    cmd = 'git diff --name-status %s %s | grep /migrations/' % (
+        old, new)
+    for line in os.popen(cmd).readlines():
+        status, filepath = line.split()
+        # search for the migration number
+        match = re.compile('\w+/migrations/\d+').search(filepath)
+        if match:
+            app, text, migration = match.group().split('/')
+            prefix = filepath.split(app)[0]
+            if app and migration:
+                if status == 'D':
+                    direction = 'B'
+                else:
+                    direction = 'F'
+                migration = Migration(app,
+                        migration, direction, old=old, options=options, prefix=prefix)
+                migrations.add(migration)
+
+    migrations.plan()
+    migrations.migrate_all()
+
+def main():
+
+    parser = OptionParser()
+
+    parser.add_option("-m", "--manage")
+    parser.add_option("-s", "--settings")
+
+    options, args = parser.parse_args()
+
+    if len(args) >= 1:
+        command = args[0]
+
+        if command == 'post-checkout':
+            old = args[1]
+            new = args[2]
+            post_checkout(old, new, options)
+
+        elif command == 'install':
+
+            cmd = '%s post-checkout $@' % CMD
+            if options.manage:
+                cmd += ' --manage %s' %options.manage
+            if options.settings:
+                cmd += ' --settings %s' %options.settings
+
+            f = file('.git/hooks/post-checkout', 'w')
+            f.write('#!/bin/bash\n')
+            f.write('\n')
+            f.write(cmd)
+            f.close()
+            os.system('chmod +x .git/hooks/post-checkout')
+            print 'Compass installed!'
+
+        else:
+
+            print 'Use `%s install` to install to current repository' % CMD
+
+    else:
+        print 'Use `%s install` to install to current repository' % CMD
+
+if __name__ == '__main__':
+    main()
