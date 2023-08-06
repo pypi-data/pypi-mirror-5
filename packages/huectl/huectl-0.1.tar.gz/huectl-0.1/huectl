@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import argparse
+import logging
+from huecontroller import HueController
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--bridge', default=None)
+    parser.add_argument('--verbose', action='store_true', default=False)
+
+    subcmds = parser.add_subparsers(dest="command")
+    listcmd = subcmds.add_parser('list')
+    savecmd = subcmds.add_parser('save')
+    savecmd.add_argument('name', default='default')
+    loadcmd = subcmds.add_parser('load')
+    loadcmd.add_argument('name', default='default')
+    offcmd = subcmds.add_parser('off')
+    oncmd = subcmds.add_parser('on')
+    cntcmd = subcmds.add_parser('connect')
+
+    args = parser.parse_args()
+
+    if not args.verbose:
+        logger = logging.getLogger('phue')
+        logger.setLevel(logging.CRITICAL)
+
+    ctl = HueController(args.bridge)
+
+    if args.command == 'list':
+        for cfg in ctl.configs:
+            print(cfg)
+    elif args.command == 'save':
+        ctl.save_state(args.name)
+    elif args.command == 'load':
+        ctl.load_state(args.name)
+    elif args.command == 'off':
+        ctl.lights_off()
+    elif args.command == 'on':
+        ctl.lights_on()
+    elif args.command == 'connect':
+        ctl.connect()
+
+
