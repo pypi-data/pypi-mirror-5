@@ -1,0 +1,410 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>About Ximpia &mdash; Ximpia 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="author" title="About these documents" href="#" />
+    <link rel="top" title="Ximpia 0.2 documentation" href="index.html" />
+    <link rel="next" title="Example" href="example.html" />
+    <link rel="prev" title="Ximpia" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="example.html" title="Example"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Ximpia"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Ximpia 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="about-ximpia">
+<h1>About Ximpia<a class="headerlink" href="#about-ximpia" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Ximpia allows you to model back-end and front-end in an easy way to minimize lines of code for
+your application.</p>
+<p>On the front-end, you parametrize javascript components in HTML5 and define stylesheets to
+customize look and feel.</p>
+<p>On the back-end, you define your services (=use cases) with views, actions and app flow and
+other services like search, settings, parameters, already defined so you can speed up
+development.</p>
+</div>
+<div class="section" id="context">
+<h2>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
+<p>Instead of request and response, this framework uses context which contains session, cookies
+and it is shared in all layers: service, business and data. We have full contexts with all
+data from front-end like forms, flow, session and cookies and minimized context with common
+data for business and data layers. Service layer uses full context and other layers interchange
+minimized context.</p>
+<p>You can extend our common context to include extended attributes needed for common parts of
+your services, useful when you need custom decorators for your applications.</p>
+<p>You can write data into context from service and business layers to interchange domain layer
+information like user metadata, user profile information, etc...</p>
+</div>
+<div class="section" id="services">
+<h2>Services<a class="headerlink" href="#services" title="Permalink to this headline">¶</a></h2>
+<p>Use cases are materialized in the framework as services. Services will hold view methods,
+action methods and validation operations.</p>
+<p>Think of Apps as collections of services, and services collections of views and operations:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">messages</span> <span class="kn">as</span> <span class="nn">_m</span>
+
+<span class="k">class</span> <span class="nc">SiteService</span><span class="p">(</span><span class="n">CommonService</span><span class="p">):</span>
+
+        <span class="nd">@validation</span><span class="p">()</span>
+        <span class="k">def</span> <span class="nf">_validate_invitation_pending</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invitation_code</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                Validates that invitation is pending</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="n">setting</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_setting</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">SET_SITE_SIGNUP_INVITATION</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">SET_SITE_SIGNUP_INVITATION</span><span class="p">,</span> <span class="n">setting</span><span class="o">.</span><span class="n">is_checked</span><span class="p">())</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="n">setting</span><span class="o">.</span><span class="n">is_checked</span><span class="p">():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_exists</span><span class="p">([</span>
+                                        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_dbInvitation</span><span class="p">,</span>
+                                        <span class="p">{</span><span class="s">&#39;invitationCode&#39;</span><span class="p">:</span> <span class="n">invitation_code</span><span class="p">,</span>
+                                        <span class="s">&#39;status&#39;</span><span class="p">:</span> <span class="n">K</span><span class="o">.</span><span class="n">PENDING</span><span class="p">},</span>
+                                        <span class="s">&#39;invitationCode&#39;</span><span class="p">,</span> <span class="n">_m</span><span class="o">.</span><span class="n">ERR_invitation_not_valid</span><span class="p">]</span> <span class="p">])</span>
+
+        <span class="nd">@view</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">HomeForm</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">viewHome</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">db_setting</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">(</span><span class="s">&#39;ximpia.xpsite.data.SettingDAO&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c"># your code...</span>
+
+        <span class="nd">@action</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">HomeForm</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">activateGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot;Activate group&quot;&quot;&quot;</span>
+                <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_pk_values</span><span class="p">(</span><span class="s">&#39;groups&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In case vaidation is not checked, user will see message <tt class="docutils literal"><span class="pre">ERR_invitation_not_valid</span></tt></p>
+<p>In case you have use cases with a set of operations, you can choose to materialize those
+into a service class or have n services with <a href="#id1"><span class="problematic" id="id2">``</span></a>do``operation or similar.</p>
+<p>You register services to map them into database and you would write code by extending from <tt class="docutils literal"><span class="pre">CommonService</span></tt> and have methods
+for views, actions, workflow views, etc...(components.py):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerService</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">serviceName</span><span class="o">=</span><span class="s">&#39;My Service&#39;</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="n">SiteService</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="views">
+<h2>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h2>
+<p>Views are called from menu items, search or other action components like buttons, links, etc...</p>
+<p>They query your database and display information to your users, so framework uses slave databases for them. For example,
+they would be list of customers, search customers and customer detail.</p>
+<p>Views must all have a form which is defined in the decorator. Forms hold fields as well as window success messages and error
+messages.</p>
+<p>In case you need to link views in a flow, you would set views into the workflow. You don&#8217;t need to write code for this, all flow
+logic is kept parametrized into the Workflow. You may write variables into the workflow and then define flows for views and actions
+depending on variable data. Your services may write into workflow as well. It is easy to write wizards, use cases that link to other
+use cases in a business operational flow.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@view</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">HomeForm</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">viewHome</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">db_setting</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">(</span><span class="s">&#39;ximpia.xpsite.data.SettingDAO&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c"># your code...</span>
+</pre></div>
+</div>
+<p>We have HomeForm with messages and fields for home view.</p>
+<p>You would need to register the view, template, menu items and search for each view. In case you don&#8217;t map views with menu, you can
+skip menu registering:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerView</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">serviceName</span><span class="o">=</span><span class="s">&#39;Users&#39;</span><span class="p">,</span> <span class="n">viewName</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span>
+                                                <span class="n">className</span><span class="o">=</span><span class="n">SiteService</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;view_login&#39;</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerTemplate</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">viewName</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;passwordReminder&#39;</span><span class="p">,</span> <span class="n">winType</span><span class="o">=</span><span class="s">&#39;popup&#39;</span><span class="p">,</span>
+                                        <span class="n">alias</span><span class="o">=</span><span class="s">&#39;password_reminder&#39;</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerSearch</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;Login&#39;</span><span class="p">,</span> <span class="n">viewName</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="forms">
+<h2>Forms<a class="headerlink" href="#forms" title="Permalink to this headline">¶</a></h2>
+<p>Ximpia forms are a bit different from django forms since they keep database fields inyected into fields.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">LoginForm</span><span class="p">(</span><span class="n">XBaseForm</span><span class="p">):</span>
+        <span class="n">_XP_FORM_ID</span> <span class="o">=</span> <span class="s">&#39;login&#39;</span>
+        <span class="n">_dbUser</span> <span class="o">=</span> <span class="n">User</span><span class="p">()</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">UserField</span><span class="p">(</span><span class="n">_dbUser</span><span class="p">,</span> <span class="s">&#39;username&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;XimpiaId&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                <span class="n">jsRequired</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">PasswordField</span><span class="p">(</span><span class="n">_dbUser</span><span class="p">,</span> <span class="s">&#39;password&#39;</span><span class="p">,</span> <span class="n">minLength</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                <span class="n">jsRequired</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">socialId</span> <span class="o">=</span> <span class="n">HiddenField</span><span class="p">()</span>
+        <span class="n">socialToken</span> <span class="o">=</span> <span class="n">HiddenField</span><span class="p">()</span>
+        <span class="n">authSource</span> <span class="o">=</span> <span class="n">HiddenField</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="n">K</span><span class="o">.</span><span class="n">PASSWORD</span><span class="p">)</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="n">HiddenField</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="n">_jsf</span><span class="o">.</span><span class="n">encodeDict</span><span class="p">({</span><span class="s">&#39;authSources&#39;</span><span class="p">:</span> <span class="n">Choices</span><span class="o">.</span><span class="n">SOCIAL_NETS</span><span class="p">}))</span>
+        <span class="n">errorMessages</span> <span class="o">=</span> <span class="n">HiddenField</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="n">_jsf</span><span class="o">.</span><span class="n">buildMsgArray</span><span class="p">([</span><span class="n">_m</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;ERR_wrong_password&#39;</span><span class="p">]]))</span>
+        <span class="n">okMessages</span> <span class="o">=</span> <span class="n">HiddenField</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="n">_jsf</span><span class="o">.</span><span class="n">buildMsgArray</span><span class="p">([</span><span class="n">_m</span><span class="p">,</span> <span class="p">[]]))</span>
+</pre></div>
+</div>
+<p>We need <tt class="docutils literal"><span class="pre">_XP_FORM_ID</span></tt> to have an unique id used in front-end. Your forms in a service should have an unique id. When we build
+form data for front-end, we use field attributes from model like maxlength, labels and helptext. You can customize these attributes
+in the form class as well.</p>
+</div>
+<div class="section" id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
+<p>It allows you to glue together your views (navigation) without writing code, just defining your flow with views and actions. You define
+views, actions associated to views and flow variables that must met in order to satisfy flow. These variables will behave like conditions
+for your application flow.</p>
+<p>Your layers may write parameters to flow as you do with sessions. Session data starts when user starts flow and end when flow ends.
+There is a set of parameters that control the way flows behave to adapt to your needs.</p>
+<p>You would register flow parameters through components.py file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerFlow</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">flowCode</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerFlowView</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">flowCode</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">viewNameSource</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span>
+        <span class="n">viewNameTarget</span><span class="o">=</span><span class="s">&#39;homeLogin&#39;</span><span class="p">,</span> <span class="n">actionName</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="actions">
+<h2>Actions<a class="headerlink" href="#actions" title="Permalink to this headline">¶</a></h2>
+<p>Visual components associated with actions like buttons and links will call your actions. They may be called from search and menu items
+as well.</p>
+<p>Action operations may be mapped to your services. Each action would have an implementation associated with it in a method.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@validation</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">_authen_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">()[</span><span class="s">&#39;authSource&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">K</span><span class="o">.</span><span class="n">FACEBOOK</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">()[</span><span class="s">&#39;socialId&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_authenticate_user_soc_net</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">()[</span><span class="s">&#39;socialId&#39;</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">()[</span><span class="s">&#39;socialToken&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">()[</span><span class="s">&#39;authSource&#39;</span><span class="p">],</span> <span class="s">&#39;facebook&#39;</span><span class="p">,</span>
+                        <span class="n">_m</span><span class="o">.</span><span class="n">ERR_wrong_password</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_authenticate_user</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">()[</span><span class="s">&#39;username&#39;</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">()[</span><span class="s">&#39;password&#39;</span><span class="p">],</span> <span class="s">&#39;password&#39;</span><span class="p">,</span> <span class="n">_m</span><span class="o">.</span><span class="n">ERR_wrong_password</span><span class="p">)</span>
+
+<span class="nd">@action</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">LoginForm</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the login action. Puts workflow parameter username, write context variables</span>
+<span class="sd">        userChannel and session.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_authen_user</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_login</span><span class="p">()</span>
+        <span class="n">user_channel_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_user_channel_name</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dbUserChannel</span> <span class="o">=</span> <span class="n">UserChannelDAO</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ctx_min</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="o">.</span><span class="n">userChannel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dbUserChannel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">user_channel_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s">&#39;userChannel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctx</span><span class="o">.</span><span class="n">userChannel</span>
+</pre></div>
+</div>
+<p>You need to map form associated with the action using <a href="#id3"><span class="problematic" id="id4">``</span></a>action``decorator. Form is validated prior to processing action in decorator logic.</p>
+<p>You can implement validation operations that need to be checked in order to execute your actions. You call them inside your action method
+(like <tt class="docutils literal"><span class="pre">self._authen_user()</span></tt>). You can think of this as service-level validaations or business validations.</p>
+<p>You would register them like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerAction</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">serviceName</span><span class="o">=</span><span class="s">&#39;Users&#39;</span><span class="p">,</span> <span class="n">actionName</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span>
+        <span class="n">className</span><span class="o">=</span><span class="n">SiteService</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="templates">
+<h2>Templates<a class="headerlink" href="#templates" title="Permalink to this headline">¶</a></h2>
+<p>Ximpia templates are plain HTML5 files. You will find them at:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">myproject</span><span class="o">/</span><span class="n">myapp</span><span class="o">/</span><span class="n">templates</span>
+</pre></div>
+</div>
+<p>You will find directories for templates. By default, you will find your app directory which
+would keep <tt class="docutils literal"><span class="pre">window</span></tt> and <tt class="docutils literal"><span class="pre">popup</span></tt> directories. You can define templates for other apps within
+your application extending their templates, like you would do for our <tt class="docutils literal"><span class="pre">xpsite</span></tt> app.</p>
+<p>You will also find blank templates at your project path, built by ximpia start-app script. You
+would copy those blank templates and rename them in order to start with your own templates.</p>
+<p>Here goes an example for change password popup:</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+<span class="nt">&lt;meta</span> <span class="na">http-equiv=</span><span class="s">&quot;Content-Type&quot;</span> <span class="na">content=</span><span class="s">&quot;text/html; charset=utf-8&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;title&gt;</span>Ximpia - Change Password<span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_popup&quot;</span>
+                <span class="na">data-xp=</span><span class="s">&quot;{title: &#39;Change Password&#39;}&quot;</span> <span class="nt">&gt;&lt;/div&gt;</span>
+<span class="c">&lt;!-- Content --&gt;</span>
+<span class="nt">&lt;section</span> <span class="na">id=</span><span class="s">&quot;id_content&quot;</span> <span class="na">class=</span><span class="s">&quot;sectionContent&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_changePassword&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;form</span> <span class="na">id=</span><span class="s">&quot;form_userChangePassword&quot;</span> <span class="na">action=</span><span class="s">&quot;&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span> <span class="na">data-xp=</span><span class="s">&quot;{}&quot;</span><span class="nt">&gt;</span>
+<span class="c">&lt;!-- ximpiaId --&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_username_comp&quot;</span>
+                <span class="na">data-xp-type=</span><span class="s">&quot;field&quot;</span>
+                <span class="na">data-xp=</span><span class="s">&quot;{tabindex: &#39;1&#39;, label: &#39;XimpiaId&#39;, &#39;readonly&#39;: &#39;readonly&#39;}&quot;</span> <span class="nt">&gt;</span> <span class="nt">&lt;/div&gt;</span>
+<span class="c">&lt;!-- password --&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_password_comp&quot;</span> <span class="na">data-xp-type=</span><span class="s">&quot;field&quot;</span>  <span class="na">style=</span><span class="s">&quot;margin-top: 10px&quot;</span>
+                <span class="na">data-xp=</span><span class="s">&quot;{type: &#39;password&#39;, info: true}&quot;</span> <span class="nt">&gt;&lt;/div&gt;</span>
+<span class="c">&lt;!-- newPassword --&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_newPassword_comp&quot;</span> <span class="na">data-xp-type=</span><span class="s">&quot;field&quot;</span> <span class="na">style=</span><span class="s">&quot;margin-top: 10px&quot;</span>
+                <span class="na">data-xp=</span><span class="s">&quot;{type: &#39;password&#39;, info: true, class: &#39;passwordStrength&#39;}&quot;</span> <span class="nt">&gt;&lt;/div&gt;</span>
+<span class="c">&lt;!-- newPasswordConfirm --&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_newPasswordConfirm_comp&quot;</span> <span class="na">data-xp-type=</span><span class="s">&quot;field&quot;</span> <span class="na">style=</span><span class="s">&quot;margin-top: 10px&quot;</span>
+                <span class="na">data-xp=</span><span class="s">&quot;{type: &#39;password&#39;, info: true}&quot;</span> <span class="nt">&gt;&lt;/div&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;br/&gt;</span>
+<span class="nt">&lt;/section&gt;</span>
+<span class="c">&lt;!-- Content --&gt;</span>
+<span class="c">&lt;!-- Page Button Bar --&gt;</span>
+<span class="nt">&lt;section</span> <span class="na">id=</span><span class="s">&quot;id_sectionButton&quot;</span> <span class="na">class=</span><span class="s">&quot;sectionButton&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_popupButton&quot;</span> <span class="na">class=</span><span class="s">&quot;btBar&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_doChangePassword_comp&quot;</span> <span class="na">data-xp-type=</span><span class="s">&quot;button&quot;</span>
+                                <span class="na">data-xp=</span><span class="s">&quot;{      form: &#39;form_userChangePassword&#39;,</span>
+<span class="s">                                                        align: &#39;right&#39;,</span>
+<span class="s">                                                        text: &#39;Save&#39;,</span>
+<span class="s">                                                        type: &#39;iconPopup&#39;,</span>
+<span class="s">                                                        mode: &#39;actionMsg&#39;,</span>
+<span class="s">                                                        action: &#39;changePassword&#39;,</span>
+<span class="s">                                                        clickStatus: &#39;disable&#39;,</span>
+<span class="s">                                                        icon: &#39;save&#39;}&quot;</span> <span class="nt">&gt;&lt;/div&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;/section&gt;</span>
+<span class="c">&lt;!-- Page Button Bar --&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">div</span></tt> elements with <tt class="docutils literal"><span class="pre">_comp</span></tt> ending in <tt class="docutils literal"><span class="pre">id</span></tt> hold the visual components. These visual
+components will be parsed by our js rendering engine, build html5 and mix server data with
+visual data.</p>
+<p>You have base template code for your application at <tt class="docutils literal"><span class="pre">myproject/myapp/templates/dir/myapp.html</span></tt>:</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+        <span class="c">&lt;!-- Place style sheets here ... --&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+<span class="nt">&lt;footer&gt;</span>
+<span class="nt">&lt;/footer&gt;</span>
+<span class="c">&lt;!-- Your javascript here ... --&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+<p>You can link your visual components and apply style themes.</p>
+</div>
+<div class="section" id="visual-components">
+<h2>Visual Components<a class="headerlink" href="#visual-components" title="Permalink to this headline">¶</a></h2>
+<p>Visuals for your application are built using what we call visual components. They are <tt class="docutils literal"><span class="pre">jQuery</span></tt>
+plugins that mix server data in JSON format with parametrized data in HTML5 from your templates.</p>
+<p>We provide a set of visual components tailored for most needs and you only need to parametrize
+them in HTML5 templates. You app would not need to develop js code, simply configure the
+components with HTML5 <tt class="docutils literal"><span class="pre">data-</span></tt> attributes.</p>
+<p>In case this is not enough for you, you can write your own components. We also provide a js
+rendering component: you define the js function to do render logic. This is useful for
+integrating external js code into your application.</p>
+<p>Example for list component:</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;id_groups_comp&quot;</span> <span class="na">data-xp-type=</span><span class="s">&quot;list.data&quot;</span> <span class="na">style=</span><span class="s">&quot;margin-left: 10px&quot;</span>
+        <span class="na">data-xp=</span><span class="s">&quot;{      app: &#39;ximpia.xpsite&#39;,</span>
+<span class="s">                dbClass: &#39;GroupDAO&#39;,</span>
+<span class="s">                disablePaging: true,</span>
+<span class="s">                fields: [       &#39;id&#39;,</span>
+<span class="s">                                        &#39;group__name&#39;,</span>
+<span class="s">                                        &#39;category__name&#39;,</span>
+<span class="s">                                        &#39;groupNameId&#39;,</span>
+<span class="s">                                        &#39;parent&#39;,</span>
+<span class="s">                                        &#39;isPublic&#39;,</span>
+<span class="s">                                        &#39;isDeleted&#39;,</span>
+<span class="s">                                        &#39;dateCreate&#39;,</span>
+<span class="s">                                        &#39;dateModify&#39;,</span>
+<span class="s">                                        &#39;userCreateId&#39;]</span>
+<span class="s">        }&quot;</span> <span class="nt">&gt;</span> <span class="nt">&lt;/div&gt;</span>
+</pre></div>
+</div>
+<p>Will render as tabular data:</p>
+<img alt="_images/data-list-low.png" src="_images/data-list-low.png" />
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">About Ximpia</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#context">Context</a></li>
+<li><a class="reference internal" href="#services">Services</a></li>
+<li><a class="reference internal" href="#views">Views</a></li>
+<li><a class="reference internal" href="#forms">Forms</a></li>
+<li><a class="reference internal" href="#workflow">Workflow</a></li>
+<li><a class="reference internal" href="#actions">Actions</a></li>
+<li><a class="reference internal" href="#templates">Templates</a></li>
+<li><a class="reference internal" href="#visual-components">Visual Components</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Ximpia</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="example.html"
+                        title="next chapter">Example</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/about.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="example.html" title="Example"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Ximpia"
+             >previous</a> |</li>
+        <li><a href="index.html">Ximpia 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Ximpia Inc.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
