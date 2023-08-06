@@ -1,0 +1,175 @@
+Metadata-Version: 1.1
+Name: Flask-PJAX
+Version: 0.0.1
+Summary: PJAX Templating for Flask Applications
+Home-page: http://github.com/rhyselsmore/flask-pjax
+Author: Rhys Elsmore
+Author-email: me@rhys.io
+License: Copyright 2013 Rhys Elsmore
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+Description: Flask-PJAX
+        ==========
+        
+        
+        .. image:: https://travis-ci.org/rhyselsmore/flask-pjax.png?branch=master
+                :target: https://travis-ci.org/rhyselsmore/flask-pjax
+        
+        .. image:: https://pypip.in/d/Flask-PJAX/badge.png
+                :target: https://crate.io/packages/Flask-PJAX/
+        
+        Add a fairly basic handler for PJAX to Flask.
+        
+        Allows you to specify a base template for both a normal request or a
+        PJAX request. This allows you to return the required code blocks, and
+        choose what you wish to render.
+        
+        Installation
+        ------------
+        
+        .. code-block:: bash
+        
+            pip install flask-pjax
+        
+        Configuration
+        -------------
+        
+        Configiguring Flask-PJAX is fairly simple. To get started, initalise it against
+        your application.
+        
+        .. code-block:: python
+        
+            from flask import Flask
+            from flask_pjax import PJAX
+        
+            app = Flask(__name__)
+            PJAX(app)
+        
+        or
+        
+        .. code-block:: python
+        
+            from flask import Flask
+            from flask_pjax import PJAX
+        
+            app = Flask(__name__)
+            pjax = PJAX(app)
+        
+        or
+        
+        .. code-block:: python
+        
+            from flask import Flask
+            from flask_pjax import PJAX
+        
+            pjax = PJAX()
+        
+            def create_app():
+                app = Flask(__name__)
+                pjax.init_app(app)
+                return app
+        
+        Currently, the base template for your PJAX request is the only configuration
+        item. This is set to the location of the template within your project.
+        
+        .. code-block:: python
+        
+            PJAX_BASE_TEMPLATE = "pjax.html"
+        
+        Usage
+        -----
+        
+        You can return your templates like you normally do.
+        
+        .. code-block:: python
+        
+            # app.py
+        
+            @app.route('/')
+            def index():
+                return render_template('index.html')
+        
+        Your base template remains the same.
+        
+        .. code-block:: html
+        
+            # base.html
+        
+            <html>
+            <head>
+                <title>Woop</title>
+            </head>
+            <body>
+                {% block content %}{% endblock %}
+            </body>
+            </html>
+        
+        And you create a PJAX base template.
+        
+        .. code-block:: html
+        
+            # pjax.html
+        
+            <title>Woop</title>
+        
+            {% block content %}{% endblock %}
+        
+        And within your index template, you can specify your base template:
+        
+        .. code-block:: html
+        
+            # index.html
+        
+            {% extends pjax('base.html') %}
+        
+            <title>Woop - Home</title>
+        
+            {% block content %}
+            This is my homepage
+            {% endblock %}
+        
+        This will render the pjax.html for PJAX requests, and the base for non-PJAX requests.
+        
+        Furthermore, you can specify a custom PJAX Base Template:
+        
+        .. code-block:: html
+        
+            {% extends pjax('base.html', pjax='/base/custom_pjax_template') %}
+        
+        Contribute
+        ----------
+        
+        #. Check for open issues or open a fresh issue to start a discussion around a feature idea or a bug. There is a Contributor Friendly tag for issues that should be ideal for people who are not very familiar with the codebase yet.
+        #. Fork `the repository`_ on Github to start making your changes to the **master** branch (or branch off of it).
+        #. Write a test which shows that the bug was fixed or that the feature works as expected.
+        #. Send a pull request and bug the maintainer until it gets merged and published.
+        
+        .. _`the repository`: http://github.com/rhyselsmore/flask-pjax
+        
+        History
+        =======
+        
+        0.0.1 (29/9/2013)
+        -----------------
+        
+        - Conception.
+        - Initial Commit of Package to GitHub.
+        - First Release.
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
