@@ -1,0 +1,38 @@
+{% extends 'Base.html' %}
+{% load ptreefilters %}
+{% block title %}Please wait{% endblock %}
+
+{% block content %}
+    <p>
+    {{ waiting_message|default_if_none:"Please wait." }}
+    </p>
+
+    <div class="progress progress-striped active" id='waitingIndicator'>
+      <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+        <span class="sr-only">Please wait</span>
+      </div>
+    </div>
+{% endblock %}
+
+{% block content_at_bottom_of_body %}
+    <script type="text/javascript">
+    var checkIfReady = function() {
+
+        var args = { type: "GET", url: "{{ SequenceViewURL }}", complete: redirectToSequenceView};
+        $.ajax(args);
+
+    }
+
+    var redirectToSequenceView = function(res, status) {
+        if (status == "success") {
+            var response = res.responseText;
+            if (response == "1") {
+                document.location.href = '{{ SequenceViewURL }}';
+            }
+        }
+    }
+
+    var SECOND = 1000;
+    var intervalId = window.setInterval("checkIfReady()", 5 * SECOND);
+    </script>
+{% endblock %}
