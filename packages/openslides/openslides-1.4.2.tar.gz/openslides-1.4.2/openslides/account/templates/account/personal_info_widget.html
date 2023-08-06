@@ -1,0 +1,57 @@
+{% load i18n %}
+{% load tags %}
+
+<ul style="line-height: 180%">
+    {% trans 'I am on the list of speakers of the following items:' %}
+    {% for item in items %}
+        <li><a href="{% model_url item %}">{{ item }}</a></li>
+    {% empty %}
+        <li><i>{% trans 'None' %}</i></li>
+    {% endfor %}
+</ul>
+
+<hr />
+<ul style="line-height: 180%">
+    {% trans 'I submitted the following motions:' %}
+    {% for motion in submitted_motions %}
+        <li>
+            <a href="{% model_url motion %}">
+                {{ motion.identifier|add:' | '|default:'' }}
+                {{ motion }}
+            </a>
+        </li>
+    {% empty %}
+        <li><i>{% trans 'None' %}</i></li>
+    {% endfor %}
+</ul>
+
+{% if config_motion_min_supporters %}
+<hr />
+<ul style="line-height: 180%">
+    {% trans 'I support the following motions:' %}
+    {% for motion in supported_motions %}
+        <li>
+            <a href="{% model_url motion %}">
+                {% if motion.identifier %}
+                    [# {{ motion.identifier }}]
+                {% else %}
+                    [---]
+                {% endif %}
+                {{ motion }}
+            </a>
+        </li>
+    {% empty %}
+        <li><i>{% trans 'None' %}</i></li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<hr />
+<ul style="line-height: 180%">
+    {% trans 'I am candidate for the following elections:' %}
+    {% for assignment in assignments %}
+        <li><a href="{% model_url assignment %}">{{ assignment }}</a></li>
+    {% empty %}
+        <li><i>{% trans 'None' %}</i></li>
+    {% endfor %}
+</ul>
