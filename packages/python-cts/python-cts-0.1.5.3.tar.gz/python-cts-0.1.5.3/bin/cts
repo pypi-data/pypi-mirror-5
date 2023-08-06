@@ -1,0 +1,242 @@
+#!/usr/bin/env python
+import sys
+import shlex
+import os.path
+from itertools import islice,ifilter
+from optparse import OptionParser
+from collections import namedtuple
+import ctags
+
+KINDS = {
+    "c": "class name",
+    "d": "define (from #define XXX)",
+    "e": "enumerator",
+    "f": "function or method name",
+    "F": "file name",
+    "g": "enumeration name",
+    "m": "member (of structure or class data)",
+    "p": "function prototype",
+    "s": "structure name",
+    "t": "typedef",
+    "u": "union name",
+    "v": "variable",
+}
+def build_arg_parser():
+    usage = "usage: %prog [-flags] name"
+    parser = OptionParser(usage=usage)
+    parser.add_option("-p", "--partial", dest="partial", help="Partial match on ctag",
+                      action="store_true", default=False)
+
+    parser.add_option("-i", "--insensitive", dest="insensitive", 
+                      help="Case insensitive search on ctag",
+                      action="store_true", default=False)
+
+    parser.add_option("-c", "--ctag_file", dest="tag_file",
+                      help="If provided, specifies a CTAG file to use instead "\
+                           "of recursing up from the current directory", default="")
+
+    parser.add_option("-f", "--force", dest="force",
+                      help="Forces cts to use a ctag file even if it looks invalid", 
+                      action="store_true", default=False)
+
+    parser.add_option("-k", "--restrict-kinds", dest="kinds",
+                      help="Restricts tags to only show certain one or more tag types", 
+                      default=None)
+
+    parser.add_option("-l", "--list-kinds", dest="listkinds", 
+                      help="Lists default descriptive ctags types.  This is not an " \
+                           "exhaustive list",
+                      action="store_true", default=False)
+
+    parser.add_option("-t", "--file-types", dest="types", 
+                      help="CSV list of file suffixes to include in search",
+                      default=None)
+    
+    parser.add_option("-e", "--exec", dest="execute",
+                      help="Executes a command using execv, filling in the "\
+                           "appropriate variables.  Default opens in $EDITOR", 
+                      default='%s +"{pattern}" {file}' % os.environ['EDITOR'])
+
+    parser.add_option("-s", "--print-std", dest="stdout",
+                      help="Instead of executing program, prints the formated string "\
+                           "to stdout", default=None)
+
+    parser.add_option("-n", "--num", dest="num", type="int",
+                      help="Number of tags to show at a time.  Default is 5",
+                      default=5)
+                        
+
+    return parser
+
+class EntryFilter(object):
+    def __init__(self):
+        self.kinds = None
+        self.fileTypes = None
+
+    def add_kinds_filter(self, kinds):
+        self.kinds = frozenset(kinds)
+
+    def add_file_types_filter(self, fts):
+        if isinstance(fts, basestring):
+            fts = fts.split(",") 
+
+        self.fileTypes = set(fts)
+
+    def filter(self, entry_set):
+        if self.kinds is not None:
+            entry_set = ifilter(lambda e: e.kind in self.kinds, entry_set)
+
+        if self.fileTypes is not None:
+            sp = os.path.splitext
+            filterfn = lambda e: sp(e.file)[1][1:] in self.fileTypes 
+            entry_set = ifilter(filterfn, entry_set)
+
+        return list(entry_set)
+
+def rec_dir_up(dir):
+    if os.path.isdir(dir):
+        while True:
+            yield dir
+            newdir = os.path.split(dir)[0]
+            if newdir == dir: break
+            dir = newdir
+
+def find_ctag_file():
+    directory = os.getcwd()
+    for dir in rec_dir_up(directory):
+        path = os.path.join(dir, "tags")
+        if os.path.isfile(path):
+            return path
+
+    return None
+
+def build_flags(partial, insensitive):
+    search_type = ctags.TAG_PARTIALMATCH if partial else ctags.TAG_FULLMATCH
+    case = ctags.TAG_IGNORECASE if insensitive else ctags.TAG_OBSERVECASE
+    return search_type | case
+
+Entry = namedtuple("Entry", "name, file, pattern, lineNumber, kind, fileScope")
+def entry_to_Entry(entry):
+    return Entry(*(entry[f] for f in Entry._fields))
+
+def query_tag_file(tags, query, partial, insensitive):
+    results = []
+    entry = ctags.TagEntry()
+    flags = build_flags(partial, insensitive)
+
+    if tags.find(entry, query, flags):
+        results.append(entry_to_Entry(entry))
+        while tags.findNext(entry):
+            results.append(entry_to_Entry(entry))
+
+    return results
+
+def select_entry(entries, num):
+    idx = 0
+    # display in chunks of num
+    i_entries = list(enumerate(entries))
+    while True:
+        print_set = []
+        midx = idx * num
+        for i, entry in i_entries[midx:midx+num]:
+            fields = (entry.name, entry.file, entry.pattern)
+            print_set.append(" %d: %s" % (i,'\t'.join(fields)))
+            
+        instructions = ["Select number to open"]
+        not_at_end = (midx + num) < len(entries)
+        if not_at_end:
+            instructions.append("'m' for more")
+        if idx > 0:
+            instructions.append("'p' for prev")
+
+        print '\n\n'.join(print_set)
+        print
+        print ', '.join(instructions)
+
+        # Get the input
+        results = raw_input("> ")
+        if results.isdigit():
+            linenum = int(results)
+            if linenum < len(entries):
+                return entries[linenum]
+        elif results == 'm' and not_at_end:
+            idx += 1
+        elif results == 'p' and idx > 0:
+            idx -=1
+ 
+def validate(tag_file):
+    # we need attempt to verify that the file is actually a ctags file
+    # since 'python-ctags' segfaults if it isn't
+    valid = 1
+    with file(tag_file) as f:
+        valid &= "_TAG_FILE_FORMAT" in f.readline()
+        valid &= "_TAG_FILE_SORTED" in f.readline()
+
+    return valid
+    
+if __name__ == '__main__':
+    parser = build_arg_parser()
+    opts, args = parser.parse_args()
+
+    if opts.listkinds:
+        print "Tag Kinds"
+        for k in sorted(KINDS.iterkeys()):
+            print "%s\t%s" % (k, KINDS[k])
+
+        sys.exit(0)
+
+    if not args:
+        print "Missing search string"
+        parser.print_usage()
+        sys.exit(1)
+
+    # find the nearest ctag file
+    tag_file = opts.tag_file or find_ctag_file()
+    if tag_file is None or not os.path.isfile(tag_file):
+        print "Could not find tag_file"
+        sys.exit(1)
+    
+    if not validate(tag_file) and not options.force:
+        print "file %s Does not look like a ctag file.  Aborting." % tag_file
+        sys.exit(1)
+
+    query = args[0]
+    results = query_tag_file(ctags.CTags(tag_file), query, 
+                             opts.partial, opts.insensitive)
+
+    # filter results
+    entryFilter = EntryFilter()
+    if opts.kinds is not None:
+        entryFilter.add_kinds_filter(opts.kinds)
+
+    if opts.types is not None:
+        entryFilter.add_file_types_filter(opts.types)
+
+    results = entryFilter.filter(results)
+    
+    if not results:
+        print "No tags for `%s` found." % query
+        sys.exit(0)
+    
+    entry = None
+    if len(results) == 1:
+        entry = results[0]
+    else:
+        try:
+            entry = select_entry(results, opts.num)
+        except (KeyboardInterrupt,EOFError),e:
+            sys.exit(1)
+
+    # Prepare execution of script
+    tag_dir = os.path.split(tag_file)[0]
+    filename = os.path.join(tag_dir, entry.file)
+    variables = entry.__dict__.copy()
+    variables['file'] = filename 
+    if opts.stdout is not None:
+        print opts.stdout.format(**variables)
+        sys.exit(0)
+
+    pieces = shlex.split(opts.execute.format(**variables))
+    if pieces:
+        os.execvp(pieces[0], pieces)
+
