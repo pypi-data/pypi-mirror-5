@@ -1,0 +1,4953 @@
+commit 6ede4c20163d22b758f9a0f362affb5258dd4504
+Merge: a8d8e7a 1d2a85d
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Sep 19 20:47:17 2013 +0000
+
+    Merge "Add DIB_IMAGE_CACHE"
+
+commit a8d8e7a30dc401daedfc5e0d5937ebc609dd0458
+Author: Cody A.W. Somerville <cody.somerville@hp.com>
+Date:   Thu Sep 19 16:35:31 2013 -0400
+
+    Do not prompt on removal of apt-xapian-index from ubuntu cloud images
+    
+    Change-Id: I49582a0c51aafcda6c0ad7911c291d58bb6c52a6
+
+commit 1d2a85d5e46741f40ec3b9eb1646b9da167e6e7b
+Author: Matthew Farrellee <matt@redhat.com>
+Date:   Thu Sep 19 09:50:48 2013 -0400
+
+    Add DIB_IMAGE_CACHE
+    
+    DIB_IMAGE_CACHE will be a user override for the location where images
+    are cached. Default location is ~/.cache/image-create
+    
+    Change-Id: I3e9b9f970864d555c9ec9436344b53f6d3d66dfa
+
+commit 2d70812e81a6e807dcf4c2336f93f65f5e5ecf36
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Sep 18 17:22:59 2013 -0700
+
+    Remove apt-xapian-index from ubuntu cloud images
+    
+    This package recently caused us some very large headaches when it
+    was updated for a security issue. It is completely unnecessary and
+    should be removed.
+    
+    Note that we have recommended that it be removed from the cloud images
+    in launchpad bug #1227425.
+    
+    fixes bug #1227420
+    
+    Change-Id: Ic0d4efa7b44c46271d19576f5191c9421d07c015
+
+commit f7391197c0bdf043fdc933482c7207b956736a78
+Merge: e29cc0c 5e3b532
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Sep 18 21:41:40 2013 +0000
+
+    Merge "Remove github references"
+
+commit e29cc0c10c398e5660d4e9edd5d8aad2637cf689
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Sep 18 14:09:24 2013 -0700
+
+    Use lazy umount to avoid race problems with dev
+    
+    A problem with unmounting the dev filesystem in Ubuntu images caused
+    the umount of the /dev bind mount to fail, which left it there to be
+    removed during the mv -t step, causing the build host's /dev to be
+    wiped out.
+    
+    The lazy umount will detach it from the filesystem hierarchy and then
+    clean up the mount reference later.
+    
+    Change-Id: I8f8cea857c445fb0b4fd02bc063722fb1553c947
+
+commit 5e3b5320e46d19ca9dc6a4c9edacb9089f43b385
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Wed Sep 18 08:17:10 2013 -0500
+
+    Remove github references
+    
+    OpenStack runs git.openstack.org which is more reliable and responsive
+    when projects operate within OpenStack Infra. Replace all of the
+    references to github with referneces to git.openstack.org.
+    
+    Change-Id: Ib3ece85aba6451801487b0bdbd83147e39d9e155
+
+commit b50dbb0571ecb52db3b03b2f4f96f0abbb4c8bf0
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Wed Sep 18 01:33:27 2013 +0100
+
+    Move textmode forcer to vm element.
+    
+    Changing the grub config makes no sense in a build not heading for a vm
+    and may fail because grub is removed from images not including the vm
+    element. Forcing textmode for those images would be better done in nova.
+    
+    Change-Id: I1c5b89e551e62df2463200b1889cb2342498c7dd
+
+commit bd632a92fdf8addf703339aa1ff5a9e1b4364214
+Merge: 6d1f03b d799ad5
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Sep 18 00:05:12 2013 +0000
+
+    Merge "Fix grub/linux text mode override."
+
+commit d799ad5beb8aa67d375beb579c63369f89de04ba
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Tue Sep 17 18:17:39 2013 +0100
+
+    Fix grub/linux text mode override.
+    
+    Apply a wider range of hammers to the recurring issue of images booting
+    with graphical consoles.
+    
+    Change-Id: I96345bf8f2f13d615131557b572201b9d41b6c75
+
+commit 6d1f03bda3f9ff0f2dee9bf7563626efd58eee2b
+Author: Ghe Rivero <ghe.rivero@hp.com>
+Date:   Mon Sep 16 22:01:08 2013 -0700
+
+    Add deploy-kexec element
+    
+    Boots into the new image kernel once baremetal-deploy-helper signals
+    it is finished using kexec utilities.
+    
+    Change-Id: I705787cc394ef14200d80404ee497762ab79b452
+
+commit fb33adc5ba3df271b45b73d3d02e895031dbe0ba
+Author: Dan Prince <dprince@redhat.com>
+Date:   Tue Sep 17 11:08:04 2013 -0700
+
+    Consolidate the checks for /etc/grub.
+    
+    Create a single check for grub2 so we skip these steps on F19.
+    
+    Change-Id: I5f05adcf409be5c2532478439bcb55ab397da20e
+
+commit f5e191dc8e87773bd981c78eb2e3d1c268086515
+Merge: 15007cc 9a5e14c
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Sep 16 21:24:53 2013 +0000
+
+    Merge "Check cached file size when downloading an url"
+
+commit 9a5e14cbc51f3fd8484bac3d14f00fc12b85e281
+Author: Jan Provaznik <jprovazn@redhat.com>
+Date:   Mon Sep 16 13:27:03 2013 -0700
+
+    Check cached file size when downloading an url
+    
+    In some cases cache-url fails when downloading an image and leaves
+    an empty cached file. qemu-img then fails with "Wrong medium type"
+    error on next run.
+    
+    Change-Id: I23e91c52094f27248cf8452f192ad63646051190
+
+commit 15007cc18459031e1a5311ba41de5af23ead3004
+Author: Dan Prince <dprince@redhat.com>
+Date:   Mon Sep 16 12:18:49 2013 -0700
+
+    Fedora 19 has no grub2 conf file.
+    
+    This fixes ramdisk creation on Fedora 19.
+    
+    Change-Id: Ica486473cecb93feac740ae905fba5f2a3723bc2
+
+commit 9ba761ef27a3ac53588394d2ebbee59e6d7e5ed7
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Sun Sep 15 06:06:08 2013 +1200
+
+    Install fedora grub from cached rpm during finalise
+    
+    When uninstalling grub2, leave all its dependencies
+    including grub2-tools installed to minimise the number of packages
+    which need to be installed in the finalise stage.
+    
+    Since the yum cache is unmounted during finalise, installing
+    grub2 in finalise is slowed by re-populating the yum cache.
+    
+    This change copies the grub2 rpm out of the yum cache so it can be installed
+    from file during finalise.
+    
+    This should prevent disk becoming full during finalise on Fedora.
+    
+    Closes-Bug: #1217185
+    
+    Change-Id: If095adc4abb52a19a3aa0b1caebfb3e4d8f605ef
+
+commit ccd7b86b606e678bf7281baff05c420b089c5d8f
+Author: Jeff Peeler <jpeeler@redhat.com>
+Date:   Thu Sep 12 17:56:30 2013 -0400
+
+    Remove -r option from kpartx for successful build
+    
+    This option does not exist on RHEL hosts and matches what is
+    currently present in elements/rhel/root.d/10-rhel-cloud-image.
+    
+    Change-Id: I578233c1f37d035c67600fc60e7c4eb4ff75cbb3
+
+commit 0eaddbd214fa03f2a4a4041686c7ca62a21e4941
+Author: Jan Provaznik <jprovazn@redhat.com>
+Date:   Thu Sep 12 11:26:57 2013 +0200
+
+    Fixes files ordering when choosing newest image
+    
+    For example if there are following kernels in undercloud/overcloud
+    image:
+    /boot/vmlinuz-3.9.5-301.fc19.i686.PAE
+    /boot/vmlinuz-3.10.10-200.fc19.i686.PAE
+    then disk-image-get-kernel picks vmlinuz-3.9.5. It should use the
+    newest one.
+    
+    Change-Id: I7bbf06705e85370d66c7dd8a5d4f8d6c93b21c0c
+    Fixes: bug #1224365
+
+commit 43b96d91c2561312c09b6278d12b62d4f2ce887c
+Author: Matthew Farrellee <matt@redhat.com>
+Date:   Tue Sep 10 20:01:21 2013 -0400
+
+    Add package mapping for default-jre
+    
+    Change-Id: Idffbc84ea2afaf2584c1bb79729c3e0cf52b851e
+
+commit e8c73cde4944492dfaab07e0bf1848486bba4f31
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Sun Sep 8 01:03:19 2013 +0100
+
+    Set raw image size to be multiple of 64k
+    
+    This works around a bug in qemu-img causing it to sometimes error if
+    compressing a raw image that isn't a multiple of 64k (the qcow2
+    cluster size).
+    https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1180021
+    http://lists.gnu.org/archive/html/qemu-devel/2013-04/msg02520.html
+    
+    Change-Id: I88f8bb5c6bf3606ef5856b085a284af6b8858dbb
+
+commit a495079695e914fa7ec93292497bfc2471f41510
+Author: Ghe Rivero <ghe.rivero@hp.com>
+Date:   Wed Sep 4 12:03:13 2013 +0000
+
+    Delete -new image once copied
+    
+    Before, this was created on /tmp/image.XXX so was removed at the
+    end of the script.
+    
+    Change-Id: I8ceb97626d389c5bcb66fa3058f74388009ea677
+
+commit d339f9b25e857ee11a14d51feef086801f543084
+Merge: c182fef 6311388
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Sep 4 10:59:46 2013 +0000
+
+    Merge "Add --list support to dib-run-parts."
+
+commit 6311388892f2edc8c49600e371e175cf226dac78
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Wed Sep 4 09:43:11 2013 +0100
+
+    Add --list support to dib-run-parts.
+    
+    Our custom dib-run-parts now supports --list for better compatibility
+    with some OS-provided run-parts tools.
+    
+    Change-Id: I2feb615b2094d9d6522bfe9b422362223bb8e652
+    Closes-Bug: #1190521
+
+commit c182fef45c7769c242c979d1326a5d0a041cd470
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Thu Aug 29 13:49:48 2013 +1200
+
+    On Fedora, use Linux Foundation bzr lsb_release
+    
+    Installing redhat-lsb-core adds 87M to the install due
+    to bugzilla #1002342
+    
+    lsb_release is a platform agnostic script, so this change fetches
+    a single file via source-repositories from linuxfoundation bzr http
+    and installs it to /usr/local/bin
+    
+    Change-Id: I4c979d4eb5e34a753d9143d9dcfe4e5d08f74a0d
+
+commit 9e5bc3726500c25717d4a9cbad1edabf63d74649
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Mon Sep 2 09:52:04 2013 +1200
+
+    Add support for file to source-repositories
+    
+    Adds a file type to source-repositories to allow individual files
+    to make use of source-repositories caching.
+    
+    REPO_DIRECTORY has been rename to REPO_DEST since it is now sometimes
+    a file.
+    
+    This change also fixes the incorrect path to the cache-url in the
+    tar type.
+    
+    Change-Id: Ib79e41969c982a02f0235318d9f254b39c3c6d93
+
+commit cc681eb830cbff24e479ef720c86f56ac8624ad6
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Thu Aug 29 15:02:04 2013 +1200
+
+    Install patch for dracut patching
+    
+    patch is installed indirectly via redhat-lsb-core, so it
+    should really be installed directly.
+    
+    Meanwhile, Daddy Shadowman waited for these patches to be
+    submitted to bugzilla.
+    
+    Change-Id: I2107cf7be99f396c5dd489a2693b949022a512e7
+
+commit 9211a7fecbadc13e8254085133df1e3b53f150d8
+Merge: 771f3ec 44c3ff7
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Aug 28 16:58:37 2013 +0000
+
+    Merge "Add rhel installation element"
+
+commit 771f3ec141a56e11227b751eb5b137bbaf030555
+Merge: 2d79304 fefc28a
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Aug 28 15:40:31 2013 +0000
+
+    Merge "Add option --min-tmpfs <size> to disk-image-create"
+
+commit 2d7930447caf23892c7fe590765bb67512679df3
+Merge: 316d6be d4a9b44
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Aug 28 15:40:30 2013 +0000
+
+    Merge "Add package mappings for MySQL-MariaDB"
+
+commit 316d6beeaf79f6136c3b1f49e88989660da51644
+Merge: 5dd6c4a dbfca7a
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Aug 28 15:39:56 2013 +0000
+
+    Merge "Combine compress and save image into one function"
+
+commit 44c3ff7ecef550303c1653a33105ea44b4ab8c5d
+Author: Chris Alfonso <calfonso@redhat.com>
+Date:   Wed Aug 21 14:18:01 2013 -0400
+
+    Add rhel installation element
+    
+    If you want to have the installation update packages, you'll
+    need to register the system log in to rhn and subscribe to an
+    available subscription.
+    export DIB_RHSM_USER to your rhn username
+    export DIB_RHSM_PASSWORD to your rhn password
+    
+    To get the qcow2 image, log into rhn.redhat.com and download the
+    image from
+    https://rhn.redhat.com/rhn/software/channel/downloads/Download.do?cid=16952
+    Then export DIB_CLOUD_IMAGES to whereever you're hosting the qcow2.
+    
+    Change-Id: Idb547f4ffe75514b1e3f6b34f5f347493b132925
+
+commit fefc28a9184f2539a94a650ffcf1556e16a36710
+Author: Ghe Rivero <ghe.rivero@hp.com>
+Date:   Mon Aug 26 11:57:34 2013 +0000
+
+    Add option --min-tmpfs <size> to disk-image-create
+    
+    In some scenarios, the required space in the tmpfs partition can be
+    larger (or smaller) than the default one, producing errors due to
+    the lack of enough space (or performance penalties for not using
+    tmpfs).
+    
+    Using --min-tmpfs <size>, we can hint the working set size we'll need
+    and let dib choose to avoid or use tmpfs.
+    
+    Change-Id: I7d5fe498302a100c8555ae542268e14b21f3a0c5
+
+commit d4a9b44e739de3ace9d97a6c1a58baa762a73101
+Author: IvanBerezovskiy <iberezovskiy@mirantis.com>
+Date:   Mon Aug 26 15:03:56 2013 +0400
+
+    Add package mappings for MySQL-MariaDB
+    
+    Partial-Bug: #1213891
+    
+    Change-Id: I1ac1d11ff1716eccee4c734395282be25dd5b541
+
+commit dbfca7a816f45129693a50766dd239a6ef56df1b
+Author: Ghe Rivero <ghe.rivero@hp.com>
+Date:   Mon Aug 26 09:59:41 2013 +0000
+
+    Combine compress and save image into one function
+    
+    When compressing an image, this is done in the same dir where the raw
+    image resides, doubling the amount of space needed (scarce when
+    using tmpfs), and then it's moved to the .cache folder in disk.
+    
+    Combining these two functions, we reduce the amount of space needed
+    in the tmpfs partition (when in use), and the compressed image is
+    created directly on the .cache folder disk, so there is no need to
+    move the compressed image after the process into disk.
+    
+    Change-Id: I451d24bdd6fa0983414244135dff5e96c0549833
+
+commit 5dd6c4a8346e87948dee720a559d5bc6f95ad49e
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Tue Aug 27 11:00:03 2013 +0100
+
+    Extlinux fallback
+    
+    If GRUB2 is not available in the system a fallback to install Extlinux
+    will happen. This patch also allows you to enforce the use of Extlinux
+    exporting the DIB_EXTLINUX variable.
+    
+    Change-Id: I88fa792a0bd19cacca167134f2054b11c807a451
+
+commit b01f412c1ea2ebb07d5e921d313a5b043eac61c2
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Thu Aug 22 14:44:23 2013 +0100
+
+    Rename 51-grub to 51-bootloader
+    
+    This patch is part of a another big patch that will implement a fallback
+    to Extlinux in case GRUB2 is not available in the system. The reason why
+    it's being splitted in two patches is because git is not being able to
+    recognize the file changes when the rename happens in the same commit.
+    
+    Change-Id: Ic2027dfa057fd6d62b532203b7ff50c3c739bccb
+
+commit 0702ce98430ed09e4e73d1b7661bdcb039c20ca0
+Author: James Slagle <jslagle@redhat.com>
+Date:   Wed Aug 14 14:12:15 2013 -0400
+
+    Add a pip-cache element.
+    
+    The element bind mounts a pip cache inside the image build chroot so
+    that pip downloads can be reused across image builds.  While similar
+    in purpose to the PyPi element that sets up a mirror, this element
+    just allows for a reusable download cache and doesn't require anything
+    to be setup beforehand.
+    
+    The pip-cache element is not concurrency safe, and that is indicated
+    in the README for the element.  An upstream bug was file as well:
+    https://github.com/pypa/pip/issues/1141
+    
+    Change-Id: Ibd1d4ea17c24923ed939357ada95b781e3179cfd
+
+commit 11df3a45f43f699296cd50d439301ea2036636e3
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Mon Aug 26 11:18:22 2013 +0100
+
+    Fix URL to os-apply-config
+    
+    Just incase anybody is actually using this element(which may not be the
+    case).
+    
+    Change-Id: I663f8e4db86a38d8c9063d02da3dfaa6715e465a
+
+commit 6687bdd267040d3bfc0a9e2ef9bb941658a2af65
+Merge: 1fb5d23 c93dfee
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Aug 25 22:35:10 2013 +0000
+
+    Merge "Fixed a network setup issue for F19"
+
+commit 1fb5d232beca81d76b3216942e2dbaa7d1e09046
+Author: Richard Su <rwsu@redhat.com>
+Date:   Wed Aug 7 13:44:55 2013 -0700
+
+    qpid package mappings
+    
+    Change-Id: Iad2c21f3c2cd771f58d5444f61186b3aaf84e89e
+
+commit 1dea2f35249bdb1aed50ef6a580d52da754396e6
+Author: Chris Alfonso <calfonso@redhat.com>
+Date:   Thu Aug 15 12:45:31 2013 -0400
+
+    Call sync before unmounting keeps the mount from being busy.
+    
+    here is a bug associated with this patch because there is a
+    workaround included. Calling sync to enable the unmounting...
+    https://bugs.launchpad.net/diskimage-builder/+bug/1214388
+    
+    Change-Id: I9d5a1f092fd8f3ae1c14de03dd516203baab4da3
+
+commit 473d08cb84fdbb50e6bcc3e741906afc726e2fb3
+Merge: 301c3c4 3536474
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Aug 20 23:09:43 2013 +0000
+
+    Merge "Remove a device mapping, then let the loop device get removed"
+
+commit 35364749de1d8a70e0bc5c471e2f146d3df0940e
+Author: Chris Alfonso <calfonso@redhat.com>
+Date:   Thu Aug 15 12:35:07 2013 -0400
+
+    Remove a device mapping, then let the loop device get removed
+    
+    Change-Id: Ie1eb621ff56688208421d0115547f127a3c7fd56
+
+commit 301c3c44758bdccd65a3ce795e719916a48948dc
+Author: Chris Alfonso <calfonso@redhat.com>
+Date:   Tue Aug 20 16:02:57 2013 -0400
+
+    Extracting common functionality for rpm based distros
+    
+    Rather than dublicating code to implement rhel or any
+    other derivitive, this patch introduces an rpm-distro
+    element that should be used as a dependency.
+    
+    Change-Id: I8a92bb041764d03f430b438f0013704f79a8674c
+
+commit e7a8fefa0b02a62282d1e6c17499b7620dc02abc
+Author: Chris Alfonso <calfonso@redhat.com>
+Date:   Thu Aug 15 12:27:25 2013 -0400
+
+    Use kpartx if partition device doesn't exist
+    
+    If the loop partition isn't created as a device by the kernel, go ahead and use
+    kpartx to create the device.
+    
+    Change-Id: I53290b7724d0cb45a1fc9225ec096025db8978dd
+
+commit 6c26cec656b5abd0c403cb9b8bb5de6a472fb742
+Author: sjing <sjing@cn.ibm.com>
+Date:   Tue Aug 20 06:18:40 2013 +0000
+
+    Set file permission to be executable.
+    
+    When ramdisk-image-create is called with the hwdiscovery element,
+    it failed to install hwinfo package.
+    
+    The root reason is 10-hwinfo is not executable, the fix is to
+    set the file permission of 10-hwinfo to be executable.
+    
+    Change-Id: I3a57147103f607b3975eb6ad23a44475f26c2f1e
+
+commit c93dfeec7f1f5126ec5857e61d42cbfa8ae1c621
+Author: Jan Provaznik <jprovazn@redhat.com>
+Date:   Fri Aug 16 14:58:39 2013 +0200
+
+    Fixed a network setup issue for F19
+    
+    IP address is passed as a kernel boot param when booting undercloud
+    machine. For Fedora 19, this IP is not set, instead IP is fetched
+    from DHCP.
+    
+    The problem is caused by a bug in dracut-network version 029, which
+    causes that dracut network setup script is not executed properly. This
+    patch applies a fix for the bug when building undercloud image.
+    
+    Fixes: bug #1213833
+    Change-Id: Ie94a86ed716044343791628973143c1a7d0778dc
+
+commit d18891d952d43af0c0245736f8904f8301a03df4
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Aug 17 22:58:20 2013 -0400
+
+    Update stackforge references to openstack
+    
+    Change-Id: I17e896eddf6fe84f4784cac8231552ee3d21aa39
+
+commit d6deb9f56597facdf82ccfe12d5f19ede55492ce
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Tue Aug 6 14:30:56 2013 +1200
+
+    Package dib-run-parts
+    
+    dib-run-parts is a symlink into the elements directory.
+    
+    During packaging the symlink is preserved however
+    during installation dib-run-parts becomes a file containing
+    the contents of the symlink target.
+    
+    Related-Bug: #1212482
+    Change-Id: I78c28a52689810a2ccfc9925a9ac8df017c44326
+
+commit c9a6aef9f4360759b2f52611be0b3c56ae8ce40a
+Author: James Slagle <jslagle@redhat.com>
+Date:   Wed Jul 31 09:37:57 2013 -0400
+
+    Add yum element.
+    
+    The yum element provides for specific customizations
+    for yum based distros.  The included customization is
+    a yum cache mounted outside of the chroot so that yum
+    downloaded packages are reused on subsequent image builds.
+    
+    Change-Id: I6833c9fdbc83cb09debec6a789082e105c917800
+
+commit 2c73a001b26ed229de6e7479baea29df2abcd1ee
+Author: Steven Dake <sdake@redhat.com>
+Date:   Wed Aug 7 14:43:36 2013 -0700
+
+    dkms is unavailable on RHEL and derivatives
+    
+    The dynamic kernel module system is not available on RHEL, CentOS,
+    Scientific Linux, or SUSE.  Make it part of the distro post-install
+    rather then base post-install.
+    
+    Change-Id: Ic2c345bf9f0738dadae611194e263d3a5d424a3e
+
+commit 89fe51b83d4738578916e04b8312dbd1782a561e
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Aug 12 14:51:01 2013 -0700
+
+    Fix pypi element README.md errors
+    
+    - pip install to a github URL without a git+ prefix fails.
+    - Need to close EOF heredoc when creating mirror.yaml
+    
+    Change-Id: Ic555174881e9c06fede1cf731141cbe6eb0e0b02
+
+commit 97bc5d7853ebd41d878c8e8c30ee87ccaff1189a
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Sat Aug 10 01:13:15 2013 +1200
+
+    Allow using a pypi mirror to install via pip.
+    
+    Using a custom pypi mirror can be very convenient, making image builds
+    substantially faster - because we create multiple virtual
+    environments we benefit more than single-virtualenv users would.
+    
+    Change-Id: I997daf1f9477c447e1fb30818aea9e80a49b31a6
+
+commit d6d941a8f1b0f5b7a00ef88101c18bb856628363
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Sat Aug 10 01:15:18 2013 +1200
+
+    Make $HOME in the chroot be reasonable.
+    
+    With sudo -E $HOME is inherited, which is nearly always wrong.
+    
+    Change-Id: Ic77b9c2892c19a2fc08a07d35f76da79a346ebac
+
+commit c7d80ddeed80d9ae39a9f2bf2d8a1127cccf6522
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri Aug 9 22:53:32 2013 +1200
+
+    Cleanup mount points automatically.
+    
+    Manually listing the mount points that need cleanup is not
+    maintainable and makes it hard to write elements that use bind
+    mounting to inject resources into the build environment.
+    
+    Change-Id: I7c9ade444f4ebe42552f8e321f257a7ec0a674ef
+
+commit a5806cd48272cc97bcb22082255492eedbf3a43b
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Wed Aug 7 09:39:23 2013 +0100
+
+    Change the rootfs label in F18 and F19
+    
+    The images produced by the diskimage-builder have their filesystem with
+    a label of "cloudimg-rootfs", The regex changing fstab on fedora didn't
+    match the F19 case.
+    
+    This regex matches both
+    F18 :
+    LABEL=_/   /         ext4    defaults        1 1
+    F19 :
+    UUID=f2da0fc8-2e12-4a6e-8e95-a31a474aa1a8 / ext4 defaults,noatime 0 0
+    
+    Change-Id: Iafcf5e069199f1df76874309b2d5064f343fb5e5
+
+commit 39d4d9b941f06802053e37117021e326e0f6ca21
+Merge: 585a155 357c2de
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Aug 6 20:57:33 2013 +0000
+
+    Merge "Remove explicit sudoers requirement."
+
+commit 585a155d17d35416a2af9d2a2b5ff9a92e43546e
+Merge: bcad373 3708e40
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Aug 6 20:55:50 2013 +0000
+
+    Merge "Document the dangers of co-existing elements."
+
+commit 357c2de681c698915ea062de72cd1863067c080b
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Fri Aug 2 11:34:56 2013 +0100
+
+    Remove explicit sudoers requirement.
+    
+    Most of our build process runs as root and the overhead of explicitly
+    tracking sudo commands in the shipped sudoers.d file, plus the
+    operational overhead of keeping the sudoers.d file updated on build
+    hosts over time, is now considered to be unnecessary.
+    Instead, we now document that the build process will expect sudo
+    commands to work and the operator must make this happen (either by
+    running as root, via sudo -E, or allowing passwordless sudo for the
+    build user).
+    
+    Change-Id: If2628e7d0c7efde0fb99c84a217523ba29b1b38d
+
+commit 3708e40051e59eb9e33d71d4876fd00e30a6d3d2
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Fri Aug 2 11:04:42 2013 +0100
+
+    Document the dangers of co-existing elements.
+    
+    Add a potent example (and simply remedy) of how element authors can
+    unwittingly conflict with each other in ways that it is almost
+    impossible for us to guard against with low level policy/mechanism in
+    di-b. Fixes bug 1181309.
+    
+    Change-Id: I51e845065702911371e448521327143495c3b405
+
+commit bcad3737e822d4964dc8f3ca02616387759382eb
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Tue Aug 6 09:47:53 2013 +1200
+
+    Blacklist H803
+    
+    H803 isn't supported by community consensus. Blacklist it to avoid
+    breaking folk's muscle memory.
+    
+    Change-Id: I8eea9eb2562e12136018e762c8a5e23527fcf48f
+
+commit c7c4ec19a3f9e5bc3d2b351ed18e87427895d095
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri Aug 2 22:56:48 2013 +1200
+
+    Capture the repositories from source-repositories.
+    
+    We try to expose metadata to users about what dib included in the
+    image and source-repositories was not doing that, so this fixes it. It
+    also permits easy introspection from other elements (such as an
+    upcoming PyPI cache layer).
+    
+    Change-Id: I1e48e65f69ebe1f4556cc3bf35ccf195e99bcc76
+
+commit 950fa15d64cf6df3065e1c4ea1e6ccff659e84cf
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri Aug 2 22:48:51 2013 +1200
+
+    Improve caching documentation.
+    
+    It was a little weak, and folk need enough detail to reason about
+    performance.
+    
+    Change-Id: I67f81ab5a206b3d42dd1e4e1eb52af88ac1a3adc
+
+commit 7795c7b10851ce2d5674b5101c2736b0f8702f16
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Mon Jul 8 11:54:40 2013 +1200
+
+    Package with pbr.
+    
+    Uses pbr-0.5.20 glob support to install elements, lib and scripts.
+    
+    Change-Id: Ie466e753f6e75a943ced1a2939c9bb27aec4a6b0
+
+commit 4651913e5507b113a078ccb2bdf2c4d6e044cda7
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Thu Aug 1 15:50:17 2013 +0100
+
+    Add a new break on error
+    
+    A user running di-b several times while developing an element may not
+    want to drop to a shell in all cases but may only want to do so if one
+    of their in target hooks failed.
+    
+    This patch gives them the ability to do so, If break=after-error is set
+    then a user will be provided a in target shell taking over from where the
+    last failed command left off.
+    
+    Change-Id: Ia2f7ac4c21b64b971f87f4ae9cb867981b13eb5e
+
+commit 4284936084437a34710e4390a5a5f7b614c959c5
+Merge: 9233ca4 de6efe2
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Aug 1 00:41:52 2013 +0000
+
+    Merge "Ensure $TMP_BUILD_DIR is actually created."
+
+commit 9233ca4056c101419255e2af20a223febdd0d577
+Merge: 5b37036 ee5ae03
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Aug 1 00:36:36 2013 +0000
+
+    Merge "Enable running disk-image-create on SUSE Linux"
+
+commit de6efe2b2c424a322066455f3f586065bf4cea4d
+Author: James Slagle <jslagle@redhat.com>
+Date:   Wed Jul 31 14:26:05 2013 -0400
+
+    Ensure $TMP_BUILD_DIR is actually created.
+    
+    Previously if mktemp failed in function mk_build_dir, die was not
+    called.  The check for the exit code was actually checking that the
+    previous export statement completed successfully, not the call to
+    mktemp.
+    
+    Change-Id: I477a2ce75c87c8167883ce7aa342e93c40770e29
+
+commit 5b37036c88b93f452c2822262b7f4d953f1495da
+Merge: 6ac894c 87fb533
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jul 31 11:04:03 2013 +0000
+
+    Merge "Modify relative paths of lib, elements for packaging"
+
+commit 87fb5339791dfe37c3b3b4e4f5b0cf830471c513
+Author: Jeff Peeler <jpeeler@redhat.com>
+Date:   Tue Jul 30 14:23:31 2013 -0400
+
+    Modify relative paths of lib, elements for packaging
+    
+    (Based on review https://review.openstack.org/#/c/36009)
+    
+    Scripts test for existence of ../share/diskimage-builder and
+    fall-back to ../ if not found. This allows scripts to run unmodified
+    from a packaged installation or a local archive/repository.
+    
+    Change-Id: I0cf4c1fdb8e42ec284c56860cb15818632b93b9e
+
+commit 6ac894cae689af6d29f38fcb342dc24b77860c52
+Author: Jeff Peeler <jpeeler@redhat.com>
+Date:   Tue Jul 30 14:20:47 2013 -0400
+
+    Add binaries for setuptools
+    
+    Binaries disk-image-create, disk-image-get-kernel, and
+    ramdisk-image-create were missing.
+    
+    Change-Id: I1d9e25fe49d23e9e66fd2dcbde44e17505a3d7d7
+
+commit 5a69fa879eb159412f6d1e8c6a837bcd32b2a293
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Jul 29 17:02:23 2013 -0700
+
+    Make Ubuntu 13.04 (raring) the default release
+    
+    Ubuntu 13.04 has been released now for 3 months. The updated libvirt,
+    openvswitch and kernel are all beneficial to various OpenStack components,
+    and many other software is updated beyond the versions in Ubuntu 12.10.
+    
+    Change-Id: I358aed8bf906c3ff5103f19b1f9e6ac689b5d5ee
+
+commit fb81fe874269b26bf3a52e291c884c61910e53bd
+Merge: 45f32b4 f57e8c6
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jul 29 13:39:42 2013 +0000
+
+    Merge "Provide hint for what package contains qemu-img"
+
+commit 45f32b4b82f4ea65e6e2ba0988d20d0c8bfb5775
+Merge: 1146fe6 4535c53
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jul 29 05:04:12 2013 +0000
+
+    Merge "Ignore emacs autosave files in source-repositories"
+
+commit 1146fe63fcdbf562cb2f185bdd37b0cec8db9ab6
+Merge: 6b74b65 92fa96b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Jul 28 19:58:58 2013 +0000
+
+    Merge "Add needed symlink for Fedora deployment ramdisk."
+
+commit 4535c5323a5ce28c1c37c5968a69097d2fb85e41
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sat Jul 27 14:46:33 2013 -0400
+
+    Ignore emacs autosave files in source-repositories
+    
+    source-repositories uses find to discover things it should import. If
+    someone happens to use emacs, and happens to have had an autosave file
+    in a directory with a wildly broken version of a source-repositories-
+    file, then dib will attempt to execute the contents of the autosave file
+    and the user will be sad. Adding a filter to the find command for files
+    ending in ~ will prevent pain and suffering.
+    
+    Change-Id: I27c8a4b53d3c9b913ca926db16b4271941f6fb5d
+
+commit f57e8c66c26c5321121e745534dada462bed52d8
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Fri Jul 26 13:17:58 2013 -0700
+
+    Provide hint for what package contains qemu-img
+    
+    While following install instructions in README.md it should be more
+    clear how to install qemu-img on your system.
+    
+    Change-Id: Ibb8828806bf46716b91b83a4eea696f4fe478206
+
+commit 6b74b65449a45f90f187f0157e3c7b9d6a9d0b92
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Jul 26 22:32:01 2013 -0400
+
+    Fix hacking errors
+    
+    As another step in aligning further with OpenStack practices, stop
+    ignoring the hacking style checks.
+    
+    Change-Id: I16c9f0ca3be5790176467377303817249e7643ea
+
+commit c179d9b04d49bb405ddcbd597f2446aca8647a54
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Jul 26 14:44:42 2013 -0700
+
+    Add downloadonly flag to fedora
+    
+    devstack-gate needs to be able to make an image that has pre-downloaded
+    but not installed a sequence of packages. To support that, add a -d flag
+    to install-packages to allow downloading but not installing. -d passes
+    through on a dpkg install, and with this patch should be transformed
+    to --downloadonly which is the yum version.
+    
+    Change-Id: Ia4e61fa4304df86afbee7dfc8067ea1bdf528f3e
+
+commit 36a46649ed74c624c9d9af7bb47b50d64cd26782
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Jul 26 22:27:45 2013 -0400
+
+    Fixed up test-requirements
+    
+    As a first step to OpenStack alignment, get test-requirements.txt in
+    line with current OpenStack standard practices.
+    
+    Fixes: Bug #1205546
+    Change-Id: I899c3dc167df191b84008250671c58520c436a30
+
+commit 92fa96b2f60367ec6c1e3a0180f2834d4f6a21db
+Author: James Slagle <jslagle@redhat.com>
+Date:   Thu Jul 25 16:44:32 2013 -0400
+
+    Add needed symlink for Fedora deployment ramdisk.
+    
+    Symlink /usr/lib -> ../lib for Fedora deployment ramdisk.  This
+    symlink is needed for systemd-udevd.  Otherwise, the network device is
+    not loaded and initialized when the deployment image is booted.  This
+    logic was previously contained in
+    elements/deploy/root.d/50-redhat-prepare-fs, but now that ramdisk
+    images are built in a chroot, the change needs to be moved so that it
+    is applied to the ramdisk build.
+    
+    Change-Id: Icea43230126956ccf5fb8a6a96ca706b75d5c32f
+
+commit b4a9fceea7b9d98dfc880f8446a1889ec4f69a78
+Merge: e79968f d8ba46f
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jul 26 13:51:13 2013 +0000
+
+    Merge "Install which on Fedora"
+
+commit d8ba46f8e3f2e54cd8996f9a3d7142440d541152
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Fri Jul 26 10:54:45 2013 +0100
+
+    Install which on Fedora
+    
+    Create an install hook where core utilities can be installed
+    on Fedora. In this case we are installing which.
+    Which is being used by
+      ramdisk/post-install.d/01-ensure-binaries
+      vm/finalise.d/51-grub
+    The absence to which caused the ramdisk build to fail on F19.
+    
+    On Ubuntu which is installed with the package debianutils, this pretty
+    much has to exist on Ubuntu images, so a corresponding package install for
+    ubuntu isn't needed.
+    
+    Fixes Bug 1202612
+    
+    Change-Id: I847c1619cdab021c9348caed3fa32db64e663e8e
+
+commit e79968f6825093a2f9aa8fb7040004cb8fe42739
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Fri Jul 26 10:42:47 2013 +0100
+
+    Only remove $TMP_BUILD_DIR on cleanup
+    
+    During ramdisk cleanup if for some reason the filesystems mounted
+    in $TMP_BUILD_DIR were not removed this recursive delete ended up
+    deleting parts of the host filesystem that were mounted (in particular
+    most of the contents of /dev got removed.
+    
+    This commit doesn't deal with the reason the filesystem didn't unmounted
+    but ensures the consequences are not as severe.
+    
+    Fixes Bug 1202612
+    
+    Change-Id: Id8eba0753c2fe76c79ae1d952ce690d26e33e3ed
+
+commit ee5ae03d58ea17bc343430218814f636a65c3d44
+Author: Tim Serong <tserong@suse.com>
+Date:   Mon Jul 22 20:06:54 2013 +1000
+
+    Enable running disk-image-create on SUSE Linux
+    
+    - Ensures /sbin and friends are in $PATH when invoked (without this,
+      various sudo invocations fail in exciting ways).
+    - Use dib-run-parts in lib/common-functions instead of run-parts
+      (neither SLES nor openSUSE ship run-parts).
+    - Ensure dib-run-parts doesn't descend into subdirectories (same
+      behaviour as run-parts).
+    - Move dib-run-parts from root.d to bin (cleaner, consistent with
+      other elements with separate bin scripts).
+    - Tested by building Ubuntu image on openSUSE 12.3.
+    - Note: this doesn't add support for creating SUSE images, it just
+      lets you run disk-image-create on SUSE-based distros.
+    
+    Change-Id: I906c6bc3cf51cdf2c4415adeae1ca250faac25e1
+
+commit f33c4ebdde0ff352a9178ad5aa0b73a00f17beaa
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Tue Jul 23 15:18:05 2013 +1200
+
+    Update TripleO incubator URL reference.
+    
+    The old location has been deleted and 404's.
+    
+    Change-Id: I29f3b534e28e8c0efe94736dcdc7f4c453738676
+
+commit 5f52562570e77c75cd625b9f0cd6b4d2fa2e3048
+Merge: 51216db a4a0523
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jul 19 19:45:42 2013 +0000
+
+    Merge "Support repo names with multiple '-'s"
+
+commit a4a0523f2b5cac587792f8d53dc7367e75952c08
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Fri Jul 19 17:41:32 2013 +0100
+
+    Support repo names with multiple '-'s
+    
+    The search and replace that converted dashes in REPONAME only converted
+    the first dash. They should all be converted.
+    
+    Change-Id: I76a48cf5bdfa8664f0a65d0238fa4da7d80305db
+
+commit 51216dbd2dbb36ca95e8a18b69300028b0314f4f
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Fri Jul 19 17:40:16 2013 +0100
+
+    Set work-dir to cached repository
+    
+    source-repositories does a git reset on the .git directory of cached
+    repositories. But doesn't specify the directory to reset. A working
+    directory needs to be specified so that the $PWD isn't used.
+    
+    Without this change $PWD is polluted with the contents of repositories
+    being cached.
+    
+    Change-Id: Ic37b702ac579bf766bb2204a988fa9468d308abf
+
+commit 7e408271a7ab501717d3b8242f11f9033d2171d9
+Merge: e187a40 1651cfb
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Jul 18 20:27:58 2013 +0000
+
+    Merge "Allow 'sudo kpartx -d' used in EACTION for Fedora"
+
+commit e187a402aed26563e802187aec58d4fd20b9197f
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 23:06:30 2013 +1200
+
+    Move the getsources hook earlier.
+    
+    Caching PyPI objects will require inspecting the content downloaded by
+    the source repositories, so needs to run after it.
+    
+    Change-Id: I551c075e0bb6853b2ef79268b7f6455a4f06743d
+
+commit 79ca4d901cd5a41fca700b1ca1f7837dd3c62ee5
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 15:02:31 2013 +1200
+
+    Cache repository-sources data.
+    
+    Cloning large repositories over the internet can take considerable
+    time.  Caching them locally makes repeated image builds significantly
+    faster, so lets do that.
+    
+    When users override the element source they will often be using a
+    local repository, so in those cases I don't cache - but we could
+    easily change our minds on that in the future.
+    
+    Change-Id: I9822362cf722b904d9806dbbb4bb07cfe2b33437
+
+commit b8d08006db275d917751a0aaf22064bb2532c6b6
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 10:15:02 2013 +1200
+
+    Update the Fedora element to honour --offline.
+    
+    Similar to the Ubuntu element the Fedora element had not been updated
+    to honour --offline. Also similarly we only check for the existence of
+    the final cached file rather than the image we directly download,
+    because they are generated separately.
+    
+    The -u change is just hygiene to detect future buggy changes.
+    
+    Change-Id: Ib92a9d419bb485c8861da041066827e8d6aac0b7
+
+commit d7379df8b8c9161e780b84626ce0e44f50d4a9eb
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 10:05:47 2013 +1200
+
+    Enable --offline support for Ubuntu root images.
+    
+    When --offline is set elements should not revalidate cached data. The
+    ubuntu element had not been updated to match this. SHA checking is
+    also skipped as we only move a new cached file into place when the
+    hash matches, and we might download a new hash before updating the
+    image cache, which would cause persistent --offline failures.
+    
+    Change-Id: If1a0366b51951a73b7a3ffe23a29a3d910b08938
+
+commit f7f6cb45ee3c400748f42d20fb73ebd8468060b5
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 10:04:26 2013 +1200
+
+    Fix the DIB_OFFLINE setting to actually work.
+    
+    I missed the getopt parameter and forgot defaults are imported after
+    option processing. Untested code is broken code!
+    
+    Change-Id: I133a691909d38e834c204950276a57f4884fc4ed
+
+commit b2f1d4e2af01c60e24980ef885355d676959c0a1
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 09:17:01 2013 +1200
+
+    Document an interface for offline operation.
+    
+    Complex image builds can download hundreds of MB of data from the
+    internet with many separate lookups. It would be nice to allow users
+    to ask for a fast build where those lookups are entirely avoided,
+    using locally cached resources (where possible). This new interface
+    allows users to signal to elements that they wish to operate without
+    updating cached resources, which will in turn allow us to avoid
+    checking for stale data at all.
+    
+    As part of this I've also documented where we cache data, so that
+    things like the ccache cache dir and image cache files are not a
+    surprise to users.
+    
+    Change-Id: I27f5de6ceaa4e9c6390721b7c434fe0908df84f5
+
+commit 1651cfb53a5bae80a4677f0a3365369f9b04e6a1
+Author: Matthew Farrellee <matt@redhat.com>
+Date:   Wed Jul 17 17:12:07 2013 -0400
+
+    Allow 'sudo kpartx -d' used in EACTION for Fedora
+    
+    Change-Id: I0c651091d9623d7607bb59bd05ffec20fd78633c
+
+commit d1a24cab165977855cccf24e631899f4687fad56
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 00:36:54 2013 +1200
+
+    Move end user docs higher up in README.md.
+    
+    Most folk probably don't need the massive design details, so they
+    should come later.
+    
+    Change-Id: I94067196e664b37c05fbd8882d259ffc3d95c50f
+
+commit 1a172683a5906e308bdbb2ff8bf355b4532c2fbe
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jul 18 00:00:01 2013 +1200
+
+    Remove excess whitespace in README.md.
+    
+    Change-Id: I664cfe4aa8d05c4cc53eeb2ee5f5a200f0d41110
+
+commit 64d7b8d4cb3d3fafac27acbcefca5189fe9ef012
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Tue Jul 16 17:52:21 2013 +0100
+
+    Fedora 19 GRUB
+    
+    In the 52-force-text-mode-console hook, gracefully exit when the
+    /boot/grub2 directory does not exist on the Fedora 19 cloud image
+    filesystem. By default the Fedora 19 cloud image is using extlinux to boot
+    the image instead of GRUB. The decision was taken because GRUB is quite
+    big (would pull in ~30MB of dependencies) and there's very little benefit
+    in using it because cloud images don't need to cover all the corner cases.
+    
+    Change-Id: I52723d4d14c21b1787b4c7e0dd21a09cdbdae0d1
+
+commit 894134fd3077d4513ea79893c62b25bb9564d52e
+Author: Ivan Berezovskiy <iberezovskiy@mirantis.com>
+Date:   Tue Jul 16 15:47:58 2013 +0400
+
+    Fix for mounted readonly filesystem for Fedora 19
+    
+    Change-Id: Ie168618924116f88ef4ec46f59e79818239b4c70
+    Fixes: bug #1201774
+
+commit 5d84c9ea46fa2c5fe0d43ecf17b119052a1aad3d
+Merge: e75ada2 92313e0
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jul 15 15:37:53 2013 +0000
+
+    Merge "Update Fedora cloud image to its latest version"
+
+commit e75ada24e151ab376465af24a28f5c1e881ac473
+Merge: 29bff3d a1beca7
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jul 15 15:31:52 2013 +0000
+
+    Merge "EFI hosts"
+
+commit a1beca7b44a788dc627a210550ab2d96714f391c
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri Jul 12 17:50:39 2013 +0100
+
+    EFI hosts
+    
+    If you have an EFI host but the image doesn't have the EFI modules
+    installed the grub-install command will fail in case the --target
+    argument is not set. The problem is that the grub-install script will
+    check whether the /sys/firmware/efi file exists or not to determine if
+    it's an EFI installation, but this value comes from the host, so this
+    patch will look for the /sys/firmware/efi file and will also check if
+    the EFI modules are installed in the image, if not set the --target to
+    a non-efi platform.
+    
+    Change-Id: I4481b43e4a8fe4144be9c7eb9d9c618bbb2df21e
+
+commit 29bff3d601f1adbb64b4b861fb03535e3654fa18
+Merge: e057476 8d1ce9c
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jul 12 20:25:00 2013 +0000
+
+    Merge "Build ramdisks in an image chroot."
+
+commit e057476f095349045d953b7c9d9a9752d8249b63
+Merge: 6f8b8f0 ac73868
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jul 12 20:12:08 2013 +0000
+
+    Merge "Make cloud-init-nocloud work cross-platform."
+
+commit 6f8b8f07b20ca501c0e3a19bde11ddd630979269
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri Jul 12 17:15:08 2013 +0100
+
+    F19 GRUB configuration file
+    
+    In the 51-grub hook, after the GRUB installation, the script will look
+    for a GRUB configuration file and in case it's not present one will
+    be generated using the grub-mkconfig command. The reason why it have
+    to be done is because the new Fedora 19 cloud images is using extlinux
+    by default.
+    
+    Change-Id: I80b15b3122698d98ac4d47dc06faf5909a90ab00
+
+commit 82eacdec2ff452b5e2c81fd26be9612d782726b1
+Author: Matthew Farrellee <matt@redhat.com>
+Date:   Thu Jul 11 17:35:04 2013 -0400
+
+    Add package mappings for augeas-tools and openssh-client
+    
+    Change-Id: I06e2c30ea13ff616ca2ae7c55a7c050aaae64df9
+
+commit 8d1ce9c0c376eaaebcb63203a3ed6097528b1dbb
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Mon Jul 1 17:20:15 2013 +0100
+
+    Build ramdisks in an image chroot.
+    
+    Ramdisks are now built inside a chroot which is built by the normal
+    image build process. Doing so improves our independence of the
+    precise state of the build host.
+    
+    This fixes bug 1194055.
+    
+    Change-Id: Ibc254fbb9e7b404b5f38c1b35bcde8a4136e8e28
+
+commit ac738685fbcf58a145d7de0160c32a1553c46479
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Jul 11 08:21:51 2013 -0700
+
+    Make cloud-init-nocloud work cross-platform.
+    
+    Previously debconf was used and thus this only worked on dpkg based
+    systems. Now we can support any system that runs a reasonably recent
+    cloud-init.
+    
+    Change-Id: I1397aefb3af400adcfd98f858c5a32fad2b584b5
+
+commit 92313e0c8189c10fc336e53537611a395f611139
+Author: Kashyap Chamarthy <kchamart@redhat.com>
+Date:   Wed Jul 10 18:31:14 2013 +0530
+
+    Update Fedora cloud image to its latest version
+    
+    Latest Fedora cloud images are available here
+    
+      http://cloud.fedoraproject.org/
+    
+    With this change, when a Fedora version comes up,
+    d-i-b will point to it automatically.
+    
+    Fixes 1199237
+    
+    (Also, thanks to Lucas Gomes for testing.)
+    
+    Change-Id: Ifcb8a48f3baf3ef841f00e6a20c6fd9f79fea129
+
+commit 8c5888e8535935483c44aab04e3958a4c3c0b9eb
+Merge: f6cc6bb 1950531
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jul 10 20:45:09 2013 +0000
+
+    Merge "Adding docs for the source-repositories element"
+
+commit 195053108b97005304f3708c6449b269a90a7c91
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Tue Jul 9 10:46:00 2013 +0100
+
+    Adding docs for the source-repositories element
+    
+    Change-Id: I57244a5cc2f563b2e69eb49388c3c6b49202c9eb
+
+commit f6cc6bb18545ba5829fa2aad0193e981830ad296
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Tue Jul 9 15:03:58 2013 -0700
+
+    Use ccache to cache all compiles between builds.
+    
+    Many python extensions are built from source each time an image is
+    built. Repeating these is wasteful, so ccache is employed to eliminate
+    that waste. A cache dir outside the chroot is used to speed up
+    subsequent image builds.
+    
+    Change-Id: Ib73563ddbe5f3be7454bfc54ab91cedb559a1304
+
+commit 3464064a87c01f9b9857987947a3f7abd49b36fa
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Tue Jul 9 15:01:33 2013 -0700
+
+    Add environment.d hook to setup environment.
+    
+    Before each phase dib-run-parts will pick these up to setup the
+    environment for the commands it runs.
+    
+    Change-Id: I56697d7bc370918d4063eee67a1c35d4988a5359
+
+commit 9f93451710a5da370b10d7f657910c2f332723e3
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Tue Jul 9 11:13:04 2013 +0100
+
+    Curl to redo the request (Found 302)
+    
+    The URL to download the Fedora 19 images is not persistent anymore,
+    they are now download from http://download.fedoraproject.org where the
+    request will be redirected to a different location. Passing the -L option
+    to the curl command will make it redo the request on the new place and
+    download the image correctly.
+    
+    Related to bug #1199237
+    
+    Change-Id: Ib9b9d65734992e2bf1a6888c5f2eb9de366f8204
+
+commit 9a81644d6518098a6f33286aecbe5adbe59744c6
+Author: Richard Su <rwsu@redhat.com>
+Date:   Fri Jul 5 12:38:24 2013 -0700
+
+    Fix loop0p2 does not exist on F19
+    
+    On Fedora 19, there is a delay between the time loop0p2
+    is created to the time it is ready to be mounted.
+    
+    This patches waits for 5 seconds for /dev/mapper/loop0p2
+    to be accessible. If it is not ready then the script
+    exits with status 1.
+    
+    Fixes: bug #1197340
+    
+    Change-Id: Iff0cfd0566673799a77500e0e24954f5f3743a17
+
+commit 57a1304df924ec331cdfa3f2544439038175abd5
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri Jul 5 10:20:15 2013 +0100
+
+    Add arping to the fedora map-packages
+    
+    Needed for the quantum-network-node element
+    
+    Change-Id: I9a96476667c33a8260a60e7ad95c0f15166bc868
+
+commit ad0fe876df8c7a8d45712163f143e48516b077b3
+Author: Richard Su <rwsu@redhat.com>
+Date:   Tue Jul 2 17:25:15 2013 -0400
+
+    Fix 50-firmware.rules no such file on Fedora 19
+    
+    systemd on Fedora 19 has made /lib/udev/rules.d/50-firmware.rules
+    optional:
+    http://lists.freedesktop.org/archives/systemd-devel/2013-March/009708.html
+    
+    Firmware is now handled by the in-kernel loader.
+    
+    Added a file exist check for Fedora 19 and any other distros that
+    may have dropped the rules file. Backwards compatible with existing
+    distros.
+    
+    Fixes: bug #1196409
+    
+    Change-Id: I1d2acf3f88543736d75eb2e8766e83a3da194638
+
+commit 095b0b3b61c61ddfe42adedd4f897af702b9da80
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri Jun 28 16:21:56 2013 +0100
+
+    Add mysql-devel to fedora map-packages
+    
+    Needed for Ifc3580d4b59a5f1e97de77c0c4a875b123208100
+    
+    Change-Id: I984a5c63a20bc79747d3d09affd9b45371c46702
+
+commit c0206aa52cc60ed281ebbcb781b4ce47984c5a82
+Author: Vipul Sabhaya <vipuls@gmail.com>
+Date:   Wed Jun 26 14:31:55 2013 -0700
+
+    Fix cache-url to use single '=' in test expression
+    
+    When downloading the base image for the first time, the response
+    test expression fails with '[: 200: unexpected operator'.  This is
+    caused by using '==' in the test expression, which is not supported
+    in sh scripts.
+    
+    Fixes bug 1195030
+    
+    Change-Id: I66260814cb591371dc5c10f8436f90c2f18d78cf
+
+commit 860090bd1a9bd0ce776c59497a7dc368b31501af
+Merge: 2ced195 6c997fd
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 26 13:04:24 2013 +0000
+
+    Merge "Re-use cache_url() in fedora element."
+
+commit 2ced195d203e10628d9860c0afba5c81fa424ac2
+Merge: 59a3adf 1ee4997
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 26 04:25:34 2013 +0000
+
+    Merge "Fix pyOpenSSL on Fedora."
+
+commit 59a3adf7340f2dfd6772c481b0e5a3cf074d9ef2
+Merge: 44df18a a969be4
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 26 03:57:45 2013 +0000
+
+    Merge "Move functions to common-functions for reuse."
+
+commit 44df18af752bcfe013d7b428bffdc28262ef16f7
+Author: Richard Su <rwsu@redhat.com>
+Date:   Tue Jun 25 14:49:18 2013 -0700
+
+    Fix cloud-init routing issue on Fedora
+    
+    Add "NONZEROCONF=yes" to /etc/sysconfig/network to prevent
+    169.254.0.0 route from being created. This route interferes
+    with fedora baremetal nodes' access to the nova metadata
+    server at 169.254.169.254.
+    
+    Change-Id: Iad77abfc97c0eba944680772f233389481a270ff
+
+commit a969be49a2c2bf9159e5c2e9ac64291b56d5a07f
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jun 20 16:47:22 2013 +1200
+
+    Move functions to common-functions for reuse.
+    
+    Change-Id: I12a5687d94df678d7f7e8c0b075ee4aba1082156
+
+commit 0b1ff7d4b02a62cf356f52f36de8cb08e743d6a6
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jun 20 15:48:37 2013 +1200
+
+    Factor out element processing.
+    
+    This reduces code duplication for hygiene, no functional changes.
+    
+    Change-Id: I10c96da4f07bcd1e5aabfcfbd115ecaef7bb65a1
+
+commit 9b01f2b129b12f694bcf1116f683f7133cc379cb
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jun 20 14:58:14 2013 +1200
+
+    Consolidate more ramdisk and disk-image code.
+    
+    RAMDISK_ELEMENT is a spurious difference, to merge the code we need
+    only semantic difference to exist.
+    
+    Change-Id: I7d38b2457b6fc838d1a536406bb3c34c00f2b1f9
+
+commit 1ee499729b29362b5ab422839943654f9f0ec698
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Thu Jun 20 11:02:18 2013 +0100
+
+    Fix pyOpenSSL on Fedora.
+    
+    On fedora 18 the package pyOpenSSL is conflicting with one of the
+    packages needed to build the bootstack image. The problem gets sorted
+    if you install pyOpenSSL at the beginning of the image building process
+    and this is what this patch is doing.
+    
+    Change-Id: I681683b81ad638dfeb690fde1bc7d08a2116aaed
+
+commit 539e8e2e69526d92e4fd2582c223934ab1132002
+Merge: a37f7ca efb1f43
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 21 13:51:54 2013 +0000
+
+    Merge "Improve first time download of ubuntu images."
+
+commit a37f7ca2a4663d9823081bfc3a7dcb52ccb5daac
+Merge: aa8afcf fcd1a2e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 21 13:44:53 2013 +0000
+
+    Merge "Enable Flake8 F*** checks."
+
+commit aa8afcf47df2df88e53cd4f77f768e331b26a6ab
+Merge: e6655bd e39e338
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 21 13:33:58 2013 +0000
+
+    Merge "Switch from pep8 to flake8/hacking."
+
+commit e6655bde8c7dfda633a4f85abee2974008835935
+Merge: 1da4e4d 674a6c1
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 21 13:18:07 2013 +0000
+
+    Merge "Use the source-repository interface."
+
+commit 1da4e4dbe479a8cd3a720a131467947b0c2a1281
+Merge: 1a681d3 f527b02
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 21 10:59:20 2013 +0000
+
+    Merge "Install git with source-repositories element."
+
+commit 1a681d3a4f8ac9b62c86b18f949b5f957769ec16
+Merge: f956444 a98c0fe
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 21 08:07:49 2013 +0000
+
+    Merge "Improve debugging of missing elements."
+
+commit a98c0fe282c219cf1fbfd1e15f675694cd61b4ae
+Author: Joe Gordon <joe.gordon0@gmail.com>
+Date:   Wed Jun 19 13:23:27 2013 -0700
+
+    Improve debugging of missing elements.
+    
+    Print the checked directory when cannot find an element.
+    
+    Change-Id: I2c1f74e4975e66b6ec9d4122c02067bc2c473620
+
+commit f95644470a4eabff91d9b7ef0735da7dc1b56f15
+Author: Joe Gordon <joe.gordon0@gmail.com>
+Date:   Thu Jun 20 14:21:40 2013 -0700
+
+    Fix unit tests to have accurate return code.
+    
+    Before 'tox -epy27' would not fail even if a unit test failed.
+    
+    Change-Id: I3ed43fdd78d0d877b93b59e2eaaf5de289a17259
+
+commit 674a6c172b13c173b47ec49a0d1e94d46e814924
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Thu Jun 20 14:16:24 2013 +0100
+
+    Use the source-repository interface.
+    
+    Use the new source-repository interface to git clone
+    source repository.
+    
+    Also there was a few thing in this element that needed to be fixed.
+    o url to the git repo wasn't curren't.
+    o pip and git are also dependencies that needed to be installed.
+    
+    Change-Id: Ieb7be6576fc909aa4bba0233b7b81cab03395d76
+
+commit f527b024b95ebdf931dfc98c3369db4fc64d0386
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Thu Jun 20 14:14:13 2013 +0100
+
+    Install git with source-repositories element.
+    
+    Git isn't a dependency of this element, but is a dependency of pbr
+    if you are doing pip install on a git cloned directoy, because this
+    looks to be a fairly common pattern it makes sense to have git on the
+    target image.
+    
+    Change-Id: I49ee3fa4eac493b9dfa379a674ab9b3390cfc89a
+
+commit 866c55dced2b26a37377e9cecca54d3b9e037090
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Thu Jun 20 07:47:58 2013 +0100
+
+    Use full path to dib-run-parts during firstboot.
+    
+    Commit cc5ecb4e9cb29c45369cc07014c15202f4a5fd78 switched from using
+    run-parts in favor of dib-run-parts.
+    
+    /usr/local/bin isn't part of PATH on Ubuntu causing
+    "/usr/sbin/dib-first-boot: line 8: dib-run-parts: command not found".
+    
+    Change-Id: Ia7e401221add197edf880af82e0148f3ba7d2b9c
+
+commit fcd1a2e7fd515104eac97d21fa7b6cb16c5572a9
+Author: Joe Gordon <joe.gordon0@gmail.com>
+Date:   Wed Jun 19 22:42:13 2013 -0700
+
+    Enable Flake8 F*** checks.
+    
+    Fix and enable F*** Checks by removing unused imports.
+    
+    Change-Id: I39863a4664abff1349911546f16bfea055104e63
+
+commit e39e3385b5b3dc6be6d87b5ab7708f53e552cdfa
+Author: Joe Gordon <joe.gordon0@gmail.com>
+Date:   Wed Jun 19 22:32:55 2013 -0700
+
+    Switch from pep8 to flake8/hacking.
+    
+    Use flake8/hacking, as is standard in other OpenStack projects, but
+    disable new checks -- they will be enabled in later patches.
+    
+    Flake8 catches many useful things
+    http://flake8.readthedocs.org/en/2.0/warnings.html, and hacking enforces
+    the OpenStack Style guidelines, including things like one import per
+    line and alphabetical imports in order to make merging easier.
+    
+    Change-Id: Ib43f7a6790bc17c0b4efdda0a5f891b5a90303c4
+
+commit 92094ecdc540e877cfe3724408ba44960c21b202
+Merge: ded16a0 04bfd49
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 19 23:09:22 2013 +0000
+
+    Merge "Add mechanism to send error messages to helper."
+
+commit 6c997fda973486254aa7b0b4f01d622d596a0f78
+Author: Mark McLoughlin <markmc@redhat.com>
+Date:   Mon Jun 17 16:26:02 2013 +0100
+
+    Re-use cache_url() in fedora element.
+    
+    The fedora element downloads images too, so we should re-use the caching
+    code from the ubuntu element.
+    
+    There doesn't seem to be other examples of code shared between root.d
+    scripts. In the fedora and dpkg elements we copy install-packages into
+    the chroot, but that model doesn't apply when we're running scripts
+    outside of the chroot. Seems sane to just run it directly from the bin/
+    dir in the temporary hooks directory.
+    
+    Change-Id: Iaa6aca660042fea323cab4271633a4bdbbc271b8
+
+commit efb1f435d4242b6574a63b07656e9a56bb952de7
+Author: Mark McLoughlin <markmc@redhat.com>
+Date:   Mon Jun 17 13:28:13 2013 +0100
+
+    Improve first time download of ubuntu images.
+    
+    If a cached copy of the file doesn't exist, cache_url() passes a
+    non-existent path to -z/--time-cond and you see this warning:
+    
+     Warning: Illegal date format for -z, --timecond (and not a file name).
+     Warning: Disabling time condition. See curl_getdate(3) for valid date syntax.
+    
+    It works just fine, but the warning is ugly.
+    
+    Change-Id: Ic6f13a2c596b988308d7fca9cd1745e5d48ae5fb
+
+commit ded16a0eb37a599ee720ff45e25de751ffd018b9
+Merge: 35c4a0a cc5ecb4
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 19 22:27:27 2013 +0000
+
+    Merge "Use dib-run-parts on dib-first-boot."
+
+commit 35c4a0a8fa7a3d243655a4aaa68eb57b64b6ae62
+Merge: 0e4b055 ef2aa6e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 19 22:23:19 2013 +0000
+
+    Merge "Adding element to get source for elements."
+
+commit 0e4b0556edff77a6a2e5c3cc7bfb45e207162a2b
+Merge: e5e5845 0ff82af
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 19 22:22:45 2013 +0000
+
+    Merge "Make bash troubleshooting configurable"
+
+commit e5e5845335b9e551a38747c83c08bbae802d3d79
+Merge: a3fc33d 2c47b70
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 19 22:20:14 2013 +0000
+
+    Merge "Reduce duplication between ramdisk and disk image codepaths."
+
+commit a3fc33dc776f1dc7ca336ca444750656ff6114f3
+Merge: 207aece 1435f6e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 19 22:17:45 2013 +0000
+
+    Merge "Make the finalise_base function less Ubuntu-ish."
+
+commit cc5ecb4e9cb29c45369cc07014c15202f4a5fd78
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Wed Jun 19 17:00:10 2013 +0100
+
+    Use dib-run-parts on dib-first-boot.
+    
+    At least on RedHat the run-parts command is very precarious and doesn't
+    even check for the return code of the scripts it runs causing the
+    dib-first-boot to delete itself even when something went wrong with the
+    configuration of the first boot of the image. Using the dib-run-parts
+    instead will make the whole first boot routine to be more robust and
+    less platform dependent.
+    
+    Change-Id: I0073fd52fc1fc8848ca9277a84603124215cdb6e
+
+commit 2c47b700bee9c337e1d66f87e97dc136b38a4fdd
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Wed Jun 19 21:26:29 2013 +1200
+
+    Reduce duplication between ramdisk and disk image codepaths.
+    
+    Change-Id: Ie9e2d60ffe94f971953d52b7b5bce9c1a86fb1b5
+
+commit 04bfd491add46b077e6db978d05b868052e74453
+Author: Dan Prince <dprince@redhat.com>
+Date:   Mon Jun 17 16:38:12 2013 -0400
+
+    Add mechanism to send error messages to helper.
+    
+    Adds a new err_msg function which is used to:
+    
+    -echo feedback to the deploy ramdisk console
+    -keep track of the first error message we hit so
+     that we can send it along to the baremetal-deploy-helper.
+    
+    Also, updates our wget request back to baremetal-deploy-helper
+    to include the first the first error message (if any) as
+    the 'e' parameter.
+    
+    The err_msg uses a new simple safe_url_encode function to ensure
+    we don't send invalid characters in our HTTP post requests.
+    
+    Change-Id: I5a623a6f66cde8d81ff1e75800dc2953ca2703a8
+
+commit 0ff82aff46090319f18090d2a255f16c0f36f255
+Author: Dan Prince <dprince@redhat.com>
+Date:   Fri Jun 14 11:39:40 2013 -0400
+
+    Make bash troubleshooting configurable
+    
+    Adds a new 'troubleshooting' function which encapsulates
+    the things we might want to do when something bad happens.
+    Typically this is echo'ing a simple message and launching a
+    bash shell.
+    
+    The new troubleshooting function also makes use of a new
+    'troubleshoot' kernel param which if specific will allow you to
+    hang the deployment process and interactively debug the deploy_ramdisk
+    via a bash shell on a console.
+    
+    Troubleshoot is disabled by default.
+    
+    Fixes LP Bug #1191043.
+    
+    Change-Id: I2cba8a9674075ba7e420027d40ef8cbe756cf07e
+
+commit 1435f6e48d33ed76b242ea4dabfcecd707a37c44
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri Jun 14 14:32:14 2013 +0100
+
+    Make the finalise_base function less Ubuntu-ish.
+    
+    The finalise_base function was creating a broken link at /etc/resolv.conf
+    when building a non ubuntu image.
+    
+    Change-Id: I974d43fd6db365dbff9c85195e3b72950f3409da
+
+commit 207aeced033d26e0ea1375b7f3b3c1a12b945da1
+Merge: 13858d4 9fe9afb
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Jun 16 22:08:29 2013 +0000
+
+    Merge "deploy element: Call find_disk in loop w/ timeout."
+
+commit 13858d499c94d785c80d98a3b2a084ab0fb242a7
+Merge: 4e428c6 50e0512
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Jun 16 22:07:51 2013 +0000
+
+    Merge "Add disable-selinux element."
+
+commit ef2aa6e8a12aedbd13df7a6227c4b1822263f1cb
+Author: Derek Higgins <derekh@redhat.com>
+Date:   Thu May 23 14:09:04 2013 +0100
+
+    Adding element to get source for elements.
+    
+    Fixes bug 1184943
+    
+    Adding an element that allows other elements to register
+    repositories it would like to be retrieved for it.
+    
+    Doing this outside of the chroot allows locally cached
+    repositories to be used. It also gives the ability to d-i-b
+    to specify what revision to use if an alternative to the
+    most recent is required.
+    
+    Effectively allowing a CI system to test d-i-b and elements
+    without being effected by unavailable git repositories or
+    breakages in actively developed source code being used by
+    the elements.
+    
+    Change-Id: I1527facebaad256a357af680e017b34b1788575d
+
+commit 9fe9afb1590eb4c42969e537a610e0b796b4f1fd
+Author: Dan Prince <dprince@redhat.com>
+Date:   Fri Jun 14 08:15:28 2013 -0400
+
+    deploy element: Call find_disk in loop w/ timeout.
+    
+    Updates our deploy element's init script so that it calls
+    find_disk in a loop until it returns true (meaning we have a disk).
+    
+    Previously on some bare metal machines find_disk would return ""
+    which causes the subsequent iscsi target commands to fail due to
+    a bad backing store.
+    
+    This commit also updates the error message when start_iscsi_target
+    fails to be a bit more accurate as well.
+    
+    Fixes LP Bug #1190984.
+    
+    Change-Id: I3cd535d6672c197c1c3c539c83bba36be7a14e18
+
+commit 50e0512a281a7cf8e71d87aab79e9563d4da897a
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Tue Jun 11 09:44:10 2013 +0100
+
+    Add disable-selinux element.
+    
+    Having all security enabled is not always interesting, e.g. when
+    developing or testing new elements.
+    
+    Change-Id: I828ecedc805ce4f89d60d185994eaa9c651d436a
+
+commit 4e428c6844740783c2bfb518609bec893a049acb
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Wed Jun 12 15:06:37 2013 +0100
+
+    dib-run-parts was failing with empty targets.
+    
+    When the target directory is empty, the for loop printing our profile
+    data was failing because of a glob problem.
+    
+    Change-Id: I34e612021c70d6b8f75423de0d8be969c52e58e2
+
+commit f17e169f690d42c9ee24481d39441c99b2c83025
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Wed Jun 12 10:47:34 2013 +0100
+
+    Add /usr/local/bin to the secure_path variable.
+    
+    This patch will append /usr/local/bin to the sudoers secure_path variable,
+    by doing so commands prefixed with sudo will then find some binaries
+    delivered by other elements in that path (e.g nova-rootwrap).
+    
+    Change-Id: I1ebad8b1932620559a3d90aa39298f9b12e636fd
+
+commit 03b437db0eb93399d17ca5be1d6927c9a38c0451
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Wed Jun 12 13:28:27 2013 +1200
+
+    Fix cloud-init-nocloud to actually work.
+    
+    Bug 1124593 reported that ssh host keys were not being created, and the
+    lack of seed metadata files was the cause. Add those files and remove
+    the workaround.
+    
+    Change-Id: I6fb55be7f8c7efd1f75aeba9123f495e312ff695
+
+commit 1fa27e745de99793a1057f18922b42e9d368ac89
+Author: Dan Prince <dprince@redhat.com>
+Date:   Tue Jun 11 10:03:10 2013 -0400
+
+    Stop apt-get installing qemu-img.
+    
+    This is simply a prerequisite and we should not try to
+    apt-get install it inline.
+    
+    Remove this code and exit with an error if qemu-img is
+    not found.
+    
+    Change-Id: I52d47a95d24d4bfe801ba664200604bd385dc67f
+
+commit e66bb40e7e2a50384ff76eae543cadd6df038d08
+Merge: 233ee29 6219ad7
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Jun 11 08:49:12 2013 +0000
+
+    Merge "Change the rootfs label in fedora's /etc/fstab."
+
+commit 6219ad79171e00a841353ec88bb0fdf59afd32c0
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Wed Jun 5 11:44:32 2013 +0100
+
+    Change the rootfs label in fedora's /etc/fstab.
+    
+    The images produced by the diskimage-builder have their filesystem with
+    a label of "cloudimg-rootfs", so we need to change the default /etc/fstab
+    on fedora to reflect that.
+    
+    Change-Id: Id1bb00cb81cb200a114f500e26272624be577da0
+
+commit 233ee2929979139d37c26db2f499fe01ba28e3f3
+Merge: 997c7dc f58adec
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jun 10 22:13:44 2013 +0000
+
+    Merge "Add zlib-devel and qemu-img to fedora map-packages."
+
+commit 997c7dc95cf038f71f934ca4d24456b1fc4cb0f6
+Merge: 8c847b7 c28cb1b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jun 10 22:09:29 2013 +0000
+
+    Merge "Add RedHat support for disk-image-get-kernel."
+
+commit 8c847b75c9c5d6b0c30d2c6f1874e9becd260572
+Merge: cbfd5a9 4e4a88a
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jun 10 22:07:09 2013 +0000
+
+    Merge "Add dracut-network element."
+
+commit f58adecaf6ab5f28d6c2a5bfaa328760563166cd
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri Jun 7 16:39:06 2013 +0100
+
+    Add zlib-devel and qemu-img to fedora map-packages.
+    
+    Needed for building the bootstack image.
+    
+    Change-Id: I4da14527f1647633213d86bef59fbd0eee3591f3
+
+commit cbfd5a9a626f1af8a8972fcb25bba1509b8ec110
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri Jun 7 15:20:21 2013 +1200
+
+    Document some dependencies.
+    
+    Change-Id: Ibe925bd48cf8dd1a5318361ab972c5734aeee3c1
+
+commit c28cb1b5d8b77fdf170e612a17afcf79e23b7f95
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri May 24 12:50:11 2013 +0100
+
+    Add RedHat support for disk-image-get-kernel.
+    
+    RedHat and Debian based systems have different binary names.
+    
+    Change-Id: I5162204759fbc4ff167d1584294c9936ab7df4c8
+
+commit 4e4a88a387961b73a90ca28a24a26bfe4bcf93a8
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Wed Jun 5 14:17:59 2013 +0100
+
+    Add dracut-network element.
+    
+    This element will install the network modules for dracut and regenerate
+    the initramfs. The network support would allow us to configure the network
+    of the image via kernel cmdline instead of injecting files into the image.
+    
+    Change-Id: I829405127e77aec80b99ac8dd2032cb0c6d81063
+
+commit 8532b3d7ad49c568b4e9a7747933b0c0a83d90b2
+Merge: e34a211 cd27dff
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 5 10:00:11 2013 +0000
+
+    Merge "Add fedora support for ramdisk-image-create."
+
+commit cd27dff29ae658b4f92bfd9476fc8bfb6d86749e
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Tue May 28 15:43:46 2013 +0100
+
+    Add fedora support for ramdisk-image-create.
+    
+    This patch allows the creation of ramdisks from a fedora system.
+    
+    Change-Id: Ic3b393af45ae1b85d015d2ceb5601ea723457da6
+
+commit e34a211d2184d858f1982f6ded0d3944ee3d5d84
+Merge: e6608d4 58538ce
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri May 31 10:33:42 2013 +0000
+
+    Merge "Remove obsolete Fedora rc-local install.d hook."
+
+commit 58538cea51641793205725b848070856595dbf96
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri May 24 12:59:09 2013 +0100
+
+    Remove obsolete Fedora rc-local install.d hook.
+    
+    After the refactor of the first-boot routine there's no use for this
+    script anymore, in fact all it's doing is to create a broken link.
+    
+    Change-Id: Ic09e7208bc950380341e8a073647950ac99a05fd
+
+commit e6608d42da03ec70d64d2020a92f52d5fe17ba34
+Author: Matthew Farrellee <matt@redhat.com>
+Date:   Tue May 28 20:38:51 2013 -0400
+
+    Switch from losetup+partprobe to kpartx for Fedora image creation.
+    
+    Fedora's partprobe does not create devices the same way it does on
+    Ubuntu. Instead of using partprobe, this patch uses kpartx, which
+    works on both Fedora and Ubuntu.
+    
+    Change-Id: Iac5cbac083e423425693c8210cd5d058ce4bce72
+
+commit 6fe45020582819c1f117d4b785d3a44efbb4758b
+Merge: c713e44 da02e05
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue May 28 23:40:05 2013 +0000
+
+    Merge "Fix fedora element to work with qcow2 images."
+
+commit c713e44ad8cdbb61f196594247aa24590bed57fc
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Mon May 27 12:05:19 2013 +1200
+
+    Move package install of dkms to install.d.
+    
+    Change-Id: I04bebdc9162915e0789fc374c172adc73079a227
+
+commit da02e05ff4c956c19a08762fa0df8a16f712fa6a
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Sat May 25 06:24:08 2013 -0700
+
+    Fix fedora element to work with qcow2 images.
+    
+    The images from mattdm were updated and also changed to qcow2 format.
+    
+    Change-Id: I6560f177baa9a0e2d303364a3ad4eb216f1f2136
+
+commit a4c42954d367376524b70287373cf3842b10c341
+Author: Dan Prince <dprince@redhat.com>
+Date:   Fri May 24 07:53:35 2013 -0400
+
+    Install dkms before using it.
+    
+    Updates the new 99-dkms element so that it installs the package
+    before using it.
+    
+    Fixes LP Bug #1183785.
+    
+    Change-Id: Ia191ed3cae707a8c8591f849dc0c6293e849d64a
+
+commit be99db321b66ccf64f2db0b95ca13211324430a5
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Fri May 24 11:42:36 2013 +0100
+
+    Build all dkms modules near the end of the image build.
+    
+    Work around ordering issues that cause dkms modules to not always
+    be built for all installed kernels, add a post-install.d script to
+    the base element that will force the issue.
+    (Note that any module/kernel pairs with a pre-existing valid
+    module will not be rebuilt, so this should not impact performance
+    unnecessarily)
+    
+    Change-Id: Iccea14c6318014cc7e1fec77e71c14a224f7b76e
+
+commit 5695fbd39e49b2bb291e472d52d2a2852d0b0ad4
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri May 24 12:01:57 2013 +1200
+
+    Set correct mode for .ssh/authorized_keys files.
+    
+    Per bug 1182648 we were not setting the mode and as a result couldn't
+    log in, defeating the purpose of having a local-config element :).
+    
+    Change-Id: I4114b9536392f1517eac8f4bbe6f4b60ce1186a1
+
+commit 45a730b3b5329fb2538b1ce320ad64b5470dd3d3
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri May 24 11:01:50 2013 +1200
+
+    Update sudoers rules for 1PB resizing.
+    
+    Change-Id: Ib3c346a2ecf5fc2a2198dc01cb8572806c8b635e
+
+commit 1f0bc8f19b04f2b2cd27dbd541123ecec013cd3b
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri May 24 10:22:08 2013 +1200
+
+    Increase the size heuristic for images.
+    
+    Bug 1183597 reported that we create them too narrowly today.
+    
+    Change-Id: Ia863cf2fb19c813c51f94dd0b8e210a75dccd945
+
+commit c139b0cb467498c12ba925a03484bea7de6811ed
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri May 24 10:06:33 2013 +1200
+
+    The ext4 resize fix was faulty - fix it.
+    
+    Fix bug 1183251 by replacing an erroneous reference to OPTS with
+    MKFS_OPTS.
+    
+    Change-Id: I741005d574715b8b237d9789398dbaba29df60e3
+
+commit 1e28c18c50d4bad5ca8a08eff98b9dfaaad5f5d2
+Merge: 495381c 85b5ef0
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon May 20 18:43:22 2013 +0000
+
+    Merge "Move the ensure_nbd function call."
+
+commit 495381c2f5f8adf4a23de6db5cedd305763aa4a9
+Merge: 92e420a 02ee161
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon May 20 18:38:45 2013 +0000
+
+    Merge "Refactor the first boot routine."
+
+commit 92e420aaf0a74d38900212de2ca5c8a2207f40ff
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Fri Mar 22 09:54:21 2013 -0700
+
+    Basic wall clock profiling per element script.
+    
+    Change-Id: I43f90574ac716f2ef22949c0fe4fa2e7fc84348e
+
+commit 85b5ef0c8db403279cc70db73ab26d33954d5e57
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Mon May 20 11:59:21 2013 +0100
+
+    Move the ensure_nbd function call.
+    
+    Move the ensure_nbd function call from the disk-image-create to the
+    disk-image-get-kernel. The image creation process does not use qemu-nbd
+    anymore.
+    
+    Change-Id: I8ff2ad54f322a9e33d52408fa4e253a7b45900c7
+
+commit fb246a02eb2ed330d3cc37f5795b3ed026aabe07
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Sat May 11 16:36:32 2013 +1200
+
+    Ensure that the ext4 fs can be rebuilt up to 1PB in size.
+    
+    Change-Id: I16c5fe4eb0a9951d44745d6a46450f70d33b3481
+
+commit 103bedacc71fa37f19708053a42bea217f6a8d07
+Merge: 7abd158 6561ed2
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri May 17 22:39:06 2013 +0000
+
+    Merge "Run fixfiles restore in chroot instead of firstboot."
+
+commit 7abd1583462e9455b0782ab1008a71c528ae4bdb
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Tue May 14 14:29:45 2013 +0100
+
+    Force text mode console in base element.
+    
+    Apply kernel command line parameters to force Linux to remain in text
+    mode. Typical distro kernels quickly switch into a graphical screenmode
+    and this is incompatible with common Lights Out Management hardware
+    which is able to intercept text mode consoles to display them remotely.
+    
+    Change-Id: Id553972c4fd87e78c9e6fe344331a399913d965e
+
+commit 02ee161e8172bf9b7f0e1ed410961a298602ce7e
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Thu May 16 15:43:32 2013 +0100
+
+    Refactor the first boot routine.
+    
+    Setting up a routine to run at first time the system boot may vary from
+    distribution to distribution. This patch will remove the logic from the
+    diskimage-builder code and put it into the elements.
+    
+    The base element will now deploy a dib-first-boot script and each OS
+    element will ensure that this script runs at rc.local time. By doing
+    that we will put the OS specific stuff in the OS elements and remove
+    the embedded code out of the img-function file.
+    
+    Change-Id: I24c5d1b1185de5693f145347fe912245f1ba7dfe
+
+commit 6561ed2ce8daefe906c3231f3a97fcdb70a29058
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Thu May 16 14:33:24 2013 +1200
+
+    Run fixfiles restore in chroot instead of firstboot.
+    
+    Boot time was 30 seconds shorter in an all-in-one devstack
+    environment.
+    
+    Thanks to Ghe Rivero for a pointer to the solution
+    https://bugzilla.redhat.com/show_bug.cgi?id=208275
+    
+    Change-Id: I90d0c96d5659326ba67d6119b96d9a4113adf7fe
+
+commit 7e0fe78cf227b0cca8e40d20c884c385bbb2b3c5
+Merge: 010fef9 c6da246
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 15 22:35:19 2013 +0000
+
+    Merge "Fix for running /etc/rc.local on Fedora"
+
+commit 010fef9843b7a9ba30b7fe82cdaeecdce3c86301
+Merge: 958badb d36ecfb
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 15 22:32:42 2013 +0000
+
+    Merge "Trigger SELinux autorelabel on first boot."
+
+commit 958badb36f9bcacdb87534aa67bdfd1ce6f3a8e4
+Merge: 2e244fb 3bf171b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 15 22:19:04 2013 +0000
+
+    Merge "An element for putting SELinux in permissive mode"
+
+commit 2e244fb72025f94ffcb89a0c443ed543c1608d2c
+Merge: 606f676 04e8d1c
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 15 22:13:17 2013 +0000
+
+    Merge "install redhat-lsb before pre-install.d baseline-tools"
+
+commit 606f67643bb2ef608482a3fb604d38b21a1153b8
+Merge: 2e3dbac aea625d
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 15 22:13:08 2013 +0000
+
+    Merge "install redhat-lsb-core instead of redhat-lsb"
+
+commit 2e3dbac7c11df712eba0f603ebea1064d689abe6
+Merge: ffdf0ba 3c3ee47
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 15 22:12:38 2013 +0000
+
+    Merge "Enable serial console for fedora"
+
+commit d36ecfb75c3110764b9afec7162ca9a3fdd655dc
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Tue May 14 12:03:24 2013 +1200
+
+    Trigger SELinux autorelabel on first boot.
+    
+    This adds about 30 seconds to my local boot time.
+    
+    Fixes bug #1179730
+    
+    Change-Id: I519bb9289236abd43f8eb784768dcab10e2e5754
+
+commit 3bf171b2b513ee63facb6bb19d47a23b15c08163
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Tue May 14 11:56:01 2013 +1200
+
+    An element for putting SELinux in permissive mode
+    
+    This is useful for selinux debugging, so is most useful in its own
+    optional element.
+    
+    Change-Id: I83532242eacbe211d3bb13e00436f682ca6d7e76
+
+commit c6da246b73cb7bba545850b1bba141ed91cb29bd
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Tue May 14 11:48:58 2013 +1200
+
+    Fix for running /etc/rc.local on Fedora
+    
+    With systemd rc.local lives in /etc/rc.d and is only run
+    if the rc-local service is enabled.
+    
+    This change creates a /etc/rc.d/rc.local symlink, and modifies img-functions
+    prepare_first_boot to tolerate an initially missing /etc/rc.local.
+    
+    Fixes bug #1179674
+    
+    Change-Id: I7e6102b62224950c1de5d48205dc4feff60f9389
+
+commit ffdf0ba7ff3347d8050c2767cb5379cd4ce8c5db
+Merge: 6b44b6d 9983245
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon May 13 17:56:17 2013 +0000
+
+    Merge "Honor $DIB_IMAGE_SIZE."
+
+commit 9983245249b72fc2f7b932b9ed3f8f952d4ed9ec
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon May 6 12:17:42 2013 -0700
+
+    Honor $DIB_IMAGE_SIZE.
+    
+    The recent change to use loopdev instead of nbd stopped
+    honoring the DIB_IMAGE_SIZE setting.
+    
+    This change adds it back, by resizing the image to
+    DIB_IMAGE_SIZE GB, if specified. If unspecified, it resizes
+    the image to (actual usage + 20%), as it did before this change.
+    
+    Change-Id: I69afd9584e644ddacc948619100f153d3d8713a4
+
+commit 04e8d1cc003964180e0f51fd2690488fee1d7f34
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Mon May 13 15:58:31 2013 +1200
+
+    install redhat-lsb before pre-install.d baseline-tools
+    
+    baseline-tools expects lsb_release (although tolerates it not being there)
+    
+    Order needs to be 01-override-yum-arch, 02-lsb, 03-baseline-tools
+    hence the renames.
+    
+    Possibly lsb_release isn't cared enough about to do this.
+    
+    Change-Id: I03abffb1ab2f560e746ba4ffd407605de31f4930
+
+commit aea625d64d6c0f6fbad56618b2baf77eb091f1b6
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Mon May 13 15:55:51 2013 +1200
+
+    install redhat-lsb-core instead of redhat-lsb
+    
+    The later pulls in most of a desktop. The former still pulls in a lot
+    but significantly less, and still provides lsb_release.
+    
+    Change-Id: Ie27310f01c037b4a10feb5e380e6f5c4ecf21364
+
+commit 3c3ee47e827fb5044683a1d5feefd948635f0a46
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Fri May 10 14:59:35 2013 +1200
+
+    Enable serial console for fedora
+    
+    Change-Id: Ic3695f643f3d00457fd97d18863793d60d3f211d
+
+commit 6b44b6d27418fa613aec0c67e9bae723c9e88c3b
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Fri May 10 00:05:56 2013 -0700
+
+    Fix fedora fstab so / is mounted rw properly.
+    
+    Change-Id: I8001b3fdb3fecb70cda388450222c60a2bd0a58b
+
+commit 2536d3f28d45bfcb6552db1023543ff34177c1ba
+Merge: a8707cc 20661e8
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 9 23:08:29 2013 +0000
+
+    Merge "Retry losetup -d for up to 10 seconds."
+
+commit a8707cc1524b22cd9416134b592a4d1e1d3e7747
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu May 9 18:39:37 2013 +1200
+
+    Add an element to configure a serial console.
+    
+    With ILO and other remote machine management cards, a serial console is
+    actually useful.
+    
+    Change-Id: I86f74d9dae3821b4682df813c5b52a83a29a138a
+
+commit 20661e8d8070c034bbc962feeb15b72d710dee5d
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu May 9 09:34:53 2013 -0700
+
+    Retry losetup -d for up to 10 seconds.
+    
+    When partition tables are added to loopback devices, this can set off a
+    chain of udev hooks that may still be holding the loopback open. Failing
+    to detach loopback devices was the reason we were seeing leaked tmpfs
+    volumes.
+    
+    Fixes bug #1178091
+    
+    Change-Id: I836d6e2bbce824951dd4786e3ef28273ea18ee73
+
+commit bd0f73f4cc10192203caa0330b8b7477d2904885
+Merge: 4506d94 60a1405
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 9 05:13:06 2013 +0000
+
+    Merge "Use conditional GET to fetch latest ubuntu image."
+
+commit 4506d948ea38c8d8ddd2207472dbc4b4697a29a5
+Merge: e537e04 3052127
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 9 01:20:23 2013 +0000
+
+    Merge "Reinstate support for real hardware with Ubuntu."
+
+commit e537e046d184021a6a41e7580e7911879e870238
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Tue May 7 13:20:35 2013 +0100
+
+    Force the inclusion of /usr/local/bin in PATH.
+    
+    Sudo compiled with the --with-secure-path option enabled (default on
+    Ubuntu, Fedora and potentially other distros) will cause sudo to ignore
+    any changes made to the PATH variable in the user's environment (even when
+    the -E option is used). Also, some distros might not have /usr/local/bin
+    set in their sudoers secure_path causing the diskimage-builder to fail
+    when building an image using such distros as host. This patch will force
+    the inclusion of the /usr/local/bin in the PATH enviroment variable
+    inside the chroot.
+    
+    Change-Id: Idb7156d8ff124bfe685cc721337d9bb21f49dc9e
+    Fixes: bug #1175980
+
+commit d5d775e9b4055c5061d6c3e21f00f45096224f80
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu May 9 08:32:36 2013 +1200
+
+    Tweak the moved cleanup_dirs to match the original.
+    
+    Change-Id: I5cb240aa82a5d9ccea539927d355a1f07e728381
+
+commit fe36ab555412489f84dbba2bcb1c04b08c778356
+Merge: c26bd8d dbe715e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 8 19:54:15 2013 +0000
+
+    Merge "Extend mellanox support to disk images."
+
+commit c26bd8d6554bd92a06e6cf0425d8281403651410
+Merge: a72d3c1 76d8d98
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 8 19:51:32 2013 +0000
+
+    Merge "Remove img-functions from ramdisk-image-create."
+
+commit 76d8d98a6031133e8e0d233248eded36b46f0917
+Author: Chris Krelle <nobodycam@gmail.com>
+Date:   Mon May 6 09:11:49 2013 -0700
+
+    Remove img-functions from ramdisk-image-create.
+    
+    Ramdisk-image-create sources both img-functions and ramdisk-functions
+    causing duplicate functions. To correct this situation this patch
+    removes the import of img-functions from ramdisk-image-create.
+    It moves cleanup_dirs and run_d functions from img-functions to
+    common-functions to allow this.
+    
+    fixes bug 1175427
+    Authored-by: Chris Krelle <nobodycam@gmail.com>
+    
+    Change-Id: I971d019b0d92b06d9de661663b49c433e823ea42
+
+commit a72d3c1af5db1b7b582de6fd9cd9ab2af2ad2c0e
+Author: Ghe Rivero <ghe.rivero@hp.com>
+Date:   Wed May 8 14:13:38 2013 +0200
+
+    Ignore errors when ldd'ing static binaries.
+    
+    When trying to get the library dependencies from a static program
+    it fails and die.
+    This scapes the error and continue with the execution.
+    
+    Change-Id: Id3463f2dd77a182ce4f9d9d28165d35f17806892
+
+commit dbe715e97b72edb80221ed5bf0486de7bf34bef1
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Wed May 8 09:18:00 2013 +0100
+
+    Extend mellanox support to disk images.
+    
+    We need to support mellanox devices in disk images as well as ramdisks.
+    This adds the requisite element structure to provide that support.
+    
+    Change-Id: Iaf383f5b32b84fbb69569ef42ec2460ab1b231e5
+
+commit 7893e234354df63f1a8d15391df7186fe0d89c41
+Merge: d9a2211 b751213
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 8 07:58:46 2013 +0000
+
+    Merge "Remove tripleo PPA from base element."
+
+commit 3052127ae0b650d2773da34773fb7ebed853d3db
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Wed May 8 19:23:08 2013 +1200
+
+    Reinstate support for real hardware with Ubuntu.
+    
+    Change-Id: Ibfdcd9c4b707a41258153c15a09d5976311080a0
+
+commit b751213a2454d83c10a071140f28062cd72a637a
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Tue May 7 09:04:07 2013 -0700
+
+    Remove tripleo PPA from base element.
+    
+    The PPA would have to be updated for each release we want to build for,
+    including raring. The PPA also gives the tripleo team root on every
+    built image, something we don't necessarily want.
+    
+    A shallow review of the packages in the PPA and known elements shows
+    only one dependency in the tripleo-image-elements heat-cfntools element.
+    
+    Change-Id: Ic514f929eba26014dd3a0d76d5bb3b8e9e0caf3c
+
+commit d9a2211d14913a0875c730261611214ca55bdedc
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu May 2 14:02:38 2013 -0700
+
+    Only use tmpfs if build machine has 4GB+ RAM.
+    
+    For machines with low RAM (or no access to /proc/meminfo) the builder
+    will still run, but will just build inside the filesystem that is
+    hosting /tmp. This will result in a slower build (especially if there
+    are a lot of .deb packages installed).
+    
+    Fixes bug #1175453
+    
+    Change-Id: I79f2672058c11e377548820df0ab4fad8f47ffdc
+
+commit 60a1405eefec9d18e663604e2275c2b9b87f85e3
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Tue Apr 30 16:36:56 2013 -0700
+
+    Use conditional GET to fetch latest ubuntu image.
+    
+    This also switches to using curl which some people may not have
+    installed. However, curl is far superior for this type of download.
+    
+    Change-Id: I7ac5a84b30eb8daad320c082f976931c41a24669
+
+commit f13570d322e6b06ed945d310c51e68aac94ee7b8
+Merge: d119c28 488c462
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 2 20:37:58 2013 +0000
+
+    Merge "Fix architecture filter."
+
+commit d119c28f49d0589e5f47b9dea11af01126557b9c
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri May 3 08:15:17 2013 +1200
+
+    Revert "Improve Fedora build host support."
+    
+    This reverts commit 591059ffd3ba406c4af010bacb07cbaf890c1500.
+    
+    Change-Id: I8ad5bde2eabe12c6575d51e7443d9b46521c0928
+
+commit 488c462dcd4e30436a7bbc4f0c474fee478f7410
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu May 2 20:52:47 2013 +0100
+
+    Fix architecture filter.
+    
+    If we are using uname to collect the name of the architecture, we need
+    to filter its output to make it consistent with dpkg. This is now
+    happening in the right place to avoid a spurious warning on i386 builds.
+    
+    Change-Id: Iae80dbfb757fc068155730686841c742acb7a6a2
+
+commit 55993863fc6cd21255264fe3633d77fcb232d53d
+Merge: 9992962 591059f
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 2 19:30:43 2013 +0000
+
+    Merge "Improve Fedora build host support."
+
+commit 999296272c2d924fbe9db128ba515728f3776701
+Merge: 90a64d7 5bb6b36
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 2 19:16:54 2013 +0000
+
+    Merge "Add few other packages to the map list for fedora."
+
+commit 90a64d745bc008ced78a1b82a8a48918d0486df2
+Merge: f725be5 da7e5b8
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 2 19:16:11 2013 +0000
+
+    Merge "Fix up the conflict between audit and glibc packages."
+
+commit f725be5dd1fae1b04f99c2af2653c16f549d710d
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu May 2 13:56:01 2013 +1200
+
+    Unbreak grub for precise.
+    
+    Change-Id: I5739b95e08c25d732223ad36d00aa1a46f67ff28
+
+commit 6dae56c45256ef439a11ab20a5bc58be8c033973
+Author: justin-hopper <justin.hopper@hp.com>
+Date:   Wed May 1 15:47:27 2013 -0700
+
+    Fix GRUB command quote escape for VM element
+    
+        Quotes were being eaten by bash
+    
+    Change-Id: Ib33be02eeb703df5b23fc8d0b312f480c69f1b1b
+    Fixes: bug #1175374
+
+commit 9e9f5fecb82053262d0d9fb2c5b9ee889a130d04
+Merge: b7bcbe6 2cd44bd
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 1 20:47:39 2013 +0000
+
+    Merge "Fix missing export of $ARCH"
+
+commit b7bcbe62150f18c6568fcad09ecf92998c980c7e
+Author: justin-hopper <justin.hopper@hp.com>
+Date:   Wed May 1 11:54:03 2013 -0700
+
+    Fix GRUB for for precise
+    
+        --target param is not supported in precise
+    
+    Change-Id: Ie369ed9d53dbb462cf253144251da4d5c463107c
+    Fixes: bug #1175275
+
+commit 2cd44bd77ca9d05208a0d87205459ddd80a3286c
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Wed May 1 15:13:24 2013 +0100
+
+    Fix missing export of $ARCH
+    
+    So that elements can have access to the variable.
+    
+    Change-Id: I9a63160ef891e3a3a3c6c90856e2539250c8b807
+
+commit 591059ffd3ba406c4af010bacb07cbaf890c1500
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Wed Apr 17 11:18:20 2013 +0100
+
+    Improve Fedora build host support.
+    
+    Sudo command (even using -E) resets $PATH for security reasons, Fedora
+    and other distos might have to explicitly add /usr/local/bin to $PATH
+    in order to run the commands in the chroot environment.
+    
+    Change-Id: I95068ecf1e7437152e11c6d6789f59bcfd6ae9cc
+
+commit e27ac025fc4c97cc47a12819db295ab186d0c686
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Wed May 1 15:03:44 2013 +1200
+
+    Use a different approach to solving the ramdisk-image-create failure.
+    
+    Change-Id: I2861927d1989bde1137c253c8b3a48b245c65f19
+
+commit 7ef33c51dbedbd6be0be23ad021dad96298b7c88
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Apr 30 19:36:37 2013 -0700
+
+    Source img-functions into common-functions.
+    
+    A recent commit added a call to function cleanup_dirs to
+    the common-functions file, but this function is not in scope
+    for all code paths.
+    
+    The problem can be reproduced like so:
+      bin/ramdisk-image-create deploy -o /tmp/foo
+    
+    Which results in the error:
+      bin/../lib/common-functions: line 35: cleanup_dirs: command not found
+    
+    This change causes cleanup_dirs to be in scope when calling ramdisk-image-create.
+    
+    Change-Id: Iaf01beb9dd42a9d810d8aed1aa4ce19a5854c09b
+
+commit 39152c1b30d1619f9ced4f7a6eaa83a896c502e1
+Merge: cb62bae be48317
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 1 01:52:10 2013 +0000
+
+    Merge "Improve Fedora build host support: architectures."
+
+commit cb62bae9b8367a3ac5a96eeadbba110c14ba9dbb
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Mon Apr 1 17:25:25 2013 -0700
+
+    Build images using loopdev instead of qemu-nbd.
+    
+    Qemu-nbd does not perform well with older versions of qemu due to
+    the lack of writeback caching mode. It also only builds qcow2 images
+    and there is a desire for raw image support. Finally, qemu-nbd makes
+    it very difficult to build images concurrently due to the somewhat
+    opaque nature of how it selects a /dev/nbd# device. losetup, on
+    the other hand, makes this process very straight forward.
+    
+    Change-Id: I309fad8af4fd1e8d1720c17b65e1897a76d5e897
+    Co-Author: Clint Byrum <clint@fewbar.com>
+
+commit 5bb6b362d44ff9a1e126f40e8008f43be33a7adf
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Tue Apr 23 11:57:25 2013 +0100
+
+    Add few other packages to the map list for fedora.
+    
+    Needed to build some modules with pip.
+    
+    Change-Id: If6e210bbd68ffe7454069c4b0880ba787733aa7a
+
+commit da7e5b837c42adfc7d9a7bf4920f8adff4de87e1
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Thu Apr 25 14:28:12 2013 +0100
+
+    Fix up the conflict between audit and glibc packages.
+    
+    Update audit in order to fix up a conflict with a file from the glibc
+    package on a fresh Fedora 18 install.
+    
+    Change-Id: Ib44c8415bce4ec47e21626a697cf426b96a9061a
+
+commit be48317fc354cdd33c3de85ae4b6797e9fa259bc
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Fri Apr 12 10:53:44 2013 +0100
+
+    Improve Fedora build host support: architectures.
+    
+    Instead of blindly calling dpkg, we will now perform an appropriate test
+    and fall back on uname with some subsequent massaging of uname's output
+    on amd64 and ARM build hosts.
+    
+    Based on a patch from Lucas Alvares Gomes
+    
+    Change-Id: I363addd9f8b4d748d50b69f4509ce627aa5676aa
+
+commit 0a1bf74c323ea2f33495ed1525319bec7c384b04
+Merge: 3202a8f 45173cc
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Apr 22 22:18:25 2013 +0000
+
+    Merge "Adds support for post-install scripts."
+
+commit 3202a8f69cd7e7ebf40823eb49be28d158e35795
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Sun Apr 21 21:31:51 2013 +0100
+
+    Fix Ubuntu image fetching.
+    
+    Set a bash option which has been breaking cold builds due to an extended
+    glob pattern.
+    
+    Change-Id: Ideab0fca057eb3744002ae137ac1f988b61bb560
+
+commit 1001e750e727e0e83346babafa6db82a6a5310f7
+Author: Robert Myers <robert.myers@rackspace.com>
+Date:   Thu Apr 18 11:35:38 2013 -0500
+
+    Fix a small typo in fake init scripts.
+    
+    Change-Id: Iaae4e8424ce2e87b0d19391fa2994042aed832e5
+
+commit 45173ccdb5ea2f0b2835cf9adcc966b96009a97a
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Mon Apr 15 11:31:04 2013 +0100
+
+    Adds support for post-install scripts.
+    
+    Post install scripts are useful because they can perform tasks you want
+    to handle after the OS/application install but before the first boot
+    of the image. e.g: Clean the cache left by the package manager reducing
+    the size of the image.
+    
+    Change-Id: I03e77f602192bbdce29c02999d1b57fac8051ddc
+    Fixes: Bug #1145786
+
+commit 26ba473c721942b1697fcb30e0b28dbfeb7ffc4c
+Merge: 2c442c5 a8312db
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Apr 12 19:59:19 2013 +0000
+
+    Merge "Migrate cloud image URL/Release options to DIB_."
+
+commit 2c442c5b020a2ff889d6beb0f11a046c59ca1d5c
+Merge: 8a22115 b20e133
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Apr 12 19:59:18 2013 +0000
+
+    Merge "Grab the next available /dev/nbdX."
+
+commit b20e133714cf00f41d29d7125c5137eed24745f7
+Author: Lucas Alvares Gomes <lucasagomes@gmail.com>
+Date:   Fri Apr 12 17:49:23 2013 +0100
+
+    Grab the next available /dev/nbdX.
+    
+    Change-Id: I6a2c8e58cdab889d747e870d0009f51bba0ff148
+
+commit 8a22115c6defc3caa4924bd4db0109706c63715d
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Fri Apr 12 07:43:53 2013 -0700
+
+    Allow build dir to be changed from /tmp
+    
+    Adds an env var TMP_DIR which will override mktemp's default location.
+    
+    Fixes bug 1168432
+    
+    Change-Id: I60c63389bb2a639f948e7e96bf9aaea0ea73e27d
+
+commit a8312db74245334f4ceeda07dd731da44799ff66
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Fri Apr 12 14:41:32 2013 +0100
+
+    Migrate cloud image URL/Release options to DIB_.
+    
+    This switches $CLOUD_IMAGES and $RELEASE to the DIB_ namespace so
+    they will survive future changes to the sanitisation of the build
+    environment.
+    
+    Change-Id: I7dc2aa82fb9ef452705b080cc404f41046014f20
+
+commit 66b563e466126571821ba8f6777aff76d3583915
+Merge: 9eda303 bd1bae7
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Apr 12 09:38:43 2013 +0000
+
+    Merge "Introduce the DIB_ namespace for build-time config."
+
+commit bd1bae7c580fad65c6d73a6c104ccb8dd96ee04e
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Wed Apr 10 12:42:00 2013 +0100
+
+    Introduce the DIB_ namespace for build-time config.
+    
+    Document the use of DIB_ as a prefix on environmental variables that can
+    be overridden at build time.
+    
+    Introduce the first such variable by migrating IMAGE_SIZE to
+    DIB_IMAGE_SIZE.
+    
+    Change-Id: Ie36b734991b913a23f37f2add47d470d7c1576e4
+
+commit 9eda303f5f8c430581e2f1e82c95f05a67583674
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Apr 9 16:45:15 2013 -0700
+
+    Fedora element allows root to sudo without TTY.
+    
+    The root user tries to `sudo -u stack`, without a tty,
+    causing fedora+devstack images builds to fail in Jenkins.
+    
+    Change-Id: Ia0a7fb315cf9bd17cf250e70dba06363a697c97c
+
+commit 169382246b8c3418c921d4d1f4e318adb32a28f0
+Merge: 5ada82a 21e3fb1
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Apr 9 20:54:15 2013 +0000
+
+    Merge "Generate ssh hostkeys on first-boot."
+
+commit 21e3fb185c095d311f327416ce76e76fa99a971d
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Apr 8 18:57:00 2013 -0700
+
+    Generate ssh hostkeys on first-boot.
+    
+    cloud-init is expected to generate unique hostkeys on first
+    boot, but sometimes it doesn't.
+    
+    This change ensures that hostkeys are always generated.
+    This change should be removed if the cloud-init problem is solved.
+    
+    Change-Id: I7d7e05fbd12727992cf1aebec547ae0488e002ff
+
+commit 5ada82a59c80811dfd36effa3d0dba761e639575
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Mon Apr 8 15:10:34 2013 +1200
+
+    Add armhf support.
+    
+    ARM doesn't have a generic Linux image due to the soc-specific nature of Linux
+    kernels today, so we drop the manual installation of that package, replacing it
+    with a dist-upgrade instead. This involved tweaks to the dpkg and fedora
+    install-package scripts.
+    
+    Change-Id: I97924b80ca87781307e1087b9fe4b18215770e84
+
+commit 24c89932be352f4357cf3fe2c7be6b00a20c6cdb
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Mon Apr 8 10:26:44 2013 +1200
+
+    Always include the in-tree elements directory.
+    
+    Change-Id: I5a79fbf0568f5755dd14824ed147093387170b3f
+
+commit e826e77a16a295633798cf5097875386d099d487
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri Apr 5 15:27:18 2013 +1300
+
+    Delete elements moved to tripleo-image-elements.
+    
+    Change-Id: I062d3dfb538682d72011307e8b96672e8f0844a5
+
+commit ddcf3db028c3955ca8da888f5b45bbd43e4baacd
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Fri Apr 5 09:59:30 2013 +0100
+
+    Update README.md for build-time state capture
+    
+    Document the existence and genesis of /etc/dib_{environment,arguments}
+    
+    Change-Id: I99e696b87230d3b45ae1d37ee0de3742f407f0ce
+
+commit a400a5e00a89defe000e542ae8237b66abebea53
+Merge: c75d891 0cfecd1
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 20:56:22 2013 +0000
+
+    Merge "Store build-time settings"
+
+commit c75d89128bc90a75ddceab9b05d7d485ce712575
+Merge: 0dceb77 ca8a663
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 20:39:51 2013 +0000
+
+    Merge "Fix mysql migration script to handle errors."
+
+commit 0dceb774e46d74c515b8616c3e4566329e34a157
+Merge: a18a5c8 3525163
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 20:39:50 2013 +0000
+
+    Merge "Remove strict sql_mode setting which breaks apps."
+
+commit ca8a663707727d6098e3eca60dca67b3547ed060
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Apr 4 12:57:28 2013 -0700
+
+    Fix mysql migration script to handle errors.
+    
+    Errors in mysqldump would have been missed due to not having pipefail
+    set. Also there was a type-o in the invocation of mysqldump that was
+    going undetected, that has been repaired. Finally we should not pass
+    --master-data if we don't have slave credentials, as the master data,
+    even if provided, is useless without a valid slave user/pass.
+    
+    Change-Id: I0f80af34c747f465250ef17fae4a44dac919c9cd
+
+commit 352516381f7b8ae4f0944380f3d6ef10e1aa5a7c
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Apr 4 10:54:27 2013 -0700
+
+    Remove strict sql_mode setting which breaks apps.
+    
+    Strict sql_mode settings are very application specific, many will simply
+    not work with them. This setting was likely inherited from some other
+    production MySQL config file and is not appropriate for a generic
+    configuration. Specifically, this broke the MySQL package maintainer
+    scripts.
+    
+    Change-Id: I068fcc7b3c770541d3d1ecfb372384750f182584
+
+commit a18a5c85fff1da7b41de9151725920dd73816cba
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Apr 3 13:21:36 2013 -0700
+
+    Do not require arguments for os-svc-daemon.
+    
+    They are not actually required, so allow os-svc-daemon to be called
+    without them.
+    
+    Change-Id: I62c2887d48e4173005c54c9cab4ecd6aff8069a1
+
+commit 0cfecd1024e87f965e28743f2654915b1d0f4122
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu Apr 4 20:38:19 2013 +0100
+
+    Store build-time settings
+    
+    This will write two files in /etc/ that contain the environment and
+    command line arguments used in the creation of an image. This should
+    assist with later efforts to repeat the creation of an image.
+    
+    Change-Id: Icdbe6693380bed6c406feee10d2cb1a88a992932
+
+commit ef7d0307ffae0e3d77b4a7eadc802ca324873ef8
+Merge: 4e36ae9 9483471
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 19:22:21 2013 +0000
+
+    Merge "Migrate data into MySQL from bootstrap."
+
+commit 4e36ae9eb9a04bbcdeed17c70752aae9557a6f05
+Merge: 2e0e121 3ace1ba
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 19:19:40 2013 +0000
+
+    Merge "Run os-config-applier using os-refresh-config."
+
+commit 2e0e1210bf48d3ff754404cf549232a80ced0cb0
+Merge: b196f1b e4e4989
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 19:18:10 2013 +0000
+
+    Merge "Bring os-svc-install element docs up-to-date."
+
+commit b196f1bb3d8abc9ecc0ccb985d158db10f36d530
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Thu Apr 4 11:56:14 2013 -0700
+
+    Disable tunneling in quantum-ovs.
+    
+    Quantum-ovs was continually re-creating interfaces
+    every second or so, because it was configured to use tunneling,
+    and the default version of OVS included with ubuntu does
+    not support tunneling.
+    
+    Change-Id: I1246181c4b9c96ebe2795b337454dc8ddcb35e8f
+
+commit 948347131f3d6ddb05e923d9a2f73b172465519c
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Mar 21 16:36:54 2013 -0700
+
+    Migrate data into MySQL from bootstrap.
+    
+    Use Heat Metadata to specify host and credentials to pull whole database
+    snapshot and setup Replication. Also include root credentials for use after
+    the snapshot has been applied.
+    
+    Change-Id: Ie3aa92463d28db54a523f520c2b4cdfb528acf9d
+
+commit 3ace1ba29e3eaff1100e841bc3904d9843c6b08c
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Fri Mar 15 10:07:07 2013 -0700
+
+    Run os-config-applier using os-refresh-config.
+    
+    There's no need to run os-config-applier at any time except when
+    os-refresh-config is in its configure state.
+    
+    Change-Id: Id9758294c60469a976b61c68fc26d9b83130599a
+
+commit e4e4989e1885cd7981e22dbe9d07dad9e2dddded
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Apr 2 18:22:41 2013 -0700
+
+    Bring os-svc-install element docs up-to-date.
+    
+    Change-Id: Ia0547de1a899359994706d1607ed19e5ad5c056f
+
+commit f501494bced8f95384c490e734b75c961b6e0bd8
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Apr 3 21:27:41 2013 -0700
+
+    Enable use_namespaces setting for quantum agents.
+    
+    Change-Id: I060c381cc9dc858a979e072b78bde6a55ad69472
+
+commit 00114f6e90be7e56de6dafb3620252df6d609b5c
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Apr 3 20:51:34 2013 -0700
+
+    Clearly mark unaudited config templates as such.
+    
+    Change-Id: I130b0874b2efad1345bb5449bce001985c477960
+
+commit 3df85839e57eb02b6da159e7313af305f4a01783
+Merge: 3ea3696 4762f65
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 02:48:05 2013 +0000
+
+    Merge "Streamline upstart scripts in os-svc-daemon"
+
+commit 3ea3696c8fc55e04cf9943aa28d9fbba4e0593f6
+Merge: 123cc10 0809886
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 02:40:42 2013 +0000
+
+    Merge "Add a nova-baremetal element."
+
+commit 123cc109e299f3915c3d04d234a4b2325d238576
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Apr 1 14:46:34 2013 -0700
+
+    Replace glance-api+glance-reg elements with glance:
+    
+    'glance' element now results in a properly-configured,
+    working glance service on first boot.
+    
+    While glance-api and glance-reg may need to be broken
+    out again in the future, the intention now is to focus
+    on a working service for an end-to-end PoC.
+    
+    Change-Id: I4fb1cd5ad6defef5a5c4fddfded46d51e8097b5a
+
+commit 4c986076ac9a03b4c2e9f901548164987335870b
+Merge: 2ea0430 7e36570
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 02:15:12 2013 +0000
+
+    Merge "Add a quantum element."
+
+commit 2ea0430acb730a887e6a66714b190ff927be9250
+Merge: 3211e6d a6b794f
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 01:58:08 2013 +0000
+
+    Merge "Add element to run DHCP on all network interfaces."
+
+commit 4762f65dc1bc21529ceb223221094e76777a4562
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Apr 3 11:28:53 2013 -0700
+
+    Streamline upstart scripts in os-svc-daemon
+    
+    Best practice is to use start-stop-daemon rather than sudo, as sudo will
+    apply user-centric pam limits and create a wtmp entry. Also there is no
+    need for a script stanza, as we are only execing one command.
+    
+    Change-Id: I0c2f12536b56d90fd43ab40e74424350efcc0b61
+
+commit 08098865718e75b67fada55eeba31ab3e77db322
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Apr 1 14:52:48 2013 -0700
+
+    Add a nova-baremetal element.
+    
+    Future work is intended to allow this to serve
+    as a nova-virt element as well, by allowing the config
+    and which services are run (such as bm-deploy-helper)
+    based upon metadata config settings.
+    
+    Change-Id: I59718a0b329e6adc59097492638cf02c76162c0a
+
+commit 3211e6d277e1373734ae22d2fe546fedbd9b9f60
+Merge: ea57869 e34e75f
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Apr 3 10:02:00 2013 +0000
+
+    Merge "Remove duplicate file extensions."
+
+commit 7e3657051905fe2719d2e1d7417d46788b8a02a7
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Apr 1 14:49:51 2013 -0700
+
+    Add a quantum element.
+    
+    Change-Id: I1008dcbb4e0a6c4cc25f4cc11a90fbc265ab2fdd
+
+commit ea57869d3e1ae899631f6d55b24f35c3d88b635d
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Apr 1 14:55:15 2013 -0700
+
+    Run all openstack services in virtualenvs:
+    
+    Python package dependency conflicts have been observed
+    to occur for certain combinations of services at certain
+    revision.
+    
+    Running all services in virtualenvs removes the issue.
+    
+    Change-Id: I100817569b43a5af3427b0ae20cebdc7d55d03a5
+
+commit a6b794fffcbd91cc5692fa531f754d7900e43705
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Tue Mar 5 17:34:19 2013 +0000
+
+    Add element to run DHCP on all network interfaces.
+    
+    Ensures that all network interfaces are present in
+    /etc/network/interfaces. Any interface not already defined there
+    will be added and configured for DHCP.
+    
+    Change-Id: I27e0902e62804e8d719acd7288109bd0e294fd16
+
+commit ff7eac3c651e7e1f38c5c50e40c6652de123cb77
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Mar 21 16:35:16 2013 -0700
+
+    Create users in mysql server based on metadata
+    
+    Enable templates to specify a list of users that need passwords assigned
+    in Metadata. These passwords are then communicated back to the template
+    via an optional wait condition handle using cfn-signal.
+    
+    Change-Id: Iaaf4d4a9d0d757b7d44ea39e77eed3c55ffffd88
+
+commit 6bf07b12d385560d87ce651b070284548c939f09
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Mar 21 16:28:17 2013 -0700
+
+    Set mysql server_id based on instance-id
+    
+    Do nothing if we are booted on a server which has no instance-id set,
+    such as a non-cloud VM or server.
+    
+    Change-Id: I6df81edbea1b2b4e4f1ef11a9f2ddaf100d98eda
+
+commit 72534d6eba250b95d4d7d8c843904e83a647aa55
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Mar 21 16:20:32 2013 -0700
+
+    Refactor mysql element to do less in first-boot.d
+    
+    We didn't need to do most of this anyway, we just needed to configure
+    mysql before we installed the packages in the image. Some of the other
+    things were half-baked ideas which will come in later changes to add
+    os-refresh-config and os-config-applier support to the element.
+    
+    Change-Id: Ib1b66a8b3b70fac10f3f826b1efd414c67f9bfc6
+
+commit a28a1be2c36919575a5437178bf8cf9a55862e5e
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Mar 21 16:26:49 2013 -0700
+
+    Adding cfn-credentials file to heat-cfntools
+    
+    Change-Id: Icd9f0e24700d8016169682f86d5004ec1486c463
+
+commit 51f003bf2fba1b20fd9f5ea4a1995c9c5a608b27
+Merge: f2ad365 3a2f482
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Apr 1 22:35:51 2013 +0000
+
+    Merge "remove unnecessary '/usr/local/bin' from install.d."
+
+commit 3a2f482c9d98704a64ce7831290efbd68ce72de4
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Apr 1 15:01:49 2013 -0700
+
+    remove unnecessary '/usr/local/bin' from install.d.
+    
+    Change-Id: Idda511dbf26c1562d8993bc5bbda6756ce796546
+
+commit f2ad365039c8d7736593d50b91e1b5804f63f29f
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Apr 1 14:58:51 2013 -0700
+
+    Install os-config-applier from stackforge repo.
+    
+    Change-Id: Ic383750856e23957fe6bd0ee65767efa26021028
+
+commit 12e86eb6577c84b9cf2f3c98b7c0d002bce71538
+Merge: c6ff2fc d5f7d7e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Apr 1 20:37:56 2013 +0000
+
+    Merge "Fix os-refresh-config failing without scripts."
+
+commit c6ff2fcade5e28204c364f81b44eb71529e42295
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri Mar 29 14:01:32 2013 +1300
+
+    Switch to using the incubator-bootstrap tree.
+    
+    Incubator is having dangerous scripts removed from it.
+    
+    Change-Id: I5567b9b89eeed4dbf124186a84a7d890eefc87ef
+
+commit d5f7d7e7c0848004e680b9d1a14c65d358690b3b
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Mar 18 15:38:06 2013 -0700
+
+    Fix os-refresh-config failing without scripts.
+    
+    It is valid to request os-refresh-config without putting any scripts in
+    the element root. This fixes failing builds of heat-cfntools.
+    
+    Change-Id: I4f70b33e453399ff5baa48919557995a6eb27520
+
+commit e34e75ff2234e8c97420b2d3e58451ae547f5bb4
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu Mar 14 17:56:18 2013 +0000
+
+    Remove duplicate file extensions.
+    
+    Gracefully remove duplicate file extensions on the output filename
+    
+    Change-Id: Id4f8b0d75b587c238c89d6ca7a06fab6a57cd627
+
+commit 5b99028acf67d5883f1d836e85bec911cbf8fb98
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Fri Mar 8 08:15:58 2013 -0800
+
+    Correctly translate all branches/tags/shas:
+    
+    The code which raises an error if two elements try
+    to install different versions of the same git repo
+    currently works correctly for SHAs, or if a branch
+    is specified first, followed by a SHA.
+    
+    However it fails if two branches are specified, because
+    the shallow clone does not fetch all branch heads.
+    
+    This change correctly handles any combination of
+    SHAs/branch-heads/tags.
+    
+    Change-Id: I501e94150ddeb41b79588816576a5d7a06fa92aa
+
+commit c1bf047d396cace96cd3a6c601079a89831b731e
+Merge: e56b0de a99584d
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Mar 12 01:22:26 2013 +0000
+
+    Merge "Fix script that installs os-refresh-config scripts"
+
+commit e56b0de32132d79fee77455da26204fcf221c1b4
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Sat Mar 9 01:34:30 2013 -0800
+
+    Update keystone middleware in cinder api-paste:
+    
+    cinder-api in trunk will no longer start with
+    keystone.middleware, only with keystoneclient.middleware.
+    
+    The issue is discussed here:
+      https://bugs.launchpad.net/nova/+bug/1143998
+    
+    Change-Id: I29f81ca2503957b4df58e86b2392ef4b3c15d6fe
+
+commit a99584d0f94a1f55d4e131addfd4606535048357
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Fri Mar 8 23:06:02 2013 -0800
+
+    Fix script that installs os-refresh-config scripts
+    
+    Was missing executable bits
+    
+    Change-Id: Idcb984e44f4b45d78c59a45eb0d8d43457c788c9
+
+commit 4da169ce6e6e91c1a228e263e908a578d86c46ae
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Fri Mar 8 03:24:45 2013 -0800
+
+    local-config: Configure proxy for apt and/or yum
+    
+    Fixes fail to build image on Fedora
+    
+    Change-Id: I30324081702ffc68e82499d81a841c8ae17119ce
+
+commit 28aa222b20f46ff2fbc78e7606bda6045f3b8389
+Merge: 21720c6 597575c
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Mar 8 03:06:27 2013 +0000
+
+    Merge "Fix issues causing Fedora images to fail"
+
+commit 21720c6acd84bd70359ce0ef47d0387b1999e86d
+Merge: b554030 abbd8a6
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Mar 8 03:04:56 2013 +0000
+
+    Merge "Update keystone element to use os-refresh-config."
+
+commit b554030787ca960da9b85f847bb4dd4395b963f8
+Merge: 6cfd968 9135165
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Mar 8 00:34:40 2013 +0000
+
+    Merge "Install os-refresh-config scripts automatically"
+
+commit 597575c6816d367dcfaaed0f65215340d073ad8c
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Mar 7 14:17:41 2013 -0800
+
+    Fix issues causing Fedora images to fail
+    
+    For os-refresh-config and os-config-applier, support systemd or upstart.
+    
+    Change-Id: I4ff12e891a85b3171a6ef0c6898b2d45a1699de1
+
+commit 6cfd9681b75c6ba7c7f6a706504e2d731bea97e1
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Feb 20 21:46:27 2013 -0800
+
+    Seperate install of services and start scripts:
+    
+    This allows openstack services to be git/pip installed
+    without installing any startup scripts.
+    
+    This is useful for keystone-db or nova-db elements, for
+    example, where the service must be installed to perform
+    database migration, but no service start scripts need
+    be installed.
+    
+    Additionally, add a tool to create openstack sql databases.
+    
+    Use openstack pypi mirror:
+    
+    Use the openstack pypi mirror for openstack service
+    installation. It's much faster than pypi.org.
+    
+    Also, pip install $svc_repo/tools/pip-requires first,
+    if it exists, which is required to pick up oslo.config.
+    
+    Change-Id: I72751d4da59f8597d20aea2f27a9dfabe2f63a8f
+
+commit abbd8a61a89d0e9a05ee2e1ca29a66d14f86279e
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Feb 20 21:48:53 2013 -0800
+
+    Update keystone element to use os-refresh-config.
+    
+    Change-Id: I15595d80ee7fad04d964aaa83a403d9303f6aa55
+
+commit 8346115bf955bf8c22ba61d3cce72a25336f0f55
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Mar 6 13:35:12 2013 -0800
+
+    Make 99-install-config-templates executable:
+    
+    This script is not run by dib unless it is executable.
+    
+    Change-Id: Ic7658cd229dba5635a4ea445f0c62d9f22198729
+
+commit 91351658b3a5e56d602af276368106e1a87b3592
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Mar 6 11:22:46 2013 -0800
+
+    Install os-refresh-config scripts automatically
+    
+    Updating the cinder element to reflect the new desired way to ship
+    os-refresh-config scripts.
+    
+    Change-Id: Ibde1275725241204f6097ad7cc0ba0de5e6cd431
+
+commit 9215817ec93f27ac3ce57be09b401d010ec31c4a
+Merge: b880ef9 2b29ca6
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Mar 6 00:43:53 2013 +0000
+
+    Merge "Integrate os-refresh-config with heat-cfntools"
+
+commit b880ef9017dea9f203bff34414aebd344352d6ec
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Sun Mar 3 23:56:11 2013 -0800
+
+    local-config element adds authorized_key for root:
+    
+    Currently, the local-config and stackuser elements
+    are intertwined.  local-config installs an authorized_key
+    for stackuser, if the stackuser element is in use.
+    
+    This change does two things:
+    - add authorized_key for root from local-config element,
+        regardeless of whether stackuser element is in use.
+    - install key for stack user from stackuser element,
+        only if local-config element is in use.
+    
+    Change-Id: I0d07b61404119ea0650c5c0fb98d6786adcf3ca9
+
+commit 2b29ca61834e4135308401d8c792ecd34bc96564
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Fri Mar 1 16:41:45 2013 -0800
+
+    Integrate os-refresh-config with heat-cfntools
+    
+    * Provide entry point for Heat Metadata to drive os-refresh-config
+    * Use os-config-applier for configuring heat cfn tools
+    
+    Change-Id: Ie38b932173948f1e7c414c48caa1b037916bef84
+
+commit 30e803aa56d3da7bcebb8a4c62ad532b760b6378
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Tue Mar 5 10:38:07 2013 -0800
+
+    Allow elements to include skeleton config
+    
+    Copies all templates found in the root of any element into the
+    default template location.
+    
+    These templates will be filled in from heat metadata by
+    os-config-applier whenever it is run.
+    
+    Update keystone to install templates in this way as an example.
+    
+    Change-Id: I0be0a79a431e9ba5b80e84f130c48d5ce8b100ae
+    Co-Authored-By: Tim Miller <tim.miller.0@gmail.com>
+
+commit aa8a2174a6fcdaeb3b2cbcb2f5a0bafcb993e9bb
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Feb 20 21:50:33 2013 -0800
+
+    Add a cinder element.
+    
+    Change-Id: I4729cf003896c3b4f8267d16e1b4822099231051
+
+commit 07c476b5901c3df3c1cfcad8f06ce1a2023217cb
+Merge: cc4b23a 614b6af
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Feb 28 05:19:47 2013 +0000
+
+    Merge "Fix heat-cfntools to work on Fedora"
+
+commit cc4b23aafa7e210aa3bb697649f16bdee1be6510
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Feb 27 20:23:13 2013 -0800
+
+    Namespace SHA256SUMS file to distro/release/arch
+    
+    Its possible other images will want to use the same filename
+    
+    Change-Id: Iae393bfc71205d39e2bc6e12f5524824607d6101
+
+commit 614b6af62fbe85c93d83ebbda7862d7c432e7763
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Feb 27 15:07:12 2013 -0800
+
+    Fix heat-cfntools to work on Fedora
+    
+    Also add redhat-lsb to Fedora images for lsb_release which should prove
+    useful as a way to do distro-specific things.
+    
+    Change-Id: Ie32566349319ca244fa02065bb9f81c36c1b49fb
+
+commit b2314243c63a85dd6fc292104a2fefe54c54e492
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Feb 27 15:31:56 2013 -0800
+
+    Verify Ubuntu Cloud Images using SHA256SUMS
+    
+    Relies on https://cloud-images.ubuntu.com being served by a cert signed
+    by one of the CA's trusted by the build host.
+    
+    Change-Id: I690b755acca54789110c2c8fa723c8b87b2485c9
+
+commit 0bbea74583435300a700dcb36ee17ebcd1449496
+Merge: 4f8040c 2b5557e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Feb 27 20:26:01 2013 +0000
+
+    Merge "Don't use sudo in base."
+
+commit 4f8040c7a4d3b963aaa479ede70b5d2faee4a5c3
+Author: Ghe Rivero <ghe.rivero@hp.com>
+Date:   Wed Feb 27 11:11:26 2013 +0100
+
+    Fix elements_path default path.
+    
+    Change-Id: I0cf94813bd23edac8e25a55bbe58db6f126a2294
+
+commit 308eee28271531bc493e632a42542143b43e8637
+Author: Ghe Rivero <ghe@debian.org>
+Date:   Mon Feb 25 10:17:32 2013 +0100
+
+    Use multiple locations for elements dir.
+    
+    Using ELEMENTS_DIR env variable, you can specify multiple dirs containint your elements.
+    It must be a ":" separated elements list.
+    
+    When an element is seen in one of those lists, it will be chosen and will continue with the next element.
+    
+    Change-Id: I18eca27d943139cd6ca1ebd232b419e502d7b048
+
+commit 7d1a4adc175f5302298f3bdd2eabd4aa8783335a
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Feb 26 20:12:09 2013 -0800
+
+    Specify os-refresh-config path in README.
+    
+    Change-Id: I1cf9569ae805c070f13a582d376665f2e8976ffc
+
+commit 2b5557ea3021640a4dd41fc68eef515a16e0ce40
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Wed Feb 27 15:51:10 2013 +1300
+
+    Don't use sudo in base.
+    
+    Install.d hooks are already root, we don't need plain sudo there.
+    
+    Change-Id: I69747049b2f5f649eb503a24487bbb3a4151ae21
+
+commit b917233a2477dde372cdd78a70eabe17c0bac2d3
+Merge: 619153b aa9f447
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Feb 27 00:02:31 2013 +0000
+
+    Merge "Devstack element pulls from master."
+
+commit 619153bdf45aa6f44099c6ae3a60ffa56bd6c548
+Merge: b509dbb a05629b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Feb 27 00:02:26 2013 +0000
+
+    Merge "Support multiple outputs disk formats"
+
+commit b509dbbd0e2c922a2cc1e8d3eea5915ed024f7c3
+Merge: bf67e4e bdc5759
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Feb 27 00:02:24 2013 +0000
+
+    Merge "Install heat-cfntools from pypi"
+
+commit bf67e4ec0c22a05f46ad7ad894195d0f720969f2
+Merge: c520326 dc84546
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 26 21:06:57 2013 +0000
+
+    Merge "Add an openstack all-openstack-db element:"
+
+commit dc845466bcbf7ace4ad205bdaca25187d5be5b00
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Thu Feb 21 11:21:15 2013 -0800
+
+    Add an openstack all-openstack-db element:
+    
+    This element installs all openstack sql databases into
+    a single image, useful for a bootstrap image.
+    
+    Change-Id: I6efe807793ec620a60d5798d28a7e3103a5b90e8
+
+commit aa9f4477708e7acc9f9d1f1fce7539a099c93d46
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Mon Feb 25 16:31:09 2013 -0800
+
+    Devstack element pulls from master.
+    
+    Devstack element pulls devstack from trunk
+    instead of from the tripleo fork.
+    
+    Change-Id: Ie5b1c325b2464cf1195e8e79857bdea27f9847a2
+
+commit c5203262d7ba9c2005c6f2b9ea48e532c4fefe75
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Mon Feb 25 16:29:28 2013 -0800
+
+    Fix ramdisk-image-create
+    
+    ELEMENTS_DIR env var was not being set by lib/ramdisk-defaults.
+    This caused ramdisk-image-create to fail.
+    
+    Change-Id: I25ec43feddb8ef546dba83a77b8488fee98d4a17
+
+commit 48e22d91b6ef1603c6ebf15339b840a0bd2c906d
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Fri Feb 22 12:39:10 2013 +1300
+
+    Run alternatives pip -> pip-python
+    
+    Checks to see if python-pip is installed and installs
+    an alternatives link at /usr/bin/pip
+    
+    Change-Id: I858ac2597d3cacc79144a8b345faf6a2f7dee26e
+
+commit bdc575974091ced865dfd84a4c195a179cb3034b
+Author: Steve Baker <sbaker@redhat.com>
+Date:   Thu Feb 21 15:47:12 2013 +1300
+
+    Install heat-cfntools from pypi
+    
+    Then creates symlinks into /opt/aws/bin using the included script.
+    
+    This replaces the heat-jeos element, so anything that references heat-jeos will need to be replaced with heat-cfntools
+    
+    Change-Id: Id286b005f69ea364357303b4bbc1ed29d4f0f8f9
+
+commit a05629b9f4088b0762b4ee4d7396440117115d09
+Author: Ghe Rivero <ghe.rivero@hp.com>
+Date:   Wed Feb 20 13:07:23 2013 +0100
+
+    Support multiple outputs disk formats
+    
+    Using the IMAGE_TYPE env variable, you can select which ouput disk format you want for your image.
+    Only qcow2 format supports compression.
+    
+    Change-Id: Ia01d9079c354dbd3cfcf870d86f97ee57bd9d479
+
+commit e4957e37a9f9e7f7c4f7d141107a68c09d1d21a8
+Merge: 274f493 6cfea30
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 19 04:52:04 2013 +0000
+
+    Merge "Prevent silent failure of element-info:"
+
+commit 6cfea302464043a0682a58cb21474ee21053bc3b
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Feb 5 09:53:33 2013 -0800
+
+    Prevent silent failure of element-info:
+    
+    bin/element-info accesses it's library via a symlink:
+      bin/diskimage_builder -> diskimage_builder
+    
+    This causes the relative path in elements.py to be
+    incorrect.
+    
+    element-info silently fails in this situation, because
+    it allows missing 'element-deps' files, so that these files
+    may be optional.
+    
+    This change causes element-info to fail explicitly if $ELEMENTS_DIR
+    is not set, as it now is when called by diskimage-create, and
+    adds tests reflecting this behavior.
+    
+    Change-Id: Iec50f934feb13dfed64d69297a3af6ac9f842677
+
+commit 274f4939a1840cca73168a6cca8d165300aebc1c
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Tue Feb 19 11:35:56 2013 +1300
+
+    Fix the sudo rules for unpacking fedora raw images.
+    
+    Change-Id: Icba75e0380f63a8f6059d1be4c63ac823b9f473d
+
+commit 9978720051923e58ae50794adf9ca24bb6d8cd38
+Merge: f42cb64 5544da4
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Feb 18 22:01:36 2013 +0000
+
+    Merge "first-boot.d scripts log to a file:"
+
+commit 5544da4605e8fa26901f53afeec11851b941aa69
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Fri Feb 15 10:01:58 2013 -0800
+
+    first-boot.d scripts log to a file:
+    
+    Log first-boot.d script output to a file, to ease troubleshooting,
+    since the first-boot scripts are removed from the system after
+    running, even in case of failure.
+    
+    Change-Id: I07d5c782dd918a804e054bf08efce89ed9442e0c
+
+commit f42cb641bf710d805ec3fffe4c10d69367b9f998
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Fri Feb 15 15:34:09 2013 +1300
+
+    Fedora needs to depend on dib-run-parts too.
+    
+    Change-Id: I56611d1c2bf13c8d24a87869bf8334d8e4992f6f
+
+commit 7ae4fb5c1c7780cc94dedebecc1b72bc69f25944
+Merge: 210e697 826c9c7
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Feb 15 02:19:05 2013 +0000
+
+    Merge "Make populate_libs() more generic."
+
+commit 210e69779b7633214955e2411f5f9127f5c1eb71
+Merge: 9afddcf 9806b6e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Feb 15 02:12:47 2013 +0000
+
+    Merge "Give stack user passwordless sudo:"
+
+commit 9afddcf2669061712a1a9268b890dea315024480
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Feb 14 11:16:00 2013 +1300
+
+    New element that uses a fedora cloud image as the base.
+    
+    Change-Id: I7d83bb2b359e7a8c3858eca04c96e35cf4e1fe9e
+
+commit 04a208c866a7f144e931365119e383dc0fb5c45a
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Feb 14 11:36:06 2013 -0800
+
+    Add dib-run-parts install command to sudoers.d
+    
+    Change-Id: I8943d18efa4077da87cb822255f70c6541f32f30
+
+commit 91c30f6ab242f86bfa71d8eda14283f90a992cd2
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Feb 14 10:20:30 2013 -0800
+
+    Use dib-run-parts for running scripts in target
+    
+    Also modified dib-run-parts to apply a more workable solution for
+    filtering out unwanted files such as editor backups and VCS.
+    
+    The script is installed in its own element, depended on by the OS
+    specific ubuntu element. This is  because the ubuntu element (and
+    later other OS's) are responsible for populating the root filesystem.
+    If we try to install this in base, the root filesystem will look to
+    be populated already and we will skip automatically choosing ubuntu.
+    
+    Change-Id: I017646748c1a8360299106289b57d976d45875a8
+
+commit 3ce071c8942441cbd8eaf2377f63101be9b1ea60
+Merge: 4992022 7f77729
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Feb 14 18:28:55 2013 +0000
+
+    Merge "Move the dpkg specific stuff to a dpkg element rather than being hardcoded."
+
+commit 49920223b561ff2cc501777e999f53a93cc9fef7
+Merge: d84a2fa 3860af4
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Feb 14 16:55:03 2013 +0000
+
+    Merge "Change run-parts usage to be compatible with Fedora."
+
+commit 826c9c793501716c754cec0578865396adfabe31
+Author: Arata Notsu <notsu@virtualtech.jp>
+Date:   Thu Feb 14 17:40:39 2013 +0900
+
+    Make populate_libs() more generic.
+    
+    It can handle "path to path" output of ldd, such as
+        /a/b/c.so => /x/y/z.so (0x123456789)
+    
+    Change-Id: I68d1096694835818c9129212a02796e1ce1c181d
+
+commit d84a2fa246d308daa43234f2e87931e29b1ca65d
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Feb 13 16:41:09 2013 -0800
+
+    Work in progress run-parts replacement.
+    
+    Change-Id: Ie95b3ed2145594b5f6436454a6756012fc1c4729
+
+commit 7f77729ec54d418ff728767b3aec7e9b3ba40e6a
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Feb 14 11:16:00 2013 +1300
+
+    Move the dpkg specific stuff to a dpkg element rather than being hardcoded.
+    
+    This includes the install-packages implementation for dpkg, apt http proxy
+    config, daemon blocking and unblocking.
+    
+    Change-Id: I8f159021d2b223d7003cec067de3aa605ad06974
+
+commit 3860af4be56a1d4f99136f35e8255176ad0fa0f5
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Feb 14 11:16:00 2013 +1300
+
+    Change run-parts usage to be compatible with Fedora.
+    
+    Change-Id: I7a4e1252b0ced940cd4d8fa2fbd096c016933954
+
+commit 9806b6e737ca030450225ffe5100e770d4e7c697
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Feb 5 22:30:30 2013 -0800
+
+    Give stack user passwordless sudo:
+    
+    This is very helpful when performing automation.
+    
+    Additionally, removed addition of stack user to admin group,
+    since that group does not exist on all systems, and
+    passwordless sudo eliminates the need it was addressing.
+    
+    Change-Id: I727bd51acb920c6c2e66247069998b6ee4267895
+
+commit 56e50ee5cf4dde5362eb9a0b747a2ca04b49f8f0
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Fri Jan 25 14:23:56 2013 -0800
+
+    Consolidate common OS installation into a script:
+    
+    Move common openstack service installation operations
+    into a new script `os-svc-install`, which simplifies
+    the elements for openstack services.
+    
+    Change-Id: Ied8ac3278e7fe8af76e24748ec4e598a84afa03c
+
+commit 8220c0009594151dbee55d257f12c60bb17ee5d3
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Wed Feb 13 13:58:35 2013 +1300
+
+    Bad code landed, causing ubuntu to be always landed.
+    
+    Change-Id: Ia77073563fde70140169dbbc5a7448aad54295e2
+
+commit b98e8d1b3ff7806da8b6db5277b6c54d4685163c
+Merge: 86a1294 9386a35
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 23:16:23 2013 +0000
+
+    Merge "ramdisk-image-create shows a failed binary dependency"
+
+commit 86a1294c280cc58780190fb2f73fbc5c0899c833
+Merge: 792a4a5 f3dc4c9
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 23:13:48 2013 +0000
+
+    Merge "cloud-init-nocloud element for non-cloud image"
+
+commit 792a4a5916749c2610f5820c2c144c189e979a47
+Merge: e5e36ce 0841576
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 23:09:13 2013 +0000
+
+    Merge "Add cfn-hup configuration for os-refresh-config"
+
+commit e5e36ce2c1581c37b6d20494e91e07ff08424354
+Merge: 750e4c3 9ed4aaf
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 23:07:12 2013 +0000
+
+    Merge "Add element to call os-refresh-config"
+
+commit 750e4c3e062ef731823863c7bb884d1fd3efe6dd
+Merge: 4008475 aa6f5f8
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 23:05:07 2013 +0000
+
+    Merge "Correct misuse of return in ramdisk-image-create"
+
+commit 4008475bfc8b8f56ef3393c65a962e9a209eedf0
+Merge: fd8b30f 5c13dc1
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 23:04:56 2013 +0000
+
+    Merge "Fix unnecessarily creating a temporary directory"
+
+commit fd8b30fa590f4f1b4fb01e82e52da6079d662de2
+Merge: d9cc434 8f96a28
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 21:22:32 2013 +0000
+
+    Merge "Add default element selection"
+
+commit f3dc4c93807b83c9ba79f2df813996fb8fe0976c
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Feb 4 21:54:48 2013 -0800
+
+    cloud-init-nocloud element for non-cloud image
+    
+    Disables cloud-init from querying EC2 metadata, or any cloud metadata
+    service. It keeps only the Nocloud and None data sources, which are both
+    expected to be "baked in" to an image.  This speeds up boot by 2 minutes
+    on hosts where cloud-init cannot reach the EC2 metadata service.
+    
+    Change-Id: I43522c4a442c0f2fc2044d4898768ceb4f839099
+
+commit 0841576862235868768f82e7cf48edcc34df3693
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Sun Feb 10 21:10:18 2013 -0800
+
+    Add cfn-hup configuration for os-refresh-config
+    
+    Configures cfn-hup to run os-refresh-config on Metadata changes.
+    
+    Change-Id: I65fcd8e09fe3cb070e3036156eaca4b5b0993d67
+
+commit d9cc434fa03376c9c0dc098722dbd4b80077ed91
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Tue Feb 12 08:56:35 2013 -0800
+
+    Fix broken pep8 in setup.py
+    
+    Change-Id: I304a581068d6513e5ee7acbb80b80a912c6f7a39
+
+commit 9ed4aaf2b07bd3538a87c922865d1379da483208
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Feb 6 19:05:47 2013 -0800
+
+    Add element to call os-refresh-config
+    
+    os-refresh-config simply runs things in a predictable order in directories
+    that other elements can populate. This element installs it and sets it
+    up to run at boot.
+    
+    We also modify os-config-applier element to be called by this rather
+    than to have its own upstart job. This provides an example of how other
+    elements can insert themselves into the refresh process.
+    
+    Change-Id: I52d72b7fd302ec317840af87fa77299387af99ad
+
+commit 8f96a286d7381e93e7506da483c0dc1afaca4c17
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Mon Jan 28 18:24:05 2013 +0000
+
+    Add default element selection
+    
+    This change includes the 'base' element by default and adds a
+    command line switch to prevent this behaviour. This should reduce
+    confusion since this element is almost always necessary.
+    
+    Change-Id: Ib4a2ef53a76b119b764751fa21058f4e2cb37741
+
+commit aa6f5f8005850d6783a04784e90c0921f31e7f37
+Author: Arata Notsu <notsu@virtualtech.jp>
+Date:   Tue Feb 12 17:43:35 2013 +0900
+
+    Correct misuse of return in ramdisk-image-create
+    
+    Replaced return with exit.
+    
+    Change-Id: Iee26177cdb58af67b6919da12456debfe5940105
+
+commit 5c13dc1d75538d0dfb318519f44a3c33460a602a
+Author: Arata Notsu <notsu@virtualtech.jp>
+Date:   Tue Feb 12 17:29:52 2013 +0900
+
+    Fix unnecessarily creating a temporary directory
+    
+    mk_build_dir was executed twice in ramdisk-image-create.
+    
+    Change-Id: I93cf83775fb5e7ba3e6b84643f723568a2420305
+
+commit 9386a35e47ede3f754e6fdc6a2ef7d4531f6fa33
+Author: Arata Notsu <notsu@virtualtech.jp>
+Date:   Tue Feb 12 16:40:26 2013 +0900
+
+    ramdisk-image-create shows a failed binary dependency
+    
+    This patch fixes a problem: if a binary is not found, the script
+    exits without a message informs what is needed (because of 'set -e').
+    
+    Change-Id: I00b8917918f0e6eddf8506d6548432077eb4bf14
+
+commit 9605c7090acdb49392fc2036d2e4f4628fc96036
+Merge: 8f9d433 41b93c9
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 12 07:08:53 2013 +0000
+
+    Merge "Add missing python-pip dependency in heat-jeos"
+
+commit 8f9d433917dd9622118321af32a4d2d6525cbd0c
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Tue Feb 12 19:23:34 2013 +1300
+
+    The default ARCH was broken due to $ARCH not being exported.
+    
+    Change-Id: I84f2b60c391d90ed285bd30669260c8483a3c76f
+
+commit 41b93c99c453e1aee9a10cb9eb1d2b311638eb67
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Feb 11 18:11:51 2013 -0800
+
+    Add missing python-pip dependency in heat-jeos
+    
+    Change-Id: I9d0b5d0f86c8fc07cbd7e432df79f7b66c98af0f
+
+commit 80b9b45e312a25cfc4b36c87a3a29b7200f89538
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Feb 11 14:23:02 2013 -0800
+
+    Work around cfn API bug in HEAT w/ specific boto
+    
+    See https://bugs.launchpad.net/heat/+bug/1122472 for information on the
+    specific problem in heat. This can be removed when that bug is resolved.
+    
+    Change-Id: I76a7a42dea9472c54f03593c8c67856aa23f2c73
+
+commit 1ee3a01447469d613124ecc8ac5680699d767b7f
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Mon Feb 11 17:01:36 2013 +1300
+
+    Move initial root contents into a hook.
+    
+    This is a necessary but not complete step towards supporting Fedora and Suse
+    distributions. Further work is needed (e.g. to quiesce daemons on
+    installation).
+    
+    Change-Id: If3ea6093d41a21de755db52328226b84b5a3ede6
+
+commit 988bebcefb7bbf2786ce93b9ff4129c9de9f0cbe
+Merge: c3ee071 455bae1
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Feb 5 06:54:53 2013 +0000
+
+    Merge "Add os-config-applier element."
+
+commit c3ee071d73f4719ac5313303d4898c8bc41ea921
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Thu Jan 24 09:42:57 2013 -0800
+
+    Make it possible for openstack-CI to run tests
+    
+    Per http://wiki.openstack.org/ProjectTestingInterface we enable all
+    of the commands except build_sphinx because we do not have any sphinx
+    documentation as of yet. Includes babel support though there are no
+    properly internationalized strings just yet.
+    
+    Change-Id: Iae6e6b3f9e605106f4575196fa5527d2187255df
+
+commit 3d95bf81c51d1b91d4787b5c70caaf6a87dc54f1
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Tue Feb 5 14:39:38 2013 +1300
+
+    Export the ELEMENTS_DIR so that dependencies work.
+    
+    Change-Id: I544b0762f8a13a11564cf02c5fdbe3cb521f63b3
+
+commit 455bae12bd21466fc62da65cd64eb043cb4f5a62
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Jan 30 10:57:12 2013 -0800
+
+    Add os-config-applier element.
+    
+    Change-Id: Ie7ee15c26fbbcf93f2708bc63005cee5f75e8fc1
+
+commit 24600defd0592f233285e8f9b3876499235f51fc
+Author: Robert Collins <rbtcollins@hp.com>
+Date:   Thu Jan 31 16:43:44 2013 +1300
+
+    Split stack user creation out of devstack element.
+    
+    This makes it easy to create a local user without cloud init, for vm
+    instances.
+    
+    Change-Id: Ifaae67418a725eb5a39cf9e46f0804b09986f63c
+
+commit 0135f07ad93fdcca0217cf312e9a72b9aa6cfd02
+Merge: cb40379 4688804
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Jan 31 00:18:45 2013 +0000
+
+    Merge "Improve error message for missing element."
+
+commit cb403795238d94090d20d1e87d2b948149b57244
+Merge: 11b4a55 997165f
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Jan 31 00:17:50 2013 +0000
+
+    Merge "Add option to clear environment"
+
+commit 4688804bbc80e30946f4958447c426f8e41f7f78
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Jan 30 16:07:02 2013 -0800
+
+    Improve error message for missing element.
+    
+    Change-Id: I80beae77874e36d7f47880b030c225100b102e95
+
+commit 11b4a5501d6d7f8db85a4ce85b0cac849ef1f0e6
+Author: Ghe Rivero <ghe@debian.org>
+Date:   Mon Jan 28 06:41:54 2013 +0100
+
+    Create install-packages as a binary.
+    
+    Only supports Debian family distribution so far.
+    
+    Change-Id: I9fa0b833c34a614fe498c6c6ae599733a69c1309
+
+commit 997165ff119fe7ffcfeb76ecb86ffb643f610ccc
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Wed Jan 30 18:24:24 2013 +0000
+
+    Add option to clear environment
+    
+    This adds an option to disk-image-create that allows it to re-exec with
+    an empty environment if required.
+    
+    Change-Id: I9e51aa07b903e18cdd0ed5f953800307f9899b5d
+
+commit 8997ec6d0ba51f235365be56889d5619dc8c950c
+Merge: 42a2d1c e831a06
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jan 30 09:42:29 2013 +0000
+
+    Merge "Add openstack-all element."
+
+commit 42a2d1cf44c4f4b70a4a216ec562c7e650d2cfa8
+Merge: 42cad78 861f633
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jan 30 09:26:11 2013 +0000
+
+    Merge "Add sudoers rule to format and mount anykind of partitions in disks."
+
+commit 42cad78e204856eaa5c3ccd3cbbc3c7c3615c966
+Merge: 15dbc42 b8d51d3
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jan 30 09:17:19 2013 +0000
+
+    Merge "Add element to install config-applier"
+
+commit 15dbc42d72a75f350a503b7c25a38f9080dbc0ae
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Mon Jan 28 18:08:50 2013 +0000
+
+    Switch locale to C
+    
+    Remove the explicit installation of an English language pack and instead
+    just default LANG to C. This settls Perl's noisy warnings and also stops
+    any side effects of different language build hosts.
+    
+    Note that this is set right at the start of the build process, so it
+    should be entirely possible to override if needs be.
+    
+    Change-Id: Id3b31162d4198fa02dc5a4d11168e57dbcd14a5d
+
+commit 861f633196923c7aa167e1f603d001cd8a7c2e5a
+Author: Ghe Rivero <ghe@debian.org>
+Date:   Mon Jan 28 17:20:22 2013 +0100
+
+    Add sudoers rule to format and mount anykind of partitions in disks.
+    
+    The element vm is the only one creating a partition in the disk.
+    If not included, it will ask for sudo password to format or mount
+    the whole nbd disk or disks with multiple partitions.
+    
+    Change-Id: Iac0987d2088433873b7cbb68deecc9254b2d0103
+
+commit e831a06bad80327d54b8006454a33b76c297225c
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Fri Jan 25 14:00:43 2013 -0800
+
+    Add openstack-all element.
+    
+    Change-Id: I192b03c64899c77f4bc739b6a09921284b600a98
+
+commit b8d51d3c9a1ffe3b7dbfdea55364580738def485
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Tue Dec 18 14:54:33 2012 -0800
+
+    Add element to install config-applier
+    
+    Change-Id: I91f519f5ecbe1c5a252e87af28b66eef983478b0
+
+commit 15a1ad0b5bf84d1d7291cfc853bee092a8616685
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Sat Jan 19 08:09:42 2013 +0000
+
+    Enable 'ec2-user' in HEAT for quantal images.
+    
+    Employs some workarounds that can be removed when bugs reference in
+    comments are fixed elsewhere.
+    
+    Change-Id: If423844f0dfabbddd4d0d7b8ad8fcf6d32693195
+
+commit c8c33e3bb125021b90aaf78ce67965af66b0b6f0
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Jan 21 17:35:31 2013 -0800
+
+    Add a simple implementation of element dependency
+    
+    This adds a new optional file to the root of elements. The
+    file lists dependencies which will be added to the list
+    requested by the user during disk image creation.
+    
+    Change-Id: Id71c3b333563604bbbaf90f9cf40e24fa9738fc8
+
+commit b4e495f6efabe3babead5b97783ab6090f194e75
+Merge: 35487c8 89b245c
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Jan 20 22:50:51 2013 +0000
+
+    Merge "Install nova-api from github."
+
+commit 35487c8639da3d45ac00a2a6f4bd08cef1847a33
+Merge: 6aed59c 1951ac8
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Jan 20 22:46:39 2013 +0000
+
+    Merge "Disable Apt Recommends."
+
+commit 6aed59c95e8418643bcc709a9921201addc32fd4
+Merge: 4c2c3a8 ec3f7f6
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Jan 20 22:40:09 2013 +0000
+
+    Merge "Add Icinga elements."
+
+commit 1951ac88382599834adeb111805cdeca738ed1d2
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu Jan 17 17:07:30 2013 +0000
+
+    Disable Apt Recommends.
+    
+    This disables apt's default behaviour of installing packages in the
+    Recommends field of other packages. While this can be useful, it
+    causes a lot of unnecessary software to be installed and may cause
+    explicit dependencies to be missed in some circumstances.
+    
+    Change-Id: I10f4519290e6b3dafda3365c0c5dcc42ad17c090
+
+commit 4c2c3a873863e77126b26f8b2ec3f96d1d61b88c
+Author: Chris Krelle <nobodycam@gmail.com>
+Date:   Thu Jan 10 15:01:18 2013 -0800
+
+    add default gateway to deploy init script
+    
+    Change-Id: Ia2aed772d811c44e0613bc0684b2ab2a58d36f86
+
+commit a215ffcd92d690e4222404b084578fc4ab054965
+Merge: 961d6dc 0f73578
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Dec 21 17:53:11 2012 +0000
+
+    Merge "Allow manual installation of packages."
+
+commit 0f73578721f4bdb59bd73efba936b2c8178a2db9
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Tue Dec 18 20:45:02 2012 +0000
+
+    Allow manual installation of packages.
+    
+    Rather than force creation of an element for a single package install,
+    allow people to do this from the command line.
+    
+    Change-Id: I63e2e7e50c4a7dbb8a8e198581dfadce91773621
+
+commit 961d6dc7b2aebebe8a99dfbaa50b75be6b1c8ce6
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu Dec 20 18:07:54 2012 +0000
+
+    Include English locale in base.
+    
+    This change causes the "base" element to install and generate English
+    locales, thereby mitigating a lot of build noise (at least for
+    English speaking users). Also included is a note in the element's
+    README.md about what users in other locales should do.
+    
+    Change-Id: I053c7e0254a0a0d7dde081f7cc72204a12aa8ef4
+
+commit 89b245c604b89aebd856bc1eb4f3f3cdadb44069
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Thu Dec 20 14:10:44 2012 -0800
+
+    Install nova-api from github.
+    
+    Change-Id: If3b2818386a58a5effcfb3cc93579dc296536733
+
+commit ec3f7f64daf28c09b5fd95e788d373c6c8ed67b4
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu Dec 13 15:39:53 2012 +0000
+
+    Add Icinga elements.
+    
+    Add basic install-only elements for creating images for Icinga's core
+    and its web UI.
+    
+    Change-Id: I7193a3a7130543903d07efc95322487444443d9a
+
+commit 147489f239d05ac7dbe5b3ce8a2303c9fa38dfa8
+Author: Ghe Rivero <ghe@debian.org>
+Date:   Wed Dec 19 15:25:35 2012 +0000
+
+    Add missing whitespace to local-config.
+    
+    Fix whitespace error in local-config/install.d/61-http-proxy that prevents
+    no-proxy being written.
+    
+    Change-Id: Ie2511bb5b2504c42ff59ec277cd91bf92b56da59
+
+commit d0e9f98b5b99b265d58be245c8ff8fd943fb3480
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Wed Dec 19 13:35:29 2012 -0800
+
+    Replace demo references with incubator.
+    
+    Change-Id: I94e88471e85ab5cf364ce995d6e09631030e3aeb
+
+commit 0d898acd7c82ca47cb1616e251029fbb174cbc0d
+Merge: 20b679e 05ccb5e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Dec 19 20:53:04 2012 +0000
+
+    Merge "Clean up the MySQL element to make it suitable for generic use."
+
+commit 20b679e95992bc268836162c502aaa9f7935ee69
+Merge: 041f04a d25f89a
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Dec 19 20:53:02 2012 +0000
+
+    Merge "Install quantum-api from github."
+
+commit 041f04a8368d0a36865766e92ed027a2860bfd0c
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Wed Dec 12 21:20:12 2012 -0800
+
+    Add an element to install the HEAT JEOS tools.
+    
+    Change-Id: Id1d96479142dbfbba2265ab8ec5f242146a03b19
+
+commit d25f89ad1217dc1a4722452cf280b5859966041e
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Wed Dec 12 15:25:46 2012 -0800
+
+    Install quantum-api from github.
+    
+    Change-Id: If7ae61bce1ee263077ecd3e49beab4e5c8f97cf2
+
+commit 05ccb5eab5bbc8914a166da68d7b144192fbd157
+Author: Clint Byrum <clint@fewbar.com>
+Date:   Mon Dec 17 15:00:18 2012 -0800
+
+    Clean up the MySQL element to make it suitable for generic use.
+    
+    Change-Id: Ib3e384d6fb48e6df53a0897bcc48bbb46995a824
+
+commit 804e94b5ebde80fbac21e0711338370e8597932f
+Merge: 783e57e 2fcb64e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Dec 18 16:14:57 2012 +0000
+
+    Merge "Add glance-api element."
+
+commit 783e57ef4fb5ba844d487d8a8f5aec85dbdd41e8
+Merge: 2cefdd7 219aa52
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Dec 18 15:32:52 2012 +0000
+
+    Merge "Fix disk-image-create's getopt error handling:"
+
+commit 219aa5295824cb341fbcff875bec897c7d632448
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Mon Dec 17 17:00:13 2012 +0000
+
+    Fix disk-image-create's getopt error handling:
+    
+    We originally checked the return code of getopt, but subsequently
+    a debugging echo has been inserted and now we are checking the
+    return code of "echo", which is very rarely going to be useful.
+    
+    Change-Id: I054fecaf6576d5e9d42b07159bba7d50335bf6cc
+
+commit 2cefdd7e601e37ff24028ea3fb54cf9164a2f28e
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Mon Dec 17 16:53:46 2012 +0000
+
+    Tidy up base element:
+    
+    Fix a typo in the base element itself.
+    Refer to it early in the README since it is likely to be useful to
+    almost everyone.
+    
+    Change-Id: I4a753b61542f8a354ade7fcc4436076aec61e6c0
+
+commit d212ffd1db29f61e9111006fdbe9f7bac2b6f28e
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Sun Dec 16 18:44:46 2012 -0800
+
+    Add guidelines for composing elements.
+    
+    Change-Id: Id9bb81aefaad2024d9a73d02c58a73565250b813
+
+commit dba9418f03aa1c2036d781a071923b4936cffc90
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Fri Dec 7 14:52:35 2012 -0800
+
+    Copy both http and https proxy to local-config.
+    
+    Previously, only http_proxy was copied into the local-config image.
+    We now preserve both http_proxy and https_proxy settings.
+    
+    Change-Id: I4de2712f2772fb7d07b228cecdc0c8ec6f3df567
+    Co-authored-by: Chris Krelle <nobodycam@gmail.com>
+
+commit 1f39f4c629074444d2301d9c47a8f0a6d9cae4cc
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Dec 14 13:25:18 2012 +1300
+
+    Add a test framework for testing elements.
+    
+    Change-Id: I845ac3ec6bbcd212ee43151981a2bc5264f4a5b3
+
+commit 573ee28fd2709e1dbd95adc2d3b8648502b9fc8e
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Dec 14 13:25:18 2012 +1300
+
+    Ignore .pyc files.
+    
+    Change-Id: I74c1197fb5c8c35903f0ede8442741d2fc1d3f1d
+
+commit daf9fc1d6b5164b8bce5b287397b0ef110605f67
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Dec 14 13:25:18 2012 +1300
+
+    Add a .testr.conf configuration and ignore .testrepository.
+    
+    Change-Id: I182d8b5567732ecf3da69f580c3e4b6d6438ab6b
+
+commit d03825b504ccf362315142a698bbcbe5b6ab1f8c
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Dec 14 20:17:00 2012 +1300
+
+    Add the ability to break into a shell during builds.
+    
+    Change-Id: I87af952d892f8622e4c916085fc896c735a35438
+
+commit 2fcb64ee77c6ee72142dab1170ef1a3a03f9a5a7
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Thu Dec 13 15:48:18 2012 -0800
+
+    Add glance-api element.
+    
+    Change-Id: I277b353fbbed59823335c8b27e875c4417e2643d
+
+commit 012116cad66eed0706a6381834152623df8272a0
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Dec 14 13:25:18 2012 +1300
+
+    Move everything 'common' into base, making it avoidable for tests.
+    
+    Change-Id: I87edd00f6e0edcd609856192c2c98604ef3274f0
+
+commit e8a8e99a0882a884bfc594beb1256c5076aa90ba
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Dec 14 13:25:18 2012 +1300
+
+    Make it possible to not recompress the qcow2 image at the end.
+    
+    Change-Id: Icca922853ee583dcccb6d3970d080fbec11edac7
+
+commit 115cd0edbb5fe99a79a93c03ca78a8e2d9fc4b73
+Merge: 258185b 9371411
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Dec 13 17:55:27 2012 +0000
+
+    Merge "updating devstack element to reference incubator"
+
+commit 258185b7a22edcc76755b31f225ca46b71625fae
+Author: Ghe Rivero <ghe@debian.org>
+Date:   Thu Dec 13 18:20:55 2012 +0100
+
+    Added true to avoid exit on error
+    
+    disk-image-create just died without any warning
+    
+    Change-Id: Ia5da4188d64bb22540b57d01184b91faa59149e7
+
+commit 9371411ddb23c9bf0f592d6b068249a44bdfd783
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Thu Dec 13 02:31:26 2012 -0800
+
+    updating devstack element to reference incubator
+    
+    devstack element points to github:tripleo/incubator, instead of demo.
+    
+    Also, the element now pulls devstack into the image, rather than relying
+    on incubator/scripts/demo to pull it down after the image starts.
+    
+    Change-Id: I878edcc8f5b1a509b14cadfb5fb4c33571a7f312
+
+commit e47bb5713113f2dce0eea8cabde10b67dd177f3a
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Dec 11 13:44:14 2012 -0800
+
+    Add keystone element.
+    
+    Change-Id: I478227c7a6b806e2aaa52f28ba6c6408d55e9ebc
+
+commit a6755037167dbe36b5f4e893e19aad868f15b5fb
+Merge: 7afabfb 1d3ca33
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Dec 11 09:36:57 2012 +0000
+
+    Merge "Add copyright to lib/ramdisk-*"
+
+commit 1d3ca33ce72de233f1145fafa8c83f43b5d3a7e6
+Author: Arata Notsu <notsu@virtualtech.jp>
+Date:   Tue Dec 11 18:14:19 2012 +0900
+
+    Add copyright to lib/ramdisk-*
+    
+    Change-Id: I6b48205858f3bc6e55b3dd6efc3e038dd6c42127
+
+commit 7afabfb06e322d97c839575500b7c982835df0b4
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Tue Dec 11 21:22:43 2012 +1300
+
+    Generate apt.conf files with correct content, fixes bug 1088805.
+    
+    Change-Id: I26b855260fdfc472179774779558ed7f0947da6c
+
+commit ae1e74acd8c402a61f2caf187c1cc62e7aa93a08
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu Dec 6 14:34:29 2012 +0000
+
+    Further fleshing out of hwdiscovery element
+    
+    This adds support for other elements to feed into the hwdiscovery
+    results.
+    
+    It also fixes a few bugs in the construction of the ramdisk.
+    
+    It also adds support for specifying a server to POST the discovered
+    hardware data to, via the kernel command line
+    
+    Change-Id: I163db2b1388f908880e8f458e16906fa6f9db7bc
+
+commit 9243a8e3f9d701d5b3f307d33ad1f5d7f919b58a
+Author: Chris Jones <cmsj@tenshu.net>
+Date:   Thu Dec 6 12:44:18 2012 +0000
+
+    Move grub installation to the vm element
+    
+    It makes more sense for grub to be installed by the vm element, since
+    that is intended to produce directly bootable disk images.
+    
+    Change-Id: Ic340ba9d3ec4dbeea3aed3576fc899c1424783a2
+
+commit 1eff4a436e9af3c6131fca04039f943ef4fc5cf0
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Nov 30 12:47:57 2012 -0800
+
+    Rename flavour to element.
+    
+    Flavour is overloaded in openstack due to it being used by nova. Element
+    seems to have the same feeling of combinability without using a term already
+    in active use in the openstack community.
+    
+    Change-Id: Ia4c028d4062a8f69c66665821c94dd4bcdf06031
+
+commit e1bc989c2cfb30b7b9705a621048bffedfeb887a
+Author: Darragh Bailey <dbailey@hp.com>
+Date:   Wed Dec 5 17:28:52 2012 +0000
+
+    Configure git proxy settings and prefer http(s) protocol
+    
+    Set a proxy for http protocol usage by git, and switch to using
+    the https:// protocol in preference to git:// to make it easier
+    to clone from behind firewalls.
+    
+    Change-Id: I41e809c54f3065d59ca84d83be80b9472361dd9d
+
+commit 7ccf5282ed3f3ec215ea587f1073111c4b97ff93
+Merge: 0b81a3e e5cda1f
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Dec 3 21:38:54 2012 +0000
+
+    Merge "Use system resolv.conf file when available"
+
+commit e5cda1f731630f98f61c43ddb19944d0b47a2c64
+Author: Darragh Bailey <dbailey@hp.com>
+Date:   Fri Nov 30 15:40:24 2012 +0000
+
+    Use system resolv.conf file when available
+    
+    Where possible use the system configured resolv.conf file
+    to to support resolution of internal servers such as proxies.
+    Use previous hardcoded google dns nameserver as fallback
+    
+    Change-Id: Ibc1e8a3b96e733a2f7fbcdd4b2c5d3e8926424c4
+
+commit 0b81a3e0e805ae562250f5dd7ca50d253d83f41d
+Author: Arata Notsu <notsu@virtualtech.jp>
+Date:   Thu Nov 29 12:28:14 2012 +0900
+
+    Remove udev stuff from the source tree
+    
+    Pick udev stuff from the running evironment instead.
+    
+    Change-Id: I90a004d0a2b83d3451e73ae351cf474a7bfd62ee
+
+commit 5682d59ca64fd57cfbd65ef2d7f65fa6e10b0dcf
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Wed Nov 28 08:47:30 2012 -0800
+
+    Add .gitreview file.
+    
+    Change-Id: I95b011b1851d4299efa19e0527e7594d31600418
+
+commit 38dc7680c9c163c11ae6b740e376209a180fb0ed
+Author: Ghe Rivero <ghe.rivero@gmail.com>
+Date:   Tue Nov 27 18:37:57 2012 +0100
+
+    Jenkins image fixed
+    
+    - Removed http_proxy option
+    - Added sudoers entry to cp first-bot.d
+    - Fixed typo on 11-jenkins-plugins
+    - Restored trap exit on run-parts
+
+commit f48fa9e369ef00508c1c94df5a93b30b7169f21b
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Tue Nov 27 15:13:37 2012 +1300
+
+    Reinstate /mnt redirection of jenkins - HPCS cloud images have a very
+    restricted /.
+
+commit a3f9f12a4aa5570dd596a918cfa12a00d0d3ccb5
+Author: Ghe Rivero <ghe.rivero@gmail.com>
+Date:   Mon Nov 26 19:05:12 2012 +0100
+
+    Untrap EXIT before run-parts
+
+commit 3d596d7e9ce497cab18b024c769edb51fa74db51
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Mon Nov 26 10:55:30 2012 +0000
+
+    Update hwdiscovery flavour to have lots more structure that we can build on
+
+commit c3acf1ed9cec4b2d413d58b38cf4f5e1b4f60139
+Author: Ghe Rivero <ghe.rivero@gmail.com>
+Date:   Fri Nov 23 16:25:14 2012 +0100
+
+    fix crappy header
+
+commit fcf68d1c184966853aa3d8b876483fc8a994af41
+Author: Ghe Rivero <ghe.rivero@gmail.com>
+Date:   Fri Nov 23 10:12:42 2012 +0100
+
+    Updated jenkins flavour
+    
+    - Install list of plugins
+    - Use an http service as proxy on port 80
+      - Only nginx for now
+
+commit 5efe4f983f3dc6bd8a318efce22234af4e043529
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Thu Nov 22 17:58:07 2012 +1300
+
+    Make a primitive jenkins image.
+
+commit d935fc0e073c47bad5dcdde5064516af0224f199
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Wed Nov 21 19:00:53 2012 -0800
+
+    be smarter about mounting qcow images
+    
+    some images have partition tables, some don't
+
+commit 90f0077cbaf1a01c1eb2ec087845da5800e9ae45
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Thu Nov 22 15:04:51 2012 +1300
+
+    Use base in all examples.
+
+commit 51cbc17c4a9d113fa3d60edad30c2ed7b4413ad7
+Author: Chris Krelle <nobodycam@gmail.com>
+Date:   Tue Nov 20 15:21:29 2012 -0800
+
+    added br* filter for interfaces
+
+commit e1203eccf277c658798d3bc9a715677a0e04f9b8
+Author: NoBodyCam <nobodycam@gmail.com>
+Date:   Tue Nov 20 14:05:20 2012 -0800
+
+    adding BASIC hardware discovery.
+
+commit 2b879aea6a0771124c4d59bb06a415c3b671d384
+Author: NoBodyCam <nobodycam@gmail.com>
+Date:   Tue Nov 20 14:04:40 2012 -0800
+
+    adding dhclient support
+
+commit 06bbe7d334a973e11445cfbd911836d3607b59cc
+Author: NoBodyCam <nobodycam@gmail.com>
+Date:   Tue Nov 20 14:03:40 2012 -0800
+
+    adding dhclient
+
+commit 589d961cb2d448f7d307554b0b0abae91f1ba7be
+Merge: e636d61 d0d372a
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Nov 20 11:21:21 2012 -0800
+
+    Merge remote-tracking branch 'upstream/tripleo' into tripleo
+
+commit e636d61365d1cf2c60a638cd2f6afd8e15fc5e8d
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Tue Nov 20 10:59:44 2012 -0800
+
+    move misplaced salt-master install script.
+
+commit d0d372ad78ef9bf8640e4e8fc1e9e8cbe2e3c1f7
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Tue Nov 20 05:21:53 2012 -0800
+
+    mount_qcow_image should mount p1
+
+commit e3551c752f54a3ba229bde95c3cc6b5ff84bb9bd
+Author: NoBodyCam <nobodycam@gmail.com>
+Date:   Mon Nov 19 17:04:51 2012 -0800
+
+    removes AMQP install and adds hwinfo
+
+commit f7fdec55a85af6e6969664d94cb527bc9673b43a
+Author: NoBodyCam <nobodycam@gmail.com>
+Date:   Mon Nov 19 16:01:40 2012 -0800
+
+    added lsmod to default busybox links
+
+commit 4e6ca85e8fcbc033e8d7b32b79514d6c17c19028
+Author: Tim Miller <tim.miller.0@gmail.com>
+Date:   Mon Nov 19 14:18:33 2012 -0800
+
+    add salt-master flavor.
+
+commit fb426153f4a5dc0dc94343fbaac12d526d62a800
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Sun Nov 18 08:17:54 2012 -0800
+
+    remove force-xtrace in disk-image-get-kernel
+
+commit e5fcb277906cde94ad8a5ca25135867888d1cd27
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Fri Nov 16 18:30:15 2012 -0800
+
+    add some tooling that baremetal-devstack wants
+    
+    - add bin/disk-image-get-kernel to extract vmlinuz/initrd from .qcow2
+    - add corresponding methods to lib/common-functions
+      - map_nbd
+      - (un)mount_qcow_image
+
+commit 37253564d32683b105963a1cc550dcc2b6503361
+Author: chriskrelle <chriskrelle@tooltester.(none)>
+Date:   Fri Nov 16 16:30:11 2012 -0800
+
+    move tgtd & tgtadm to bin-deps of deploy and remove from lib/ramdisk-functions
+
+commit aa12710e5bf9e6ccba95b2e17097044d6ac633b1
+Author: chriskrelle <chriskrelle@tooltester.(none)>
+Date:   Fri Nov 16 15:06:14 2012 -0800
+
+    Adding python-AMQPLib install to HWdiscovery
+
+commit 4b7cdb4fdc27ae6584e0a5ce229b550bd0d97cbf
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Thu Nov 15 16:20:32 2012 +1300
+
+    Fix copyrights for HP work.
+
+commit 7ce2c06edd9ef719f59fa70bc78e8d1eb04034ac
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Tue Nov 13 15:34:29 2012 +1300
+
+    Add a flavour for doing generic this-node-is-in-a-cloud stuff, like cloud-init tweaks.
+
+commit ffab3354ca460b0e7a96f39bac5d58f9865ef685
+Author: Devananda van der Veen <devananda.vdv@gmail.com>
+Date:   Mon Nov 12 16:49:27 2012 -0800
+
+    adding mysql flavor (untested)
+
+commit 823e18fda2c059c1dc75b018a1385a6641e09e08
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Tue Nov 13 10:00:33 2012 +1300
+
+    Document more about the layers.
+
+commit d15b782175ec5f632852d2f5971744026fc53002
+Author: Ghe Rivero <ghe.rivero@gmail.com>
+Date:   Mon Nov 12 19:39:25 2012 +0100
+
+    Some cleanup on nova-vm flavour
+
+commit f7091cb2fc973271b1c063b892bf083b41d3c9fa
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Mon Nov 12 16:56:08 2012 +0000
+
+    Add support for flavours to ship udev rules.d files and port over the mellanox variant to use this
+
+commit cef3e552e6451feae4f740e4f887f851ba507c6a
+Author: Ghe Rivero <ghe.rivero@gmail.com>
+Date:   Mon Nov 12 13:09:54 2012 +0000
+
+    Fix mysql passwords
+
+commit 9ecbe14d9ca6ad8dad15871f5335c445a453ec0a
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Mon Nov 12 20:12:46 2012 +1300
+
+    Default to 2G in size - 1G is just too small.
+
+commit 4c3c7ea9ba50b51d1d922c12c5c41d10127e04fd
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Mon Nov 12 13:45:57 2012 +1300
+
+    Fix handling of parameters that are not set by any flavour for eval_run_d.
+
+commit 40e954735c53eb79d4f8262c2066cad9950548dc
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Mon Nov 12 11:47:26 2012 +1300
+
+    Make it possible to set a size from within a flavour, and use that for devstack.
+
+commit ac930076fb4543fd082b6827df23baa5f1c15f70
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Sat Nov 10 11:36:24 2012 +1300
+
+    Rename baremetal to deploy.
+
+commit 13d65413e1f20492f3eea5ab70d1b141396ab2c0
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Fri Nov 9 22:16:08 2012 +0000
+
+    Remove some whitespace
+
+commit 6fb8b19b7cd2f8e7b335c047992846f719ae5445
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Fri Nov 9 21:48:41 2012 +0000
+
+    Update ramdisk building to support init hooks for flavours
+
+commit 88a11115f5c1e581180b3a0556d978e1aa7484da
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Fri Nov 9 21:48:23 2012 +0000
+
+    Update docs for ramdisk building
+
+commit a9bd68f1c34fd62abb65b814c1024f72b41243cb
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Fri Nov 9 21:48:04 2012 +0000
+
+    Add readmes to the ramdisk flavours
+
+commit 511fb825f94fbdf0f0f43174b8a9b39e55a93062
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Sat Nov 10 10:16:06 2012 +1300
+
+    Documented binary-deps feature.
+
+commit eb584f14edbeeb5aebbeb98959284836bd87b5cc
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Fri Nov 9 18:18:08 2012 +0000
+
+    Port old baremetal-mkinitrd.sh to the new image creation standards
+
+commit 7da463e61790543c105eaa62588ee0b214ff9186
+Author: Chris Jones <chris.jones@canonical.com>
+Date:   Fri Nov 9 16:13:20 2012 +0000
+
+    Land an extension of baremetal-mkinitrd.sh which can also build flavours, with a start at making hwdiscovery and hwburning flavours
+
+commit 5cc195e3917043be8fad023b28766922d8e65736
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Sat Nov 10 00:04:13 2012 +1300
+
+    Bring across disk image code.
+
+commit 10b9c660d6940bf107203615c6cb4b8f40fc74b9
+Merge: f2f8931 d87f92c
+Author: NTTdocomo-openstack <openstack-contributor-ml@nttdocomo.com>
+Date:   Thu Oct 25 22:49:56 2012 -0700
+
+    Merge pull request #1 from tripleo/tripleo
+    
+    A few cleanups
+
+commit d87f92cb4f442b142a63175ddaee81644055ae5f
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Oct 26 12:20:15 2012 +1300
+
+    Ignore temporary files.
+
+commit bf3474c762f79ad0aa93e0f0b2ae6ced6070fa4b
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Oct 26 12:19:47 2012 +1300
+
+    Support KVM instances - allow /dev/vda to be detected as a disk.
+
+commit f3eb459e3204455531c1eec33bd1b6b444264cf7
+Author: Robert Collins <robertc@robertcollins.net>
+Date:   Fri Oct 26 12:18:57 2012 +1300
+
+    Turn off udev logging, it makes debugging too hard. Better would be to log to a file or something.
+
+commit f2f89317316949e0d7503f03755237fc6b5adca4
+Author: NTTdocomo <openstack-contributor-ml@nttdocomo.com>
+Date:   Mon Jul 23 16:32:58 2012 +0900
+
+    change working directory name template.
+
+commit 70c434617cdc8c31fe61520a7d532d5dcf7ec1ef
+Author: NTTdocomo <openstack-contributor-ml@nttdocomo.com>
+Date:   Mon Jul 23 13:16:57 2012 +0900
+
+    Rename to baremetal-mkinitrd.sh.
+
+commit 8a187e29d31692ae88984417159cf2c16197e0f3
+Author: NTTdocomo <openstack-contributor-ml@nttdocomo.com>
+Date:   Mon Jul 23 13:07:27 2012 +0900
+
+    initial commit
