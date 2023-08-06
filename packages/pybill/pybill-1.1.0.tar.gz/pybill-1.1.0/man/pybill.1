@@ -1,0 +1,94 @@
+.TH pybill 1 "2010-07-08" "Pybill"
+
+.SH NAME
+pybill \- produces PDF bills from XML
+
+
+.SH SYNOPSIS
+.B pybill [ options ] <src>
+.br
+
+.SH DESCRIPTION
+PyBill reads an XML file describing an accounting document (bill, 
+claim-form, debit, downpayment, pro-forma) and produces a PDF 
+document. The XML document should be in PBD (PyBill Document) 
+format.
+.PP
+PyBill uses a configuration XML file to customize the PDF rendering 
+(logo, sender address, sender bank data, i18n texts, etc.) This 
+configuration file can be specified with a command-line option or in 
+the XML document into a dedicated processing instruction. In this last 
+case, the configuration file is search in the user configuration 
+directory ($HOME/.config/pybill) and then in the system configuration 
+directory (/etc/config/pybill).
+.PP
+Example:
+.PP
+<?xml version="1.0"?>
+<?pybill config="my-config"?>
+<accounting document type="bill" format="1.0">
+and so on
+.PP
+Here, PyBill will search the my-config.xml XML file in the 
+configuration directories. If it cann't be found, PyBill will backup 
+on default.xml configuration file (that it is at least installed in 
+the system configuration directory).
+.PP
+PyBill can produce accounting entries in an XML format compatible with 
+pycompta tool. By default, the entries are generated in an entries.xml 
+file. Command-line options control this generation.  When several XML 
+documents are processed in one call, a single entries.xml file is 
+generated but it contains several accounting entries. Another 
+dedicated processing instruction can be inserted in the XML document 
+to specify the accounts number used in the entries.
+.PP
+Example:
+.PP
+<?xml version="1.0"?>
+<?pybill config="my-config"?>
+<?accounts client="41101" client-holdback="41102" 
+           product="7001" vat="44501"?>
+<accounting-document type="bill" format="1.0">
+and so on
+.PP
+Here, PyBill will generate accounting entries using the 41101 account 
+as the client account, the 41102 for the holdbacks concerning this 
+client, the 7001 as the product account and the 44501 for all the VAT 
+movements.
+.SS "Command-line options:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show the help message and exit
+.TP
+\fB\-\-version\fR
+Show the version number and exit
+.TP
+\fB\-c\fR CFGFILE, \fB\-\-config\fR=CFGFILE
+Name of the config file to be used for generating the PDFs of the 
+accounting documents. This config file overrides the config specified 
+in the processing instructions of each accounting document.
+.TP
+\fB\-k\fR, \fB\-\-convert\fR
+Convert the processed accounting documents into the last 'PyBill 
+Document' format and save them. The initial document is kept with 
+a .old extension.
+.TP
+\fB\-n\fR, \fB\-\-no-entries\fR
+Don't generate the accounting entries corresponding to the processed 
+accounting documents.
+.TP
+\fB\-e\fR XMLFILE, \fB\-\-entries-files\fR=XMLFILE
+Name of the file where the generated accounting entries will be saved 
+in 'pycompta' format. By default, this is the entries.xml file.
+.TP
+\fB\-d\fR, \fB\-\-debug\fR
+Print debug information and don't catch the exceptions.
+
+.SH LICENCE
+(c) 2001-2010 Logilab. GNU Public Licence Version 2
+
+.SH SEE ALSO
+/usr/share/doc/pybill/
+
+.SH AUTHOR
+Olivier Cayrol <olivier.cayrol@logilab.fr>

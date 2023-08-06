@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:pbd="http://www.logilab.org/2010/PyBillDocument"
+            targetNamespace="http://www.logilab.org/2010/PyBillDocument"
+            elementFormDefault="qualified"
+            attributeFormDefault="qualified">
+
+  <xsd:element name="accounting-document">
+    <xsd:complexType>
+      <xsd:sequence>
+
+        <!-- accounting information for some specific documents -->
+        <xsd:element name="downpayment-percent" type="xsd:double"
+                     minOccurs="0"/>
+          <!-- optional in downpayment documents -->
+        <xsd:element name="validity-date" type="xsd:string" 
+                     minOccurs="0"/>
+          <!-- mandatory in pro-forma documents -->
+
+	<!-- metadata of the document -->
+	<xsd:element ref="pbd:metadata"/>
+
+	<!-- sender and receiver addresses -->
+	<xsd:element ref="pbd:address" minOccurs="1" maxOccurs="2"/>
+	<!-- one with attribute role set to "from" (optional sender of the doc)
+	     and the other one with attribute role set to "to" (receiver) -->
+
+	<!-- optional text -->
+	<xsd:element ref="pbd:remark" minOccurs="0" maxOccurs="unbounded"/>
+
+	<!-- list of items (that have been sold) -->
+	<xsd:element ref="pbd:items-list"/>
+
+	<!-- various elements modifying the total to be paid -->
+	<!-- optional in bill documents -->
+	<xsd:choice minOccurs="0" maxOccurs="unbounded">
+	  <xsd:element name="charged-downpayment" 
+                       type="pbd:previous-bill-data"/>
+	  <!-- previous downpayment substracted to the bill -->
+	  <xsd:element name="issued-debit" 
+                       type="pbd:previous-bill-data"/>
+	  <!-- previous debit substracted to the bill -->
+	</xsd:choice>
+
+	<!-- Payment terms -->
+        <!-- mandatory in bill, downpayment, claim form documents -->
+        <!-- optional in debit documents -->
+	<xsd:element ref="pbd:payment-terms" minOccurs="0"/>
+
+      </xsd:sequence>
+      <xsd:attribute name="type" use="required">
+	<xsd:simpleType>
+	  <xsd:restriction base="xsd:string">
+	    <xsd:enumeration value="bill"/>
+	    <xsd:enumeration value="claim-form"/>
+	    <xsd:enumeration value="debit"/>
+	    <xsd:enumeration value="downpayment"/>
+	    <xsd:enumeration value="pro-forma"/>
+	  </xsd:restriction>
+	</xsd:simpleType>
+      </xsd:attribute>
+      <xsd:attribute name="format-version" use="required">
+	<xsd:simpleType>
+	  <xsd:restriction base="xsd:string">
+	    <xsd:enumeration value="PBD-1.0"/> <!-- PyBill Document 1.0 -->
+	  </xsd:restriction>
+	</xsd:simpleType>
+      </xsd:attribute>
+    </xsd:complexType>
+  </xsd:element>
+
+
+  <!-- document metadata -->
+
+  <xsd:element name="metadata">
+    <xsd:complexType>
+      <xsd:sequence>
+	<xsd:element name="id" type="xsd:string" minOccurs="0"/>
+          <!-- mandatory in bill, debit, downpayment, claim form documents -->
+	<xsd:element name="doc-ref" type="xsd:string"/>
+          <!-- reference of the document (different from "bill" id) -->
+	<xsd:element name="place" type="xsd:string"/>
+	<xsd:element name="date">
+          <xsd:complexType>
+            <xsd:simpleContent>
+              <xsd:extension base="xsd:string">
+		<xsd:attribute name="num" type="xsd:date" use="optional"/>
+	      </xsd:extension>
+	    </xsd:simpleContent>
+	  </xsd:complexType>
+	</xsd:element>
+	<xsd:element name="info" minOccurs="0" maxOccurs="unbounded">
+           <!-- Other informations to be displayed on the document -->
+	  <xsd:complexType>
+	    <xsd:simpleContent>
+	      <xsd:extension base="xsd:string">
+		<xsd:attribute name="name" type="xsd:string" use="required"/>
+	      </xsd:extension>
+	    </xsd:simpleContent>
+	  </xsd:complexType>
+	</xsd:element>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+
+  <!-- address blocks -->
+
+  <xsd:group name="person-name">
+    <xsd:sequence>
+      <xsd:element name="honorific" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="firstname" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="othername" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="surname" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="lineage" type="xsd:string" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:group>
+
+  <xsd:group name="corp-desc">
+    <xsd:sequence>
+      <xsd:element name="orgname" type="xsd:string"/>
+      <xsd:element name="orgdiv" type="xsd:string" 
+		   minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jobtitle" type="xsd:string" 
+                   minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:group>
+
+  <xsd:group name="postal-address">
+    <xsd:sequence>
+      <xsd:element name="street" type="xsd:string"
+                   minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="pob" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="postcode" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="city" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="state" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="country" type="xsd:string" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:group>
+
+  <xsd:group name="comm-data">
+    <xsd:sequence>
+      <xsd:element name="phone" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="fax" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="web" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="email" type="xsd:string" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:group>
+
+  <xsd:element name="address">
+    <xsd:complexType>
+      <xsd:sequence>
+	<xsd:group ref="pbd:person-name"/>
+	<xsd:group ref="pbd:postal-address"/>
+	<xsd:group ref="pbd:comm-data"/>
+	<xsd:element ref="pbd:affiliation" minOccurs="0"/>
+      </xsd:sequence>
+
+      <xsd:attribute name="role" use="optional">
+	<xsd:simpleType>
+	  <xsd:restriction base="xsd:string">
+	    <xsd:enumeration value="from"/>
+	    <xsd:enumeration value="to"/>
+	  </xsd:restriction>
+	</xsd:simpleType>
+      </xsd:attribute>
+    </xsd:complexType>
+  </xsd:element>
+
+  <xsd:element name="affiliation">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:group ref="pbd:corp-desc"/>
+        <xsd:element ref="pbd:address" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+
+  <!-- Items list block -->
+
+  <xsd:element name="item">
+    <xsd:complexType>
+      <xsd:sequence>
+	<xsd:element name="qty">
+	  <xsd:complexType>
+	    <xsd:simpleContent>
+	      <xsd:extension base="xsd:double">
+		<xsd:attribute name="digits" type="xsd:integer" use="optional"/>
+	      </xsd:extension>
+	    </xsd:simpleContent>
+	  </xsd:complexType>
+        </xsd:element>
+	<xsd:element name="description">
+	  <xsd:complexType>
+	    <xsd:sequence>
+	      <xsd:element name="title" type="xsd:string"/>
+	      <xsd:element name="detail" type="xsd:string" 
+			   minOccurs="0" maxOccurs="unbounded"/>
+	    </xsd:sequence>
+	  </xsd:complexType>
+	</xsd:element>
+	<xsd:element name="unit-price">
+	  <xsd:complexType>
+	    <xsd:simpleContent>
+	      <xsd:extension base="xsd:double">
+		<xsd:attribute name="digits" type="xsd:integer" use="optional"/>
+	      </xsd:extension>
+	    </xsd:simpleContent>
+	  </xsd:complexType>
+        </xsd:element>
+	<xsd:element name="vat-rate" type="xsd:double" minOccurs="0"/>
+      </xsd:sequence>
+      <xsd:attribute name="holdback-rate" type="xsd:double" use="optional"/>
+        <!-- optional in bill documents -->
+      <xsd:attribute name="holdback-on-vat" use="optional">
+        <!-- optional in bill documents -->
+	<xsd:simpleType>
+	  <xsd:restriction base="xsd:string">
+	    <xsd:enumeration value="yes"/>
+	    <xsd:enumeration value="no"/>
+	  </xsd:restriction>
+	</xsd:simpleType>
+      </xsd:attribute>
+    </xsd:complexType>
+  </xsd:element>
+
+  <xsd:element name="items-list">
+    <xsd:complexType>
+      <xsd:sequence>
+	<xsd:element ref="pbd:item" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+
+  <!-- other informations -->
+
+  <xsd:element name="payment-terms" type="xsd:string"/>
+
+  <xsd:element name="remark" type="xsd:string"/>
+
+
+
+  <!-- Type used for the previous downpayment and previous debit -->
+
+  <xsd:complexType name="previous-bill-data">
+    <xsd:complexContent>
+      <xsd:restriction base="xsd:anyType">
+	<xsd:attribute name="date" type="xsd:string" use="required"/>
+	<xsd:attribute name="id" type="xsd:string" use="required"/>
+	<xsd:attribute name="total" type="xsd:double" use="required"/>
+	<xsd:attribute name="vat" type="xsd:double" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+</xsd:schema>
