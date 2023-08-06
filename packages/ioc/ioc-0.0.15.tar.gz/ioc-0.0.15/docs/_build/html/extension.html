@@ -1,0 +1,228 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Extension &mdash; IoC 0.0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="IoC 0.0.4 documentation" href="index.html" />
+    <link rel="next" title="Extra" href="extra.html" />
+    <link rel="prev" title="Bootstraping" href="bootstraping.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="extra.html" title="Extra"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="bootstraping.html" title="Bootstraping"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">IoC 0.0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="extension">
+<h1>Extension<a class="headerlink" href="#extension" title="Permalink to this headline">¶</a></h1>
+<p>An extension is a class used to configure services. A vendor might want to expose a configuration file to automatically generated valid services.</p>
+<p>Here a flask extension, <tt class="docutils literal"><span class="pre">ioc.extra.flask.di.Extension</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">ioc.loader</span><span class="o">,</span> <span class="nn">ioc.component</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">class</span> <span class="nc">Extension</span><span class="p">(</span><span class="n">ioc</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="n">Extension</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">container_builder</span><span class="p">):</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
+
+        <span class="c"># load an external file defining services</span>
+        <span class="n">loader</span> <span class="o">=</span> <span class="n">ioc</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">YamlLoader</span><span class="p">()</span>
+        <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">/resources/config/flask.yml&quot;</span> <span class="o">%</span> <span class="n">path</span><span class="p">,</span> <span class="n">container_builder</span><span class="p">)</span>
+
+        <span class="c"># set default parameters into the container to be reuse by the container builder</span>
+        <span class="c"># or by external services</span>
+        <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app.name&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app.static_path&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;static_path&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app.static_url_path&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;static_url_path&#39;</span><span class="p">,</span> <span class="s">&#39;static&#39;</span><span class="p">))</span>
+        <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app.instance_path&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;instance_path&#39;</span><span class="p">,</span> <span class="s">&#39;templates&#39;</span><span class="p">))</span>
+        <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app.template_folder&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;template_folder&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app.instance_relative_config&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;instance_relative_config&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">))</span>
+        <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app.port&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;port&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="section" id="how-to-use-an-extensions">
+<h2>How to use an extensions<a class="headerlink" href="#how-to-use-an-extensions" title="Permalink to this headline">¶</a></h2>
+<p>An extension is declared in the top yaml file by using its module name (<tt class="docutils literal"><span class="pre">di.Extension</span></tt> is added by the <tt class="docutils literal"><span class="pre">ioc</span></tt>), so in order to generate a flask instance just do:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">ioc.extra.flask</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">port</span><span class="p-Indicator">:</span>               <span class="l-Scalar-Plain">8080</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span>               <span class="s">&#39;&#39;</span>
+    <span class="l-Scalar-Plain">static_path</span><span class="p-Indicator">:</span>        <span class="s">&#39;&#39;</span>
+    <span class="l-Scalar-Plain">static_url_path</span><span class="p-Indicator">:</span>    <span class="s">&#39;&#39;</span>
+    <span class="l-Scalar-Plain">static_folder</span><span class="p-Indicator">:</span>      <span class="s">&#39;static&#39;</span>
+    <span class="l-Scalar-Plain">template_folder</span><span class="p-Indicator">:</span>    <span class="s">&#39;templates&#39;</span>
+    <span class="l-Scalar-Plain">instance_path</span><span class="p-Indicator">:</span>      <span class="s">&#39;&#39;</span>
+    <span class="l-Scalar-Plain">instance_relative_config</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+<p>and to use it:</p>
+<div class="highlight-python"><pre>import ioc
+
+container = ioc.build(['config.yml'])
+
+app = container.get('ioc.extra.flask.app')
+
+__name__ == ’__main__’:
+    app.run()</pre>
+</div>
+</div>
+<div class="section" id="going-further">
+<h2>Going further<a class="headerlink" href="#going-further" title="Permalink to this headline">¶</a></h2>
+<p>The previous example is a bit overkill as Flask itself required a minimun amount of code to run. However the previous code allows to configure the default port which can be usefull for running different configurations.</p>
+<p>Now, the <tt class="docutils literal"><span class="pre">ioc.extra.flask.app</span></tt> is available inside the container, so other services can use it.</p>
+<p>The <tt class="docutils literal"><span class="pre">shirka</span></tt> project exposes some <tt class="docutils literal"><span class="pre">flask</span></tt> actions as service:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">shirka.flask.view.shirka_proc_list</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="nv">shirka.control.proc</span><span class="p-Indicator">,</span> <span class="nv">ProcListView.as_view</span><span class="p-Indicator">]</span>
+    <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shirka_proc_list</span>
+        <span class="p-Indicator">-</span> <span class="s">&quot;%shirka.data.dir%/proc&quot;</span>
+
+<span class="l-Scalar-Plain">shirka.flask.view.shirka_proc_view</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="nv">shirka.control.proc</span><span class="p-Indicator">,</span> <span class="nv">ProcView.as_view</span><span class="p-Indicator">]</span>
+    <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span>
+        <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">shirka_proc_view</span>
+        <span class="p-Indicator">-</span> <span class="s">&quot;%shirka.data.dir%/proc&quot;</span>
+</pre></div>
+</div>
+<p>So there are 2 actions as a service defined here : <tt class="docutils literal"><span class="pre">shirka.flask.view.shirka_proc_view</span></tt> and <tt class="docutils literal"><span class="pre">shirka.flask.view.shirka_proc_list</span></tt>. As you can note, we are injected custom parameters into each service, these parameters can be configured by the user in an external file.</p>
+<p>The <tt class="docutils literal"><span class="pre">shirka</span></tt> project also provide a custom extension <tt class="docutils literal"><span class="pre">shirka.di.Extension</span></tt>, this extension will register theses services as methods call to the <tt class="docutils literal"><span class="pre">ioc.extra.flask</span></tt> service.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">ioc</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">class</span> <span class="nc">Extension</span><span class="p">(</span><span class="n">ioc</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="n">Extension</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">pre_build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container_builder</span><span class="p">,</span> <span class="n">container</span><span class="p">):</span>
+
+        <span class="c"># if the service does not exist, then avoid registering services</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">container_builder</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app&#39;</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">definition</span> <span class="o">=</span> <span class="n">container_builder</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;ioc.extra.flask.app&#39;</span><span class="p">)</span>
+
+        <span class="n">base_url</span> <span class="o">=</span> <span class="n">container_builder</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;shirka.web.api.base_url&#39;</span><span class="p">)</span>
+        <span class="n">definition</span><span class="o">.</span><span class="n">method_calls</span><span class="o">.</span><span class="n">append</span><span class="p">([</span>
+            <span class="s">&#39;add_url_rule&#39;</span><span class="p">,</span>
+            <span class="p">[</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">/process&#39;</span> <span class="o">%</span> <span class="n">base_url</span><span class="p">],</span>
+            <span class="p">{</span><span class="s">&#39;view_func&#39;</span><span class="p">:</span> <span class="n">ioc</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="s">&#39;shirka.flask.view.shirka_proc_list&#39;</span><span class="p">)}</span>
+        <span class="p">])</span>
+
+        <span class="n">definition</span><span class="o">.</span><span class="n">method_calls</span><span class="o">.</span><span class="n">append</span><span class="p">([</span>
+            <span class="s">&#39;add_url_rule&#39;</span><span class="p">,</span>
+            <span class="p">[</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">/process/&lt;id&gt;&#39;</span> <span class="o">%</span> <span class="n">base_url</span><span class="p">],</span>
+            <span class="p">{</span><span class="s">&#39;view_func&#39;</span><span class="p">:</span> <span class="n">ioc</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="s">&#39;shirka.flask.view.shirka_proc_view&#39;</span><span class="p">)}</span>
+        <span class="p">])</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">pre_build</span></tt> method is called after all extensions are loaded, this allow extensions to alter service definitions.</p>
+<p>shirka configuration defined inside the <tt class="docutils literal"><span class="pre">config.yml</span></tt> file:</p>
+<div class="highlight-python"><pre>shirka:
+    # public_dir:
+    api:
+        base_url: '/shirka/api'
+    data_dir: '%base_dir%/data'</pre>
+</div>
+<p>So through some configuration, the user can configure how the Flask action will be expose <tt class="docutils literal"><span class="pre">/shirka/api</span></tt>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Extension</a><ul>
+<li><a class="reference internal" href="#how-to-use-an-extensions">How to use an extensions</a></li>
+<li><a class="reference internal" href="#going-further">Going further</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="bootstraping.html"
+                        title="previous chapter">Bootstraping</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="extra.html"
+                        title="next chapter">Extra</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/extension.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="extra.html" title="Extra"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="bootstraping.html" title="Bootstraping"
+             >previous</a> |</li>
+        <li><a href="index.html">IoC 0.0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Thomas Rabaix.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
