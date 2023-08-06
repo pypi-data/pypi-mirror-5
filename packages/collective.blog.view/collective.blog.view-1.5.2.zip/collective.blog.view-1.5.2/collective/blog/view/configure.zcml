@@ -1,0 +1,61 @@
+<configure
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:five="http://namespaces.zope.org/five"
+  xmlns:browser="http://namespaces.zope.org/browser"
+  xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+  xmlns:i18n="http://namespaces.zope.org/i18n"
+  i18n_domain="plone">
+
+  <five:registerPackage package="."/>
+  <i18n:registerTranslations directory="locales" />
+
+  <include package="plone.app.contentmenu" />
+  
+  <!-- Register the installation GenericSetup extension profile -->
+  <genericsetup:registerProfile
+    name="default"
+    title="Collective Blog View"
+    description="Blog view for Plone"
+    directory="profiles/default"
+    provides="Products.GenericSetup.interfaces.EXTENSION"
+    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+    />
+  
+  <browser:page
+    for="*"
+    name="blog_view"
+    class=".blog.BlogView"
+    template="blog.pt"
+    permission="zope2.View"
+    />
+
+  <browser:menuItem
+    for="Products.ATContentTypes.interface.IATFolder"
+    menu="plone_displayviews"
+    title="Blog view"
+    action="@@blog_view"
+    description="List contents as a blogging view" />
+
+  <browser:menuItem
+    for="Products.ATContentTypes.interface.IATTopic"
+    menu="plone_displayviews"
+    title="Blog view"
+    action="@@blog_view"
+    description="List contents as a blogging view" />
+
+  <browser:page
+    for="*"
+    name="blog_item_view"
+    class=".default_item.DefaultItemView"
+    permission="zope2.View"
+    />
+      
+  <adapter
+    factory=".adapters.FolderEntryGetter"
+    />
+    
+  <adapter
+    factory=".adapters.TopicEntryGetter"
+    />
+
+</configure>
