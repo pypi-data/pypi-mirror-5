@@ -1,0 +1,526 @@
+0.9.1	2013-05-06
+
+ CHANGES
+
+  * For the moment, disable subvertpy.wc.WorkingCopy when used with Subversion 1.7.
+    Subversion 1.7 has some significant changes in the behaviour of
+    the working copy API because of the WC-NG rewrite.
+
+    Support for the WC API in newer versions of Subversion will be re-added later
+    (help welcome), but since most users (bzr-svn is the only I'm aware of)
+    don't seem to actually rely on it, it seemed better to disable it and
+    support 1.7 than to prevent use of newer svn versions altogether.
+
+    (Jelmer Vernooij)
+
+ TESTS
+
+  * Fix TestClient.test_info when run against Subversion 1.6. (Jelmer Vernooij)
+
+ BUG FIXES
+
+  * Use PyObject_AsFileDescriptor instead of PyFile_AsFile so
+    apr_file_from_object works under Win32. (Yonggang Luo)
+
+0.9.0	2012-07-08
+
+ IMPROVEMENTS
+
+  * Some fixes to help with porting to Python 3. (Yonggang Luo)
+
+  * Add bindings for svn.client.Client.info(), svn.client.Client.log() and
+    svn.client.Client.cat(). (Mark Lee)
+
+  * Add constant ERR_WC_UPGRADE_REQUIRED. (Jelmer Vernooij)
+
+  * In Client.checkout, default to HEAD revision. (Jelmer Vernooij)
+
+ TESTS
+
+  * Remove readonly files properly in tests.  (Yonggang Luo, #943131)
+
+ DOCUMENTATION
+
+  * Update documentation for building on Windows. (Yonggang Luo)
+
+ BUG FIXES
+
+  * Include *.c files in MANIFEST. (#951060, Shlomi Fish)
+
+0.8.10	2012-01-23
+
+ BUG FIXES
+
+  * Fix test suite on Cygwin. (Ronald Blaschke)
+
+  * Support windows-cryptoapi on Cygwin. (Ronald Blaschke)
+
+  * Include wc.h in wc.c. FIxes build on NetBSD 5.1/amd64.
+    (#894659)
+
+0.8.9	2011-10-25
+
+ BUG FIXES
+
+  * Fix compilation with Python 2.4 and 2.5. (Jelmer Vernooij, #860621)
+
+ FEATURES
+
+  * Add constant ERR_WC_NODE_KIND_CHANGE. (Jelmer Vernooij)
+
+0.8.8	2011-09-27
+
+ BUG FIXES
+
+  * Fix several memory leaks and error checks in subvertpy.client
+    pointed out by Barry Warsaw. (Jelmer Vernooij)
+
+  * Drop broken code to support loading configuration from has.
+    (Jelmer Vernooij)
+
+  * WorkingCopy.prop_set() now accepts None as a value,
+    removing a properties. (Jelmer Vernooij)
+
+ FEATURES
+
+  * Add constant ERR_BAD_FILENAME. (Jelmer Vernooij)
+
+0.8.7	2011-09-19
+
+ BUG FIXES
+
+  * Fix revnum types in subvertpy.repos.Repos.verify_fs().
+    (Jelmer Vernooij)
+
+0.8.6	2011-09-19
+
+ FEATURES
+
+  * Allow passing in log_msg_func when creating subvertpy.client.Client.
+    (Jelmer Vernooij)
+
+  * subvertpy.client.Client.update now accepts keyword arguments.
+    (Jelmer Vernooij)
+
+  * Editors will now raise an exception if the protocol is not followed;
+    children have to be closed before their parents are accessed again.
+    (Jelmer Vernooij)
+
+  * Add constant ERR_DIR_NOT_EMPTY. (Jelmer Vernooij)
+
+  * Add constant ERR_FS_ROOT_DIR. (Jelmer Vernooij)
+
+  * Add `subvertpy.repos.Repository.verify_fs`. (Jelmer Vernooij)
+
+  * Add `subvertpy.repos.Repository.pack_fs`. (Jelmer Vernooij)
+
+ BUG FIXES
+
+  * Fix memory leak in subvertpy.client.Client.list.
+    (Wez Furlong)
+
+  * Fix double free of apr pools from subverty.repos.Repos.fs.
+    (Roland Mas, Jelmer Vernooij, #853960)
+
+0.8.5	2011-08-21 "boomerang arrow"
+
+ BUG FIXES
+
+ * Fix compatibility with python < 2.6, where T_BOOL is not available.
+   (Jelmer Vernooij, #829993)
+
+0.8.4	2011-08-18 "mimic octopus"
+
+ FEATURES
+
+  * Fix argument count in subvertpy.client.Client.export. (Jelmer Vernooij, #820662)
+
+  * Add subvertpy.wc.WorkingCopy.status. (Mark Lee)
+
+0.8.3   2011-07-24 "manual override"
+
+ BUG FIXES
+
+  * Fix memory management in subvertpy.ra.Auth. (Jelmer Vernooij)
+
+  * Fix type for revnum in process_committed_queue. (Jelmer Vernooij, #730931)
+
+  * Fix double free when calling close() more than once on editor objects.
+    (Jelmer Vernooij)
+
+  * Fix too early free during iter_log. (Jelmer Vernooij)
+
+  * Prevent freeing the RemoteAccess object before any
+    individual request frees. Thanks very much to Steve Langasek for the help
+    debugging this! (Jelmer Vernooij, #803353)
+
+  * Error out properly when editor objects are used after they are closed.
+    (Jelmer Vernooij)
+
+ FEATURES
+
+  * Add constant ERR_BAD_PROPERTY_VALUE. (Jelmer Vernooij)
+
+0.8.2   2011-06-17 "mathematically annoying"
+
+ BUG FIXES
+
+  * Abort immediately if a callback raises an exception.
+    (Jelmer Vernooij)
+
+  * Fix leaking of error objects. (Jelmer Vernooij)
+
+0.8.1   2011-06-02 "ornithologic reptile"
+
+ FEATURES
+
+  * Add subvertpy.wc.WorkingCopy.conflicted. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.resolved_conflict. (Jelmer Vernooij)
+
+  * Add subvertpy.client.Client.mkdir. (Jelmer Vernooij)
+
+ BUG FIXES
+
+  * Fix compilation on OS X. (#728574)
+
+  * Keep reference to commit callback in editor. (Jelmer Vernooij, #732120)
+
+  * Properly check return values of PyInt_AsLong() in various places.
+
+  * Convert times and file sizes to 64 bit integer objects.
+    (Jelmer Vernooij, #786156)
+
+0.8.0   2011-03-02 "("
+
+ FEATURES
+
+  * Add --version option to subvertpy-fast-export. (Jelmer Vernooij)
+
+  * Add basic manual page for subvertpy-fast-export. (Jelmer Vernooij)
+
+  * Automatically convert the appropriate errors to socket.gaierror.
+    (Jelmer Vernooij)
+
+  * Add subvertpy.wc.set_adm_dir(). (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.has_binary_prop. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.get_ancestry. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.maybe_set_repos_root.
+    (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.add_repos_file.
+    (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.mark_missing_deleted.
+    (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.remove_from_revision_control.
+    (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.relocate. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.crop_tree. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.translated_stream. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.text_modified. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.props_modified. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.CommittedQueue. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.get_actual_target. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.is_wc_root. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.transmit_text_deltas. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.transmit_prop_deltas. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.probe_retrieve, subvertpy.wc.WorkingCopy.retrieve.
+    (Jelmer Vernooij)
+
+  * Add subvertpy.wc.WorkingCopy.probe_try. (Jelmer Vernooij)
+
+  * Add subvertpy.client.export. (Jelmer Vernooij)
+
+ DEPRECATIONS
+
+  * ERR_UNKNOWN_HOSTNAME and ERR_EAI_NONAME are deprecated
+    and will be removed in the next version of subvertpy.
+    Instead, subvertpy will raise socket.gaierror.
+    (Jelmer Vernooij)
+
+  * Use svn_fs_paths_changed2() if available. (Jelmer Vernooij)
+
+ BUG FIXES
+
+  * Fix handling of DST in time_from_cstring. (Max Bowsher, #656226)
+
+  * Re-using a WorkingCopy object after calling close() on it
+    now raises an exception rather than trigger a segfault.
+    (Jelmer Vernooij)
+
+  * Fix type mismatch in svn.ra.get_dir(). (Jelmer Vernooij, #686663)
+
+  * Cope with trailing slash being specified to subvertpy.wc.revision_stats().
+    (Ronny Pfannschmidt)
+
+ API BREAKS
+
+  * WorkingCopy.entry() will now raise KeyError if the specified entry was not found.
+    (Jelmer Vernooij)
+
+0.7.5   2010-10-26
+
+ BUG FIXES
+
+  * Fix compatibility with Subversion 1.4 and 1.5. (Max Bowsher)
+
+0.7.4   2010-09-25
+
+ FEATURES
+
+  * Add constants ERR_APR_OS_START_EAIERR and ERR_APR_OS_ERRSPACE_SIZE.
+    (Jelmer Vernooij)
+
+  * Implement subvertpy.wc.match_ignore_list. (Jelmer Vernooij)
+
+  * Add subvertpy.ra.RemoteAccess.iter_log(). (Jelmer Vernooij)
+
+  * Add subvertpy.wc.STATUS_* constants. (Jelmer Vernooij)
+
+  * Add subvertpy.wc.api_version(), subvertpy.ra.api_version().
+    (Dan Villiom Podlaski Christiansen, Jelmer Vernooij)
+
+ DEPRECATION
+
+  * Avoid deprecation warnings for svn.client.Client.copy,
+        svn.client.Client.propset, svn.client.Client.propget,
+        svn.client.Client.do_update.
+    (Jelmer Vernooij)
+
+  * Avoid deprecation warnings for svn.ra.RemoteAccess.do_update,
+        svn.ra.RemoteAccess.do_switch, svn.ra.RemoteAccess.do_diff.
+    (Jelmer Vernooij)
+
+  * Avoid deprecation warnings for svn.wc.WorkingCopy.propset,
+        svn.wc.WorkingCopy.walk_entries,
+        svn.wc.WorkingCopy.add, svn.wc.WorkingCopy.close,
+        svn.wc.WorkingCopy.crawl_revisions,
+        svn.wc.WorkingCopy.update_editor,
+        svn.wc.ensure_adm.
+    (Jelmer Vernooij)
+
+ * Add ERR_ENTRY_NOT_FOUND constant. (Jelmer Vernooij)
+
+ * Add subvertpy.ra.RemoteAccess.get_url(). (Dan Villiom Podlaski Christiansen)
+
+ BUG FIXES
+
+  * Fix compilation using Visual C++. 
+    (Ronald Blaschke, #612056)
+
+  * Return an empty dictionary rather than None when there are no revision
+    properties.  (Jelmer Vernooij)
+
+  * Link against all libraries that are somehow called.
+    (Daniel Johnson, Jelmer Vernooij, #615015)
+
+  * Include check for apr util headers. (Jelmer Vernooij, #615017)
+
+  * Fix reference leaks in Auth and SubversionException handling.
+    (Jelmer Vernooij, #436406)
+
+  * Canonicalize paths in subvertpy.ra.RemoteAccess.get_locations(). 
+    (Jelmer Vernooij)
+
+0.7.3.1    2010-07-27
+
+ BUG FIXES
+
+  * Fix compilation against Subversion 1.5. (Jelmer Vernooij)
+
+0.7.3    2010-07-21
+
+ BUG FIXES
+
+  * Canonicalize paths to subvertpy.wc.check_wc. (Ronny Pfannschmidt)
+
+  * Canonicalize paths to subvertpy.repos.Repos. (Dan Villiom Podlaski
+                                                  Christiansen)
+
+  * Cope with leading slashes in paths. (David Wolever, #527239)
+
+  * Various methods are now a bit more liberal in accepting any
+    sort of sequence rather than explicitly requiring lists.
+    (Jelmer Vernooij)
+
+ FEATURES
+
+  * Implement subvertpy.client.Client.diff. (Dan Villiom Podlaski Christiansen,
+                                       Jelmer Vernooij)
+
+  * Support ``revprops`` argument to subvertpy.client.Client.commit. 
+    (Jelmer Vernooij)
+
+  * Implement subvertpy.wc.get_pristine_contents(). (Jelmer Vernooij)
+
+  * Use better error messages when possible. 
+    (Dan Villiom Podlaski Christiansen)
+
+  * Implement subvertpy.ra.get_platform_specific_client_providers().
+    (Dan Villiom Podlaski Christiansen)
+
+0.7.2    2010-01-03
+
+ BUG FIXES
+
+  * Fix inconsistencies between PyArg_ParseTuple arguments and variables, 
+    which caused crashes on some 64-bit platforms. (Václav Slavík, #488780)
+
+  * Add constant for ERR_NODE_UNKNOWN_KIND. (Dan Villiom Podlaski Christiansen)
+
+  * Add svn.client.proplist() binding. (Dan Villiom Podlaski Christiansen,
+                                        Jelmer Vernooij)
+
+  * Add svn.client.list() binding. (Dan Villiom Podlaski Christiansen, 
+                                    Jelmer Vernooij)
+
+0.7.1    2009-10-20
+
+ BUG FIXES
+
+  * Fix APR include path on Windows. (Ronald Blaschke, #456321)
+
+0.7.0    2009-10-20
+
+ FEATURES
+
+  * Add definition for ERR_EAI_NONAME. (John Szakmeister)
+
+  * Add subvertpy.repos.FileSystem methods: youngest_revision, revision_root, 
+    revision_proplist.  (Jelmer Vernooij)
+
+  * Add subvertpy.repos.{delete,Repository.has_capability,hotcopy}.
+    (Jelmer Vernooij)
+
+  * Add subvertpy-fast-export script, based on svn-fast-export.py by Chris Lee 
+    included with bzr-fast-import. (Jelmer Vernooij)
+
+0.6.9    2009-09-10
+
+ BUG FIXES
+
+  * Cope with leading slashes in paths specified to 
+    subvertpy.ra.RemoteAccess.get_{dir,file}(). Thanks Ronny for the bugreport.
+    (#405713)
+ 
+  * Don't send too large svndiff windows as newer versions of libsvn 
+    will barf. (CVE2009-2411, #413113)
+
+0.6.8    2009-06-18
+
+ FEATURES
+
+  * Support svn.client.Client.delete(keep_local=True)
+
+  * Support svn.wc.WorkingCopy.delete(keep_local=True)
+
+  * Define ERR_RA_DAV_FORBIDDEN.
+
+0.6.7    2009-06-01
+
+ BUG FIXES
+ 
+  * Replace PyExc_ArgumentError with PyExc_TypeError.
+
+  * Fix compilation with MSVC++.
+
+ FEATURES
+
+  * Support RemoteAccess.stat.
+  
+  * Support svn.client.add(parents=false)
+
+  * Support uuid argument to svn.ra.RemoteAccess().
+
+0.6.6    2009-05-04
+
+ FEATURES
+
+  * wc.Entry.uuid is now provided
+
+  * New error code ERR_MALFORMED_FILE.
+
+ BUG FIXES
+
+  * Fix RemoteAccess against http:// without an auth baton.
+
+  * Cope with invalid arguments to Auth(). (#347155)
+
+  * Support svn.client.resolve.
+
+  * Allow non-canonical paths to some working copy methods
+
+  * Fixed uninitialized memory bug when reading configuration.
+
+0.6.5    2009-03-07
+
+  FEATURES
+
+   * Add subvertpy.wc.cleanup()
+
+   * Split out subvertpy.delta.txdelta_apply_window.
+
+  Relicensed to LGPLv2.1 or later.
+
+0.6.4    2009-02-17
+
+ BUG FIXES
+
+  * Fix reference counting for progress callback in RemoteAccess.
+
+  * Fix several (major) object leaks. 
+
+0.6.3    2009-02-12
+
+  FEATURES
+
+   * Add svn:original-date constant.
+
+0.6.2    2009-02-10
+
+ BUG FIXES
+
+  * Install Windows binaries to the right directory. (#323276)
+
+  * Fix import of warn().
+
+ FEATUREs
+
+  * Add WorkingCopy.remove_lock(path)
+
+0.6.1    2009-01-25
+
+ API BREAKS
+
+ * subvertpy.properties.diff() now returns not just the new property value
+   but a tuple with the old property value and the new property value.
+
+ BUG FIXES
+
+ * Fixed bdist_rpm. (#311712)
+
+ * Fixed segfault when unsetting property values. (#319313)
+
+ * Allow non-canonical path arguments in subvertpy.wc.WorkingCopy()
+
+ * Convert APR-based OSError properly. (#323548)
+
+0.6        2009-01-13
+
+ Initial release.
