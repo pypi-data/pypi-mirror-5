@@ -1,0 +1,115 @@
+{% extends "main.html" %}
+{% block title %}
+	{{ _('Main') }}
+{% endblock %}
+{% block content %}
+{% if jobs %}
+<div class="navbar navbar-inverse" style="background-color:#00146B">
+	<div class="container">
+	{% if "get_token" in perms %}
+	<a href="/gethash/" class="navbar-brand">{{ _('Get token') }}</a>
+	{% endif %}
+	<a href="/getscreenshot.png" class="navbar-brand">{{ _('Take screenshot') }}</a>
+	</div>
+</div>
+
+<center>
+<div class="panel panel-primary" style="width: 90%">
+<div class="panel-heading" align="left">
+          <h3 class="panel-title">{{ _('Jobs') }}<span class="pull-right">{{ datetime }}</span></h3>
+</div>
+ <table class="table table-hover">
+{% for job in jobs %}
+	<tr class="{{ job.id }} {% if current_job %}{% if current_job.id == job.id %}success{% endif %}{% endif %}">
+		<td>
+			{% if "edit_jobs" in perms %}<a class="editjob" href="/editjob/{{ job.id }}/">{{ job }}</a>
+			{% else %}
+				{{ job }}
+			{% endif %}
+		</td>
+		<td align="right">
+			{% if "delete_jobs" in perms %}<a href="/deletejob/{{ job.id }}/" class="btn btn-danger">{{ _('Delete') }}</a>{% endif %}
+			{% if "run_jobs" in perms %}<a href="/runjob/{{ job.id }}/" class="btn btn-primary">{{ _('Run') }}</a>{% endif %}
+		</td>
+	</tr>
+{% endfor %}
+</table>
+{% endif %}
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+</div>
+{% if "add_jobs" in perms %}<span class="pull-right"><a href="/addjob/" class="addjob btn btn-primary">{{ _('Add job') }}</a></span>
+<br><br>
+{% endif %}
+</div>
+</center>
+<center>
+{% if media %}
+	{% if media['state'] == 1 %}
+		<div class="panel panel-warning" style="width: 90%">
+		<div class="panel-heading">	
+			<strong>{{ _('Opening') }} </strong>
+		</div>
+	{% elif media['state'] == 2 %}
+		<div class="panel panel-warning" style="width: 90%">
+		<div class="panel-heading">	
+			<strong>{{ _('Buffering') }} </strong>
+		</div>
+	{% elif media['state'] == 3 %}
+		<div class="panel panel-primary" style="width: 90%">
+		<div class="panel-heading">	
+			<strong>{{ _('Playing') }} </strong>
+		</div>
+		<br/>
+		<div class="progress progress-striped">
+  			<div class="progress-bar progress-bar-info" style="width: {{ get_percents(player.get_position()) }}%;"></div>
+		</div>
+	{% elif media['state'] == 4 %}
+		<div class="panel panel-success" style="width: 90%">
+		<div class="panel-heading">	
+			<strong>{{ _('Paused') }} </strong>
+		</div>
+		<br/>
+		<div class="progress progress-striped">
+  			<div class="progress-bar progress-bar-info" style="width: {{ get_percents(player.get_position()) }}%;"></div>
+		</div>
+	{% elif media['state'] == 5 %}
+		<div class="panel panel-info" style="width: 90%">
+		<div class="panel-heading">	
+			<strong>{{ _('Stopped') }} </strong>
+		</div>
+	{% elif media['state'] == 6 %}
+		<div class="panel panel-danger" style="width: 90%">
+		<div class="panel-heading">	
+			<strong>{{ _('Ended') }} </strong>
+		</div>
+		<br/>
+		<div class="progress progress-striped">
+  			<div class="progress-bar progress-bar-info" style="width: 100%;"></div>
+		</div>
+	{% elif media['state'] == 7 %}
+		<div class="panel panel-danger" style="width: 90%">
+		<div class="panel-heading">	
+			<strong>{{ _('Error') }} </strong>
+		</div>
+	{% else %}
+		<div class="panel panel-info" style="width: 80%">
+		<div class="panel-heading">	
+			<strong>{{ _('Stopped') }}</strong>
+		</div>
+	{% endif %}
+	{% if media['mrl'] %}
+	<p>{{ media['mrl'] }}</p>
+	{% endif %}
+{% else %}
+	<p class="muted"><strong>{{ _('Stopped') }}</strong></p>
+{% endif %}
+<br>
+{% if "run_jobs" in perms %}<a href="/play/" class="btn btn-primary" title="{{ _('Play') }}"><i class="glyphicon glyphicon-play"></i></a>{%endif%}
+{% if "run_jobs" in perms %}<a href="/pause/" class="btn btn-info" title="{{ _('Pause') }}"><i class="glyphicon glyphicon-pause"></i></a>{% endif %}
+{% if "run_custom_jobs" in perms %}<a href="/open/" class="openmedia btn btn-success" title="{{ _('Open file') }}"><i class="glyphicon glyphicon-eject"></i></a>{% endif %}
+<br/>
+<br/>
+</div>
+</center>
+<br><br>
+{% endblock %}
