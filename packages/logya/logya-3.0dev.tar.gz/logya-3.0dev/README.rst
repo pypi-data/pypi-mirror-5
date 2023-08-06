@@ -1,0 +1,41 @@
+Logya README
+============
+
+.. image:: https://badge.fury.io/py/logya.png
+        :target: http://badge.fury.io/py/logya
+.. image:: https://travis-ci.org/yaph/logya.png?branch=master
+        :target: https://travis-ci.org/yaph/logya
+
+Logya is a static Web site generator written in Python designed to be easy
+to use and flexible.
+
+Quickstart
+----------
+
+::
+
+    # install logya and required packages
+    pip install logya
+
+    # create a barebone site
+    logya create mysite
+    cd mysite
+
+    # serve the site on http://localhost:8080
+    logya serve
+
+    # add content and then generate the site in the deploy directory
+    logya gen
+
+Please see the `documentation`_ for more information on how to use logya for
+creating Web sites.
+
+Sites built with logya
+----------------------
+
+* http://geeksta.net/
+* http://ramiro.org/
+* http://exploringdata.github.com/
+
+.. _`documentation`: http://yaph.github.com/logya/
+.. _`GitHub Issues`: https://github.com/yaph/logya/issues
