@@ -1,0 +1,34 @@
+
+{% block title %}Import Timeline from Google Spreadsheet {% endblock %}
+
+{% block content %}
+<div>
+    <h1>Import Timeline from a Google Spreadsheet</h1>
+
+    <form action="." method="POST">{% csrf_token %}
+        {{ form }}
+        <div id="status"></div>
+        <button id="convert-spreadsheet" class="btn" type="submit" disabled="disabled">Convert</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/timeline.js"></script>
+<script type="text/javascript">
+    $(function () {
+            var $status = $("#status");
+            var timeline = new VMM.Timeline();
+            $("#id_data_source").on("change", function (e) {
+                var spreadsheetUrl = $("#id_data_source").val();
+                $status.html("Loading spreadsheet data...");
+                timeline.init({}, spreadsheetUrl);
+            });
+            $(global).on('DATAREADY', function (e, d) {
+                $("#id_item_data").val(JSON.stringify(d));
+                $status.html("Spreadsheet data loaded!");
+                $("#convert-spreadsheet").prop('disabled', false);
+            });
+    });
+</script>
+{% endblock %}
