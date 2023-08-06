@@ -1,0 +1,298 @@
+#!/usr/bin/env python
+# Purpose of this program is given a list of hypervisors figure out how much
+# memory is available and cpu cores across them, then list the active, inactive and total
+# vm memory as well as vcpu. Once we have this information we can determine if we need to
+# buy more memory, add more cores or buy more hypervisors.
+
+# Written 9-27-2013 by Syed Ali syed_a_ali@yahoo.com under Apache 2.0 License
+# this program uses your ssh account to connect to libvirt on the hypervisors,
+# as such you should have SSH enabled in libvirt for remote authentication.
+# Read http://libvirt.org/auth.html for additional details.
+
+import libvirt
+import sys
+import getpass
+import pdb
+import hostlist
+import argparse
+import os
+
+
+def CheckArgs():
+    """Must have a -h or a -i in order to continue."""
+
+    parser = argparse.ArgumentParser(
+        description="Hypervisor Stats",
+        formatter_class=argparse.RawDescriptionHelpFormatter, epilog='''
+        Examples: 
+        kstats -i infile
+        kstats -r h[1-10].domain.com
+        The below stats are aggregated across all hypervisors
+        ********hv stats*********************
+        hv_max_mem_total = Total memory 
+        hv_free_mem_total = Total free memory 
+        hv_used_mem_total = Total used memory
+        hv_free_mem_total_percent = Free memory as a percent of total
+        hv_used_mem_total_percent = Used memory as a percent of total
+        hv_max_cores_total = Total number of cores added from each hypervisor
+  
+        ********active vm stats**************
+        vm_active_max_mem_total = Total memory allocated to active VMss
+        vm_active_max_vcpu_total = Total VCPU allocated to active VMss
+        vm_active_total = Total number of active VMs
+        vm_active_total_percent = Total active VM percent as compared to total active and inactive VM
+
+        ********inactive vm stats************
+        vm_inactive_max_mem_total = Total max memory allocated to inactive VMss
+        vm_inactive_max_vcpu_total = Total max VCPU allocated to inactive VMs
+        vm_inactive_total = Total number of inactive VMs
+        vm_inactive_total_percent = Total inactive VM percent as compared to total active and inactive VM
+
+        ********overall vm stats*************
+        vm_max_mem_total = Total memory of VMs both active and inactive combined
+        vm_max_vcpu_total = Total number of VCPUS allocated to both active and inactive VMs
+        vm_active_plus_inactive_total = Total number of active and inactive VMs
+        vm_max_vcpu_total_percent = Percentage of VCPUS allocated to active and inactive compared to total VCPU available
+        Beta software, use at your own risk''',
+        version='0.1')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        '-i', action="store", help="filename for reading hosts from")
+    group.add_argument(
+        '-r', action="store", help="kvm host or hostrange as in h[1-10].domain.com")
+
+    args = parser.parse_args()
+
+    if args.i is not None:
+        if not os.path.isfile(args.i):
+            print "ERROR: input file %s does not exist" % (args.i)
+            sys.exit(1)
+        else:
+            with open(args.i, 'r') as file:
+                hvlist = list(file.read().splitlines())
+                return hvlist
+
+    if args.r is not None:
+        try:
+            hvlist = hostlist.expand_hostlist(args.r)
+            return hvlist
+        except:
+            print 'ERROR: bad host list format'
+            sys.exit(1)
+
+
+def GetHVConn(hvlist):
+    """Attempts to connect to hypervisors, support KVM only as of this verion."""
+    connlist = []
+    username = getpass.getuser()
+    for hv in hvlist:
+        try:
+            conn_string = "qemu+ssh://" + username + \
+                "@" + hv + "/system?no_verify=1"
+            conn = libvirt.open(conn_string)
+            connlist.append(conn)
+        except:
+            print "ERROR:unable to connect to hv", hv
+    return connlist
+
+
+def GetHV_stats(connlist):
+    """Is used to get http://www.libvirt.org/html/libvirt-libvirt.html#virNodeInfo info."""
+    hv_stats = {
+        'hv_free_mem_total': 0,
+        'hv_max_mem_total': 0,
+        'hv_used_mem_total': 0,
+        'hv_max_cores_total': 0
+    }
+
+    # hv_info is a list containing the following items:
+    # 0->model, 1->memory, 2-> active cpus, 3->mhz, 4->the number of NUMA cell, 5->sockets, 6->cores per socket, 7->threads per core
+    # Example: ['x86_64', 15919, 8, 3292, 1, 1, 4, 2] for a 64 bit host with
+    # 16GB RAM, 8 cores, 3.2GHz CPU, 1 socket,
+
+    for conn in connlist:
+        hv_info = conn.getInfo()
+        hv_free_mem = conn.getFreeMemory()
+        # need to remove the last L as in 10944331776L for 10GB RAM
+        hv_free_mem = str(hv_free_mem)
+        hv_free_mem = int(hv_free_mem)
+        hv_free_mem = hv_free_mem / 1024  # convert to KB
+        hv_free_mem = hv_free_mem / 1024  # convert to MB
+        hv_max_mem = hv_info[1]  # total hv mem
+        hv_max_cores = hv_info[2]  # total hv cores
+
+        # adding to get a total across all hypervisors
+        # there is no call to get hv_used_mem_total so we calculate that on the
+        # fly
+        hv_stats['hv_free_mem_total'] += hv_free_mem
+        hv_stats['hv_max_mem_total'] += hv_max_mem
+
+        hv_stats['hv_used_mem_total'] = hv_stats[
+            'hv_max_mem_total'] - hv_stats['hv_free_mem_total']
+        hv_stats['hv_max_cores_total'] += hv_max_cores
+
+    return hv_stats
+
+
+def GetActiveVMs(connlist):
+    """Active VM's are those that are turned on."""
+    vm_active_stats = {
+        'vm_active_max_mem_total': 0,
+        'vm_active_max_vcpu_total': 0,
+        'vm_active_total': 0
+    }
+    for conn in connlist:
+        for id in conn.listDomainsID():
+            dom = conn.lookupByID(id)
+            infos = dom.info()
+            vm_active_max_mem = infos[1]
+            vm_active_max_vcpu = infos[3]
+            vm_active_stats['vm_active_max_mem_total'] += vm_active_max_mem
+            vm_active_stats['vm_active_max_vcpu_total'] += vm_active_max_vcpu
+        vm_active_stats['vm_active_total'] += len(conn.listDomainsID())
+
+    return vm_active_stats
+
+
+def GetInactiveVMs(connlist):
+    """Inactive VM's are those that are turned off."""
+    vm_inactive_stats = {
+        'vm_inactive_max_mem_total': 0,
+        'vm_inactive_max_vcpu_total': 0,
+        'vm_inactive_total': 0
+
+    }
+
+    # getinactive vm stats, listDefinedDomains returns a list of inactive vms
+    # 0->state,1->max_mem,2->mem used,3->no_of_vcpu,4->cpu_time_in_nanoseconds
+    # Example: [5, 1048576L, 1048576L, 1, 0L]
+    # inactive domains do not have a DomainID, so we cannot use the same
+    # method as above
+
+    for conn in connlist:
+        inactive_vms = conn.listDefinedDomains()
+        for vm in inactive_vms:
+            dom = conn.lookupByName(vm)
+            domlist = dom.info()
+            vm_inactive_max_mem = domlist[1]
+            vm_inactive_max_mem = str(vm_inactive_max_mem)
+            vm_inactive_max_mem = int(vm_inactive_max_mem)
+            vm_inactive_max_vcpu = domlist[3]
+            vm_inactive_stats[
+                'vm_inactive_max_mem_total'] += vm_inactive_max_mem
+            vm_inactive_stats[
+                'vm_inactive_max_vcpu_total'] += vm_inactive_max_vcpu
+        vm_inactive_stats['vm_inactive_total'] += len(inactive_vms)
+
+    return vm_inactive_stats
+
+
+def PrintReport(hv_stats, vm_active_stats, vm_inactive_stats):
+    """Printing of reports after all computation is complete."""
+
+    # hv stats
+    hv_free_mem_total_percent = (hv_stats['hv_free_mem_total'] /
+                                 float(hv_stats['hv_max_mem_total'])) * 100
+    hv_used_mem_total_percent = (hv_stats['hv_used_mem_total'] /
+                                 float(hv_stats['hv_max_mem_total'])) * 100
+    vm_max_mem_total = vm_active_stats['vm_active_max_mem_total'] + \
+        vm_inactive_stats['vm_inactive_max_mem_total']
+
+    # active vm stats
+    vm_active_max_mem_total = vm_active_stats['vm_active_max_mem_total'] / 1024
+
+    # inactive vm stats
+    vm_inactive_max_mem_total = vm_inactive_stats[
+        'vm_inactive_max_mem_total'] / 1024
+
+    # overall vm stats
+    # pdb.set_trace()
+    vm_max_mem_total = vm_max_mem_total / 1024
+    vm_max_vcpu_total = vm_active_stats['vm_active_max_vcpu_total'] + \
+        vm_inactive_stats['vm_inactive_max_vcpu_total']
+    vm_max_vcpu_total_percent = (
+        vm_max_vcpu_total / float(hv_stats['hv_max_cores_total'])) * 100
+
+    vm_active_plus_inactive_total = vm_active_stats['vm_active_total'] + \
+        vm_inactive_stats['vm_inactive_total']
+    vm_active_total_percent = (vm_active_stats['vm_active_total'] /
+                               float(vm_active_plus_inactive_total)) * 100
+    vm_inactive_total_percent = (vm_inactive_stats['vm_inactive_total'] /
+                                 float(vm_active_plus_inactive_total)) * 100
+
+    print """
+    ********hv stats*********************
+    hv_max_mem_total = %d MB
+    hv_free_mem_total = %d MB
+    hv_used_mem_total = %d MB
+    hv_free_mem_total_percent = %.0f %%
+    hv_used_mem_total_percent = %.0f %%
+    hv_max_cores_total = %d
+    """ % (hv_stats['hv_max_mem_total'],
+          hv_stats['hv_free_mem_total'],
+          hv_stats['hv_used_mem_total'],
+          hv_free_mem_total_percent,
+          hv_used_mem_total_percent,
+          hv_stats['hv_max_cores_total'])
+
+    print """
+    ********active vm stats**************
+    vm_active_max_mem_total = %d MB
+    vm_active_max_vcpu_total = %d
+    vm_active_total = %d
+    vm_active_total_percent = %.0f %%
+    """ % (vm_active_max_mem_total,
+          vm_active_stats['vm_active_max_vcpu_total'],
+          vm_active_stats['vm_active_total'],
+          vm_active_total_percent,)
+
+    print """
+    ********inactive vm stats************
+    vm_inactive_max_mem_total = %d MB
+    vm_inactive_max_vcpu_total = %d
+    vm_inactive_total = %d
+    vm_inactive_total_percent = %.0f %%
+    """ % (vm_inactive_max_mem_total,
+          vm_inactive_stats['vm_inactive_max_vcpu_total'],
+          vm_inactive_stats['vm_inactive_total'],
+          vm_inactive_total_percent)
+
+    print """
+    ********overall vm stats*************
+    vm_max_mem_total = %d MB
+    vm_max_vcpu_total = %d
+    vm_active_plus_inactive_total = %d
+    vm_max_vcpu_total_percent = %.0f %%
+    """ % (vm_max_mem_total,
+          vm_max_vcpu_total,
+          vm_active_plus_inactive_total,
+          vm_max_vcpu_total_percent)
+
+
+def CloseHVConn(connlist):
+    """Hypervisor connections should be closed for good programming."""
+    for conn in connlist:
+        conn.close()
+
+
+def NotBeingUsedYet(num):
+    """Can be used for printing, converts bytes into human readable format."""
+    for x in ['bytes', 'KB', 'MB', 'GB']:
+        if num < 1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'TB')
+
+
+def main():
+
+    hvlist = CheckArgs()
+    connlist = GetHVConn(hvlist)
+    hv_stats = GetHV_stats(connlist)
+    vm_active_stats = GetActiveVMs(connlist)
+    vm_inactive_stats = GetInactiveVMs(connlist)
+    CloseHVConn(connlist)
+    PrintReport(hv_stats, vm_active_stats, vm_inactive_stats)
+
+if __name__ == '__main__':
+    main()
