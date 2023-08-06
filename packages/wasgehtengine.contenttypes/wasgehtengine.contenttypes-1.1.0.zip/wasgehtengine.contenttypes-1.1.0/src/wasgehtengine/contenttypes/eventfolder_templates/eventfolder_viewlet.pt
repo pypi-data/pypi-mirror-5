@@ -1,0 +1,32 @@
+<section id="eventfolder-viewlet" i18n:domain="wasgehtengine.contenttypes">
+
+	<header>
+		<h1 tal:content="python:view.datestring()" />
+		<a id="time-previous" tal:attributes="href view/previous">Früher</a>
+		<a id="time-next" tal:attributes="href view/next">Später</a>
+	</header>
+	<ul id="eventsList" class="itemList">
+		<li tal:repeat="event view/events">
+			<article class="event">
+				<header>
+					<h2 class="event-title">
+						<a tal:define="title python: unicode(event.title)" tal:attributes="href event/absolute_url" tal:content="python: title[:50] + (title[50:] and '...')" />
+					</h2>
+					<div class="event-metainfo">
+						<a tal:condition="event/venue" tal:attributes="href event/venue/to_object/absolute_url"
+							tal:content="event/venue/to_object/title" />
+						<time class="eventBegin" tal:condition="python: not(event.period.no_starttime)" tal:attributes="datetime python:event.period.start.isoformat()"
+							tal:content="python:event.period.start.strftime('%H:%M')" />
+						<tal:if condition="event/period/end">
+							<span>-</span>
+							<time class="eventEnd" tal:attributes="datetime python:event.period.end.isoformat()"
+								tal:content="python:event.period.end.strftime('%H:%M')" />
+						</tal:if>
+						<span tal:condition="python: not(event.period.no_starttime)"> Uhr</span>
+					</div>
+				</header>
+				<section class="event-description hideable-description" tal:define="desc python: unicode(event.description)" tal:content="structure python: desc[:500] + (desc[500:] and '<a title=\'Weiterlesen\' href=\'' + event.absolute_url() + '\'>[...]</a>')" />
+			</article>
+		</li>
+	</ul>
+</section>
