@@ -1,0 +1,155 @@
+0. INTRO
+~~~~~~~~
+
+Textmodel is a datatype which can hold textstrings together with
+format information. It is similar to GtkTextBuffer in functionality,
+but it is completely independent of a gui-toolkit.
+
+Wxtextview is an example widget written for the wx toolkit. It has the
+basic functionality of a text editor. It is developed and tested on
+windows only and I have no idea if it works correctly on other
+platforms.
+
+Textmodel and wxtextview are experimental. They are neither bug free
+nor stable.  Wxtextview lacks the configurability which you might
+expect from a real text widget. Hack it to fit you needs.
+
+
+1. USAGE
+~~~~~~~~
+
+using textmodel:
+
+    from textmodel import TextModel, defaultstyle
+    
+    text = TextModel(u'Hello World!')
+
+    # highlight the word "World"
+    text.set_properties(6, 11, bgcolor = 'yellow')
+
+    # query the color
+    print text.get_style(0)['bgcolor'] # --> color of first character
+    print text.get_style(10)['bgcolor'] # --> color of last character
+
+
+    # defaultstyle is just a dict
+    print defaultstyle
+    # -> {'bgcolor': 'white', 'textcolor': 'black', 'fontsize': 10, 'selected': False}
+
+    # you can change it
+    defaultstyle.clear()
+    defaultstyle['underline'] = False
+    defaultstyle['italic'] = False
+
+    # test:
+    text = TextModel(u'Hello World!')
+    text.set_properties(6, 11, underline = True)
+    print text.get_style(10)
+    # -> {'underline': True, 'italic': False}
+
+
+
+using the wxtextview-widet:
+
+    from textmodel import TextModel
+    from wxtextview import WXTextView
+
+    import wx
+    app = wx.App()
+
+
+    model = TextModel(u'Hello World!')
+    model.set_properties(6, 11, fontsize=14)
+    model.set_properties(6, 11, bgcolor='yellow')
+
+    # display the texmodel in a view 
+    frame = wx.Frame(None)
+    view = WXTextView(frame, -1)
+    view.model = model
+    frame.Show()
+
+    # set cursor and selection
+    view.cursor = 5
+    view.selection = 0, 5
+
+    # display the same textmodel in a second view
+    frame2 = wx.Frame(None)
+    view2 = WXTextView(frame2, -1)
+    view2.model = model
+    frame2.Show()
+
+    app.MainLoop()
+
+
+
+2. NOTE
+~~~~~~~
+
+Most python files contain tests and demos. For example:
+
+$ cd textmodel/
+$ python  textmodel.py
+
+ ######################## textmodel.py ########################
+> test_00: remove w. simplify............................... ok
+> test_01: row, col......................................... ok
+> test_02: update linelengths bei insert.................... ok
+> test_03: TextModel........................................ ok
+...
+
+
+$ cd ../wxtextview
+$ python  wxtextview.py
+ ####################### wxtextview.py #######################
+> test_00: ................................................. ok
+> test_01: ................................................. ok
+> test_02: ................................................. ok
+...
+
+$ python  wxtextview.py demo_00
+
+
+3. LICENSE
+~~~~~~~~~~
+
+Copyright (c) 2013, Christof Ecker
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+   must display the following acknowledgement:
+   This product includes software developed by the <organization>.
+4. Neither the name of the <organization> nor the
+   names of its contributors may be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+LICENSE FOR MVC-FRAMEWORK
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following files are taken from PyGUI 
+
+  properties.py
+  viewbase.py
+  modelbase.py
+
+See http://www.cosc.canterbury.ac.nz/greg.ewing/python_gui for license information.
+
