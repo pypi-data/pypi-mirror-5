@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+from insteonic import devices
+from insteonic.devices import *
+from insteonic.commands import *
+import argparse
+import os
+
+
+class InsteonCommand(object):
+    
+    def __init__(self):
+        
+        self.config = self._get_config()
+        
+        self.parser = argparse.ArgumentParser(
+            description='Send commands to Insteon devices')
+            
+        self.subparsers = self.parser.add_subparsers(
+            help='available devices')
+        
+        for device in self.config.get('controller', 'devices').split(','):
+            self._set_device_commands(device)
+            
+        args = self.parser.parse_args()
+        
+        device_instance = self._get_device_class(args.device)(
+            host=self.config.get('controller', 'host'),
+            device_id=self.config.get(args.device, 'id'))
+
+        getattr(device_instance, args.command)(**args.__dict__)
+        
+
+    def _set_device_commands(self, device):
+        """ Sets the command arguments for each
+            device specified in the ini file """
+        
+        device_config = self.config.items(device)
+        device_instance = self._get_device_class(device)()
+        
+        device_parser = self.subparsers.add_parser(device)
+        device_parser.set_defaults(device=device)
+                    
+        cmd_arg = device_parser.add_argument('command',
+                            help='The command to send to the device',
+                            default='',
+                            choices=device_instance.commands.keys()
+                            )
+                            
+        for option in device_instance.options:
+            device_parser.add_argument('--%s' % option['name'],
+                        help=option['description'],
+                        default=option['default'],
+                        )
+                            
+    def _get_device_class(self, device):
+        """ Gets the class name of the specified device """
+        
+        return getattr(devices, self.config.get(device, 'type'))
+
+       
+    def _get_config(self):
+        """ Gets the config object specified in 
+            ~/.insteonic/config.ini or the default
+            config file in ../config/config.default.ini """
+        
+        config = ConfigParser.ConfigParser()
+        
+        try:
+            config.read(os.path.expanduser('~/.insteonic/config.ini'))
+        except:
+            config.read(os.path.join(os.path.dirname(__file__),
+                '..', 'config', 'config.default.ini'))
+            
+        return config
+        
+
+if __name__ == "__main__":
+    command = InsteonCommand()
