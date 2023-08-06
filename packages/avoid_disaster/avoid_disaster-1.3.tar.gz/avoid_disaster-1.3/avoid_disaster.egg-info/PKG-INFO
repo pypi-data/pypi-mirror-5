@@ -1,0 +1,65 @@
+Metadata-Version: 1.0
+Name: avoid-disaster
+Version: 1.3
+Summary: Script backups easily to Amazon S3
+Home-page: http://www.amix.dk/
+Author: amix
+Author-email: amix@amix.dk
+License: BSD
+Description: avoid_disaster
+        ---------------
+        
+        Avoid Disaster can be used to script daily, weekly or monthly backups and upload them to S3.
+        
+        For more information check out:
+        http://amix.dk/blog/post/19529#Avoid-Disaster-Script-backups-easily-to-Amazon-S3
+        
+        Examples
+        ----------
+        
+        Example of creating a backups of test_dir/::
+        
+            import os
+            from avoid_disaster import S3Uploader, gunzip_dir, generate_file_key
+        
+            #--- Globals ----------------------------------------------
+            AWS_KEY = 'YOUR AWS KEY'
+            AWS_SECRET = 'YOUR AWS SECRET'
+        
+            s3_uploader = S3Uploader(AWS_KEY,
+                                     AWS_SECRET,
+                                     'backups.your_domain.com')
+        
+            #--- Easy usage ----------------------------------------------
+            #Daily
+            s3_uploader.compress_and_upload('test_dir/',
+                                            'test_dir.%(weekday)s.tgz',
+                                            replace_old=True)
+        
+            #Monthly
+            s3_uploader.compress_and_upload('test_dir/',
+                                            'test_dir.%(month_name)s.tgz',
+                                            replace_old=True)
+        
+            #Weekly
+            s3_uploader.compress_and_upload('test_dir/',
+                                            'test_dir.%(week_number)s.tgz',
+                                            replace_old=True)
+        
+        
+            #--- Generic usage ----------------------------------------------
+            file_key = generate_file_key('test_dir.%(weekday)s.tgz')
+            gz_filename = gunzip_dir('test_dir/', file_key)
+            s3_uploader.upload(file_key, gz_filename, replace_old=True)
+            os.remove(gz_filename)
+        
+        Copyright: 2010 by amix
+        License: BSD.
+Keywords: backups amazon s3
+Platform: Any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
