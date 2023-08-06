@@ -1,0 +1,395 @@
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+    datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+    <start>
+        <element name="lnstrecipe">
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <ref name="network"/>
+
+                <oneOrMore>
+                    <ref name="task"/>
+                </oneOrMore>
+            </interleave>
+        </element>
+    </start>
+
+    <define name="define">
+        <element name="define">
+            <oneOrMore>
+                <element name="alias">
+                    <attribute name="name"/>
+                    <choice>
+                        <attribute name="value"/>
+                        <text/>
+                    </choice>
+                </element>
+            </oneOrMore>
+        </element>
+    </define>
+
+    <define name="network">
+        <element name="network">
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <oneOrMore>
+                    <ref name="host"/>
+                </oneOrMore>
+            </interleave>
+        </element>
+    </define>
+
+    <define name="task">
+        <element name="task">
+            <optional>
+                <attribute name="label"/>
+            </optional>
+
+            <optional>
+                <attribute name="python"/>
+            </optional>
+
+            <optional>
+                <attribute name="quit_on_fail">
+                    <choice>
+                        <value>yes</value>
+                        <value>no</value>
+                        <value>true</value>
+                        <value>false</value>
+                    </choice>
+                </attribute>
+            </optional>
+
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <zeroOrMore>
+                    <ref name="config"/>
+                </zeroOrMore>
+                <zeroOrMore>
+                    <ref name="run"/>
+                </zeroOrMore>
+                <zeroOrMore>
+                    <ref name="wait"/>
+                </zeroOrMore>
+                <zeroOrMore>
+                    <ref name="intr"/>
+                </zeroOrMore>
+                <zeroOrMore>
+                    <ref name="kill"/>
+                </zeroOrMore>
+                <zeroOrMore>
+                    <ref name="ctl_wait"/>
+                </zeroOrMore>
+            </interleave>
+        </element>
+    </define>
+
+    <define name="host">
+        <element name="host">
+            <attribute name="id"/>
+
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <zeroOrMore>
+                    <ref name="params"/>
+                </zeroOrMore>
+
+                <element name="interfaces">
+                    <zeroOrMore>
+                        <choice>
+                            <ref name="eth"/>
+                            <ref name="bond"/>
+                            <ref name="bridge"/>
+                            <ref name="vlan"/>
+                            <ref name="macvlan"/>
+                            <ref name="team"/>
+                        </choice>
+                    </zeroOrMore>
+                </element>
+            </interleave>
+        </element>
+    </define>
+
+    <define name="eth">
+        <element name="eth">
+            <attribute name="id"/>
+            <attribute name="label"/>
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <zeroOrMore>
+                    <ref name="params"/>
+                </zeroOrMore>
+
+                <optional>
+                    <ref name="addresses"/>
+                </optional>
+            </interleave>
+        </element>
+    </define>
+
+    <define name="bond">
+        <element name="bond">
+            <attribute name="id"/>
+            <ref name="softdevice"/>
+        </element>
+    </define>
+
+    <define name="bridge">
+        <element name="bridge">
+            <attribute name="id"/>
+            <ref name="softdevice"/>
+        </element>
+    </define>
+
+    <define name="vlan">
+        <element name="vlan">
+            <attribute name="id"/>
+            <ref name="softdevice"/>
+        </element>
+    </define>
+
+    <define name="macvlan">
+        <element name="macvlan">
+            <attribute name="id"/>
+            <ref name="softdevice"/>
+        </element>
+    </define>
+
+    <define name="team">
+        <element name="team">
+            <attribute name="id"/>
+            <ref name="softdevice"/>
+        </element>
+    </define>
+
+    <define name="softdevice">
+        <interleave>
+            <optional>
+                <ref name="define"/>
+            </optional>
+
+            <optional>
+                <ref name="options"/>
+            </optional>
+
+            <optional>
+                <element name="slaves">
+                    <interleave>
+                        <optional>
+                            <ref name="define"/>
+                        </optional>
+
+                        <zeroOrMore>
+                            <element name="slave">
+                                <attribute name="id"/>
+
+                                <optional>
+                                    <interleave>
+                                        <optional>
+                                            <ref name="define"/>
+                                        </optional>
+
+                                        <zeroOrMore>
+                                            <ref name="options"/>
+                                        </zeroOrMore>
+                                    </interleave>
+                                </optional>
+
+                            </element>
+                        </zeroOrMore>
+                    </interleave>
+                </element>
+            </optional>
+
+            <optional>
+                <ref name="addresses"/>
+            </optional>
+        </interleave>
+    </define>
+
+    <define name="options">
+        <element name="options">
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <zeroOrMore>
+                    <element name="option">
+                        <attribute name="name"/>
+                        <choice>
+                            <attribute name="value"/>
+                            <text/>
+                        </choice>
+                    </element>
+                </zeroOrMore>
+            </interleave>
+        </element>
+    </define>
+
+    <define name="addresses">
+        <element name="addresses">
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <zeroOrMore>
+                    <element name="address">
+                        <choice>
+                            <attribute name="value"/>
+                            <text/>
+                        </choice>
+                    </element>
+                </zeroOrMore>
+            </interleave>
+        </element>
+    </define>
+
+    <define name="params">
+        <element name="params">
+            <interleave>
+                <optional>
+                    <ref name="define"/>
+                </optional>
+
+                <zeroOrMore>
+                    <element name="param">
+                        <attribute name="name"/>
+                        <choice>
+                            <attribute name="value"/>
+                            <text/>
+                        </choice>
+                    </element>
+                </zeroOrMore>
+            </interleave>
+        </element>
+    </define>
+
+    <define name="config">
+        <element name="config">
+            <attribute name="host"/>
+
+            <optional>
+                <attribute name="option"/>
+                <attribute name="value"/>
+            </optional>
+
+            <!-- Should config have timeout? -->
+            <optional>
+                <attribute name="timeout">
+                    <data type="integer"/>
+                </attribute>
+            </optional>
+
+            <optional>
+                <attribute name="persistent">
+                    <choice>
+                        <value>true</value>
+                        <value>false</value>
+                        <value>yes</value>
+                        <value>no</value>
+                        <value>1</value>
+                        <value>0</value>
+                    </choice>
+                </attribute>
+            </optional>
+
+            <optional>
+                <attribute name="desc"/>
+            </optional>
+
+            <optional>
+                <ref name="options"/>
+            </optional>
+        </element>
+    </define>
+
+    <define name="run">
+        <element name="run">
+            <attribute name="host"/>
+
+            <choice>
+                <attribute name="module"/>
+                <ref name="run_command"/>
+            </choice>
+
+            <optional>
+                <attribute name="bg_id"/>
+            </optional>
+
+            <optional>
+                <attribute name="expect"/>
+            </optional>
+
+            <optional>
+                <attribute name="timeout">
+                    <data type="integer"/>
+                </attribute>
+            </optional>
+
+            <optional>
+                <attribute name="desc"/>
+            </optional>
+
+            <optional>
+                <ref name="options"/>
+            </optional>
+        </element>
+    </define>
+
+    <define name="run_command">
+        <choice>
+            <attribute name="command"/>
+            <ref name="run_tool"/>
+        </choice>
+    </define>
+
+    <define name="run_tool">
+        <attribute name="command"/>
+        <attribute name="from"/>
+    </define>
+
+    <define name="wait">
+        <element name="wait">
+            <ref name="signal_command"/>
+        </element>
+    </define>
+
+    <define name="intr">
+        <element name="intr">
+            <ref name="signal_command"/>
+        </element>
+    </define>
+
+    <define name="kill">
+        <element name="kill">
+            <ref name="signal_command"/>
+        </element>
+    </define>
+
+    <define name="signal_command">
+        <attribute name="host"/>
+        <attribute name="bg_id"/>
+    </define>
+
+    <define name="ctl_wait">
+        <element name="ctl_wait">
+            <attribute name="seconds"/>
+        </element>
+    </define>
+</grammar>
