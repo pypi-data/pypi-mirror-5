@@ -1,0 +1,46 @@
+#!/usr/bin/env python2
+
+def main(args):
+	from shet.server import ShetServerFactory
+	from shet.server.meta import MetaShet
+	from twisted.internet import reactor
+	from twisted.internet.endpoints import serverFromString
+	import tempfile
+	
+	# Create a SHET server.
+	shet_factory = ShetServerFactory()
+	
+	# shet_factory.fs.on_change       = lambda *args: None
+	# shet_factory.fs.on_raise        = lambda *args: None
+	# shet_factory.fs.on_eventcreated = lambda *args: None
+	# shet_factory.fs.on_eventdeleted = lambda *args: None
+	# shet_factory.fs.on_set          = lambda *args: None
+	# shet_factory.fs.on_get          = lambda *args: None
+	# shet_factory.fs.on_call         = lambda *args: None
+	
+	def finish_setup(err):
+		"""Connect a meta client to the server and run the reactor."""
+		# Make the server listen on a random UNIX socket...
+		sock_path = tempfile.mktemp()
+		reactor.listenUNIX(sock_path, shet_factory)
+		# ...and the meta client to it.
+		reactor.connectUNIX(sock_path, MetaShet(shet_factory))
+		
+		reactor.run()
+	
+	# Connect the shet server to the given port description.
+	connection = serverFromString(reactor, args.desc).listen(shet_factory)
+	# If the connection is successfull, connect a meta client and start the
+	# reactor.
+	connection.addCallback(finish_setup)
+
+def build_argparser():
+	import argparse
+	parser = argparse.ArgumentParser(description="SHET server.")
+	parser.add_argument("--desc", "-d", dest="desc",  default="tcp:port=11235",
+			help="The twisted description of the listening port (default: %(default)s). "
+				"See twisted.internet.endpoints.serverFromString for details.")
+	return parser
+
+if __name__ == "__main__":
+	main(build_argparser().parse_args())
