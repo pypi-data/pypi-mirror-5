@@ -1,0 +1,284 @@
+.. _developing:
+
+======================
+Developing and Testing
+======================
+
+.. todo::
+    link to sliderepl or ipython notebook slides
+
+Our tests are inside ``./tmuxp/testsuite``. Tests are implemented using
+:py:mod:`unittest`.
+
+``./run_tests.py`` will create a tmux server on a separate ``socket_name``
+using ``$ tmux -L test_case``.
+
+.. _install_dev_env:
+
+Install the latest code from git
+--------------------------------
+
+To begin developing, check out the code from github:
+
+.. code-block:: bash
+
+    $ git clone git@github.com:tony/tmuxp.git
+    $ cd tmuxp
+
+Now create a virtualenv, if you don't know how to, you can create a
+virtualenv with:
+
+.. code-block:: bash
+
+    $ virtualenv .env
+
+Then activate it to your current tty / terminal session with:
+
+.. code-block:: bash
+
+    $ source .env/bin/activate
+
+Good! Now let's run this:
+
+.. code-block:: bash
+
+    $ pip install -e .
+
+This has ``pip``, a python package manager install the python package
+in the current directory. ``-e`` means ``--editable``, which means you can
+adjust the code and the installed software will reflect the changes.
+
+.. code-block:: bash
+
+    $ tmuxp
+
+Test Runner
+-----------
+
+As you seen above, the ``tmuxp`` command will now be available to you,
+since you are in the virtual environment, your `PATH` environment was
+updated to include a special version of ``python`` inside your ``.env``
+folder with its own packages.
+
+.. code-block:: bash
+
+    $ ./run_tests.py
+
+You probably didn't see anything but tests scroll by.
+
+If you found a problem or are trying to write a test, you can file an
+`issue on github`_.
+
+.. _test_specific_tests:
+
+Choose tests to run
+"""""""""""""""""""
+
+Testing specific testsuites, testcase and tests
+
+.. code-block:: bash
+
+    $ ./run_tests.py --help
+
+Will give you an output of ways you can choose to run tests. Example for
+``test_config`` TestSuite:
+
+By :py:class:`unittest.TestSuite` / module:
+
+.. code-block:: bash
+
+    $ ./run_tests.py tmuxp.testsuite.test_config
+
+by :py:class:`unittest.TestCase`:
+
+.. code-block:: bash
+
+    $ ./run_tests.py --tests tmuxp.testsuite.test_config.ImportExportTest
+
+individual tests:
+
+.. code-block:: bash
+
+    $ ./run_tests.py --tests tmuxp.testsuite.test_config.ImportExportTest.test_export_json
+
+Multiple can be separated by spaces:
+
+.. code-block:: bash
+
+    $ ./run_tests.py --tests tmuxp.testsuite.test_config.ImportExportTest.test_export_json \
+        testsuite.test_config.ImportExportTest.test_window
+
+.. _test_builder_visually:
+
+Visual testing
+""""""""""""""
+
+You can watch tmux testsuite build sessions visually also.
+
+Create two terminals:
+
+  - Terminal 1: ``$ tmux -L test_case``
+  - Terminal 2: ``$ cd`` into the tmuxp project and into the
+    ``virtualenv`` if you are using one, see details on installing the dev
+    version of tmuxp above. Then:
+
+    .. code-block:: bash
+    
+        $ python ./run_tests.py --visual
+
+Terminal 1 should have flickered and built the session before your eyes.
+tmuxp hides this building from normal users. :)
+
+Verbosity and logging
+"""""""""""""""""""""
+
+``./run_tests.py`` supports two options, these are *optional* flags that
+may be added to for :ref:`test_specific_tests` and
+:ref:`test_builder_visually`.
+
+1.  log level: ``-l`` aka ``--log-level``, with the options of ``debug``,
+    ``info``, ``warn``, ``error``, ``fatal``. Default is ``INFO``.
+
+    .. code-block:: bash
+
+        $ ./run_tests.py --log-level debug
+
+    short form:
+
+    .. code-block:: bash
+
+        $ ./run_tests.py -l debug
+
+2.  unit test verbosity:
+
+    ``--verbosity`` may be set to ``0``, ``1`` and ``2``.  Default: ``2``.
+
+    .. code-block:: bash
+
+        $ ./run_tests.py --verbosity 0
+
+Watch files and test
+--------------------
+
+You can re-run tests automatically on file edit.
+
+.. note::
+    This requires and installation of ``watching_testrunner`` from pypi.
+
+Install `watching_testrunner`_ from `pypi`_:
+
+.. code-block:: bash
+
+    $ pip install watching_testrunner
+
+To run all tests upon editing any ``.py`` file:
+
+.. code-block:: bash
+
+    $ watching_testrunner --basepath ./ --pattern="*.py" python run_tests.py
+
+To run test where :ref:`test_builder_visually` you may:
+
+.. code-block:: bash
+
+    $ watching_testrunner --basepath ./ --pattern="*.py" python run_tests.py --visual
+
+.. _watching_testrunner: https://pypi.python.org/pypi/watching_testrunner/1.0
+.. _pypi: https://pypi.python.org/pypi
+
+Super power
+"""""""""""
+
+.. image:: _static/tmuxp-dev-screenshot.png
+    :scale: 100%
+    :width: 60%
+    :align: center
+
+After you :ref:`install_dev_env`, when inside the tmuxp checkout:
+
+.. code-block:: bash
+
+    $ tmuxp .
+
+this will load the ``.tmuxp.yaml`` in the root of the project.
+
+.. literalinclude:: ../.tmuxp.yaml
+    :language: yaml
+
+Travis CI
+"""""""""
+
+tmuxp uses `travis-ci`_ for continuous integration / automatic unit
+testing.
+
+travis allows for testing against multiple scenarios. Currently tmuxp
+is tested against 1.8 and latest in addition to python 2.7. The
+`travis build site`_ uses this `.travis.yml`_ configuration:
+
+.. literalinclude:: ../.travis.yml
+    :language: yaml
+
+Internals
+---------
+
+Similarities to Tmux and Pythonics
+----------------------------------
+
+tmuxp is was built in the spirit of understanding how tmux operates
+and how python objects and tools can abstract the API's in a pleasant way.
+
+tmuxp uses the identify ``FORMATTERS`` used by tmux, you can see
+them inside of http://sourceforge.net/p/tmux/tmux-code/ci/master/tree/format.c.
+
+In this, I will also begin documenting the API.
+
+the use of:
+
+Session
+Session.new_window() - returns a new Window object bound to the session,
+also uses ``tmux new-window``.
+Session.new_session() - class method - returns a new Session object.
+
+Differences from tmux
+---------------------
+
+Because this is a python abstraction and flags like ``start-directory``
+have dashes (-) replaced with underscores (_).
+
+interesting observations
+------------------------
+
+How is tmuxp able to keep references to panes, windows and sessions?
+
+    Tmux has unique ID's for sessions, windows and panes.
+
+    panes use ``%``, such as ``%1234``
+
+    windows use ``@``, such as ``@2345``
+
+    sessions use ``$``, for money, such as ``$``
+
+How is tmuxp able to handle windows with no names?
+
+    Tmux provides ``window_id`` as a unique identifier.
+
+What is a {pane,window}_index vs a {pane,window,session}_id?
+
+    Pane index refers to the order of a pane on the screen.
+
+    Window index refers to the # of the pane in the session.
+
+To assert pane, window and session data, tmuxp will use
+:meth:`tmuxp.Server.list_sessions`, :meth:`tmuxp.Session.list_windows`,
+:meth:`tmuxp.Window.list_panes` to update objects.
+
+Reference
+---------
+
+- tmux docs http://www.openbsd.org/cgi-bin/man.cgi?query=tmux&sektion=1
+- tmux source code http://sourceforge.net/p/tmux/tmux-code/ci/master/tree/
+
+.. _travis-ci: http://www.travis-ci.org
+.. _travis build site: http://www.travis-ci.org/tony/tmuxp
+.. _.travis.yml: https://github.com/tony/tmuxp/blob/master/.travis.yml
+.. _issue on github: https://github.com/tony/tmuxp/issues
