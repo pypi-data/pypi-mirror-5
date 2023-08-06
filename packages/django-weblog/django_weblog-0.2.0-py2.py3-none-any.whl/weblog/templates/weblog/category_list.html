@@ -1,0 +1,20 @@
+{% extends 'weblog/base.html' %}
+{% load recurse %}
+{% load weblog_extras %}
+
+{% block title %}{{ block.super }} » Categories{% endblock %}
+
+{% block content %}
+<div>
+    <h2>Categories</h2>
+    {% recurse category.subcategories.all with category_list as category %}
+    <dl>
+        {% loop %}
+        <dt><a href="{% url weblog_category_detail category.path %}">{{ category.name }}</a> ({% post_count category=category %})</dt>
+        <dd><small>{{ category.description|safe }}</small>
+            {% child %}</dd>
+        {% endloop %}
+    </dl>
+    {% endrecurse %}
+</div>
+{% endblock content %}

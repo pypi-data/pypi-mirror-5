@@ -1,0 +1,83 @@
+{% load comments %}
+
+<form action="{% comment_form_target %}" method="POST">
+{% csrf_token %}
+{% if next %}
+<input type="hidden" name="next" value="{{ next }}" />
+{% else %}
+<input type="hidden" name="next" value="{{ request.path }}#latest" />
+{% endif %}
+
+{% if comment %}
+<p><input type="submit" name="submit" class="submit-post" value="Post your comment" id="submit" /> or make changes:</p>
+{% endif %}
+
+{{ form.content_type }}
+{{ form.object_pk }}
+{{ form.timestamp }}
+{{ form.security_hash }}
+
+<table class="form" cellspacing="0">
+    {% if not user.is_authenticated %}
+    <tr>
+        <td><label for="id_name">Name:</label></td>
+        <td{% if form.name.errors %} class="error"{% endif %}>
+			{{ form.name }} <span class="form_help">Required</span>
+		{% if form.name.errors %}<br />
+            <span>{{ form.name.errors}}</span>
+        {% endif %}
+		</td>
+    </tr>
+    <tr>
+        <td><label for="id_email">Email address:</label></td>
+        <td{% if form.email.errors %} class="error"{% endif %}>
+			{{ form.email }} <span class="form_help">Required, but not displayed</span>
+		{% if form.email.errors %}<br />
+            <span>{{ form.email.errors}}</span>
+        {% endif %}
+		</td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="2"><p>Logged in as <em>{{ user }}</em>. <a href="{% url logout %}">Logout »</a></p></td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td><label for="id_url">Website:</label></td>
+        <td{% if form.url.errors %} class="error"{% endif %}>
+			{{ form.url }} <span class="form_help">Optional</span>
+		{% if form.url.errors %}<br />
+            <span>{{ form.url.errors}}</span>
+        {% endif %}
+		</td>
+    </tr>
+    <tr>
+        <td{% if form.comment.errors %} class="error"{% endif %} colspan="2">
+			{{ form.comment }}
+		{% if form.comment.errors %}<br />
+            <span>{{ form.comment.errors}}</span>
+        {% endif %}
+		</td>
+    </tr>
+    <tr>
+        <td colspan="2" class="form_help">Format using ReStructuredText (<a href="http://docutils.sourceforge.net/docs/user/rst/quickref.html">Quickref</a>)
+            <ul>
+                <li><em>*emphasis*</em>, <strong>**strong**</strong>, <tt>``inline code``</tt></li>
+                <li>Blockquotes: indent each line to be quoted</li>
+                <li>Links w/ description: `Description &lt;URL&gt;`_</li>
+                <li>Highlighted code blocks: <a href="https://bitbucket.org/birkenfeld/pygments-main/src/tip/external/rst-directive.py">See here</a></li>
+            </ul>
+        </td>
+    </tr>
+    <tr style="display: none;">
+        <td><label for="id_honeypot">You want honey?</label></td>
+        <td>{{ form.honeypot }}</td>
+    </tr>
+    <tr>
+        <td></td>
+        <td class="submit">
+        <input type="submit" name="post" class="submit-post" value="Post" /><input type="submit" name="preview" class="submit-preview" value="Preview" />
+        </td>
+    </tr>
+</table>
+</form>
