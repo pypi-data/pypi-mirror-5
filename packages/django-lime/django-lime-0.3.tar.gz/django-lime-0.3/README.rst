@@ -1,0 +1,103 @@
+Package
+==================================
+django-lime
+
+Description
+==================================
+Easy sending of mixed content (html + plain) emails for Django.
+
+Prerequisites
+===================================
+- Django 1.5.+
+- Python 2.7.+, 3.3.+
+
+Installation
+==================================
+1. Install in your virtual environment:
+
+    $ pip install django-lime
+
+2. Add `lime` to your ``INSTALLED_APPS`` of your Django `settings` module:
+
+>>> INSTALLED_APPS = (
+>>>     # ...
+>>>     'lime',
+>>>     # ...
+>>> )
+>>>
+>>> LIME_SITE_LOGO = 'img/logo.png' # Relative path to logo
+>>> LIME_SITE_TEAM = ugettext("Example site team") # Team name (see the base email template)
+
+3. Copy the templates from `lime` to your main templates directory.
+
+4. Define ``LIME_SITE_LOGO`` and ``LIME_SITE_TEAM`` variables in your ``settings`` module.
+
+5. Make sure your ``django.contrib.sites.models.Site`` has data that makes sense, as ``site_name`` and
+   ``domain`` values will be taken from there. Alternatively, you can define (override) those by defining the 
+   following variables in your ``settings`` module.
+
+   - ``LIME_SITE_NAME``
+   - ``LIME_SITE_DOMAIN``
+
+Usage examples
+==================================
+Inherit your app templates from lime base templates or your own copy of the lime templates (copied to `templates`
+directory). By default the following parameters are passed to your template:
+
+    - ``site_name``: Taken from your ``django.contrib.sites.models.Site``.
+    - ``domain``: Taken from your ``django.contrib.sites.models.Site``
+    - ``site_team``: Site team name.
+    - ``site_logo``: Relative URL to site logo.
+
+>>> from lime import send_email
+>>>
+>>> send_email(
+>>>     subject = _("You've got mail"),
+>>>     from_email = 'ramzes.4@example.come', # From
+>>>     to = 'someone.else@example.com', # To
+>>>     context = {
+>>>         'date_submitted': datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+>>>         'url': 'http://example.com/check-this-fantastic-link.html',
+>>>         'full_name': 'John Doe',
+>>>         'from_name': 'Ramzes the 4th',
+>>>     },
+>>>     plain_template = 'foo/emails/foo_test.txt', # Text template
+>>>     html_template = 'foo/emails/foo_test.html' # HTML tempalte
+>>> )
+
+Running example project
+==================================
+For a working example (including set-up Django environment) check the
+`https://bitbucket.org/barseghyanartur/django-lime` (`example` directory).
+
+1. Go to example/example directory
+
+    $ cd example/example
+
+2. Install requirements (in your virtual environment)
+
+    $ pip install -r requirements.txt
+
+3. Copy local_settings.example to local_settings.py
+
+    $ cp local_settings.example local_settings.py
+
+4. Create the database
+
+    $ ./manage.py syncdb
+
+5. Run the project
+
+    $ ./manage.py runserver
+
+License
+==================================
+GPL 2.0/LGPL 2.1
+
+Support
+==================================
+For any issues contact me at the e-mail given in the `Author` section.
+
+Author
+==================================
+Artur Barseghyan <artur.barseghyan@gmail.com>
