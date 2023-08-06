@@ -1,0 +1,45 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      tal:omit-tag=""
+      tal:define="info view/info">
+
+  <div id="portal-content-header"
+       class="portal-content-header component"
+       tal:condition="python:view.hasImage or view.info()"
+       tal:define="cls python:(('portal-content-header-withimage' if view.hasImage else '') + 
+                               (' portal-content-header-withinfo' if view.description and view.hasImage else '') + 
+                               (' portal-content-header-responsive' if view.responsive and view.hasImage else ''))"
+       tal:attributes="class string:portal-content-header component ${cls};
+                       style python:'background-image:url(\'' + view.image + '\')' if view.hasImage and view.responsive else '';"
+       i18n:domain="raptus.header">
+    <div class="wrapped"
+         tal:condition="python:view.hasImage or info">
+      <tal:info tal:replace="structure view/info" />
+      <tal:image condition="view/hasImage">
+        <tal:block tal:condition="view/manage"
+                   tal:define="item view/manage">
+          <metal:manage use-macro="context/raptus_article_macros/macros/manage|nothing" />
+        </tal:block>
+        <img tal:condition="not:view/responsive"
+             tal:replace="structure view/image" />
+        <div class="content"
+             tal:condition="view/description">
+          <h2 tal:condition="view/title"
+              tal:content="view/title"></h2>
+          <div class="body">
+            <p tal:content="view/description"></p>
+          </div>
+        </div>
+        <img src="" alt="" class="hiddenStructure"
+             tal:condition="view/responsive"
+             tal:attributes="src view/thumb;
+                             alt view/title;" />
+      </tal:image>
+    </div>
+  </div>
+
+</html>
