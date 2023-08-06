@@ -1,0 +1,235 @@
+#!/usr/bin/env python
+__APP_NAME__ = "git_repo_hooks"
+import os, sys, shutil, stat, subprocess, re
+from collections import OrderedDict
+
+try:
+	import kjlib
+	kjlib.require("1.06.02")
+	from kjlib import debugtools
+	DATA_DIR = debugtools.DATA_DIR
+	from kjlib.debugtools import DebugTools, dumps, die
+	DEBUG_LEVEL = DebugTools.DEBUG_LEVEL
+	DebugTools.debugLevel = DEBUG_LEVEL.DEBUG
+except ImportError:
+	print >> sys.stderr, "This program requires kjlib package (Available in pypi)."
+	exit(-1)
+
+CONFIG_DIRECTORY = ".gitconfigs"
+GLOBAL_HOOKS_DIR = os.path.join(DATA_DIR, "global_hooks")
+
+USAGE_MSG = """usage: git hooks <command>
+
+The commands are:
+    list     List all the User, Project, Global hooks for the project or only
+             Global if not in a repository.
+    install  Prepare a git repository for User, Project hooks.
+
+To disable a hook make it non executable or add a .bkp extension.
+
+For Global hooks place them in ~/.data/git_repo_hooks/global_hooks/ under seperate folders
+(same structure as <gitProject>/.gitconfigs/hooks/project).
+
+See 'git hooks help <command>' for more information on a specific command."""
+
+HOOK_NAMES = [
+	"applypatch-msg", "pre-applypatch", "post-applypatch",
+	"pre-commit", "prepare-commit-msg", "commit-msg", "post-commit",
+	"pre-rebase", "post-checkout", "post-merge", "pre-receive",
+	"update", "post-receive", "post-update",
+	"pre-auto-gc", "post-rewrite"
+]
+
+HOOK_TEMPLATE = """#!/usr/bin/env python
+import os, subprocess
+_, hookType = os.path.split(__file__)
+exit(subprocess.call(["git", "hooks", "run", hookType]))"""
+
+GLOBAL = lambda:None
+setattr(GLOBAL, 'repoDir', None); GLOBAL.repoDir = None
+setattr(GLOBAL, 'safeUsername', None); GLOBAL.safeUsername = None
+
+def main(argv):
+	GLOBAL.repoDir = Git.getRepoDir()
+	GLOBAL.safeUsername = Git.getSafeUsername()
+
+	modname = globals()['__name__']
+	module = sys.modules[modname]
+	commands = [x for x in dir(module) if x.startswith("cmd_")]
+	commands = dict(zip(commands, [getattr(module, x) for x in commands]))
+
+	cmdStr = "help" # default command
+	userCommand = False
+	if len(argv) > 0:
+		cmdStr = argv[0]
+		userCommand = True
+	cmd = "cmd_" + cmdStr
+	cmd = commands.get(cmd)
+	if cmd is None:
+		die("git: '%s' is not a git-hooks command." % cmdStr)
+	cmd(argv[1:])
+
+class Git:
+	@staticmethod
+	def getRepoDir():
+		cmd = ["git", "rev-parse", "--git-dir"]
+		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		returncode = p.wait()
+		if returncode != 0:
+			return None
+		stdoutdata, _ = p.communicate()
+		repoDir, _ = os.path.split(stdoutdata.strip())
+		return repoDir
+	@staticmethod
+	def getUsername():
+		cmd = ["git", "config", "user.name"]
+		p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+		returncode = p.wait()
+		if returncode != 0:
+			return None
+		stdoutdata, _ = p.communicate()
+		username = stdoutdata.strip()
+		if username == "":
+			username = None
+		return username
+	@staticmethod
+	def getSafeUsername():
+		username = Git.getUsername()
+		if username is None:
+			return username
+		safeUsername = re.sub(r"[^A-Za-z0-9]+", "_", username).strip('_')
+		return safeUsername
+
+def cmd_help(argv):
+	print USAGE_MSG
+	exit(0)
+
+def cmd_list(argv):
+	allHooks = getAllHooks()
+	keysStr = ", ".join(allHooks.keys())
+	print "Listing " + keysStr + " hooks:"
+	for key, hooks in allHooks.iteritems():
+		if len(hooks) > 0:
+			print "%s:" % key
+			for hook in hooks:
+				print "\t%s" % hook
+
+def cmd_install(argv):
+	if GLOBAL.repoDir is None:
+		die("git-hooks install must be run inside a git repository.")
+	if GLOBAL.safeUsername is None:
+		die("git-hooks install requires a git username (local or global).\nSee: user.name in git help config.")
+	hookDirs = getHookDirs()
+	isInstalled = os.path.exists(hookDirs["Project"])
+	if not isInstalled:
+		print "Installing git-hooks directories into repository:"
+		for directory in (hookDirs["User"], hookDirs["Project"]):
+			os.makedirs(directory)
+			print "\t%s" % os.path.relpath(directory, os.getcwd())
+			for hook in HOOK_NAMES:
+				hookDir = os.path.join(directory, hook)
+				os.mkdir(hookDir)
+		print "Moving old hooks into new git-hooks repository directories:"
+		for hook in HOOK_NAMES:
+			oldHookPath = os.path.join(GLOBAL.repoDir, ".git", "hooks", hook)
+			if os.path.exists(oldHookPath):
+				newHookPath = os.path.join(hookDirs["Project"], hook, hook + "-orig")
+				print "\t%s -> %s" % (oldHookPath, newHookPath)
+				shutil.move(oldHookPath, newHookPath)
+	writeMyHooks()
+
+def writeMyHooks():
+	hooksDir = os.path.join(GLOBAL.repoDir, ".git", "hooks")
+	hooksRelDir = os.path.relpath(hooksDir, os.getcwd())
+	print "Installing git-hooks into %s:" % hooksRelDir
+	if not os.path.exists(hooksDir):
+		os.makedirs(hooksDir)
+	for hook in HOOK_NAMES:
+		oldHookPath = os.path.join(hooksDir, hook)
+		print "\t%s" % os.path.join(hooksRelDir, hook)
+		with open(oldHookPath, "w") as f:
+			f.write(HOOK_TEMPLATE)
+		os.chmod(oldHookPath, os.stat(oldHookPath).st_mode | stat.S_IEXEC)
+
+def cmd_run(argv):
+	if len(argv) < 1:
+		die("INTERNAL: git-hooks run needs a hookType parameter.")
+	hookType = argv[0]
+	if hookType not in HOOK_NAMES:
+		die("INTERNAL: %s is not a recognized hookType." % hookType)
+	DebugTools.println("Runing User, Project, and Global hooks for %s:" % hookType, DEBUG_LEVEL.DEBUG)
+	hookDirs = getHookDirs()
+	allHooks = getHooksByType(hookType)
+	for dirType, hooks in allHooks.iteritems():
+		hookDir = hookDirs[dirType]
+		if not os.path.exists(hookDir) and dirType != "Global":
+			die("'%s' is a missing hook directory (deleted?, user.name changed?)." % hookDir)
+		if len(hooks) > 0:
+			DebugTools.println("%s:" % dirType, DEBUG_LEVEL.DEBUG)
+			for hook in hooks:
+				DebugTools.println("\t%s ..." % hook, DEBUG_LEVEL.DEBUG)
+				sys.stdout.flush()
+				hookPath = os.path.join(hookDir, hook)
+				returncode = runSingle(hookPath, argv[1:])
+				if returncode == 0:
+					DebugTools.println("\tOK.", DEBUG_LEVEL.DEBUG)
+				else:
+					DebugTools.println("\tFail (%s)." % returncode, DEBUG_LEVEL.DEBUG)
+					die()
+	DebugTools.println("OK.", DEBUG_LEVEL.DEBUG)
+
+def runSingle(filePath, argv = []):
+	cmd = [filePath]
+	cmd.extend(argv)
+	try:
+		returncode = subprocess.call(cmd)
+	except OSError as e:
+		die("OSError: %s" % e.strerror, e.errno)
+	return returncode
+
+def getAllHooks():
+	allHooks = OrderedDict()
+	for dirType, dirPath in getHookDirs().iteritems():
+		allHooks[dirType] = getHooksByDirectory(dirPath)
+	return allHooks
+
+def getHooksByType(hookType):
+	hooks = OrderedDict()
+	for dirType, dirPath in getHookDirs().iteritems():
+		hooks[dirType] = getHookByDirectoryType(dirPath, hookType)
+	return hooks
+
+def getHookDirs():
+	d = OrderedDict()
+	if GLOBAL.repoDir is not None:
+		d["User"] = os.path.join(GLOBAL.repoDir, CONFIG_DIRECTORY, "hooks", "user", GLOBAL.safeUsername)
+		d["Project"] = os.path.join(GLOBAL.repoDir, CONFIG_DIRECTORY, "hooks", "project")
+	d["Global"] = GLOBAL_HOOKS_DIR
+	return d
+
+def getHooksByDirectory(directory):
+	hooks = []
+	if not os.path.isdir(directory):
+		return hooks
+	for hook in HOOK_NAMES:
+		dirHooks = getHookByDirectoryType(directory, hook)
+		hooks.extend(dirHooks)
+	return hooks
+
+def getHookByDirectoryType(directory, hookType):
+	hookDir = os.path.join(directory, hookType)
+	hooks = []
+	if not os.path.isdir(hookDir):
+		return hooks
+	hooks = [os.path.join(hookType,x) for x in os.listdir(hookDir) if goodHook(os.path.join(hookDir, x))]
+	return hooks
+
+def goodHook(filePath):
+	return (not filePath.endswith(".bkp")) and canExecute(filePath)
+
+def canExecute(filePath):
+	return os.stat(filePath).st_mode & stat.S_IEXEC
+
+if __name__=="__main__":
+	main(sys.argv[1:])
+
