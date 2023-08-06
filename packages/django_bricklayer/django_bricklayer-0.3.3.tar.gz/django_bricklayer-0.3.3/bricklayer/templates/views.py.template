@@ -1,0 +1,36 @@
+
+{% if generic_views %}from django.views.generic import {{ generic_views|join:"," }}{% endif %}
+{% if import_reverse_lazy%}from django.core.urlresolvers import reverse_lazy{%endif%}
+{% if import_model %}from {{app}}.models import {{model}}{% endif %}
+{% if import_form %}from {{app}}.forms import {{model}}Form{% endif %}
+
+{% if create %}
+class {{model}}Create(CreateView):
+    model = {{model}}
+    success_url = reverse_lazy('{{model|lower}}-list')
+    {% if has_form %}form_class = {{model}}Form{% endif %}
+    
+{% endif %}
+
+{% if detail %}
+class {{model}}Detail(DetailView):
+    model = {{model}}
+{% endif %}
+
+{% if list %}    
+class {{model}}List(ListView):
+    model = {{model}}
+{% endif %}
+
+{% if update %}
+class {{model}}Update(UpdateView):
+    model = {{model}}
+    success_url = reverse_lazy('{{model|lower}}-list')
+    {% if has_form %}form_class = {{model}}Form{% endif %}
+{% endif %}
+
+{% if delete %}
+class {{model}}Delete(DeleteView):
+    model = {{model}}
+    success_url = reverse_lazy('{{model|lower}}-list')
+{% endif %}

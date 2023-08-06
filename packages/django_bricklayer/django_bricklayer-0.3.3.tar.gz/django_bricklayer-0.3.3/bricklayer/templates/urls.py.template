@@ -1,0 +1,13 @@
+{% if imports %}
+from django.conf.urls import {{ imports|join:"," }}
+{% endif %}
+{% if generic_views_types %}from {{app}}.views import {%for view_type in generic_view_types %}{{model}}{{view_type}}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}
+
+urlpatterns {% if extend_urlpatterns %}+{% endif %}=patterns('',
+
+{%if "Detail" in  generic_views_types %}	url(r'^(?P<pk>\d+)$', {{model}}Detail.as_view(), name='{{model|lower}}-detail’),{% endif %}
+{%if "Create" in  generic_views_types %}  	url(r'^new$', {{model}}Create.as_view(), name='new-{{model|lower}}'),{% endif %}
+{%if "Update" in  generic_views_types %}  	url(r'^edit/(?P<pk>\d+)$', {{model}}Update.as_view(), name='edit-{{model|lower}}'),{% endif %}
+{%if "Delete" in  generic_views_types %}  	url(r'^delete/(?P<pk>\d+)$', {{model}}Delete.as_view(), name='delete-{{model|lower}}'),{% endif %}
+{%if "List" in  generic_views_types   %}	url(r'^$', {{model}}List.as_view(), name='{{model|lower}}-list'),{% endif %}
+) 
