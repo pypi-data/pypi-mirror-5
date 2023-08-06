@@ -1,0 +1,27 @@
+{% extends "kiwi/subbase.html" %}
+{% load kiwiwiki %}
+{% block head_title %}{{ block.super }} - Historique des versions de "{{ wikipageObject.title }}"{% endblock %}
+{% block header_pathline_content %}
+    {% pathline wikipageAll wikipageObject.id %}
+     &gt; Historique des versions
+{% endblock %}
+
+{% block content %}
+    <div class="content_container">
+        <h2>Historique des versions de "{{ wikipageObject.title }}"</h2>
+        
+        <div class="vertical_block_list">
+            <ul class="item_list">
+                {% ifequal page 1 %}<li class="block row2">
+                    <h3><a href="{{ wikipageObject.get_absolute_url }}">Version publiée</a></h3>
+                    <p>Publié le <ins>{{ wikipageObject.last_date|date:"l d F Y à H:i" }}</ins> par {{ wikipageObject.author }}</p>
+                </li>{% endifequal %}
+                {% for item in object_list %}<li class="block {% cycle "row1" "row2" %}{% if forloop.last %} last{% endif %}">
+                    <h3><a href="{{ item.get_absolute_url }}">Version n°{{ item.rev_number }}</a></h3>
+                    <p>Archive du <ins>{{ item.date|date:"l d F Y à H:i" }}</ins> par {{ item.author }}</p>
+                </li>{% endfor %}
+            </ul>
+        </div>
+       {% pagination_tag %}
+    </div>
+{% endblock %}

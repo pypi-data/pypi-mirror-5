@@ -1,0 +1,69 @@
+{% extends "kiwi/subbase.html" %}
+{% load kiwimarkup %}
+{% load kiwiwiki %}
+{% block head_title %}{{ block.super }} - {{ wikipageObject.title }}{% endblock %}
+{% block header_pathline_content %}
+    {% pathline wikipageAll wikipageObject.id %}
+{% endblock %}
+{% block head_more_links %}
+    <link rel="Stylesheet" title="Normal" media="screen" type="text/css" href="{{ metas.kiwimedias_url }}js/bof_editor/wikibar/ui.css"/>
+    <link rel="Stylesheet" title="Normal" media="screen" type="text/css" href="{{ metas.kiwimedias_url }}js/bof_editor/ui.css"/>
+{% endblock %}
+{% block head_more_js %}
+    <script type="text/javascript" src="{{ metas.kiwimedias_url }}js/bof_editor/wikibar/api.js"></script>
+    <script type="text/javascript" src="{{ metas.kiwimedias_url }}js/bof_editor/api.js"></script>
+    
+    <script type="text/javascript">
+    //<![CDATA[
+        $(document).ready(function(){
+            MEDIAS_URL = "{{ metas.medias_url }}";
+            $('#id_text').BOF_Editor({
+                'url_preview': "{% url kiwi.views.syntax.preview %}",
+                'syntax_help': "/syntax/",
+                'csrf_token': "csrftoken",
+                'with_wikibar': true
+            });
+        });
+    //]]>
+    </script>
+{% endblock %}
+
+{% block content %}
+    {% wiki2xhtml_render wikipageObject.text wikipageAllPub %}
+    <div class="columned">
+    
+        <div id="submenu">
+            <div class="container">
+                {% if W2X_Summary %}
+                <h2>Sommaire</h2>
+                <div class="summary">
+                    {{ W2X_Summary }}
+                </div>
+                {% endif %}
+            
+                <p class="revision_date">Dernière édition le {{ wikipageObject.last_date|date:"l d F Y à H:i" }}</p>
+                {% if with_history %}
+                    {% ifnotequal wikipageObject.rev_number 0 %}<p class="history_link"><a href="{{ wikipageObject.get_history_url }}"><strong>Historique des changements de ce document</strong></a></p>{% endifnotequal %}
+                {% endif %}
+                {% if user.is_staff %}<p class="history_link"><a href="/admin/kiwi/wikipage/{{ wikipageObject.id }}/"><strong>Éditer cette page</strong></a></p>{% endif %}
+            </div>
+        </div>
+        
+        <div class="content_container">
+            <h2>{{ wikipageObject.title }}</h2>
+            
+            <div class="wiki2xhtml">
+                {{ W2X_Xhtml }}
+                {% attached_files_widget wikipageObject %}
+                
+                <fieldset>
+                    <legend><label for="id_text">Texte:</label></legend>
+                    <div>
+                        <textarea id="id_text" rows="14" cols="100" name="text" class="vLargeTextField">{{ wikipageObject.text }}</textarea>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        
+    </div>
+{% endblock %}
