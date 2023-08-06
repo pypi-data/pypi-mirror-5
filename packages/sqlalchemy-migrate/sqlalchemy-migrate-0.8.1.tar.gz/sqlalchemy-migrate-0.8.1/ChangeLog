@@ -1,0 +1,2759 @@
+commit 82f94dd1160158b198011778da29677d58b95a4c
+Merge: 40624e7 fbc7ef0
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Nov 15 07:04:25 2013 +0000
+
+    Merge "Remove the tag_build line from setup.cfg"
+
+commit fbc7ef03d18e93d5991aded76bef74258671f4eb
+Author: David Ripton <dripton@redhat.com>
+Date:   Thu Nov 14 14:55:10 2013 -0500
+
+    Remove the tag_build line from setup.cfg
+    
+    It was causing the release tarball to have an extra ".dev." in its filename,
+    which then broke the script that uploads the release to PyPI.
+    
+    Change-Id: I995fb3e0393468568601e8614c0532b93fbe8ceb
+
+commit 40624e7ddcd21bb1713bbb04eab9ab1a9dc7f22d
+Author: Sascha Peilicke <speilicke@suse.com>
+Date:   Thu Nov 14 13:40:12 2013 +0100
+
+    Drop setuptools_git test requirement
+    
+    We don't need this since we're using pbr.
+    
+    Change-Id: I7c5985fac66d5e7a4fca1b3945a18a364a94e971
+
+commit c49b8beb831ae9399f072f9cce7e94cc64e92243
+Author: Matt Riedemann <mriedem@us.ibm.com>
+Date:   Tue Nov 5 18:43:08 2013 -0800
+
+    Fix int overflow exception in unittest
+    
+    Fixes:
+    
+      File ".../versioning/version.py", line 30, in __init__
+          if self < 0:
+      OverflowError: Python int too large to convert to C long
+    
+    Don't use __cmp__ which is deprecated and restricted to C
+    long ints, rather than python's arbitrary precision ints.
+    
+    Copied from Pádraig Brady's Fedora patch:
+    
+    http://pkgs.fedoraproject.org/cgit/python-migrate.git/commit/?id=a01bf449
+    
+    Co-authored-by: Pádraig Brady <pbrady@redhat.com>
+    Change-Id: I71f349f97507525b2f2edaf034005d67b6cc3987
+
+commit 2485118c24b2293747dfafb3be58a6bdc65f7d66
+Author: Roman Podolyaka <rpodolyaka@mirantis.com>
+Date:   Fri Oct 18 14:23:11 2013 +0300
+
+    Fix dropping of indexed columns in sqlite/sa08
+    
+    Version 0.8 of SQLAlchemy added support of indexes
+    on expressions in addition to plain table columns,
+    which changed the way indexes are created.
+    
+    This broke support of dropping columns of composite
+    indexes for SQLite: due to limitations of ALTER in
+    SQLite every time a column is dropped, we recreate
+    the whole table without the given column; if a
+    column is a part of a composite index, we change the
+    index definition to omit that column and then indexes
+    are recreated too.
+    
+    SQLAlchemy versions starting from 0.8 no more pay
+    attention to 'columns' attribute of Index instances
+    when generating DDL for indexes, so when one of columns
+    of a composite index is dropped, we try to create a
+    new index on the column that doesn't exist anymore,
+    which of course fails.
+    
+    Closes-Bug: #1241038
+    
+    Change-Id: I777b8ce36e36f49bfb0889908811a063cf1a527b
+
+commit a91766a1ac86e432449aa66ae8f4b0f886b33e88
+Author: Roman Podolyaka <rpodolyaka@mirantis.com>
+Date:   Tue Aug 6 17:20:38 2013 +0300
+
+    Run tests on PostgreSQL and MySQL too
+    
+    In addition to running tests with different Python and SQLAlchemy
+    versions, they should also be run on different DB backends, which
+    are used in production (PostgreSQL and MySQL).
+    
+    This patch:
+      - modifies test_db.cfg to run tests on PostgreSQL and MySQL
+        (Jenkins Slave credentials are used here, to ensure these
+        tests are always run by Jenkins gate); if a backend is not
+        available, test cases will be skipped for it
+      - concurrency is set to 1 (sharing of the one MySQL or PostgreSQL
+        DB among different test runner processes would lead to
+        race conditions)
+      - fixes tests dropping FK columns in MySQL: in earlier MySQL
+        versions dropping a column that is a part of a FK constraint
+        would lead to dropping of the FK too. As of MySQL 5.5 that's
+        not the case anymore: if one tries to drop such column, he/she
+        will get a very obscure error (something like "Error on rename
+        of './openstack_citest/#sql-4af_aa2' to './openstack_citest/tmp_adddropcol'
+        (errno: 150)") '\nALTER TABLE tmp_adddropcol DROP COLUMN r2').
+        So the solution if to drop FK constraints first, and only then
+        the columns it is made up of
+    
+    Change-Id: I8c5d2874c83e7df46da69969ed54d85437c849e7
+
+commit 838c1cbb147550a39bf2ee35ec1fd5911358ad70
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Oct 7 12:03:28 2013 -0400
+
+    Update tox requirements
+    
+    Update to needing 1.6, which gives us the ability to alter how the
+    software is installed into the virtualenv. It also brings in pip 1.4,
+    which lets us avoid getting pre-releases of things we weren't expecting.
+    
+    Change-Id: I3189f06610d776a032b5f8bf0910f59e4ed45719
+
+commit 2ac02e0ef57b61c01d5684a03334bd013a1c7b1a
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Sep 30 10:31:52 2013 -0400
+
+    Stop using the d2to1-based pbr
+    
+    pbr updated itself to remove the d2to1 dependency. One of the main
+    reasons for this is a direct upstream dependency on distribute, which
+    causes the distribute/setuptools merge bug to get triggered, which
+    breaks people's system if they install with pip < 1.4.
+    
+    Remove d2to1 references, and also bump the required version requested of
+    pbr to a version late enough to no longer depend on d2to1.
+    
+    Remove the version specifier from setup.py, because setup_requires has
+    no way to trigger a version requirement upgrade. The flat version should
+    be sufficient for the setup.py interface in perpetuity.
+    
+    Remove the setup-hook from setup.cfg, as it is no longer needed.
+    
+    Change-Id: I40d3507c77802d13fd894aa16714b2ed6aa7d59f
+
+commit 5c646eb55859206274e2118255f582e4d17d73e8
+Author: Pádraig Brady <pbrady@redhat.com>
+Date:   Mon Sep 23 15:12:44 2013 +0100
+
+    decouple index name generation from sqlalchemy version
+    
+    In commit 0.7.2-16-gc670d1d the _index_identifier() implementation
+    was copied from sqlalchemy, as that function was renamed
+    in sqlalchemy 0.8.  Instead handle call the renamed function
+    when appropriate, to decouple ourselves from the sqlalchemy
+    implementation.
+    
+    Change-Id: I97b22c20d96758fc5b6bd55318218edb26c5b5d0
+
+commit ddea3a8bc8c5cf4b927c4cf97bfc82e4ffd0826a
+Author: Roman Podolyaka <rpodolyaka@mirantis.com>
+Date:   Wed Jul 24 12:20:12 2013 +0300
+
+    Run tests with different SQLAlchemy versions
+    
+    The test suite should be run for all possible combinations
+    of Python and SQLAlchemy versions we claim to support, which
+    are Python 2.6 and 2.7 and SQLAlchemy 0.7.x (old stable) and
+    0.8.x (mainline stable).
+    
+    py26/py27 tox envs install the latest stable version of SQLAlchemy
+    (currently, 0.8.x branch), so two additional tox environments added
+    to run the test suite with SQLAlchemy 0.7.x (for both Python 2.6 and 2.7).
+    
+    Change-Id: I50c7009d8b808ce3bbb1f0a27c50f5cb5116cdb3
+
+commit 427149eef2b3ab774021595a785a9706808b64b6
+Author: Roman Podolyaka <rpodolyaka@mirantis.com>
+Date:   Tue Jul 30 17:30:56 2013 +0300
+
+    Add a workaround for pytz and pip>=1.4
+    
+    pip versions >= 1.4 will not install pytz unless a minimum
+    version containing a letter is specified (this workaround is
+    taken from Babel Python library).
+    
+    Change-Id: Ic013fca82816cd89e446282d3936e38ea2c39274
+
+commit b5d64cdbe43a82df818250b780cc3c573560df1a
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Fri Jul 12 10:53:37 2013 -0400
+
+    Add a reqs files for RTFD
+    
+    RTFD only has a single requirements field, so make one that installs the
+    total set of needed requirements to allow docs to build properly.
+    
+    Change-Id: I79b8202a6a7944cec052a2431dff670258bf7171
+
+commit 74ccf7a39762020671bf73820bae030d4b28bc96
+Author: Pádraig Brady <P@draigBrady.com>
+Date:   Thu Jul 11 22:01:32 2013 -0400
+
+    Fix exceptions for SQLAlchemy 0.8
+    
+    Change-Id: Ib541ac9d6b397300e34ca8b65aad459b612858c3
+
+commit c670d1d36a742ffe6c018920359424b7ece2b516
+Author: Josip Delic <delijati@googlemail.com>
+Date:   Thu Jun 13 17:17:34 2013 +0200
+
+    added bugfixes for 0.8
+
+commit a71799ea2cbfa1354c786991a85b610753f5474c
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Jul 11 16:24:50 2013 -0400
+
+    Updated to OpenStack Build stuff.
+
+commit 85fe71617f301e2163a97108aaa70de5bfb6b4a5
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Jul 11 15:53:46 2013 -0400
+
+    Removed hg and google code references
+
+commit e0edf4d4a13de3596592545c1e969e3472b1d2b9
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Jul 11 15:50:07 2013 -0400
+
+    Initial changes to import into StackForge.
+
+commit 08cacdac5900c99834ef3484f326f0793c19290e
+Author: Jan Dittberner <jan.dittberner@gmail.com>
+Date:   Sat Feb 9 13:08:53 2013 +0100
+
+    update changelog
+
+commit d9f322cf6eed9897b5a025ec41efd250997e22f5
+Author: Jan Dittberner <jan.dittberner@gmail.com>
+Date:   Sat Feb 9 13:07:39 2013 +0100
+
+    fix error, Text columns have no width
+
+commit 195f95550bade1c63be88fae66ced2a7700453c8
+Author: Jan Dittberner <jan.dittberner@gmail.com>
+Date:   Sat Feb 9 13:02:59 2013 +0100
+
+    fix deprecation warning by using MetaData.reflect
+
+commit 2e26236baacdcbcdce69172604f22b352ccbdf47
+Author: Jan Dittberner <jan.dittberner@gmail.com>
+Date:   Sat Feb 9 11:18:27 2013 +0100
+
+    update credits and changelog
+
+commit 2ff11c176af15cae3a5ea0223ee3fc236f1eab13
+Author: Alex Favaro <alexfav619@gmail.com>
+Date:   Sat Feb 9 11:15:26 2013 +0100
+
+    Import correct exceptions module (Fixes issue 154).
+
+commit 84f4faf113f619ef0f9a0df4f7f6040a6782587c
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Mon Jan 23 21:36:13 2012 +0100
+
+    update changelog and credits
+
+commit fe1f1deca8110c0ea40cd544f815d05abc36e8ec
+Author: asuffield@gmail.com <unknown>
+Date:   Mon Jan 23 21:34:12 2012 +0100
+
+    apply patch for issue #72 by asuffield@gmail.com
+    
+    fixes #72
+
+commit ddad9c7f8c501d52ad72ae32fc48c8c910f86d8e
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Dec 17 20:27:22 2011 +0100
+
+    update changelog and credits
+
+commit 7a5148a30bf1a9f55eb26dc0d5737b2132bc6ee2
+Author: Jason Michalski <armooo@armooo.net>
+Date:   Sat Dec 17 20:25:04 2011 +0100
+
+    Fix excludeTablesgetDiffOfModelAgainstModel is not passing
+    excludeTables correctly
+    
+    Fixes issue 140
+
+commit 08310eec9df530affaa02570d0fb2d163335d81a
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Tue Nov 1 22:10:37 2011 +0100
+
+    start next development iteration
+
+commit aadd728366391fc6b3fbba34d50555fd7e151f11
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Tue Nov 1 21:35:16 2011 +0100
+
+    Added signature for changeset ad06c76fc174
+
+commit da930f3b0171120ea2873d9a9a2d20522f31c6ea
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Tue Nov 1 21:34:26 2011 +0100
+
+    tag for release 0.7.2
+
+commit bd16556ddb39b065f90907b3b7c30cc348e281d8
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Tue Nov 1 21:30:51 2011 +0100
+
+    finalize changelog for 0.7.2
+
+commit 0958face627011c1edc2eedaeb95bf9747001a58
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Tue Nov 1 21:16:33 2011 +0100
+
+    add credits for contributors
+
+commit b1c1aa0b404a335e3a69cd432724a3b77af0d7e7
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sun Oct 30 00:05:59 2011 +0200
+
+    bump SQLAlchemy dependency to >= 0.6
+    add build-req.pip with build requirements
+
+commit 9d615fa4bd77b1534580276b9358e3846d1498f5
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 23:27:26 2011 +0200
+
+    update changelog
+    fix issue numbers (use trac issue prefix for pre 0.3 versions)
+
+commit 5f16f9b7119aad1121db897e982b1154b5997725
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 23:24:38 2011 +0200
+
+    add glossary
+    update documentation meta data, rewrap index.rst
+
+commit 784b99652fa6006d14540a6ea17019c2371a14ea
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 23:16:50 2011 +0200
+
+    add more developer related information
+
+commit 0981fb3f6849d6557bfdf9570d163ccb50993931
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 23:15:53 2011 +0200
+
+    rewrap README
+
+commit 05e76a1430e91687d2bd65036a1f218d879d0bf0
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 22:48:52 2011 +0200
+
+    update sqlalchemy documentation links
+    use explicit code-block markup
+
+commit 3dc1cf28b0e7c589ecf645d08e8941f0107360c1
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 22:45:43 2011 +0200
+
+    update intersphinx configuration, add sphinxcontrib.issuetracker configuration
+
+commit 7013bfad463d125b9182486e5e910ff3053f49d3
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 22:44:17 2011 +0200
+
+    ignore vim swap files and docs/_static
+
+commit 2bc520eaa60a3a025676e2d5d77a64b9a6476d21
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 21:59:11 2011 +0200
+
+    document adding/droping columns (fixes issue 104)
+
+commit 1367004a17d7b893fc1d3ae45bae849cd0e91f98
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sat Oct 29 15:55:24 2011 +0200
+
+    PEP-8 compliant script templates
+
+commit 324a2c766ddfe2057a535ba839ff10c3b12cef19
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 16:14:21 2011 +0200
+
+    add regression test (fixes issue 105)
+
+commit 18c3f68d41fd65681bf76994fdea54b045e35298
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 15:39:31 2011 +0200
+
+    fix issues with ConfigParser and existing repositories (fixes issue 115)
+
+commit 0c069a63c7d750ca6e5ea8822056e6a073e75ede
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 13:56:54 2011 +0200
+
+    give credits to Benoît Allard
+
+commit d872960ae6689d3197909402dc3822d5bb70b47b
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 13:46:16 2011 +0200
+
+    remove obsolete manage.py_tmpl (related to issue 121)
+
+commit 962b517b5ab2ee6a6e3b39bb8f4b8ddcaed8a1a8
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 13:42:41 2011 +0200
+
+    update changelog (add issue 121 bugfix)
+
+commit e31b1cf3895aa16693aea8de73abc577a4e21918
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 13:41:27 2011 +0200
+
+    generate if __name__ == "__main__" in manage.py (fixes issue 121)
+
+commit bd6df33a08d219434217caf17eca05eb7f5f7c83
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 12:45:07 2011 +0200
+
+    update changelog (include #125 fix)
+
+commit a48190c00633623ed86f00cb960c95d3a383b4bb
+Merge: 317b02f cef7676
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 12:25:22 2011 +0200
+
+    merge e5bd2821eea8 from https://code.google.com/r/alyazdi-patches/
+    (fixes issue 125)
+
+commit 317b02fbf01a1164b8aafe08f1be81521a319e95
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 11:10:31 2011 +0200
+
+    update changelog
+
+commit ad394ae2b30ed11c46321381a980486a98bf36fa
+Merge: 3619347 7ce76aa
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 11:07:00 2011 +0200
+
+    merge fixes by wyenho
+
+commit 3619347441ac129bfa2a266714b9fe933bbb4942
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 10:59:10 2011 +0200
+
+    drop SQLAlchemy < 0.6 compatibility code
+
+commit e4ad6e357f62f9fe333042e9190285ad6f283ad1
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 10:34:06 2011 +0200
+
+    ignore PyCharm project files
+
+commit 95a329b16a05342badd955e218bf3e47c4b2879e
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 10:06:19 2011 +0200
+
+    fix SQLAlchemy 0.6.x compatibility of issue 128 patch
+
+commit 6f44824055dcb653a1db94a533e466a61e82d5dd
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 10:01:50 2011 +0200
+
+    update changelog (drop support for SQLAlchemy 0.5.x, Python 2.4 and 2.5)
+
+commit 6ecf665f1467f0667e1c3ed910ae028b5caf1262
+Author: markbmc@gmail.com <unknown>
+Date:   Fri Oct 28 09:34:08 2011 +0200
+
+    fix issue 128: "table rename failure with sqlalchemy 0.7.x"
+
+commit b38c0fb2ccb508109b075c7a425acc21d5d2a941
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Oct 28 08:54:14 2011 +0200
+
+    changelog updates
+
+commit cef7676b58a71f41a842207357dcb2b73bd624ba
+Author: al.yazdi@gmail.com <unknown>
+Date:   Wed Oct 26 06:32:59 2011 +0000
+
+    Fix for issue #125, create the table on the same connection as the ALTER and INSERT happen
+
+commit 7ce76aaab64ce11426a03a908ec15315a925bd74
+Author: wyuenho@gmail.com <unknown>
+Date:   Sun Oct 2 20:13:10 2011 +0800
+
+    fixed issue 129
+
+commit 4cb8fee5ffb297719e1ffd8ec9fd7a24f9ac45a5
+Author: wyuenho@gmail.com <unknown>
+Date:   Sun Oct 2 20:09:43 2011 +0800
+
+    fixed issue 83
+
+commit 6e5f5c4b0c1620d1c0504c2574252701b6a9cf8b
+Author: Dustin J. Mitchell <dustin@mozilla.com>
+Date:   Sun Jul 10 21:32:20 2011 -0500
+
+    remove unused import
+
+commit e7195ffbf4684f2beb6b974dbca6cac527451992
+Author: Dustin J. Mitchell <dustin@mozilla.com>
+Date:   Sun Jul 10 21:21:43 2011 -0500
+
+    Fix issue 124: ignore sqlite_sequence in comparing db to model
+
+commit a1968e7f7da37a104555581bcab4fb01df90e5a5
+Author: Gabriel <g2p.code+sqla@gmail.com>
+Date:   Thu Jul 7 19:12:18 2011 +0200
+
+    Use two models in generated migrations. Test column addition and removal.
+
+commit 15f571d2965041827a60226b849b553bd9a14ee2
+Author: Gabriel <g2p.code+sqla@gmail.com>
+Date:   Tue Jul 5 19:57:27 2011 +0200
+
+    Put constraints (positional) before args (keywords).
+
+commit 15911e6bfe40cc6511de2c1bf386f696504f42eb
+Author: Gabriel <g2p.code+sqla@gmail.com>
+Date:   Tue Jul 5 01:45:52 2011 +0200
+
+    Output has changed even without the SQLa patch, update #122 tests.
+
+commit 3fe1b4a3be05fe5184feb8bc237ceded5a98e8dc
+Author: Gabriel <g2p.code+sqla@gmail.com>
+Date:   Tue Jul 5 00:44:57 2011 +0200
+
+    Fix and test issue 118. Clarify genmodel transformations.
+
+commit 5cfc74959f6f7cf0ff58693613ca410a256c3b4f
+Author: Gabriel <g2p.code+sqla@gmail.com>
+Date:   Mon Jul 4 21:50:55 2011 +0200
+
+    Fix column creation in make_update_script_for_model.
+    
+    Generating the script needs internal API updates:
+    https://code.google.com/p/sqlalchemy-migrate/issues/detail?id=113
+    
+    Getting the script to run needs the new columns defined:
+    https://code.google.com/p/sqlalchemy-migrate/issues/detail?id=123
+    
+    Table metadata represents the former state and does not contain
+    the columns being added.
+
+commit 28d2ca21d5e503324c515a89af888d84c713b59b
+Author: Gabriel <g2p.code+sqla@gmail.com>
+Date:   Wed Jun 29 13:47:45 2011 +0200
+
+    More concise declarative output.
+    
+    https://code.google.com/p/sqlalchemy-migrate/issues/detail?id=122
+
+commit 75df12b2274b78a5d8cae40dfb13a71caaa894e2
+Author: Gabriel <g2p.code+sqla@gmail.com>
+Date:   Wed Jun 29 13:33:44 2011 +0200
+
+    More pep8 compliant declarative output.
+    
+    https://code.google.com/p/sqlalchemy-migrate/issues/detail?id=122
+
+commit bf2fcaf2ee8797decde1b6a70bfb34663d34349f
+Author: Pete Keen <pete@bugsplat.info>
+Date:   Sun Jun 12 12:54:57 2011 -0700
+
+    Fix some tests that broke when adding descriptions for sql scripts
+
+commit b78a249b5207e3e0ab2df3b469c3af48acfe5ff7
+Author: Pete Keen <pete@bugsplat.info>
+Date:   Fri Jun 10 13:56:30 2011 -0700
+
+    Allow descriptions in sql change script filenames
+
+commit cbebf76ade778042e3b38f3b14455fec6b7e3bee
+Author: Pete Keen <pete@bugsplat.info>
+Date:   Fri Jun 10 10:59:39 2011 -0700
+
+    Optionally number versions with timestamps instead of sequences
+
+commit 7681155af78731b785b1764ed25fcc170086f272
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 22:58:37 2011 +0200
+
+    start next development iteration
+
+commit ae4dafc702bbe17f3761896b5f14b0876581034e
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 22:47:08 2011 +0200
+
+    Added signature for changeset fbb2817a1e3f
+
+commit 04071b633b8a59a454cc390316f60094624764de
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 22:47:04 2011 +0200
+
+    Added tag v0.7.1 for changeset fbb2817a1e3f
+
+commit 69f2802987a43e959e45644cea26390ee10b6be8
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 22:46:45 2011 +0200
+
+    Added signature for changeset 35038c66152b
+
+commit 553556814d4c65eaadb13b26895620a013a0cc32
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 22:40:44 2011 +0200
+
+    set migrate.__version__ to 0.7.1
+
+commit 76ccd1628375bd401c214a9ea9f956cb4bc7b164
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 22:40:17 2011 +0200
+
+    finalize changelog for 0.7.1
+
+commit 12f061410fd37678c18935cc24ea60a5ee501fb3
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 22:34:24 2011 +0200
+
+    fix issue tracking and source code URLs
+
+commit ca5d59910a9f968f25736757a5e5710c13df8fda
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 21:59:35 2011 +0200
+
+    fix column.create() properly
+
+commit 2e28635b0b412fd921ec5245ad30987dfefe98e3
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 14:29:15 2011 +0200
+
+    start next development iteration
+    
+    - update version numbers in setup.py and docs/conf.py
+    
+    - exclude docs/_build recursively in MANIFEST.in
+    
+    - update docs/changelog.rst
+
+commit 1446011168402cb1afb3b22f3c30100622e8e392
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 14:04:22 2011 +0200
+
+    Release 0.7
+
+commit 3bb83389617ec4e726751700ab10c538c84817c1
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 13:33:58 2011 +0200
+
+    update version number in docs/conf.py
+
+commit 2b3ade4bf827f569ce9b91970e7fd760863834c0
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 13:31:33 2011 +0200
+
+    add migrate.__version__ (Fixes issue 111)
+    
+    - add __version__ to migrate/__init__.py
+    - add test in migrate/tests/__init__.py
+    - update docs/changelog.rst
+
+commit 73244c3ffaaf0c2327ffda95108c817e78f17a96
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 13:06:37 2011 +0200
+
+    update changelog and version information
+
+commit c5a0b0e22a648ef66199d31f6647f8da6edc4043
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 12:56:14 2011 +0200
+
+    bump version number to 0.7 to indicate SQLA 0.7 compatibility
+
+commit 27e24c33749797c51e31fa5399849973f46f03c7
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri May 27 12:55:11 2011 +0200
+
+    no special treatment for SQLA 0.7 required in migrate.changeset.ansisql
+
+commit 108f28ae6bcec11b09c7cd19765d93838e01c0b1
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Thu May 26 21:56:11 2011 +0200
+
+    remove commented code
+
+commit 1af477e661b7e68730598fab70116fa1e15cfb1b
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Thu May 26 21:43:27 2011 +0200
+
+    fix unit test for adding new columns with foreign keys
+
+commit f80e91f05edd8d27b9e959cb1769d8f6bea9e42a
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Wed May 25 17:13:53 2011 +0200
+
+    use DatabaseError instead of ProgrammingError because behaviour seems to be database dependent (addresses issue 122)
+
+commit 2836390634451a602ff5547a73c3b03756a14d1d
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Wed May 25 16:53:02 2011 +0200
+
+    table.drop() raises ProgrammingError in SQLAlchemy 0.7 instead of SQLError (addresses #112)
+
+commit 20df98c44ddd064a7394f22fadb4d1b10117d6c5
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Wed May 25 16:38:00 2011 +0200
+
+    SQLAlchemy 0.7's column.foreign_keys is a set and has no _list (addresses #112)
+
+commit eace107b6954cc91ee365e9cc2aefbc9a98b9d6b
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Wed May 25 16:15:09 2011 +0200
+
+    use proper encoding instead of True (addresses #112)
+
+commit 24031b7e82137d064fe69f995bd1a88162c7473b
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Wed May 25 16:06:42 2011 +0200
+
+    fix one more test (addresses #112)
+
+commit e11a9e5cbaeb76fae1ed1d9b3614568be2520d92
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Wed May 25 15:29:28 2011 +0200
+
+    use Table._columns to remove columns (addresses #112)
+    
+    - add SQLA_07 predicate in migrate/changeset/__init__.py
+    
+    - use Table._columns instead of Table.c when removing columns in
+      migrate/changeset/schema.py
+
+commit 97d89e357a8d1838d9bef8e3f5c39f07bf0ca7eb
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Wed May 25 14:13:54 2011 +0200
+
+    psycopg2 downloads from initrd.org work without workaround
+    
+    - remove (broken) http-URL from test-req.pip
+
+commit d52e8f065a490f8946fffc690f64c5c0f77623af
+Author: iElectric <unknown>
+Date:   Sun May 8 22:52:27 2011 +0200
+
+    add Developing with migrations tutorial link
+
+commit 86bb3e7e361a779937ad0ee684cdf5344a9861c0
+Merge: f431b26 4e601ff
+Author: iElectric <unknown>
+Date:   Fri Apr 29 19:27:52 2011 +0200
+
+    merge
+
+commit f431b264891ad374e5a188ff113951e81d3db8ca
+Author: iElectric <unknown>
+Date:   Fri Apr 29 19:27:02 2011 +0200
+
+    add elixir tutorial to docs
+
+commit 4e601ff4054b89f71fb914324e2aa8888084e7e9
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Feb 11 23:25:18 2011 +0100
+
+    start next iteration
+
+commit 21bbca280a9e5e24661b0e3526e842ac6ce56eec
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Feb 11 21:30:04 2011 +0100
+
+    update version in docs/conf.py
+
+commit cd653ddfe25410cfc319eb34f4b36a46e6d8361c
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Feb 11 21:12:15 2011 +0100
+
+    Added tag v0.6.1 for changeset c2526dce0768
+
+commit 45c37c9188dcdc4b014b7a46ff94222c6b8979d3
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Fri Feb 11 21:11:17 2011 +0100
+
+    finalize changelog for 0.6.1
+
+commit 0645c2fc9a052d8ef52b4120c7383aa6c6cf5b6f
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Fri Feb 11 10:27:39 2011 +0000
+
+    Bring back alter_metadata on ColumnDelta: it seems intertwined with a lot of the tests.
+    So, it's a private API now...
+
+commit cda65c38b53ec0a0ffca0bcd30c675386e24c450
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Thu Feb 10 17:02:42 2011 +0000
+
+    try to get firebird stuff working with 0.6.6
+
+commit b5a02cb7cfc1b6c032df3fed7002e968c1932162
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Thu Feb 10 16:49:20 2011 +0000
+
+    remove the alter_metadata feature
+
+commit c80120da555f41a9b2eff9310b5d4bda1d0c149e
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Thu Feb 10 15:19:00 2011 +0000
+
+    work around firebird's insistence that indexes and constraints are dropped before columns that are references by them.
+
+commit 500cb6f5df5cbdf19b6155820e6f51e672e64649
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Thu Feb 10 15:17:28 2011 +0000
+
+    fix sqlite column dropper now that the table is only modified after the visitor is run
+
+commit b1745bee521b36b3c2e3ca0b224f8cfdbf085400
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Thu Feb 10 15:16:35 2011 +0000
+
+    firebird can only drop named foreign keys
+
+commit f749919240a4cf32cc6d6c1962276191ecbd8f41
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Thu Feb 10 15:16:15 2011 +0000
+
+    These drop indexes appear to only be for firebird.
+    Once firebird is fixed, they're not needed.
+
+commit 9c9fe2fc2425e5fe251415d622eb5b6639584b37
+Author: Chris Withers <chris@simplistix.co.uk>
+Date:   Thu Feb 10 15:15:22 2011 +0000
+
+    Only alter the SA objects after running the visitor, so the visitor may inspect
+
+commit b2db52ff4e974cd3011acc1ea126ea6dfdc6f29e
+Author: Domen Kožar <domen@dev.si>
+Date:   Sat Feb 5 18:19:37 2011 +0100
+
+    fix py2.4 and py2.5
+
+commit 99148a93806deaf584e2ab5d8902aacc1cadc93e
+Merge: 1b37b76 7bccd68
+Author: Domen Kožar <domen@dev.si>
+Date:   Sat Feb 5 14:30:31 2011 +0100
+
+    merge
+
+commit 7bccd681a0bbdcc82b61cd982dad061ab97d28a6
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Sat Feb 5 14:27:26 2011 +0100
+
+    use mirrored copy of kinterbasedb to cope with SourceForge reliability problems
+
+commit 1b37b76d2e7d8632b03161775edb68c48a504e8c
+Author: Domen Kožar <domen@dev.si>
+Date:   Sat Feb 5 14:25:25 2011 +0100
+
+    fixes #107
+
+commit 09a8867edd9bf32ec594bea869cf691ba86a9f2f
+Author: Domen Kožar <domen@dev.si>
+Date:   Sat Feb 5 14:16:00 2011 +0100
+
+    fixes #106
+
+commit c135f48fbf6a7daf3a123eb00c25156f10ea183d
+Author: iElectric <unknown>
+Date:   Mon Dec 6 01:16:00 2010 +0100
+
+    fixes #105
+
+commit e8b7ce854aa5af1641e89abd1a68062c2b20ec5f
+Merge: 47f4b5a 05e39b2
+Author: iElectric <unknown>
+Date:   Tue Nov 16 18:15:19 2010 +0100
+
+    merge
+
+commit 47f4b5a61968bff321c63b8be91c1a3d122d20b9
+Author: iElectric <unknown>
+Date:   Tue Nov 16 18:14:43 2010 +0100
+
+    adding faq section to docs
+
+commit 05e39b2c6c19d622db42589a626fe5eaffea022e
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Tue Nov 9 22:33:20 2010 +0100
+
+    make migrate.changeset.constraint.ForeignKeyConstraint.autoname work
+    with SQLAlchemy 0.5 and 0.6
+
+commit a3ae4baa299eb9b6240be1e2aa44eee42a8be76a
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Tue Nov 9 21:38:17 2010 +0100
+
+    use _index_identifier instead of _validate_identifier if
+    _validate_identifier does not exist in migrate/changeset/ansisql.py
+    
+    remove executable bits from migrate/tests/fixture/warnings.py
+
+commit 20fce9acd80f9b82886fd36322c68ec6097be72b
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sun Nov 7 22:20:49 2010 +0100
+
+    use absolute imports of exception classes (fixes tests)
+
+commit 73796f3e543a121b51a0fe2eb08d1faab255e53b
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sun Nov 7 22:19:36 2010 +0100
+
+    fix generation of foreign key constraint name in
+    migrate.changeset.constraint.ForeignKeyConstraint.autoname
+    
+    use <table>_<firstcol>_fkey instead of <table>_<reftable>_fkey
+    
+    Fixes Issue 101
+
+commit eb6e2eea24fc704e355589e78826b9c2cb15b097
+Merge: dc5bbff e03cabc
+Author: chrisw <unknown>
+Date:   Thu Sep 16 00:40:48 2010 +0100
+
+    merge
+
+commit dc5bbffcfd4fc59998c09ebe5d33cbae72f95de5
+Author: chrisw <unknown>
+Date:   Thu Sep 16 00:36:18 2010 +0100
+
+    update changelog
+
+commit 82c5fcd58c280a09acc29031f93b3282d18b9199
+Author: chrisw <unknown>
+Date:   Wed Sep 15 23:36:11 2010 +0100
+
+    implement column type diff'ing
+
+commit e03cabc49a48876d7543a90d25f8ef35cc9f08c6
+Author: iElectric <unknown>
+Date:   Sun Sep 12 13:31:48 2010 +0200
+
+    update changelog
+
+commit ff93b652ca85268cd19f665ada31100bda34beda
+Author: iElectric <unknown>
+Date:   Sun Sep 12 13:29:17 2010 +0200
+
+    fixed #92
+
+commit 8e5eb8f634eb67abe77c38154f48c37160ea0d62
+Author: chrisw <unknown>
+Date:   Fri Sep 10 15:21:05 2010 +0100
+
+    restore missing table header for column diffs
+
+commit 91e887b081709288ebc8f55030e18baaccd28cae
+Author: chrisw <unknown>
+Date:   Fri Sep 10 14:43:56 2010 +0100
+
+    rewrite of schemadiff internals
+
+commit 20a58b6e0286889e8261b6c4c2d0831bdee2a9bb
+Author: chrisw <unknown>
+Date:   Thu Sep 9 21:54:25 2010 +0100
+
+    preserve the original stack strace
+
+commit 514498d6bee3402343ebf54e50c3d7e4f3472a9d
+Author: chrisw <unknown>
+Date:   Thu Sep 9 21:44:28 2010 +0100
+
+    don't stop if one db fails, run for all so we can tell how badly things went wrong on Hudson
+
+commit 4d938a3baf4bec5bb9e33a1ed0c01be0c3f31521
+Author: chrisw <unknown>
+Date:   Thu Sep 9 18:30:58 2010 +0100
+
+    remove reference to ficticious command
+
+commit 4721bb1b810a9b47548b4a8b719d3aab193b2750
+Author: chrisw <unknown>
+Date:   Thu Sep 9 18:13:15 2010 +0100
+
+    clear out the test db for each test, making tests more isolated
+
+commit ede16eb5b0ba4b91ca942bb3c3d6f6de61efc5be
+Author: chrisw <unknown>
+Date:   Thu Sep 9 18:00:51 2010 +0100
+
+    for when logging is just annoying ;-)
+
+commit 53610259d689a1fd9508e4ad1b812c8e041ad105
+Author: chrisw <unknown>
+Date:   Thu Sep 9 18:00:25 2010 +0100
+
+    silence logger that SA adds
+
+commit 960c978da9e81717b87b18608220ef790edbfe4c
+Author: chrisw <unknown>
+Date:   Thu Sep 9 16:37:27 2010 +0100
+
+    give better feedback when errors occur in _setup or _teardown
+
+commit 70e52901b24d6fe40c1e1464c033091929e97017
+Author: chrisw <unknown>
+Date:   Thu Sep 9 16:28:42 2010 +0100
+
+    quit screwing with the testing frameworks...
+
+commit b2347898e09b21149a963ede9cda3d5cb13256a4
+Author: chrisw <unknown>
+Date:   Thu Sep 9 15:58:07 2010 +0100
+
+    update feature matrix
+
+commit c5e3ed9f1f9b2593d3c05e17b88051ae72e8adbe
+Author: chrisw <unknown>
+Date:   Thu Sep 9 15:53:24 2010 +0100
+
+    correct change log structure
+
+commit adf4113a0b8465dc67ea4002da3bc153eb4653db
+Author: chrisw <unknown>
+Date:   Thu Sep 9 15:38:42 2010 +0100
+
+    Fix issue 94 - it was impossible to add a column with a non-unique index.
+    
+    Also implement more functionality with unique and foreign key constrains for sqlite.
+
+commit a085ffa59048e10f8a874ea649aecf3335b4ab79
+Author: chrisw <unknown>
+Date:   Thu Sep 9 13:58:41 2010 +0100
+
+    implement column adding with foreign keys on sqlite
+
+commit a7c0c18a52649d1693cff6db7224477eeaa352c9
+Author: chrisw <unknown>
+Date:   Thu Sep 9 11:53:08 2010 +0100
+
+    Fix bug with column dropping involving foreign keys.
+    Bonus: remove_from_table now understands foreign keys
+
+commit 5cf42fbf76b035516d55ca0f1d7e95bb7365ae10
+Author: chrisw <unknown>
+Date:   Thu Sep 9 09:15:28 2010 +0100
+
+    fix for issue 96: deleting a column in sqlite shouldn't delete all indexes
+    bonus: remove_from_table now removes indexes
+
+commit dceff55ff41235cad7b9d53b51e9525ffabc4ca0
+Author: chrisw <unknown>
+Date:   Wed Sep 8 17:06:58 2010 +0100
+
+    another py2.4 fixture
+
+commit 802658018de773dfd557629d94d4823a4069965e
+Author: chrisw <unknown>
+Date:   Wed Sep 8 16:21:54 2010 +0100
+
+    dammit!
+
+commit aef73ed13eb1314cbf20fd788280ca179d500606
+Author: chrisw <unknown>
+Date:   Wed Sep 8 15:48:28 2010 +0100
+
+    attempt at improving the api docs a little
+
+commit 4905e28a97ed50d280dc15c58134df5792d85a22
+Author: chrisw <unknown>
+Date:   Wed Sep 8 15:24:08 2010 +0100
+
+    improve docs
+
+commit 10a16f52517d08a9bc473eb27ccc3512dec96da2
+Author: chrisw <unknown>
+Date:   Wed Sep 8 14:35:01 2010 +0100
+
+    hopefully fix test failures
+
+commit c85bbec26c3456617cb958539065a222d29c3c07
+Author: chrisw <unknown>
+Date:   Wed Sep 8 13:16:49 2010 +0100
+
+    another Py2.4 fix
+
+commit 0376ab0a21b93eb51b70ed526a1e46f89a9f150f
+Author: chrisw <unknown>
+Date:   Wed Sep 8 12:05:13 2010 +0100
+
+    fix docs
+
+commit 1d2c2f979b0b22df648e52ddd4ecef8f87946714
+Author: chrisw <unknown>
+Date:   Wed Sep 8 11:32:19 2010 +0100
+
+    another attempt to get around the initd.org problems
+
+commit a8aa2e46dc8e550e84eb2150712e5fa38d78b1e3
+Author: chrisw <unknown>
+Date:   Tue Sep 7 23:22:14 2010 +0100
+
+    looks like init.org might be back
+
+commit 34340517f0402bc682b68acf73b7451593330bde
+Author: chrisw <unknown>
+Date:   Tue Sep 7 21:02:08 2010 +0100
+
+    disable psycopg install while initd.org is offline
+
+commit 0a8bcd368c2e08c95a61b91c1fd9493a2bdaa7a1
+Author: chrisw <unknown>
+Date:   Tue Sep 7 19:50:18 2010 +0100
+
+    silence console output
+
+commit ac848a295a934076de43fc902d2cc14bb32cb1be
+Author: chrisw <unknown>
+Date:   Tue Sep 7 19:19:32 2010 +0100
+
+    hopefully make py2.4 compatible
+
+commit cade5fb2613ad3cda4ebf060e5543595020ad274
+Author: chrisw <unknown>
+Date:   Tue Sep 7 19:04:12 2010 +0100
+
+    - capture deprecation warnings and assert they re as they should be
+    - re-word alter_column deprecation warning to make more sense
+
+commit 17f5670c3c2f301a17c097387d0b41bc28254835
+Author: chrisw <unknown>
+Date:   Tue Sep 7 15:41:41 2010 +0100
+
+    remove default of dropping on pdb on test error or failure
+
+commit 8e65481a3dd344362c7837adfbe2ce4e2d6433a5
+Author: iElectric <unknown>
+Date:   Tue Sep 7 03:18:46 2010 +0200
+
+    fix last exception import
+
+commit 653e723ce1932673eb5f4936ced84df9383b131b
+Author: iElectric <unknown>
+Date:   Tue Sep 7 02:25:29 2010 +0200
+
+    move all exception classes to migrate.exceptions
+
+commit 28f06524b5428b2692b0915d2de3d6996ff19372
+Author: iElectric <unknown>
+Date:   Mon Sep 6 23:21:18 2010 +0200
+
+    update todo and test-req.pip
+
+commit aff0896e1644b92f90f62566dbb8adb0c989e3ff
+Author: iElectric <unknown>
+Date:   Fri Aug 20 15:40:14 2010 +0200
+
+    use if main conditional in manage.py script
+
+commit 8e01817b979933bccb413c3f345b2fc1693599fb
+Author: iElectric <unknown>
+Date:   Mon Aug 16 12:29:22 2010 +0200
+
+    correct case for dependencies in setup.py
+
+commit 236acfef5d652523cf63a0e580cf1f0dd1c9a8a1
+Author: iElectric <unknown>
+Date:   Wed Jul 21 21:28:32 2010 +0200
+
+    fixes issue #88
+
+commit 7035a3ed079ed0672b3c49a2845b79f03edde0a9
+Merge: 878c673 703d13b
+Author: iElectric <unknown>
+Date:   Wed Jul 14 19:05:19 2010 +0200
+
+    merge
+
+commit 878c673ca8b068b8fcd6035183d62b7e8af06c83
+Author: iElectric <unknown>
+Date:   Wed Jul 14 19:04:44 2010 +0200
+
+    fix tests on python2.7
+
+commit 703d13b2069c188eb59860031f813d0e629f466f
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Mon Jul 12 21:47:35 2010 +0200
+
+    bump version to 0.6.1 to indicate that trunk is newer than release 0.6
+
+commit 465447e193bd9e412bb35e0a79c2508cb2fdd215
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Mon Jul 12 21:46:48 2010 +0200
+
+    exclude .hgtags from release tarballs
+
+commit ca11f6b63120a4c03d3d093e0c4a85421ca28355
+Merge: 1ccbc87 5a93027
+Author: iElectric <unknown>
+Date:   Mon Jul 12 21:32:39 2010 +0200
+
+    merge
+
+commit 1ccbc879defc1cb04b248bcfd9f45df1a32ed5d4
+Author: iElectric <unknown>
+Date:   Mon Jul 12 17:27:21 2010 +0200
+
+    update TODO
+
+commit 5a93027c6187d621911fa1764c31b592d16ac971
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Mon Jul 12 13:19:43 2010 +0200
+
+    link to mercurial instead of SVN
+
+commit af206c393d53063ca786c597b6eeffff845a9ab0
+Author: iElectric <unknown>
+Date:   Mon Jul 12 09:34:28 2010 +0200
+
+    fix links in doc
+
+commit 90cec7892c76b1d2d87c1145ac8a5a986a02c063
+Author: iElectric <unknown>
+Date:   Sun Jul 11 22:38:40 2010 +0200
+
+    update sphinx config
+
+commit 14dedb3f2268870357cc9d65a793f9670f5c8c3d
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Sun Jul 11 20:42:59 2010 +0200
+
+    Added signature for changeset 65742e996d94
+
+commit 9127f437bbca7ce4225b988dc1c823e69c78b8d2
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Sun Jul 11 20:42:50 2010 +0200
+
+    Added tag v0.6 for changeset cb01bf174b05
+
+commit c1db5e32c738134f8fc93d6dfedca83309b706d0
+Author: iElectric <unknown>
+Date:   Sun Jul 11 18:19:10 2010 +0200
+
+    update changelog
+
+commit 811201d47bd1002f659190e89d576be67476f4cd
+Author: iElectric <unknown>
+Date:   Sun Jul 11 18:16:51 2010 +0200
+
+    small doc correction; fixes #67
+
+commit a87d5ff53a3d0918f2f96b469d87485b8c07eda7
+Merge: 201fe50 1d7bb56
+Author: iElectric <unknown>
+Date:   Sun Jul 11 17:45:56 2010 +0200
+
+    merge
+
+commit 201fe50e6cd03eab7ff96bd565bf3ae37fe4a687
+Author: iElectric <unknown>
+Date:   Sun Jul 11 17:45:29 2010 +0200
+
+    better document summary of changeset actions
+
+commit a3d3470d5ecc5d89b747f634c32093c8143b6013
+Author: iElectric <unknown>
+Date:   Sun Jul 11 17:22:28 2010 +0200
+
+    adding connection keyword to ORM methods
+
+commit 1d7bb5604b072fbcc46874b3c0894ac69e9e0580
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Sat Jul 10 14:27:24 2010 +0200
+
+    use migrate.tests.* instead of tests.* in find_packages argument
+
+commit b0157137e29ae197ba36e559e172982626e8b1eb
+Author: iElectric <unknown>
+Date:   Fri Jul 9 16:12:29 2010 +0200
+
+    use stdout for logging.INFO and lower; for the rest use stderr
+
+commit dffe82653cbd23cb003cd40114e2d5e331061c8a
+Author: iElectric <unknown>
+Date:   Fri Jul 9 03:57:51 2010 +0200
+
+    fix deprecation warning when using old script synta
+
+commit 3142e023ab16888f66cfb23cdab5eac97bafb2c5
+Author: iElectric <unknown>
+Date:   Thu Jul 8 23:25:41 2010 +0200
+
+    update README and fix last bugs
+
+commit a3fb663ef10867d92ceadec693f1e70e7eeb14f7
+Author: iElectric <unknown>
+Date:   Thu Jul 8 19:18:57 2010 +0200
+
+    add documentation generation date
+
+commit aa615c3974b168c762ec541d66afee3b2361163f
+Author: iElectric <unknown>
+Date:   Thu Jul 8 19:16:22 2010 +0200
+
+    add MIT licence file
+
+commit 0d70c2ccb1137b6f26c35c94beb133cf233af219
+Author: iElectric <unknown>
+Date:   Thu Jul 8 19:08:51 2010 +0200
+
+    changed documentation layout
+
+commit fb0692ccd6d73d14d3a2cc300300b72e7251587b
+Author: iElectric <unknown>
+Date:   Thu Jul 8 19:03:44 2010 +0200
+
+    add descriptions of modules in docs
+
+commit 20e9e7c7c519036b4fb582d3945ab74673b87615
+Author: iElectric <unknown>
+Date:   Thu Jul 8 18:50:28 2010 +0200
+
+    change dialect table from ugly format to list table
+
+commit a3a1e24da1cc11c3be016aa7d9edb00eac261510
+Author: iElectric <unknown>
+Date:   Thu Jul 8 17:52:55 2010 +0200
+
+    restructure changelog and minor modifications to documentation
+
+commit c0e8518d2f2211beafe2bdfefde8ce3ac8b47fe8
+Author: iElectric <unknown>
+Date:   Thu Jul 8 01:58:02 2010 +0200
+
+    log database name when running tests; firebug does not support DROP CONSTRAINT CASCADE
+
+commit 960bce7de1049151b0bdec7b40cf6fc68fc8a879
+Author: iElectric <unknown>
+Date:   Thu Jul 8 00:09:26 2010 +0200
+
+    remove test dependencies information from setup.py
+
+commit 472952672f76a4e733b487a6ef48caef3de3f01f
+Author: iElectric <unknown>
+Date:   Wed Jul 7 23:30:19 2010 +0200
+
+    found that bugger. ScriptTest 1.0.1 removes the functonality we need. rollback to 1.0
+
+commit efa9d5423d6560696da8ebc8b26e049d5a033449
+Author: iElectric <unknown>
+Date:   Wed Jul 7 19:27:26 2010 +0200
+
+    fix SA06 compatibility in tests
+
+commit e820261f2959f736c5b4ec5a0658ab712d46e192
+Author: Jan Dittberner <jan.dittberner@googlemail.com>
+Date:   Sun Jul 4 12:33:28 2010 +0200
+
+    fix unittests
+    
+    * tested with Python 2.6, SQLAlchemy 0.6.1, PostgreSQL, MySQL and SQLite
+
+commit 8b0072b3e80ec804fa66efde7feb4bf735b85e28
+Author: iElectric <unknown>
+Date:   Sun Jun 20 15:29:16 2010 +0200
+
+    move to unittest2, update README for testing instructions
+
+commit 341596f73b7dd9f613077a91946baee14336461e
+Author: iElectric <unknown>
+Date:   Fri Jun 11 02:07:16 2010 +0200
+
+    update test-req.pip
+
+commit 59e83b76b94eb7522c0ea109cf8259a643a1ea2f
+Merge: 922bd7c fd8d313
+Author: iElectric <unknown>
+Date:   Fri Jun 11 02:04:20 2010 +0200
+
+    merge with https://robertanthonyfarrell-0point6-release-patches.googlecode.com/hg/
+
+commit fd8d3136832601a1835ff4e2eb1d2969ef9af165
+Author: Bob Farrell <robertanthonyfarrell@gmail.com>
+Date:   Thu Jun 10 18:08:06 2010 +0100
+
+    move tests/ directory into migrate/tests (much better form) and fix all import lines and other minor issues
+
+commit 922bd7c08c3ab9ac4ebde792be600413abcc7c72
+Author: iElectric <unknown>
+Date:   Thu Jun 10 16:32:28 2010 +0200
+
+    note about scripttest==1.0.1
+
+commit 330b0ad2ec9230d7ae39ed6198fd27a53c04e3f2
+Author: Bob Farrell <robertanthonyfarrell@gmail.com>
+Date:   Wed Jun 9 17:18:02 2010 +0100
+
+    remove debug output and swearing
+
+commit e8feb32f8d28de9a6a5e0e0b940f56cd1c53bd3c
+Author: Bob Farrell <robertanthonyfarrell@gmail.com>
+Date:   Wed Jun 9 17:17:03 2010 +0100
+
+    make tests use a virtualenv for 'migrate' shell command
+
+commit 0ffd7266b15dca61d7b4ae24e93002c9d46fef06
+Author: Bob Farrell <robertanthonyfarrell@gmail.com>
+Date:   Wed Jun 9 17:16:01 2010 +0100
+
+    change print statements to log.info
+
+commit 5c800677bba8b42ddb72827d2d2124fc0b34e8f3
+Author: iElectric <unknown>
+Date:   Wed May 12 15:20:02 2010 +0200
+
+    add more recent version of kinterbadb due to soureforge not being maintained anymore. Thanks btami\!
+
+commit 6e025c4a4d0f8ad558c3ed66b45a1f0087b860d1
+Author: iElectric <unknown>
+Date:   Tue May 11 22:52:07 2010 +0200
+
+    add firebird to test_db.cfg.tmpl; fix bug when dropping a column in firebird: also drop related constraint or index
+
+commit ec75b93b07a1afe952c50faae67b3be3c07bf0a7
+Author: iElectric <unknown>
+Date:   Mon May 3 13:03:25 2010 +0200
+
+    revert 2688cdb980
+
+commit dd756a512fccf4d134042ffc0aede40c3879f410
+Author: iElectric <unknown>
+Date:   Mon May 3 13:01:58 2010 +0200
+
+    update setup.py
+
+commit 6ddf8e02120611dca7a18c6398315058e7d28f68
+Author: iElectric <unknown>
+Date:   Mon May 3 12:03:46 2010 +0200
+
+    run shell diff tests with correct environment
+
+commit aeb2b72b20413c84046d62d0c83d12ed26ab4046
+Author: iElectric <unknown>
+Date:   Mon May 3 11:01:29 2010 +0200
+
+    debugging fix
+
+commit 5ce83fc4de896705652525d6abfd5effea4be9f6
+Author: iElectric <unknown>
+Date:   Mon May 3 10:52:26 2010 +0200
+
+    skip runpy tests on python2.4
+
+commit 5ab0719e3f2ea9515b941055f2eb0b0c193124a3
+Author: iElectric <unknown>
+Date:   Sun May 2 23:14:55 2010 +0200
+
+    fix SA05 tests for autoincrement diff
+
+commit ece9ffed35e800fc10a6c80e79d300d7b52f2e92
+Author: iElectric <unknown>
+Date:   Sun May 2 20:31:50 2010 +0200
+
+    fix MySQL failing tests with autoincrement
+
+commit da836aad7ec4cbda0e42c50b1843bf354f7ecce5
+Author: iElectric <unknown>
+Date:   Sun May 2 03:09:04 2010 +0200
+
+    docs link correction
+
+commit 81f447ef7726732de4e2cfed15a59ee6dc738242
+Author: iElectric <unknown>
+Date:   Sun May 2 03:03:03 2010 +0200
+
+    SA06 tests fix, thanks to Mike Bayer
+
+commit 43e0c3caf229d4beb7f67580e1cbc8895e2a35e6
+Author: iElectric <unknown>
+Date:   Sat May 1 08:32:41 2010 +0200
+
+    unified warnings, use compare columns in tests
+
+commit feab45798f72f3e06cab64e8486f35e7eed198ba
+Author: iElectric <unknown>
+Date:   Sat May 1 07:38:33 2010 +0200
+
+    move warning exceptions to right module
+
+commit 1f702ac6e0ac76842588e4875e233ab102ca62d4
+Author: iElectric <unknown>
+Date:   Fri Apr 30 22:28:05 2010 +0200
+
+    update documenatation
+
+commit cef2abb30f3300556a9c74028bf8b0ef0437452a
+Author: iElectric <unknown>
+Date:   Fri Apr 30 08:34:30 2010 +0200
+
+    deprecate two columns alter
+
+commit a4176bf10e41974fcc253838e68222c300c53490
+Author: iElectric <unknown>
+Date:   Thu Apr 29 22:24:14 2010 +0200
+
+    update postgres url name
+
+commit 6e32274aec6c6c7e16c506a64258ce81cf8dab56
+Author: iElectric <unknown>
+Date:   Thu Apr 29 17:23:34 2010 +0200
+
+    fix python2.4 error
+
+commit 8469a4709df4192cfbf4eea2a4a3c7497de1278e
+Author: iElectric <unknown>
+Date:   Thu Apr 29 17:03:57 2010 +0200
+
+    update TODO
+
+commit ec24bde52c4b5170742e3db396c18f7d661fb64a
+Author: iElectric <unknown>
+Date:   Thu Apr 29 17:02:51 2010 +0200
+
+    added 0.6 TODO, all api now uses engine.dispose() to handle pool correctly
+
+commit 2e43ac8101ff1363985ccc7f2fa4fcb5c0e90211
+Author: iElectric <unknown>
+Date:   Wed Apr 28 11:52:11 2010 +0200
+
+    add pysqlite for test dep
+
+commit 26d19d79dda241a1efe75d8da5c8b5944a7f7e46
+Author: iElectric <unknown>
+Date:   Sun Apr 25 00:09:43 2010 +0200
+
+    removing mx.DateTime from test deps because pip crashes.
+
+commit 3d0a694fe46df61df3cc80d8ef1070a3ee698b20
+Author: iElectric <unknown>
+Date:   Sat Apr 24 23:49:26 2010 +0200
+
+    add mx.DateTime to test dep
+
+commit 6bb36bb28ce791c105b8300e5f7df111ed4077c8
+Author: iElectric <unknown>
+Date:   Sat Apr 24 23:16:23 2010 +0200
+
+    add mysql driver test deps
+
+commit f2f53b61d48e4fd1790114b400fe1a9b2389b12c
+Author: iElectric <unknown>
+Date:   Sat Apr 24 22:04:03 2010 +0200
+
+    change test_db database name to more verbose name
+
+commit e4868841d5922f6313821ff49d3e70426816d4fb
+Author: iElectric <unknown>
+Date:   Sat Apr 24 21:40:16 2010 +0200
+
+    partly fix SA0.6 tests on postgres
+
+commit 42ab0ba79630b0820c55d9f2cbe85492b307f160
+Author: iElectric <unknown>
+Date:   Wed Mar 17 12:32:07 2010 +0100
+
+    fix docs
+
+commit 384f045de8acd38d4ff7af4047970bc9b45d84e1
+Author: iElectric <unknown>
+Date:   Fri Mar 12 16:23:01 2010 +0100
+
+    fix documentation meta.bind(engine) -> meta.bind = engine; thanks mvt
+
+commit 27c3cca5a225107c6e67e3e3f1d9a4dbc33c1205
+Author: Jan Dittberner <jan@dittberner.info>
+Date:   Sun Feb 7 23:07:38 2010 +0100
+
+    add .coverage and test_db.cfg to .hgignore
+
+commit 2996433753ff38f12cbe66a810a74d8671098df2
+Author: iElectric <unknown>
+Date:   Fri Feb 5 19:09:18 2010 +0100
+
+    more import fixes
+
+commit 043ceb899e7a6aa5efe76ae49b87014a51fcee85
+Author: iElectric <unknown>
+Date:   Fri Feb 5 18:51:17 2010 +0100
+
+    fixing models import
+
+commit 1c8022691888a5addf20489655b4ec8508c2df2c
+Author: iElectric <unknown>
+Date:   Fri Feb 5 18:45:17 2010 +0100
+
+    rename test package to tests (problems with pytest dist)
+
+commit 78c85e67ff4a1e8990a21225694763a0b17d2f1c
+Author: iElectric <unknown>
+Date:   Fri Feb 5 05:48:36 2010 +0100
+
+    eliminate unicode usage at help
+
+commit 230fcef65e1ed4cb1e615fc2a1be1c38e0921fcd
+Author: iElectric <unknown>
+Date:   Fri Feb 5 05:25:40 2010 +0100
+
+    last but not least SA06 test fixes
+
+commit 3dfb8c8a293271bfbc995c07a6c1543479e9a3a8
+Author: iElectric <unknown>
+Date:   Fri Feb 5 05:06:48 2010 +0100
+
+    more SA06 fixes
+
+commit f9159b6851ad229bdb82140ee721038665d9c279
+Author: hudson@fubarite.fubar.si <unknown>
+Date:   Fri Feb 5 04:25:15 2010 +0100
+
+    SA06 fixes
+
+commit a16b45b380e802029a6e27e5ceb404f9e26e36f3
+Author: hudson@fubarite.fubar.si <unknown>
+Date:   Fri Feb 5 03:45:24 2010 +0100
+
+    adding test-requirements.pip for running tests
+
+commit 4958b12725e3c376126b89bd38f29aa0592de51b
+Author: root@fubarite.fubar.si <unknown>
+Date:   Fri Feb 5 03:42:27 2010 +0100
+
+    updating MANIFEST.in, fixing virtualenv tests usage, 2 failed tests
+
+commit 7912af18ed473e296ccf40a52eabc81b978c8f1b
+Author: emil.kroymann <unknown>
+Date:   Thu Jan 7 20:10:47 2010 +0100
+
+    apply Emil Kroymann's patch for Issue 75
+
+commit b7685663fc8cc7cf34dba975e141b64e4940a7d2
+Author: iElectric <unknown>
+Date:   Wed Oct 7 00:05:31 2009 +0200
+
+    apply patch by Jason Newton
+
+commit 728a01577fcc01a84001537cb3479d31257fe073
+Author: Rick Copeland <rick446@usa.net>
+Date:   Wed Aug 12 15:37:17 2009 -0400
+
+    remove bad reference to migrate_engine
+
+commit 453d4bcf482510d7ff9bc80c9641692b34f1cd36
+Author: Rick Copeland <rick446@usa.net>
+Date:   Wed Aug 12 15:00:19 2009 -0400
+
+    Add table declarations for tables with diff
+
+commit 8b18dcd54c5d82e6468c1ac91a55d2687554da5b
+Author: Rick Copeland <rick446@usa.net>
+Date:   Wed Aug 12 14:24:26 2009 -0400
+
+    Add support for ALTER TABLE add/drop columns in make_update_script_for_model
+
+commit c8d48124f65b807e0cea262946a146db40d40bd3
+Author: iElectric <unknown>
+Date:   Wed Aug 12 00:06:36 2009 +0200
+
+    adding sql_script template customizations, removing unneeded imports, updating docs
+
+commit ccf7be33721e4584206cde292b07479aa6b47f1d
+Merge: e529a66 a186d2e
+Author: iElectric <unknown>
+Date:   Mon Aug 10 12:24:01 2009 +0200
+
+    merge
+
+commit e529a662500e9c4d7d55d80c887a8b2437d838cb
+Author: iElectric <unknown>
+Date:   Fri Aug 7 16:10:15 2009 +0200
+
+    remove versioning.base in favor of versioning.config
+
+commit 2687bf8e143fb19756e6066ec4494df102951d0d
+Author: iElectric <unknown>
+Date:   Fri Aug 7 15:58:12 2009 +0200
+
+    removing deprecated logger module
+
+commit b035aa372c196d9945c408456902a71bdad942cf
+Author: iElectric <unknown>
+Date:   Fri Aug 7 13:49:11 2009 +0200
+
+    fix small bug introduced in last commit, add description to migrate help
+
+commit 3d3f4e0391c785b32d1c10ff7b73bfcad1d550ed
+Author: iElectric <unknown>
+Date:   Fri Aug 7 12:58:04 2009 +0200
+
+    we are using Tempita for templates; adding most basic pylons template
+
+commit 78ce747e250d9ac995cfea4c7e67e775b2e77abe
+Author: iElectric <unknown>
+Date:   Tue Jul 28 15:52:59 2009 +0200
+
+    add option to customize templates and use multiple themes
+
+commit 7cb4b6363c2567fee04aeb56b48651092688521c
+Author: iElectric <unknown>
+Date:   Mon Jul 13 18:45:52 2009 +0200
+
+    applying patch for issue #61 by Michael Bayer
+
+commit a186d2edf204ca0f048747436a92ac8c57120c14
+Author: iElectric <unknown>
+Date:   Fri Jul 10 19:42:42 2009 +0200
+
+    add disable_logging option
+
+commit 1c166845f8bb9137ba9ee1b5e283a920f0ba28d3
+Author: iElectric <unknown>
+Date:   Wed Jul 8 23:57:15 2009 +0200
+
+    use logging module for output, fixes #26
+
+commit 67af81806d96f4071d2ac6bc0d956b4e2e8879dc
+Author: iElectric <unknown>
+Date:   Wed Jul 8 22:03:00 2009 +0200
+
+    add tests for plain API, fixed some small bugs
+
+commit 286a912e34823483ae0fd767721fb5221d7b7ea1
+Author: iElectric <unknown>
+Date:   Sat Jul 4 10:50:43 2009 +0200
+
+    separating test_shell and test_api, replacing shell hacks with ScriptTest
+
+commit e765caaef44be49cbe17a9c14c93367001afe8ea
+Author: iElectric <unknown>
+Date:   Wed Jul 1 04:01:13 2009 +0200
+
+    add populate_default kwarg to column.create, fixes issue #50
+
+commit 7e60b6b58a828d3003cd886838f4725527709a88
+Author: iElectric <unknown>
+Date:   Tue Jun 30 22:59:01 2009 +0200
+
+    adding .hgignore
+
+commit 9cedba8b8bf04421740b50c9f00f9c4198391467
+Author: iElectric <unknown>
+Date:   Tue Jun 30 22:50:18 2009 +0200
+
+    convert svn to hg
+
+commit 9ef49f8c01c2c6988c82186c44717cbc1231a782
+Author: iElectric <unknown>
+Date:   Mon Jun 29 22:50:17 2009 +0000
+
+    applying patch for issue #60 from entequak
+
+commit de3c53989d0f113055e79ce7c3db1dd72f4067ce
+Author: iElectric <unknown>
+Date:   Mon Jun 29 10:18:03 2009 +0000
+
+    add support for SA 0.6 by Michael Bayer
+
+commit b546dded1f488a3c720375cae991130817a1ea03
+Author: iElectric <unknown>
+Date:   Sun Jun 28 20:20:52 2009 +0000
+
+    removing old changelog
+
+commit b902efe6dfddc7f759e60dd5dad3d58be6af091a
+Author: iElectric <unknown>
+Date:   Sun Jun 28 20:04:41 2009 +0000
+
+    change dev location
+
+commit 4c3d42ed758342eebbd34b32ae4cfdb8550fa396
+Author: iElectric <unknown>
+Date:   Sun Jun 28 16:42:23 2009 +0000
+
+    update changelog internal links
+
+commit 08e5d107864ebdb88593a3d0b08b93d2c61d4000
+Author: iElectric <unknown>
+Date:   Sun Jun 28 08:32:27 2009 +0000
+
+    updated changeset documentation, added alter_metadata to all schema classes
+
+commit 75e93aa4106c914b9870fae5435935db86ed0c10
+Author: iElectric <unknown>
+Date:   Sat Jun 27 14:33:40 2009 +0000
+
+    add not supported exceptions for sqlite constraints
+
+commit 5a06b033d22b21f6838571de85791f6ce95f2b1a
+Author: iElectric <unknown>
+Date:   Sat Jun 27 14:27:05 2009 +0000
+
+    always return delta when using alter constructs
+
+commit 9f7ab96881415ec6bd7fc7729f5196d75d01b8ab
+Author: iElectric <unknown>
+Date:   Sat Jun 27 14:13:27 2009 +0000
+
+    - completely refactored ColumnDelta to extract differences between columns/parameters (also fixes issue #23)
+    - fixed some bugs (passing server_default) on column.alter
+    - updated tests, specially ColumnDelta and column.alter
+    - introduced alter_metadata which can preserve altering existing objects if False (defaults to True)
+    - updated documentation
+
+commit a8c31eb25f89542c9be72d0a8f90b4d984b6aead
+Author: iElectric <unknown>
+Date:   Mon Jun 22 10:22:06 2009 +0000
+
+    adding basic support for firebird, fixes #55
+
+commit 17cc5f36e6f1463fbb0b9ad912f5c5dc983e08a8
+Author: iElectric <unknown>
+Date:   Sun Jun 21 12:51:33 2009 +0000
+
+    finally, tests pass for all supported dialects
+
+commit 4a2cd3797fc3fb06d1351d529bdd5fbc9543f796
+Author: iElectric <unknown>
+Date:   Sun Jun 21 09:58:14 2009 +0000
+
+    add ability to download development version from pypi
+
+commit 49a6654f8f511fb210ad16dec87e2d49e13008b4
+Author: iElectric <unknown>
+Date:   Sun Jun 21 09:45:22 2009 +0000
+
+    fix syntax error
+
+commit 672d9bd576e139c38d1e8bbef4f9a8fb423328fa
+Author: iElectric <unknown>
+Date:   Sun Jun 21 09:17:23 2009 +0000
+
+    some more PEP8 love
+
+commit 4b50def6ea5f370dc7267f1bea145115b28e5bd1
+Author: iElectric <unknown>
+Date:   Sat Jun 20 22:51:07 2009 +0000
+
+    fix bug when initializing CheckConstraint
+
+commit cde0f9b52d900288d5ff85fe0e742f9d73c37e6f
+Author: iElectric <unknown>
+Date:   Sat Jun 20 22:33:03 2009 +0000
+
+    updated changeset tests. whole package is finally PEP8. fixed mysql tests&bugs. updated docs where apropriate. changeset test coverage almost at 100%
+
+commit 7eafe744c2b3961b303c9bb1f7f219eeb8738840
+Author: iElectric <unknown>
+Date:   Tue Jun 16 15:17:33 2009 +0000
+
+    - refactor migrate.changeset;
+    - visitors are refactored to be more unified
+    - constraint module is refactored, CheckConstraint is added
+    - documentation is partialy updated, dialect support table is added (unfinished)
+    - test_constraint was updated
+    NOTE: oracle and mysql were not tested, *may be broken*
+
+commit cc82a1ad12003eb8d7e2714638cca731d913f34b
+Author: iElectric <unknown>
+Date:   Fri Jun 12 22:43:02 2009 +0000
+
+    update docs, delete obsolete code in constraints
+
+commit 431d22be610e5b3c80adc939195700200576b581
+Author: iElectric <unknown>
+Date:   Fri Jun 12 15:41:59 2009 +0000
+
+    update documentation
+
+commit 03eb309b6711e3ad089b238ae6c72f5f5834779a
+Author: iElectric <unknown>
+Date:   Fri Jun 12 13:26:01 2009 +0000
+
+    removed magical behavior with importing migrate_engine, now engine is passed to upgrade/downgrade functions
+
+commit 8a8b1d2366e554eef43f656b95f70e3013577f01
+Author: iElectric <unknown>
+Date:   Thu Jun 11 22:27:38 2009 +0000
+
+    use sqlalchemy preparer to do SQL quote formatting. this is a raw change, tests are yet to be written
+
+commit 15cb31cea6d29fc85031bdb8840281465bc6a5a6
+Author: iElectric <unknown>
+Date:   Wed Jun 10 14:00:53 2009 +0000
+
+    lipstick changes
+
+commit 75494ae2269294f91745718f109ebcce71ae3eb7
+Author: iElectric <unknown>
+Date:   Tue Jun 9 13:31:15 2009 +0000
+
+    update tests for schema, refactor a bit
+
+commit 2fe569dc6954b0b6c953b94fe0354ac9374f65ef
+Author: iElectric <unknown>
+Date:   Mon Jun 8 19:05:27 2009 +0000
+
+    update README, add docs to repository.py and schema.py
+
+commit d835658f238f62f0d38305b7bb6f399c589fb367
+Author: iElectric <unknown>
+Date:   Mon Jun 8 13:08:32 2009 +0000
+
+    fix setup.py
+
+commit bc1edc5c1b027c2d203b6f041839098c32c01e8c
+Author: iElectric <unknown>
+Date:   Mon Jun 8 12:57:23 2009 +0000
+
+    updated migrate.versioning.repository tests and docs, update README
+
+commit d44be57771cd5db0f04b68c619fd2b796ccd9c70
+Author: iElectric <unknown>
+Date:   Mon Jun 8 11:03:02 2009 +0000
+
+    update tests and docs for migrate.versioning.script.*
+
+commit a626f5b1b96cb3ad770b0c2f319d29d89538df74
+Author: jan.dittberner <unknown>
+Date:   Sun Jun 7 15:48:44 2009 +0000
+
+    change isinstance(obj, (str, unicode)) to isinstance(obj, basestring)
+    as suggested by Piotr Ożarowski
+
+commit afc0c6588e72399bbb20db14b54adacae63b3dba
+Author: jan.dittberner <unknown>
+Date:   Sun Jun 7 13:10:21 2009 +0000
+
+    start work on 0.5.5
+
+commit 8ffd5b46fae8b34048e5b62e6b07152bb55f8d8f
+Author: iElectric <unknown>
+Date:   Sun Jun 7 00:35:48 2009 +0000
+
+    add changelog, update util.py docs
+
+commit 820da7433407d48f94a2427f0a3e058d4a0c3fda
+Author: iElectric <unknown>
+Date:   Sun Jun 7 00:05:51 2009 +0000
+
+    rearange tests
+
+commit 14fe28bc8c90a705361d9d1d1071ef203353f909
+Author: iElectric <unknown>
+Date:   Sat Jun 6 22:43:07 2009 +0000
+
+    update documentation
+
+commit fa6e6910e7f7e31252bbf43957d8bb491f2295db
+Author: iElectric <unknown>
+Date:   Sat Jun 6 17:02:39 2009 +0000
+
+    added tests for versioning.version.py, refactored the module
+
+commit e3aefd153b1bfa687d8e6cbadfab26ad241e9a5c
+Author: iElectric <unknown>
+Date:   Sat Jun 6 13:19:48 2009 +0000
+
+    add tests for low level util.py
+
+commit bebe86584804822d3da03fef67bef1d51e753e42
+Author: iElectric <unknown>
+Date:   Sat Jun 6 12:20:47 2009 +0000
+
+    make @usedb work correctly
+
+commit 938bbf9bf38d30c5f7c69ac88896333486386d49
+Author: iElectric <unknown>
+Date:   Sat Jun 6 10:34:22 2009 +0000
+
+    Issue 34; preview_sql now correctly displays SQL on python and SQL scripts. (tests added, docs still missing)
+
+commit 4356e8b5825fcf1c06a1f7e9f404ffab61542168
+Author: iElectric <unknown>
+Date:   Fri Jun 5 00:41:05 2009 +0000
+
+    use unittest.TestCase for tests
+
+commit 31bd33bcff9b263f08f55d558f10854db76723b8
+Author: iElectric <unknown>
+Date:   Thu Jun 4 22:36:29 2009 +0000
+
+    use entrypoints terminology to parse dotted model class names
+
+commit 50246d65cb87b0c28834f0f456cafa356d7e08f1
+Author: iElectric <unknown>
+Date:   Thu Jun 4 16:57:02 2009 +0000
+
+    remove the duplicate
+
+commit e1adf595a4042626ca6caacfce2f2c814c47d2ea
+Author: iElectric <unknown>
+Date:   Thu Jun 4 16:53:10 2009 +0000
+
+    extras_require is a bit tricky, use tests_require instead
+
+commit f27428e4bb33ac986fb0c74dad6ac387f1154af9
+Author: iElectric <unknown>
+Date:   Thu Jun 4 16:09:15 2009 +0000
+
+    fix typechecking
+
+commit 508f5aff7d23f3f1ee400547aefe2a9695d68eb7
+Author: iElectric <unknown>
+Date:   Thu Jun 4 10:24:40 2009 +0000
+
+    update CHANGELOG
+
+commit 4015cbf7e9d1fb845f8c4a2d0d3dc3ad22738e8a
+Author: iElectric <unknown>
+Date:   Wed Jun 3 00:48:59 2009 +0000
+
+    Issue 38; add ability to pass arguments/dict for create_engine func
+
+commit c6883c0d472df8007db1f6c9a9930d1c53c717ae
+Author: iElectric <unknown>
+Date:   Tue Jun 2 19:50:31 2009 +0000
+
+    refactor api.py a bit, lots of PEP8 love
+
+commit 6a34d5ca5966494847dc198f72d7478973c6733a
+Author: iElectric <unknown>
+Date:   Mon Jun 1 23:03:04 2009 +0000
+
+    add asbool function to make api parsing easier
+
+commit d5c7fedbd43bbc3580edeac44b1addf1e9623365
+Author: iElectric <unknown>
+Date:   Mon Jun 1 22:45:47 2009 +0000
+
+    some more PEP8 love all over the files
+
+commit 5aaaa05fccc3f3be1872114b43f45931be00044c
+Author: iElectric <unknown>
+Date:   Mon Jun 1 22:27:45 2009 +0000
+
+    apply some PEP8 love to template.py
+
+commit 7cd2c3233bc6997b96b07d9dc525f2a5da329da4
+Author: iElectric <unknown>
+Date:   Mon Jun 1 22:23:50 2009 +0000
+
+    apply PEP8 to version.py, fixed notification of missing test_db.cfg
+
+commit 1b927fa4278c41d4bcd0c317b2fdadce2e505cc3
+Author: jan.dittberner <unknown>
+Date:   Sat May 23 22:12:40 2009 +0000
+
+    apply option parsing patch for Issue 54 by iElectric
+
+commit 77c1cae8a94714a24dcf464c7d62394409ce64e9
+Author: jan.dittberner <unknown>
+Date:   Fri Mar 27 20:39:41 2009 +0000
+
+    start work on 0.5.4
+
+commit bd21c57a68b421af5f49e5b7b67c612e7e3ddaa9
+Author: jan.dittberner <unknown>
+Date:   Fri Mar 27 20:33:43 2009 +0000
+
+    fix Issue 52 by removing unneeded parameters from object.__new__ calls
+
+commit 9c71b1020691f25c719cd749d7a537b5e6f35efa
+Author: jan.dittberner <unknown>
+Date:   Sun Mar 22 14:04:32 2009 +0000
+
+    update CHANGELOG, set version to 0.5.3
+
+commit b6240a625a2edfcd0c32fbb025929d556f5e62fb
+Author: jan.dittberner <unknown>
+Date:   Sun Mar 22 13:56:54 2009 +0000
+
+    apply patch for Issue 29 by Jonathan Ellis
+
+commit d85115c6110a05273694366941ff3216fa905fc0
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 20 18:24:44 2009 +0000
+
+    add support for ondelete and oncascade to ANSI-SQL foreign key creation
+    
+    address Issue 48
+
+commit 11be1bcb2000228e970a0b83af2bba3dd7db6d60
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 20 18:07:51 2009 +0000
+
+    unignore _build, recreate _build and ignore everything below it (fixes Issue 49)
+
+commit 1af6847bbe665fd3e73fbb5f44768c31fb7b4c0b
+Author: jan.dittberner <unknown>
+Date:   Wed Feb 18 20:20:40 2009 +0000
+
+    update CHANGELOG, set version to 0.5.2
+
+commit 5ecec7c6800d62cc60f98e574cf161d3855c7243
+Author: jan.dittberner <unknown>
+Date:   Wed Feb 18 20:08:37 2009 +0000
+
+    mark ALTER TABLE ADD FOREIGN KEY as unsupported by SQLite
+    update corresponding test case
+
+commit d7027d17a52ce23271cd136e71af65cc74081f4a
+Author: jan.dittberner <unknown>
+Date:   Wed Feb 18 19:32:21 2009 +0000
+
+    integrate unit test fix by Adam Lowry
+
+commit 2be0f1fec3f176d9ec40523cc3f909167e19de64
+Author: jan.dittberner <unknown>
+Date:   Tue Feb 17 21:06:47 2009 +0000
+
+    integrate test case fix by Adam Lowry
+
+commit de05fb5b36d09d8cd9faa456b7da30d936134d8b
+Author: ches.martin <unknown>
+Date:   Fri Feb 13 21:40:49 2009 +0000
+
+    whoops, needed to update setup.cfg too for Sphinx build location
+
+commit 68630525382394ac1a0978bcfad57dd05fac10f0
+Author: ches.martin <unknown>
+Date:   Fri Feb 13 20:52:47 2009 +0000
+
+    add Sphinx Makefile, and use underscore prefixes for some Sphinx stuff to be more Windows-friendly
+    
+    * svn:ignore the Sphinx _build directory
+
+commit 33392d31e53682e6cfc346e4738e1ee588324d0b
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 13 19:41:35 2009 +0000
+
+    integrate patch for Issue 36, update CHANGELOG
+
+commit 8e3cba6eb8c4e08995800cc0424ffb662dcedbe2
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 13 19:23:13 2009 +0000
+
+    fix Issue 47 by moving sphinx and nose dependencies to extras_require
+
+commit c0890d830f8e2fe47692808d7cf3a1ed36d9e7d0
+Author: jan.dittberner <unknown>
+Date:   Sat Feb 7 22:10:04 2009 +0000
+
+    fix upload
+
+commit ac1028c13a0124757607e4cae41aae82eb6d883c
+Author: jan.dittberner <unknown>
+Date:   Sat Feb 7 19:46:54 2009 +0000
+
+    prepare release 0.5.1.1
+
+commit 436603a2f239ac9439fb23a94f37967b76269c64
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 6 22:37:20 2009 +0000
+
+    removed misleading docs/Makefile
+
+commit 47a66d9a2ab5c1792c8c0e39fab78667c8e1c698
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 6 22:30:28 2009 +0000
+
+    updated versioning.rst to reflect reality
+
+commit 8f81d735aebd314a5d4aa988b203ff57a558333e
+Author: jan.dittberner <unknown>
+Date:   Tue Jan 27 12:57:38 2009 +0000
+
+    apply patch by Toshio Kuratomi to fix some unit tests with Python 2.6
+
+commit 0fa7d4103e849b01f52df9321206c8be3637e960
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 21:09:05 2009 +0000
+
+    migrate.versioning.schema and schemadiff PEP-8 clean, added to api.rst
+
+commit 2a8860478c5ef99988b41b839233a0a839ea9d69
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 21:08:49 2009 +0000
+
+    migrate.versioning.repository PEP-8 clean, added to api.rst
+
+commit 5289c4df3bb18ff9f1da09faa812fcfced2eae8f
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 21:08:33 2009 +0000
+
+    migrate.versioning PEP-8 improvements, more documentation
+    
+    - made api.py, cfgparse.py, exceptions.py, genmodel.py,
+      migrate_repository.py, and pathed.py PEP-8 clean
+    - add tools.rst documenting the usage of migrate_repository.py
+    - add more modules to api.rst
+    - reference tools.rst from index.rst
+
+commit 5be16f226fe1998b72ea0f30086819e477349ad0
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 17:03:31 2009 +0000
+
+    correct all links in rst docs
+
+commit 8900c512d4cbbfe422f48c02932d8b2b684e4cd2
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 16:28:06 2009 +0000
+
+    PEP-8 clean migrate.changeset, updated CHANGELOG, updated api.rst
+    
+    - code cleanup in the remaining migrate.changeset files
+    - add migrate.changeset.exceptions and migrate.changeset.schema to api.rst
+    - add more information to CHANGELOG
+
+commit acb2e7bd00c03d390c35956e6fcc7ce5e1920220
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 15:00:24 2009 +0000
+
+    cleanup in migrate.changeset.ansisql and api doc update
+    
+    remove old commented code in ansisql.py
+    add some ReST docstrings in ansisql.py
+    add migrate.changeset.constraint link ins api.rst
+
+commit 60409d80cd0563efddfca650cd9a81eea77958a8
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 13:40:55 2009 +0000
+
+    revert stupid test case breaking change
+
+commit eb00570991a2b39b005749f7f7c67643bdcaba59
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:52:33 2009 +0000
+
+    make migrate.changeset.databases PEP-8 clean and add it to the API docs
+
+commit 728b677e56a8b51c5bda6c127be9837db2c11160
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:52:13 2009 +0000
+
+    move .. automodule stuff to docs/api.rst
+
+commit cce50c2a753941481d6862a8ca443c624b013382
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:52:00 2009 +0000
+
+    start proper API documentation
+
+commit 4806e2c9e1df3df6421db084a73360de0d229d6e
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:51:49 2009 +0000
+
+    make migrate.schema.ansisql PEP8 clean and add some sphinx docstrings
+
+commit 6e22528e6fc828d34c40b453b320f299bce9c89f
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:51:36 2009 +0000
+
+    add sphinx to setup dependencies
+
+commit 6fdd5231c1669ab2c75bf784a30fea9b554d5463
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:50:51 2009 +0000
+
+    switch from pudge to sphinx
+
+commit 66c22bcae7e7ae7810d42fbf3ce7a7e102ffbabc
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:50:40 2009 +0000
+
+    first sphinx docstrings
+
+commit ca65f0ac32ec93e9ec5c6a5809468c64bebe1d9a
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:50:24 2009 +0000
+
+    first take at sphinx based documentation
+
+commit 408510be8096139256ede82a5753cc1fcdaf6d2a
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:50:10 2009 +0000
+
+    reformatted download.rst for sphinx
+    
+    wrap lines
+    add link to project's download page and issue tracker
+
+commit 2653ef81c1715eb36f27aad29def2d6187ea1844
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:49:59 2009 +0000
+
+    reformatted index.rst for sphinx
+
+commit 4072921481dfb62d25fa1835dd5cc63a4ba669d9
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:49:48 2009 +0000
+
+    add sphinx build files
+
+commit f9092faf07d7df2584b0b15c0452b8d1ad9693ee
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 12:49:36 2009 +0000
+
+    updated CHANGELOG
+
+commit c957e49b26cde0f8ddca589af69e192229619f81
+Author: jan.dittberner <unknown>
+Date:   Sun Jan 25 10:53:32 2009 +0000
+
+    updated project documentation
+
+commit 992a079d3d2a1957d8ee8a05025201b1a52c5f98
+Author: percious17 <unknown>
+Date:   Mon Jan 19 23:41:14 2009 +0000
+
+    tagging version 0.5.1 to match sa version.
+    
+    This will be going into the TG2b3 index.
+
+commit cb624f15db39de58d9e317126403469e4230d8a9
+Author: percious17 <unknown>
+Date:   Mon Jan 19 23:39:53 2009 +0000
+
+    support for SA 0.5.1.
+    
+    Only postgres is working fully.
+    
+    MySQL has 2 broken tests.
+    
+    sqlite has about 4 broken tests.
+
+commit 88ab816187e77b9258b336e1a3e5f92f27c63766
+Author: jan.dittberner <unknown>
+Date:   Sat Jan 10 13:38:44 2009 +0000
+
+    fix for changeset test
+
+commit 979b8b19dc0888e6f99191cf3ed88a1f87f598df
+Author: jan.dittberner <unknown>
+Date:   Sat Jan 10 13:11:08 2009 +0000
+
+    integrate patch for supporting CheckConstraints by srittau.
+    
+    Fixes Issue #31
+    needs a test case
+
+commit f1039d3f858167d0ee72fa8a6a1b5dcc31088b38
+Author: jan.dittberner <unknown>
+Date:   Tue Jan 6 21:44:27 2009 +0000
+
+    Depend on SQLAlchemy >= 0.5 at runtime and nose for setup
+
+commit 05819a6f70fbb508cb3856808c9ae1132a356f24
+Author: jan.dittberner <unknown>
+Date:   Tue Dec 30 20:43:40 2008 +0000
+
+    apply patch for Issue #43 (better SQLite support) by Florian Apolloner
+
+commit b73aa25733dec0bcbd9f4f6a66a026a53cbab0eb
+Author: jan.dittberner <unknown>
+Date:   Tue Dec 30 20:40:16 2008 +0000
+
+    switch to nosetests
+
+commit 1fa26920d9dfc64c49bddbfde51975627f414262
+Author: percious17 <unknown>
+Date:   Tue Dec 16 23:23:54 2008 +0000
+
+    fixed bug in create column where foreign keys were being left out.
+
+commit a5abd977a3ece272499752680873d8240f9b497a
+Author: percious17 <unknown>
+Date:   Wed Dec 3 14:06:04 2008 +0000
+
+    more migrate deprecation removal fixes.
+
+commit 4016e4ea9868c71667b4a71d2083558b1f17b617
+Author: percious17 <unknown>
+Date:   Tue Dec 2 20:24:10 2008 +0000
+
+    all tests pass except for a couple of mysql related failures in 2.6, SA 0.5rc4.
+
+commit 7e682f49aca9f2212c115320183e74a53378a02e
+Author: percious17 <unknown>
+Date:   Tue Dec 2 19:59:45 2008 +0000
+
+    print statement removal.
+
+commit 06b678bfefb274ac9da97bf5af4f786523290068
+Author: percious17 <unknown>
+Date:   Tue Dec 2 19:58:25 2008 +0000
+
+    fixed a number of shell-related failures.
+
+commit b2cca18c366016f48fed6990c70bf23d858ba77f
+Author: percious17 <unknown>
+Date:   Tue Dec 2 18:31:56 2008 +0000
+
+    hopefully the last of migrate.run
+
+commit 205d477ea4357ccf0a1c2cf0d4be187ed349e655
+Author: percious17 <unknown>
+Date:   Tue Dec 2 18:30:43 2008 +0000
+
+    more "run" removal.
+
+commit 6c0694417f940538324e9dff8a25019ebef88762
+Author: percious17 <unknown>
+Date:   Tue Dec 2 18:27:16 2008 +0000
+
+    fixes to postgres, shell.  removal of "run" module.
+
+commit 2e74b87df5de40aba9c3684ca1be7acdfd5026d4
+Author: percious17 <unknown>
+Date:   Tue Dec 2 15:57:53 2008 +0000
+
+    print statement removal
+
+commit 9ffc39c3c0d45cae3eb9c968c4274c4bdd30c8ba
+Author: percious17 <unknown>
+Date:   Tue Dec 2 15:54:58 2008 +0000
+
+    removed driver deprecation, since that was deprecated in 0.4.
+
+commit b267d64f9e5d5ca5d892750f688b23bd53aeb11c
+Author: percious17 <unknown>
+Date:   Tue Dec 2 15:41:25 2008 +0000
+
+    now all databases are running at once.
+
+commit f7e88199b4a19d445831d7be2978a46f013f19fc
+Author: percious17 <unknown>
+Date:   Tue Dec 2 15:25:12 2008 +0000
+
+    all tests pass with postgres now
+
+commit 42ca7ee5a06562b4d2d8cd0a53b339ac10746d8f
+Author: percious17 <unknown>
+Date:   Tue Dec 2 15:11:26 2008 +0000
+
+    only 2 failing tests, the tests that remain failures are mysql related.
+
+commit 9f0bd657f41fad8f8737199f383564ceb0803336
+Author: percious17 <unknown>
+Date:   Tue Dec 2 05:11:36 2008 +0000
+
+    most of the tests are now working with nose.
+
+commit 1909dc8888ee8f62c87b9b1bf026909ed7b710d2
+Author: percious17 <unknown>
+Date:   Tue Dec 2 01:03:28 2008 +0000
+
+    initial py.test removal.
+    
+    if you want to test, you must now:
+    easy_install nose
+    nosetests
+
+commit fda8014ccea73251e4aa47c3d5261a6ee6bf0835
+Author: percious17 <unknown>
+Date:   Mon Dec 1 22:18:19 2008 +0000
+
+    added an echo option for all manage commands.
+
+commit 0a3d46c290e3785c135f9a4f28a894476ef5b4de
+Author: percious17 <unknown>
+Date:   Mon Dec 1 21:22:07 2008 +0000
+
+    removed dependency on py.test
+    modified downgrade so that
+    migrate.py downgrade x works just like:
+    migrate.py downgrade --version=x
+
+commit 166a3c230c087967446ad8e74a4bee45de2f5536
+Author: percious17 <unknown>
+Date:   Thu Nov 27 00:35:12 2008 +0000
+
+    modified altering of columns to support postgres.
+
+commit e4382ab75b28c30e511c593b7da844e6406131e7
+Author: percious17 <unknown>
+Date:   Thu Nov 27 00:17:55 2008 +0000
+
+    missed a postgres identifier quoting on renaming
+
+commit c7cbde7fea78c48b4fab51c59dbfa1d594bdc680
+Author: percious17 <unknown>
+Date:   Wed Nov 26 22:05:19 2008 +0000
+
+    added hook functions which allow the dialects to specify how to indicate identifiers, as this is different in postgres.
+    
+    Also, this fix includes a fix for modification of columns which have tables definied within a schema.  This was also broken in postgres.
+
+commit d6d4b511a48850c6d06df194887e27bb147a050e
+Author: jan.dittberner <unknown>
+Date:   Tue Sep 16 18:22:18 2008 +0000
+
+    integrate patch for Issue 33
+
+commit a0ac2a438fdc3f37914919828d9e09d084cce349
+Author: christian.simms <unknown>
+Date:   Fri Aug 29 03:35:55 2008 +0000
+
+    add --declarative option to create_model to generate new declarative style
+
+commit e8cc3ec0f0e106c975a7c1c355a3bbc4e3f4b192
+Author: christian.simms <unknown>
+Date:   Thu Aug 28 02:11:03 2008 +0000
+
+    get test_changeset working in oracle - just more server_default issues
+
+commit f687cd3fe04737ffe3ef7dd5aded1a8f781c93f9
+Author: christian.simms <unknown>
+Date:   Thu Aug 28 01:17:44 2008 +0000
+
+    add support for SA 0.5
+
+commit aba0f506811ba2a8ff0bee6a0995f8690ffaa48e
+Author: jan.dittberner <unknown>
+Date:   Wed Jul 30 12:30:09 2008 +0000
+
+    - integrate patch by Toshio Kuratomi sent to migrate-users 2008/07/30
+      06:08 (GMT+01:00)
+    - pylint clean migrate/versioning/migrate_repository.py
+
+commit 52499b1f28591831466fdedfbe984a1fc2225dfa
+Author: jan.dittberner <unknown>
+Date:   Tue Jul 22 21:00:38 2008 +0000
+
+    * create bugfix branch for 0.4.4
+    * prepare trunk for new development
+
+commit bef66f693f07a69c343e13e67f3ff2fac5c037a0
+Author: jan.dittberner <unknown>
+Date:   Tue Jul 22 20:45:41 2008 +0000
+
+    * add 0.4.5 changes to CHANGELOG
+
+commit 8b69e22ee08fd19e6b5938449f64ef10a73775dc
+Author: jan.dittberner <unknown>
+Date:   Fri Jul 4 19:13:14 2008 +0000
+
+    applied patch for shell test by Toshio Kuramoti
+
+commit b37afa2b6e11ae96df218d485d5ed0fb4324383f
+Author: christian.simms <unknown>
+Date:   Sat May 31 11:16:23 2008 +0000
+
+    support default for sql scripts
+
+commit f4d358e3fbeca3782cde2bdfc80cd9aa2a778eb6
+Author: christian.simms <unknown>
+Date:   Sat May 31 10:06:14 2008 +0000
+
+    add unit test to make sure we can handle more than 999 revisions
+
+commit f3bb29c75db6f2b456405923ec79b41a07517434
+Author: christian.simms <unknown>
+Date:   Fri May 30 21:02:44 2008 +0000
+
+    finish implementing repository migration script
+
+commit 95b666783e1feffcfa8716c201b0a1193a99f45b
+Author: christian.simms <unknown>
+Date:   Fri May 30 18:21:14 2008 +0000
+
+    make repository format flatter and get rid of commit command
+
+commit 02da42cba6ed980496d4e33e821f547754d4f598
+Author: jan.dittberner <unknown>
+Date:   Mon May 5 18:56:20 2008 +0000
+
+    * applied a slightly modified version of the patch for issue #20 by
+      Christophe de Vienne which uses a logger for 'migrate.versioning'
+      instead of the root logger
+
+commit 9a44d9bd5728a581ab2561793f557071b2964a7b
+Author: christian.simms <unknown>
+Date:   Thu Apr 24 18:52:36 2008 +0000
+
+    almost done issue 12:  generate downgrade method for schema migration
+
+commit 16144bb606acdc3be28327c1814232642d874016
+Author: christian.simms <unknown>
+Date:   Fri Apr 11 20:46:43 2008 +0000
+
+    fix issue 18 by applying given patch
+
+commit 8398e15b2e71f6202887ade79aec055f1c8c3ee3
+Author: christian.simms <unknown>
+Date:   Fri Apr 11 20:40:33 2008 +0000
+
+    enhance command update_db_from_model to bump db_version to latest in repository
+
+commit fc9ad12752de7899d5092e4ec237d4facdc2a36c
+Author: christian.simms <unknown>
+Date:   Fri Apr 11 04:10:50 2008 +0000
+
+    improve diff unit tests to make sure they don't drop data when column type changes; make the code pass the tests
+
+commit d150a89357b159d456d2dca807b5322d679aaab0
+Author: christian.simms <unknown>
+Date:   Fri Apr 11 03:34:58 2008 +0000
+
+    make diff unit tests more robust
+
+commit 8af121c421f45a108894f56c8f713ae455410020
+Author: christian.simms <unknown>
+Date:   Sun Apr 6 20:58:37 2008 +0000
+
+    Change make_update_script_for_model shell command to compare two versions of Python model (issue #12); add shell test for new diff'ing apis
+
+commit c13931b6b911dde2b3732c23428da7be64786a9e
+Author: jan.dittberner <unknown>
+Date:   Fri Apr 4 20:51:24 2008 +0000
+
+    - merged CHANGELOG from bugfix branch
+
+commit 3ecf68a99c87a9d40c6f46511ce3c7c24c4f8ecd
+Author: jan.dittberner <unknown>
+Date:   Fri Apr 4 20:40:35 2008 +0000
+
+    - release 0.4.4
+
+commit d20edf45426dd4edc69c6e7ff77630db7eac1846
+Author: jan.dittberner <unknown>
+Date:   Fri Apr 4 16:48:45 2008 +0000
+
+     r1081@denkpolster:  jan | 2008-04-04 18:48:20 +0200
+     - fix for SQLAlchemy deprecation warning when creating version table
+
+commit efcd7d2f63066ed7530bb994b6712ba2065cc643
+Author: jan.dittberner <unknown>
+Date:   Wed Apr 2 12:39:41 2008 +0000
+
+     r1035@denkpolster:  jan | 2008-04-02 14:39:05 +0200
+     - fix unit tests with py-0.9.1, fixes #17
+
+commit 1eadc362f67409cec50273f51e69fb1c024f1422
+Author: christian.simms <unknown>
+Date:   Tue Apr 1 20:46:52 2008 +0000
+
+    code reorg: create new utility method loadModel for db diffing
+
+commit bc7f96cbb1515e7b3505303f160d807828fa1f98
+Author: jan.dittberner <unknown>
+Date:   Fri Mar 28 21:48:18 2008 +0000
+
+    - patch by pwannygoodness for Issue #15 integrated
+
+commit 9598b484a8c9f1af8132016544fa2214ae5cd251
+Author: jan.dittberner <unknown>
+Date:   Fri Mar 28 18:16:48 2008 +0000
+
+    - merge CHANGELOG from branch bugfix-0_4_2 to trunk
+    - increase trunk and branch bugfix-0_4_2 version numbers
+    - rename branch bugfix-0_4_2 to bugfix-0_4_3
+
+commit a7fa6cd874133df8101c2e82c44b849d774ccb39
+Author: christian.simms <unknown>
+Date:   Mon Mar 24 15:23:54 2008 +0000
+
+    Execute sqlite-specific code to alter a table inside one transaction so that we can't leave the database in a nasty state
+
+commit 2bf7e561f54387507bce10476aa3feabc9069531
+Author: christian.simms <unknown>
+Date:   Mon Mar 24 15:16:55 2008 +0000
+
+    When running schemadiff tests exclude table migrate_version because it's left around after a previous round of tests.
+
+commit 8e753b52e0feeb4365a6d83f13dc0f7517a5f7a3
+Author: christian.simms <unknown>
+Date:   Mon Mar 24 14:32:45 2008 +0000
+
+    rename model/db sync commands and add new command update_db_from_model
+
+commit 373a111c2c629ec0d92b01bf1c4dc8e2cdd5d2d7
+Author: christian.simms <unknown>
+Date:   Sat Mar 22 14:17:31 2008 +0000
+
+    add experimental support for comparing metadata against database (issue #12)
+
+commit bf45f7da6d4301f323a8b333251b3b56b50ab265
+Author: christian.simms <unknown>
+Date:   Fri Mar 21 17:04:13 2008 +0000
+
+    - make test_shell not assume Python code is compiled
+    - update results in test_shell so that it works in Postgresql
+    - make Oracle changesets generate valid sql syntax when a modified column's default value changes to NULL
+
+commit 562052de9188c884871be7049cce0e6e1d6d2c5f
+Author: jan.dittberner <unknown>
+Date:   Tue Mar 4 17:59:49 2008 +0000
+
+    * integrate patch for Issue #14 by Kevin Dangoor
+    * merge CHANGELOG from bugfix_0_4_2 branch
+
+commit 426c62bfbbfb7beb75b8ab71e53afa818726f5e8
+Author: jan.dittberner <unknown>
+Date:   Tue Feb 19 19:17:30 2008 +0000
+
+    * fixed package name
+
+commit 85c01dcc9f8bd239044018ea5330a361e6f73771
+Author: jan.dittberner <unknown>
+Date:   Tue Feb 19 19:16:28 2008 +0000
+
+    * prepare work on 0.4.3
+
+commit 2ea92c63fec03726d4de77ce1dfc5f6337193e14
+Author: christian.simms <unknown>
+Date:   Mon Feb 18 17:03:10 2008 +0000
+
+    make import of sqlalchemy's SchemaGenerator work regardless of previous imports
+
+commit dd55aebbaab5c78a711b28f01aeaae0b66dc4faa
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 15 18:27:00 2008 +0000
+
+    - 0.4.1 changes added to CHANGELOG
+
+commit 1a24921de896c02aeee8f87323ebe076ec752bba
+Author: jan.dittberner <unknown>
+Date:   Fri Feb 15 18:25:23 2008 +0000
+
+    - integrate setuptools patch by Kevin Dangoor
+    - bump version to 0.4.2dev (0.4.1 will be released from branch bugfix-0_4_0)
+
+commit 3f0a4256c13233c14ad260c93dd2def1b34fd129
+Author: jan.dittberner <unknown>
+Date:   Thu Feb 14 21:31:46 2008 +0000
+
+    - prepare for new development
+
+commit b4ef79dc043740a3547d812da7517c259406bd84
+Author: jan.dittberner <unknown>
+Date:   Thu Feb 14 21:07:25 2008 +0000
+
+    - prepare for release 0.4.0
+
+commit 32aeb8e95efc78d6b947548c430c2475ccee2962
+Author: jan.dittberner <unknown>
+Date:   Thu Feb 14 19:10:47 2008 +0000
+
+    integrated patch by Christian Simms posted at http://groups.google.com/group/migrate-users/browse_thread/thread/952a2185baf70c4d
+    fix all test cases for sqlalchemy>=0.4 and still works with sqlalchemy>=0.3.10
+    fixes #9
+
+commit 2cfe1fc31c0dfa8241200f635d8e7f6cfce2b507
+Author: jan.dittberner <unknown>
+Date:   Wed Feb 6 18:39:07 2008 +0000
+
+    moved trunk, branches and tags to project root
+    fixes Issue #5
