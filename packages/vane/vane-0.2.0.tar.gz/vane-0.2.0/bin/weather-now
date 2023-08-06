@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+#
+# weather-now - Current weather conditions
+# This file is part of vane
+#
+# Copyright (c) 2013 Trevor Parker <trevor@trevorparker.com>
+# All rights reserved
+#
+# Distributed under the terms of the modified BSD license (see LICENSE)
+
+import argparse
+import sys
+import vane
+
+parser = argparse.ArgumentParser(description='Current weather conditions')
+parser.add_argument(
+    '--units', dest='units', type=str, default='imperial',
+    choices=['imperial', 'metric'], help='units to display')
+parser.add_argument(
+    'loc', type=str, nargs=argparse.REMAINDER,
+    help="location, usually 'City, State' or 'City, Country'")
+args = parser.parse_args()
+loc = args.loc
+units = args.units
+
+if len(loc):
+    w = vane.fetch_weather(loc, units)
+else:
+    parser.print_help()
+    sys.exit()
+
+temperature = w['current']['temperature'][0]
+if (w['current']['temperature'][1] == 'fahrenheit'):
+    temperature_unit = 'F'
+else:
+    temperature_unit = 'C'
+conditions = w['current']['summary'][0]
+
+s = "{0} with a temperature of {1}" u"\u00B0" "{2}"
+print s.format(
+    conditions[0].upper() + conditions[1:].lower(),
+    int(round(temperature)), temperature_unit)
