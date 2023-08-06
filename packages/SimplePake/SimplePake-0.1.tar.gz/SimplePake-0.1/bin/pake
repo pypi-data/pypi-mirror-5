@@ -1,0 +1,51 @@
+#! /usr/bin/python
+
+import os,os.path,sys
+
+def parseTask(tk):
+    if ':' in tk:
+        return tk.split(':')
+    return None,tk
+
+def parseArgs(args):
+    dic = {}
+    lis = []
+    for arg in args:
+        if '=' in arg:
+            k,v = arg.split('=')
+            dic[k] = v
+        else:
+            lis.append(arg)
+    return lis,dic
+
+def usage():
+    print "Pake : python task runner"
+    print "usage : pake taskname [parameters]"
+    exit(1)
+            
+if __name__ == '__main__':
+    if not os.path.exists('Pakefile'):
+        print 'Error : Pakefile is not is current dir!'
+        exit(1);
+    try:
+        ns,task = parseTask(sys.argv[1])
+        if task.startswith('_'):
+            print 'Error : taskname should not start with _'
+            exit(1)
+        plis,pdic = parseArgs(sys.argv[2:])
+    except:
+        usage()
+    glb = {}
+    execfile('Pakefile',glb)
+    try:
+        if ns is not None:
+            glb[ns][task](*plis,**pdic)
+        else:
+            glb[task](*plis,**pdic)
+    except KeyError,e:
+        print 'Error : task %s is not exist, please check your Pakefile' % (sys.argv[1],)
+    except Exception,e:
+        print e
+        
+
+
