@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
+import argparse
+from cspkeyset.hdimage import hdimage
+
+
+def restore(args):
+    global parser
+    try:
+        hdimage.restore(args.file, paswd=args.pasw, filetype=args.type)
+    except Exception as exc:
+        parser.error(str(exc))
+
+
+def backup(args):
+    global parser
+    img = hdimage(args.cont, user=args.user)
+    if img.empty:
+        parser.error('Container {0} does not exist for user {1}'.format(args.cont, img.user))
+    try:
+        img.backup(args.file)
+    except Exception as exc:
+        parser.error(str(exc))
+
+
+def delete(args):
+    global parser
+    img = hdimage(args.cont, user=args.user)
+    if img.empty:
+        parser.error('Container {0} does not exist for user {1}'.format(args.cont, img.user))
+    try:
+        img.delete()
+    except Exception as exc:
+        parser.error(str(exc))
+
+
+def help(args):
+    global parser
+    parser.print_help()
+
+parser = argparse.ArgumentParser(description='Manage cryptoprovider containers')
+parser.set_defaults(func=help)
+sub = parser.add_subparsers()
+par_backup = sub.add_parser('backup', help='Save container to archive')
+par_backup.add_argument('-cont', metavar='ID', required=True, help='Container name')
+par_backup.add_argument(
+    '-user', metavar='USER', help='Container user name, defaults to current user')
+par_backup.add_argument('file', nargs='?', help='Output file name (defaults to container ID)')
+par_backup.set_defaults(func=backup)
+
+par_restore = sub.add_parser(
+    'restore', help='Load container from archive (.zip and .rar archives supported)')
+par_restore.add_argument('-pasw', help='Container password', default=None)
+par_restore.add_argument('-type', choices=['rar', 'zip'], help='Archive type', default=None)
+par_restore.add_argument('file', help='Container name')
+par_restore.set_defaults(func=restore)
+
+par_del = sub.add_parser('delete', help='Delete container')
+par_del.add_argument('-cont', metavar='ID', required=True, help='Container name')
+par_del.add_argument('-user', metavar='USER', help='Container user name, defaults to current user')
+par_del.set_defaults(func=delete)
+args = parser.parse_args()
+args.func(args)
