@@ -1,0 +1,335 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Types &mdash; Schematics 0.9.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Schematics 0.9.2 documentation" href="../index.html" />
+    <link rel="next" title="Contrib" href="contrib.html" />
+    <link rel="prev" title="Transforms" href="transforms.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="contrib.html" title="Contrib"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="transforms.html" title="Transforms"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-schematics.types.base">
+<span id="types"></span><span id="api-doc-types"></span><h1>Types<a class="headerlink" href="#module-schematics.types.base" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="schematics.types.base.BaseType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">BaseType</tt><big>(</big><em>required=False</em>, <em>default=None</em>, <em>serialized_name=None</em>, <em>choices=None</em>, <em>validators=None</em>, <em>serialize_when_none=None</em>, <em>messages=None</em><big>)</big><a class="headerlink" href="#schematics.types.base.BaseType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A base class for Types in a Schematics model. Instances of this
+class may be added to subclasses of <tt class="docutils literal"><span class="pre">Model</span></tt> to define a model schema.</p>
+<p>Validators that need to access variables on the instance
+can be defined be implementing methods whose names start with <tt class="docutils literal"><span class="pre">validate_</span></tt>
+and accept one parameter (in addition to <tt class="docutils literal"><span class="pre">self</span></tt>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>required</strong> &#8211; Invalidate field when value is None or is not supplied. Default:
+False.</li>
+<li><strong>default</strong> &#8211; When no data is provided default to this value. May be a callable.
+Default: None.</li>
+<li><strong>serialized_name</strong> &#8211; The name of this field defaults to the class attribute used in the
+model. However if the field has another name in foreign data set this
+argument. Serialized data will use this value for the key name too.</li>
+<li><strong>choices</strong> &#8211; An iterable of valid choices. This is the last step of the validator
+chain.</li>
+<li><strong>validators</strong> &#8211; A list of callables. Each callable receives the value after it has been
+converted into a rich python type. Default: []</li>
+<li><strong>serialize_when_none</strong> &#8211; Dictates if the field should appear in the serialized data even if the
+value is None. Default: True</li>
+<li><strong>messages</strong> &#8211; Override the error messages with a dict. You can also do this by
+subclassing the Type and defining a <cite>MESSAGES</cite> dict attribute on the
+class. A metaclass will merge all the <cite>MESSAGES</cite> and override the
+resulting dict with instance level <cite>messages</cite> and assign to
+<cite>self.messages</cite>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="schematics.types.base.BaseType.to_native">
+<tt class="descname">to_native</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#schematics.types.base.BaseType.to_native" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert untrusted data to a richer Python construct.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="schematics.types.base.BaseType.to_primitive">
+<tt class="descname">to_primitive</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#schematics.types.base.BaseType.to_primitive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert internal data to a value safe to serialize.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="schematics.types.base.BaseType.validate">
+<tt class="descname">validate</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#schematics.types.base.BaseType.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the field and return a clean value or raise a
+<tt class="docutils literal"><span class="pre">ValidationError</span></tt> with a list of errors raised by the validation
+chain. Stop the validation process from continuing through the
+validators by raising <tt class="docutils literal"><span class="pre">StopValidation</span></tt> instead of <tt class="docutils literal"><span class="pre">ValidationError</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.BooleanType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">BooleanType</tt><big>(</big><em>required=False</em>, <em>default=None</em>, <em>serialized_name=None</em>, <em>choices=None</em>, <em>validators=None</em>, <em>serialize_when_none=None</em>, <em>messages=None</em><big>)</big><a class="headerlink" href="#schematics.types.base.BooleanType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A boolean field type. In addition to <tt class="docutils literal"><span class="pre">True</span></tt> and <tt class="docutils literal"><span class="pre">False</span></tt>, coerces these
+values:</p>
+<ul class="simple">
+<li>For <tt class="docutils literal"><span class="pre">True</span></tt>: &#8220;True&#8221;, &#8220;true&#8221;, &#8220;1&#8221;</li>
+<li>For <tt class="docutils literal"><span class="pre">False</span></tt>: &#8220;False&#8221;, &#8220;false&#8221;, &#8220;0&#8221;</li>
+</ul>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.DateTimeType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">DateTimeType</tt><big>(</big><em>formats=None</em>, <em>serialized_format=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.DateTimeType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defaults to converting to and from ISO8601 datetime values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>formats</strong> &#8211; A value or list of values suitable for <tt class="docutils literal"><span class="pre">datetime.datetime.strptime</span></tt>
+parsing. Default: <cite>(&#8216;%Y-%m-%dT%H:%M:%S.%f&#8217;, &#8216;%Y-%m-%dT%H:%M:%S&#8217;)</cite></li>
+<li><strong>serialized_format</strong> &#8211; The output format suitable for Python <tt class="docutils literal"><span class="pre">strftime</span></tt>. Default: <tt class="docutils literal"><span class="pre">'%Y-%m-%dT%H:%M:%S.%f'</span></tt></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.DateType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">DateType</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.DateType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defaults to converting to and from ISO8601 date values.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.DecimalType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">DecimalType</tt><big>(</big><em>min_value=None</em>, <em>max_value=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.DecimalType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A fixed-point decimal number field.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.EmailType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">EmailType</tt><big>(</big><em>regex=None</em>, <em>max_length=None</em>, <em>min_length=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.EmailType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that validates input as an E-Mail-Address.</p>
+<dl class="attribute">
+<dt id="schematics.types.base.EmailType.EMAIL_REGEX">
+<tt class="descname">EMAIL_REGEX</tt><em class="property"> = &lt;_sre.SRE_Pattern object at 0x7fc614b38d40&gt;</em><a class="headerlink" href="#schematics.types.base.EmailType.EMAIL_REGEX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.FloatType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">FloatType</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.FloatType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that validates input as a Float</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.GeoPointType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">GeoPointType</tt><big>(</big><em>required=False</em>, <em>default=None</em>, <em>serialized_name=None</em>, <em>choices=None</em>, <em>validators=None</em>, <em>serialize_when_none=None</em>, <em>messages=None</em><big>)</big><a class="headerlink" href="#schematics.types.base.GeoPointType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list storing a latitude and longitude.</p>
+<dl class="method">
+<dt id="schematics.types.base.GeoPointType.to_native">
+<tt class="descname">to_native</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#schematics.types.base.GeoPointType.to_native" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure that a geo-value is of type (x, y)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.IPv4Type">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">IPv4Type</tt><big>(</big><em>auto_fill=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.IPv4Type" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that stores a valid IPv4 address</p>
+<dl class="method">
+<dt id="schematics.types.base.IPv4Type.validate">
+<tt class="descname">validate</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#schematics.types.base.IPv4Type.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure the value is a IPv4 address:
+<a class="reference external" href="http://stackoverflow.com/questions/9948833/validate-ip-address-from-list">http://stackoverflow.com/questions/9948833/validate-ip-address-from-list</a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.IntType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">IntType</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.IntType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that validates input as an Integer</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.LongType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">LongType</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.LongType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that validates input as a Long</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.MD5Type">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">MD5Type</tt><big>(</big><em>required=False</em>, <em>default=None</em>, <em>serialized_name=None</em>, <em>choices=None</em>, <em>validators=None</em>, <em>serialize_when_none=None</em>, <em>messages=None</em><big>)</big><a class="headerlink" href="#schematics.types.base.MD5Type" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that validates input as resembling an MD5 hash.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.NumberType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">NumberType</tt><big>(</big><em>number_class</em>, <em>number_type</em>, <em>min_value=None</em>, <em>max_value=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.NumberType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A number field.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.SHA1Type">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">SHA1Type</tt><big>(</big><em>required=False</em>, <em>default=None</em>, <em>serialized_name=None</em>, <em>choices=None</em>, <em>validators=None</em>, <em>serialize_when_none=None</em>, <em>messages=None</em><big>)</big><a class="headerlink" href="#schematics.types.base.SHA1Type" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that validates input as resembling an SHA1 hash.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.StringType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">StringType</tt><big>(</big><em>regex=None</em>, <em>max_length=None</em>, <em>min_length=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.StringType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A unicode string field. Default minimum length is one. If you want to
+accept empty strings, init with <tt class="docutils literal"><span class="pre">min_length</span></tt> 0.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.TypeMeta">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">TypeMeta</tt><a class="headerlink" href="#schematics.types.base.TypeMeta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Meta class for BaseType. Merges <cite>MESSAGES</cite> dict and accumulates
+validator methods.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.URLType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">URLType</tt><big>(</big><em>verify_exists=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#schematics.types.base.URLType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that validates input as an URL.</p>
+<p>If verify_exists=True is passed the validate function will make sure
+the URL makes a valid connection.</p>
+<dl class="attribute">
+<dt id="schematics.types.base.URLType.URL_REGEX">
+<tt class="descname">URL_REGEX</tt><em class="property"> = &lt;_sre.SRE_Pattern object at 0x7fc614b6a210&gt;</em><a class="headerlink" href="#schematics.types.base.URLType.URL_REGEX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="schematics.types.base.UUIDType">
+<em class="property">class </em><tt class="descclassname">schematics.types.base.</tt><tt class="descname">UUIDType</tt><big>(</big><em>required=False</em>, <em>default=None</em>, <em>serialized_name=None</em>, <em>choices=None</em>, <em>validators=None</em>, <em>serialize_when_none=None</em>, <em>messages=None</em><big>)</big><a class="headerlink" href="#schematics.types.base.UUIDType" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that stores a valid UUID value.</p>
+</dd></dl>
+
+<span class="target" id="module-schematics.types.compound"></span><div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>To learn more about how <strong>Types</strong> are used, visit
+<a class="reference internal" href="../usage/types.html"><em>Using Types</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Types</a><ul>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="transforms.html"
+                        title="previous chapter">Transforms</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="contrib.html"
+                        title="next chapter">Contrib</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/types.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="contrib.html" title="Contrib"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="transforms.html" title="Transforms"
+             >previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013 j2labs.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

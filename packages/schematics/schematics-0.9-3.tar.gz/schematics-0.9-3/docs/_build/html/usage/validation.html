@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Validation &mdash; Schematics 0.9.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Schematics 0.9.2 documentation" href="../index.html" />
+    <link rel="next" title="Models" href="../api/models.html" />
+    <link rel="prev" title="Importing" href="importing.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../api/models.html" title="Models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="importing.html" title="Importing"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="validation">
+<h1>Validation<a class="headerlink" href="#validation" title="Permalink to this headline">¶</a></h1>
+<p>To validate data in Schematics is to have both a data model and some input
+data.  The data model describes what valid data looks like in different forms.</p>
+<p>Here&#8217;s a quick glance and some of the ways you can tweak validation.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.types</span> <span class="kn">import</span> <span class="n">StringType</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">bio</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;Paul Eipper&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ModelValidationError</span>: <span class="n">{&#39;bio&#39;: [u&#39;This field is required.&#39;]}</span>
+</pre></div>
+</div>
+<div class="section" id="validation-errors">
+<h2>Validation Errors<a class="headerlink" href="#validation-errors" title="Permalink to this headline">¶</a></h2>
+<p>Validation failures throw an exception called <tt class="docutils literal"><span class="pre">ValidationError</span></tt>.  A
+description of what failed is stored in <tt class="docutils literal"><span class="pre">messages</span></tt>, which is a dictionary
+keyed by the field name with a list of reasons the field failed.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.exceptions</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">p</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="gp">... </span><span class="k">except</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>   <span class="k">print</span> <span class="n">e</span><span class="o">.</span><span class="n">messages</span>
+<span class="go">{&#39;bio&#39;: [u&#39;This field is required.&#39;]}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="extending-validation">
+<h2>Extending Validation<a class="headerlink" href="#extending-validation" title="Permalink to this headline">¶</a></h2>
+<p>Validation for both types and models can be extended.  Whatever validation
+system you require is probably expressable via Schematics..</p>
+<div class="section" id="type-level-validation">
+<h3>Type-level Validation<a class="headerlink" href="#type-level-validation" title="Permalink to this headline">¶</a></h3>
+<p>Here is a function that checks if a string is uppercase and throws a
+<tt class="docutils literal"><span class="pre">ValidationError</span></tt> if it is not.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.exceptions</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">is_uppercase</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">u&#39;Please speak up!&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">value</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>And we can attach it to our StringType like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">(</span><span class="n">validators</span><span class="o">=</span><span class="p">[</span><span class="n">is_uppercase</span><span class="p">])</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>Using it is built into validation.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">me</span> <span class="o">=</span> <span class="n">Person</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Jökull&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">me</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ModelValidationError</span>: <span class="n">{&#39;name&#39;: [u&#39;Please speak up!&#39;]}</span>
+</pre></div>
+</div>
+<p>It is also possible to define new types with custom validation by subclassing a
+type, like <tt class="docutils literal"><span class="pre">BaseType</span></tt>, and implementing instance methods that start with
+<tt class="docutils literal"><span class="pre">validate_</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.exceptions</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">UppercaseType</span><span class="p">(</span><span class="n">StringType</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">validate_uppercase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;Value must be uppercase!&quot;</span><span class="p">)</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>Just like before, using it is now built in.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">UppercaseType</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">me</span> <span class="o">=</span> <span class="n">Person</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Jökull&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">me</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ModelValidationError</span>: <span class="n">{&#39;name&#39;: [&#39;Value must be uppercase!&#39;]}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="model-level-validation">
+<h3>Model-level Validation<a class="headerlink" href="#model-level-validation" title="Permalink to this headline">¶</a></h3>
+<p>What about field validation based on other model data? The order whith which
+fields are declared is preserved inside the model. So if the validity of a field
+depends on another field’s value, just make sure to declare it below its
+dependencies:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.types</span> <span class="kn">import</span> <span class="n">StringType</span><span class="p">,</span> <span class="n">BooleanType</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.exceptions</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Signup</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">call_me</span> <span class="o">=</span> <span class="n">BooleanType</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">validate_call_me</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">u&#39;Brad&#39;</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;call_me&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">u&#39;He prefers email.&#39;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">value</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Signup</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Brad&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Signup</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Brad&#39;</span><span class="p">,</span> <span class="s">&#39;call_me&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">})</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ModelValidationError</span>: <span class="n">{&#39;call_me&#39;: [u&#39;He prefers email.&#39;]}</span>
+</pre></div>
+</div>
+<div class="section" id="more-information">
+<h4>More Information<a class="headerlink" href="#more-information" title="Permalink to this headline">¶</a></h4>
+<p>To learn more about <strong>Validation</strong>, visit the <a class="reference internal" href="../api/validation.html#api-doc-validation"><em>Validation API</em></a></p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Validation</a><ul>
+<li><a class="reference internal" href="#validation-errors">Validation Errors</a></li>
+<li><a class="reference internal" href="#extending-validation">Extending Validation</a><ul>
+<li><a class="reference internal" href="#type-level-validation">Type-level Validation</a></li>
+<li><a class="reference internal" href="#model-level-validation">Model-level Validation</a><ul>
+<li><a class="reference internal" href="#more-information">More Information</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="importing.html"
+                        title="previous chapter">Importing</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../api/models.html"
+                        title="next chapter">Models</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/usage/validation.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../api/models.html" title="Models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="importing.html" title="Importing"
+             >previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013 j2labs.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

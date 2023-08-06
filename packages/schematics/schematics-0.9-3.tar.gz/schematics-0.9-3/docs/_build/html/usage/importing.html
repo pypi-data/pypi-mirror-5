@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Importing &mdash; Schematics 0.9.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Schematics 0.9.2 documentation" href="../index.html" />
+    <link rel="next" title="Validation" href="validation.html" />
+    <link rel="prev" title="Exporting" href="exporting.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="validation.html" title="Validation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="exporting.html" title="Exporting"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="importing">
+<h1>Importing<a class="headerlink" href="#importing" title="Permalink to this headline">¶</a></h1>
+<p>The general mechanism for data import is to call a function on every field in
+the data and coerce it into the most appropriate representation in Python. A
+date string, for example, would be converted to a <tt class="docutils literal"><span class="pre">datetime.datetime</span></tt>.</p>
+<p>Perhaps we&#8217;re writing a web API that receives song data.  Let&#8217;s model the song.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Song</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">URLType</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This is what successful validation of the data looks like.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">song_json</span> <span class="o">=</span> <span class="s">&#39;{&quot;url&quot;: &quot;http://www.youtube.com/watch?v=67KGSJVkix0&quot;, &quot;name&quot;: &quot;Werewolf&quot;, &quot;artist&quot;: &quot;Fiona Apple&quot;}&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fiona_song</span> <span class="o">=</span> <span class="n">Song</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">song_json</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fiona_song</span><span class="o">.</span><span class="n">url</span>
+<span class="go">u&#39;http://www.youtube.com/watch?v=67KGSJVkix0&#39;</span>
+</pre></div>
+</div>
+<div class="section" id="compound-types">
+<h2>Compound Types<a class="headerlink" href="#compound-types" title="Permalink to this headline">¶</a></h2>
+<p>We could define a simple collection of songs like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Collection</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">songs</span> <span class="o">=</span> <span class="n">ListType</span><span class="p">(</span><span class="n">ModelType</span><span class="p">(</span><span class="n">Song</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Some JSON data for this type of a model might look like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">songs_json</span> <span class="o">=</span> <span class="s">&#39;{&quot;songs&quot;: [{&quot;url&quot;: &quot;https://www.youtube.com/watch?v=UeBFEanVsp4&quot;, &quot;name&quot;: &quot;When I Lost My Bet&quot;, &quot;artist&quot;: &quot;Dillinger Escape Plan&quot;}, {&quot;url&quot;: &quot;http://www.youtube.com/watch?v=67KGSJVkix0&quot;, &quot;name&quot;: &quot;Werewolf&quot;, &quot;artist&quot;: &quot;Fiona Apple&quot;}]}&#39;</span>
+</pre></div>
+</div>
+<p>The collection has a list of models for songs, so when we import that list, that
+data should be converted to model instances.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">song_collection</span> <span class="o">=</span> <span class="n">Collection</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">songs_json</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">song_collection</span><span class="o">.</span><span class="n">songs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">&lt;Song: Song object&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">song_collection</span><span class="o">.</span><span class="n">songs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">artist</span>
+<span class="go">u&#39;Dillinger Escape Plan&#39;</span>
+</pre></div>
+</div>
+<div class="section" id="more-information">
+<h3>More Information<a class="headerlink" href="#more-information" title="Permalink to this headline">¶</a></h3>
+<p>To learn more about <strong>Importing</strong>, visit the <a class="reference internal" href="../api/transforms.html#api-doc-transforms"><em>Transforms API</em></a></p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Importing</a><ul>
+<li><a class="reference internal" href="#compound-types">Compound Types</a><ul>
+<li><a class="reference internal" href="#more-information">More Information</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="exporting.html"
+                        title="previous chapter">Exporting</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="validation.html"
+                        title="next chapter">Validation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/usage/importing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="validation.html" title="Validation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="exporting.html" title="Exporting"
+             >previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013 j2labs.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

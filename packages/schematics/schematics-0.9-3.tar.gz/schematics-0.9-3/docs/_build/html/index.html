@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Schematics &mdash; Schematics 0.9.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.9.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Schematics 0.9.2 documentation" href="#" />
+    <link rel="next" title="Types" href="usage/types.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="usage/types.html" title="Types"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="schematics">
+<span id="index"></span><h1>Schematics<a class="headerlink" href="#schematics" title="Permalink to this headline">¶</a></h1>
+<p class="rubric">Python Data Structures for Humans™.</p>
+<a class="reference external image-reference" href="https://secure.travis-ci.org/j2labs/schematics"><img alt="Build Status" src="https://secure.travis-ci.org/j2labs/schematics.png?branch=master" /></a>
+<p><strong>For more information, please see our documentation:</strong> <a class="reference external" href="http://schematics.readthedocs.org/en/latest/">http://schematics.readthedocs.org/en/latest/</a></p>
+<div class="section" id="about">
+<h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<p>Schematics is a Python library to combine types into structures, validate them,
+and transform the shapes of your data based on simple descriptions.</p>
+<p>The internals are similar to ORM type systems, but there is no database layer
+in Schematics.  Instead, we believe that building a database
+layer is made significantly easier when Schematics handles everything but
+writing the query.</p>
+<p>Further, it can be used for a range of tasks where having a database involved
+may not make sense.</p>
+<p>Some common use cases:</p>
+<ul class="simple">
+<li>Design and document specific <a class="reference external" href="https://schematics.readthedocs.org/en/latest/usage/models.html">data structures</a></li>
+<li><a class="reference external" href="https://schematics.readthedocs.org/en/latest/usage/exporting.html#converting-data">Convert structures</a> to and from different formats such as JSON or MsgPack</li>
+<li><a class="reference external" href="https://schematics.readthedocs.org/en/latest/usage/validation.html">Validate</a> API inputs</li>
+<li><a class="reference external" href="https://schematics.readthedocs.org/en/latest/usage/exporting.html">Remove fields based on access rights</a> of some data&#8217;s recipient</li>
+<li>Define message formats for communications protocols, like an RPC</li>
+<li>Custom <a class="reference external" href="https://schematics.readthedocs.org/en/latest/usage/models.html#model-configuration">persistence layers</a></li>
+</ul>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<p>This is a simple Model.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">schematics.types</span> <span class="kn">import</span> <span class="n">StringType</span><span class="p">,</span> <span class="n">URLType</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">website</span> <span class="o">=</span> <span class="n">URLType</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;Joe Strummer&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="s">&#39;website&#39;</span><span class="p">:</span> <span class="s">&#39;http://soundcloud.com/joestrummer&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">person</span><span class="o">.</span><span class="n">name</span>
+<span class="go">u&#39;Joe Strummer&#39;</span>
+</pre></div>
+</div>
+<p>Serializing the data to JSON.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">json</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">to_primitive</span><span class="p">())</span>
+<span class="go">{&quot;name&quot;: &quot;Joe Strummer&quot;, &quot;website&quot;: &quot;http://soundcloud.com/joestrummer&quot;}</span>
+</pre></div>
+</div>
+<p>Let&#8217;s try validating without a name value, since it&#8217;s required.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">person</span><span class="o">.</span><span class="n">website</span> <span class="o">=</span> <span class="s">&#39;http://www.amontobin.com/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">person</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+  File <span class="nb">&quot;schematics/models.py&quot;</span>, line <span class="m">231</span>, in <span class="n">validate</span>
+    <span class="k">raise</span> <span class="n">ModelValidationError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span>
+<span class="gr">schematics.exceptions.ModelValidationError</span>: <span class="n">{&#39;name&#39;: [u&#39;This field is required.&#39;]}</span>
+</pre></div>
+</div>
+<p>Add the field and validation passes</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">person</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;Amon Tobin&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">person</span><span class="o">.</span><span class="n">website</span> <span class="o">=</span> <span class="s">&#39;http://www.amontobin.com/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">person</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="what-s-with-the-fork">
+<h2>What&#8217;s with the fork?<a class="headerlink" href="#what-s-with-the-fork" title="Permalink to this headline">¶</a></h2>
+<p>At the top of this projects Github page is says &#8220;forked from
+exfm/dictshield&#8221;.  James (&#64;j2labs) started dictshield while working
+for exfm.  It was open sourced, so he forked it and continued work on
+it.</p>
+<p>Alas, the name, which was originally a 3am decision to make me James
+laugh turned into something that was awkward and a little crude, so it
+was renamed Schematics.</p>
+<p>DictShield still exists, but consider anything with that label to be
+a ghost from this project&#8217;s early years.</p>
+</div>
+<div class="section" id="installing">
+<h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
+<p>Install stable releases of Schematics with <tt class="docutils literal"><span class="pre">pip</span></tt>.</p>
+<div class="highlight-python"><pre>$ pip install schematics</pre>
+</div>
+<p>See the <a class="reference internal" href="install.html"><em>Install Guide</em></a> for more detail.</p>
+</div>
+<div class="section" id="documentation">
+<span id="toc"></span><h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="getting-started">
+<h3>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h3>
+<p>New Schematics users should start with the <a class="reference internal" href="quickstart.html"><em>Quickstart Guide</em></a>.  That is the
+fastest way to get a look at what Schematics does.</p>
+</div>
+<div class="section" id="usage">
+<span id="toc-usage"></span><h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<p>Schematics exists to make a few concepts easy to glue together.  The types
+allow us to describe units of data, models let us put them together into
+structures with fields.  We can then import data, check if it looks correct,
+and easily serialize the results into any format we need.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage/types.html">Types</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/types.html#coercion">Coercion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/types.html#conversion">Conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/types.html#validation">Validation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/models.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/models.html#simple-model">Simple Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/models.html#model-configuration">Model Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/exporting.html">Exporting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/exporting.html#terminology">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/exporting.html#converting-data">Converting Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/exporting.html#compound-types">Compound Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/exporting.html#customizing-output">Customizing Output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/importing.html">Importing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/importing.html#compound-types">Compound Types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/validation.html">Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/validation.html#validation-errors">Validation Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/validation.html#extending-validation">Extending Validation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="api-reference">
+<span id="toc-api"></span><h3>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h3>
+<p>The User&#8217;s Guide provides the high-level concepts, but the code itself provides
+the most accurate reference.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/transforms.html">Transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/contrib.html">Contrib</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
+<p>We welcome ideas and code.  We ask that you follow some of our guidelines
+though.</p>
+<p>See the <a class="reference internal" href="development.html"><em>Developer&#8217;s Guide</em></a> for more information.</p>
+</div>
+<div class="section" id="community">
+<span id="id1"></span><h2>Community<a class="headerlink" href="#community" title="Permalink to this headline">¶</a></h2>
+<p>Schematics was created in Brooklyn, NY by <a class="reference external" href="http://j2labs.io">James Dennis</a>.
+Since then, the code has been worked on by folks from around the world.  If you
+have ideas, we encourage you to share them!</p>
+<p>Special thanks to <a class="reference external" href="http://hackerschool.com">Hacker School</a>, <a class="reference external" href="http://www.plainvanilla.is/">Plain Vanilla</a>, <a class="reference external" href="http://quantopian.com">Quantopian</a>, <a class="reference external" href="http://apple.com">Apple</a>, <a class="reference external" href="http://jhu.edu">Johns Hopkins University</a>, and
+everyone who has contributed to Schematics.</p>
+<div class="section" id="bugs-features">
+<h3>Bugs &amp; Features<a class="headerlink" href="#bugs-features" title="Permalink to this headline">¶</a></h3>
+<p>We track bugs, feature requests, and documentation requests with <a class="reference external" href="https://github.com/j2labs/schematics/issues">Github Issues</a>.</p>
+</div>
+<div class="section" id="mailing-list">
+<h3>Mailing list<a class="headerlink" href="#mailing-list" title="Permalink to this headline">¶</a></h3>
+<p>We discuss the future of Schematics and upcoming changes in detail on
+<a class="reference external" href="http://groups.google.com/group/schematics-dev">schematics-dev</a>.</p>
+<p>If you&#8217;ve read the documentation and still haven&#8217;t found the answer you&#8217;re
+looking for, you should reach out to us here too.</p>
+</div>
+<div class="section" id="contributing">
+<h3>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h3>
+<p>If you&#8217;re interested in contributing code or documentation to Schematics,
+please visit the <a class="reference internal" href="development.html"><em>Developer&#8217;s Guide</em></a> for instructions.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Schematics</a><ul>
+<li><a class="reference internal" href="#about">About</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#what-s-with-the-fork">What&#8217;s with the fork?</a></li>
+<li><a class="reference internal" href="#installing">Installing</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a><ul>
+<li><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development">Development</a></li>
+<li><a class="reference internal" href="#community">Community</a><ul>
+<li><a class="reference internal" href="#bugs-features">Bugs &amp; Features</a></li>
+<li><a class="reference internal" href="#mailing-list">Mailing list</a></li>
+<li><a class="reference internal" href="#contributing">Contributing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="usage/types.html"
+                        title="next chapter">Types</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="usage/types.html" title="Types"
+             >next</a> |</li>
+        <li><a href="#">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013 j2labs.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

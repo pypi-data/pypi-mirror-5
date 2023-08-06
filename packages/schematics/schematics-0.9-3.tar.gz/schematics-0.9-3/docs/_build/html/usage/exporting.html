@@ -1,0 +1,433 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Exporting &mdash; Schematics 0.9.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Schematics 0.9.2 documentation" href="../index.html" />
+    <link rel="next" title="Importing" href="importing.html" />
+    <link rel="prev" title="Models" href="models.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="importing.html" title="Importing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Models"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="exporting">
+<span id="id1"></span><h1>Exporting<a class="headerlink" href="#exporting" title="Permalink to this headline">¶</a></h1>
+<p>To export data is to go from the Schematics representation of data to some
+other form.  It&#8217;s also possible you want to adjust some things along the way,
+such as skipping over some fields or providing empty values for missing fields.</p>
+<p>The general mechanism for data export is to call a function on every field in
+the model.  The function probably converts the field&#8217;s value to some other
+format, but you can easily modify it.</p>
+<p>We&#8217;ll use the following model for the examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">schematics.models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">schematics.types</span> <span class="kn">import</span> <span class="n">StringType</span><span class="p">,</span> <span class="n">DateTimeType</span>
+<span class="kn">from</span> <span class="nn">schematics.transforms</span> <span class="kn">import</span> <span class="n">blacklist</span>
+
+<span class="k">class</span> <span class="nc">Movie</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">director</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">release_date</span> <span class="o">=</span> <span class="n">DateTimeType</span>
+    <span class="n">personal_thoughts</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="k">class</span> <span class="nc">Options</span><span class="p">:</span>
+        <span class="n">roles</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;public&#39;</span><span class="p">:</span> <span class="n">blacklist</span><span class="p">(</span><span class="s">&#39;personal_thoughts&#39;</span><span class="p">)}</span>
+</pre></div>
+</div>
+<div class="section" id="terminology">
+<span id="exporting-terminology"></span><h2>Terminology<a class="headerlink" href="#terminology" title="Permalink to this headline">¶</a></h2>
+<p>To <cite>serialize</cite> data is to convert from the way it&#8217;s represented in Schematics
+to some other form.  That might be a reduction of the <tt class="docutils literal"><span class="pre">Model</span></tt> into a
+<tt class="docutils literal"><span class="pre">dict</span></tt>, but it might also be more complicated.</p>
+<p>A field can be serialized if it is an instance of <tt class="docutils literal"><span class="pre">BaseType</span></tt> or if a function
+is wrapped with the <tt class="docutils literal"><span class="pre">&#64;serializable</span></tt> decorator.</p>
+</div>
+<div class="section" id="converting-data">
+<span id="exporting-converting-data"></span><h2>Converting Data<a class="headerlink" href="#converting-data" title="Permalink to this headline">¶</a></h2>
+<p>To export data is basically to convert from one form to another.  Schematics
+can convert data into simple Python types or a langauge agnostic format.  We
+refer to the native serialization as <cite>to_native</cite>, but we refer to the language
+agnostic format as <cite>primitive</cite>, since it has removed all dependencies on
+Python.</p>
+<div class="section" id="native-types">
+<span id="exporting-native-types"></span><h3>Native Types<a class="headerlink" href="#native-types" title="Permalink to this headline">¶</a></h3>
+<p>The fields in a model attempt to use the best Python representation of data
+whenever possible.  For example, the DateTimeType will use Python&#8217;s
+<tt class="docutils literal"><span class="pre">datetime.datetime</span></tt> module.</p>
+<p>You can reduce a model into the native Python types by calling <tt class="docutils literal"><span class="pre">to_native</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">trainspotting</span> <span class="o">=</span> <span class="n">Trainspotting</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trainspotting</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">u&#39;Trainspotting&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trainspotting</span><span class="o">.</span><span class="n">director</span> <span class="o">=</span> <span class="s">u&#39;Danny Boyle&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trainspotting</span><span class="o">.</span><span class="n">release_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1996</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trainspotting</span><span class="o">.</span><span class="n">personal_thoughts</span> <span class="o">=</span> <span class="s">&#39;This movie was great!&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trainspotting</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+<span class="go">{</span>
+<span class="go">  &#39;name&#39;: u&#39;Trainspotting&#39;,</span>
+<span class="go">  &#39;director&#39;: u&#39;Danny Boyle&#39;,</span>
+<span class="go">  &#39;release_date&#39;: datetime.datetime(1996, 7, 19, 0, 0),</span>
+<span class="go">  &#39;personal_thoughts&#39;: &#39;This movie was great!&#39;</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="primitive-types">
+<span id="exporting-primitive-types"></span><h3>Primitive Types<a class="headerlink" href="#primitive-types" title="Permalink to this headline">¶</a></h3>
+<p>To present data to clients we have the <tt class="docutils literal"><span class="pre">Model.to_primitive</span></tt> method. Default
+behavior is to output the same data you would need to reproduce the model in its
+current state.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">trainspotting</span><span class="o">.</span><span class="n">to_primitive</span><span class="p">()</span>
+<span class="go">{</span>
+<span class="go">  &#39;name&#39;: u&#39;Trainspotting&#39;,</span>
+<span class="go">  &#39;director&#39;: u&#39;Danny Boyle&#39;,</span>
+<span class="go">  &#39;release_date&#39;: &#39;1996-07-19T00:00:00.000000&#39;,</span>
+<span class="go">  &#39;personal_thoughts&#39;: &#39;This movie was great!&#39;</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+<p>Great.  We got the primitive data back.  It would be easy to convert to JSON
+from here.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">json</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">trainspotting</span><span class="o">.</span><span class="n">to_primitive</span><span class="p">())</span>
+<span class="go">&#39;{</span>
+<span class="go">   &quot;name&quot;: &quot;Trainspotting&quot;,</span>
+<span class="go">   &quot;director&quot;: &quot;Danny Boyle&quot;,</span>
+<span class="go">   &quot;release_date&quot;: &quot;1996-07-19T00:00:00.000000&quot;,</span>
+<span class="go">   &quot;personal_thoughts&quot;: &quot;This movie was great!&quot;</span>
+<span class="go"> }&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="compound-types">
+<span id="exporting-compound-types"></span><h2>Compound Types<a class="headerlink" href="#compound-types" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s complicate things and observe what happens with data exporting.  First,
+we&#8217;ll define a collection which will have a list of <tt class="docutils literal"><span class="pre">Movie</span></tt> instances.</p>
+<p>First, let&#8217;s instantiate another movie.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">total_recall</span> <span class="o">=</span> <span class="n">Movie</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">total_recall</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">u&#39;Total Recall&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">total_recall</span><span class="o">.</span><span class="n">director</span> <span class="o">=</span> <span class="s">u&#39;Paul Verhoeven&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">total_recall</span><span class="o">.</span><span class="n">release_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1990</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">total_recall</span><span class="o">.</span><span class="n">personal_thoughts</span> <span class="o">=</span> <span class="s">&#39;Old classic.  Still love it.&#39;</span>
+</pre></div>
+</div>
+<p>Now, let&#8217;s define a collection, which has a list of movies in it.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">schematics.types.compound</span> <span class="kn">import</span> <span class="n">ListType</span><span class="p">,</span> <span class="n">ModelType</span>
+
+<span class="k">class</span> <span class="nc">Collection</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">movies</span> <span class="o">=</span> <span class="n">ListType</span><span class="p">(</span><span class="n">ModelType</span><span class="p">(</span><span class="n">Movie</span><span class="p">))</span>
+    <span class="n">notes</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="k">class</span> <span class="nc">Options</span><span class="p">:</span>
+        <span class="n">roles</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;public&#39;</span><span class="p">:</span> <span class="n">blacklist</span><span class="p">(</span><span class="s">&#39;notes&#39;</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p>Let&#8217;s instantiate a collection.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">favorites</span> <span class="o">=</span> <span class="n">Collection</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">favorites</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;My favorites&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">favorites</span><span class="o">.</span><span class="n">notes</span> <span class="o">=</span> <span class="s">&#39;These are some of my favorite movies&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">favorites</span><span class="o">.</span><span class="n">movies</span> <span class="o">=</span> <span class="p">[</span><span class="n">trainspotting</span><span class="p">,</span> <span class="n">total_recall</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Here is what happens when we call <tt class="docutils literal"><span class="pre">to_primitive()</span></tt> on it.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">favorites</span><span class="o">.</span><span class="n">to_primitive</span><span class="p">()</span>
+<span class="go">{</span>
+<span class="go">    &#39;notes&#39;: &#39;These are some of my favorite movies&#39;,</span>
+<span class="go">    &#39;name&#39;: &#39;My favorites&#39;,</span>
+<span class="go">    &#39;movies&#39;: [{</span>
+<span class="go">        &#39;name&#39;: u&#39;Trainspotting&#39;,</span>
+<span class="go">        &#39;director&#39;: u&#39;Danny Boyle&#39;,</span>
+<span class="go">        &#39;personal_thoughts&#39;: &#39;This movie was great!&#39;,</span>
+<span class="go">        &#39;release_date&#39;: &#39;1996-07-19T00:00:00.000000&#39;</span>
+<span class="go">    }, {</span>
+<span class="go">        &#39;name&#39;: u&#39;Total Recall&#39;,</span>
+<span class="go">        &#39;director&#39;: u&#39;Paul Verhoeven&#39;,</span>
+<span class="go">        &#39;personal_thoughts&#39;: &#39;Old classic.  Still love it.&#39;,</span>
+<span class="go">        &#39;release_date&#39;: &#39;1990-06-01T00:00:00.000000&#39;</span>
+<span class="go">    }]</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="customizing-output">
+<span id="exporting-customizing-output"></span><h2>Customizing Output<a class="headerlink" href="#customizing-output" title="Permalink to this headline">¶</a></h2>
+<p>Schematics offers many ways to customize the behavior of serilaizataion</p>
+<div class="section" id="roles">
+<span id="exporting-roles"></span><h3>Roles<a class="headerlink" href="#roles" title="Permalink to this headline">¶</a></h3>
+<p>Roles offer a way to specify whether or not a field should be skipped during
+export.  There are many reasons this might be desirable, such as access
+permissions or to not serialize more data than absolutely necessary.</p>
+<p>Roles are implemented as either white lists or black lists where the members of
+the list are field names.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">blacklist</span><span class="p">(</span><span class="s">&#39;private_field&#39;</span><span class="p">,</span> <span class="s">&#39;another_private_field&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Imagine we are sending our movie instance to a random person on the Internet.
+We probably don&#8217;t want to share our personal thoughts.  Recall earlier that we
+added a role called <tt class="docutils literal"><span class="pre">public</span></tt> and gave it a blacklist with
+<tt class="docutils literal"><span class="pre">personal_thoughts</span></tt> listed.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Movie</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">personal_thoughts</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="o">...</span>
+    <span class="k">class</span> <span class="nc">Options</span><span class="p">:</span>
+        <span class="n">roles</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;public&#39;</span><span class="p">:</span> <span class="n">blacklist</span><span class="p">(</span><span class="s">&#39;personal_thoughts&#39;</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p>This is what it looks like to use the role, which should simply remove
+<tt class="docutils literal"><span class="pre">personal_thoughts</span></tt> from the export.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">movie</span><span class="o">.</span><span class="n">to_primitive</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="s">&#39;public&#39;</span><span class="p">)</span>
+<span class="go">{</span>
+<span class="go">    &#39;name&#39;: u&#39;Trainspotting&#39;,</span>
+<span class="go">    &#39;director&#39;: u&#39;Danny Boyle&#39;,</span>
+<span class="go">    &#39;release_date&#39;: &#39;1996-07-19T00:00:00.000000&#39;</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+<p>This works for compound types too, such as the list of movies in our
+<tt class="docutils literal"><span class="pre">Collection</span></tt> model above.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Collection</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">notes</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="o">...</span>
+    <span class="k">class</span> <span class="nc">Options</span><span class="p">:</span>
+        <span class="n">roles</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;public&#39;</span><span class="p">:</span> <span class="n">blacklist</span><span class="p">(</span><span class="s">&#39;notes&#39;</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p>We expect the <tt class="docutils literal"><span class="pre">personal_thoughts</span></tt> field to removed from the movie data and we
+also expect the <tt class="docutils literal"><span class="pre">notes</span></tt> field to be removed from the collection data.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">favorites</span><span class="o">.</span><span class="n">to_primitive</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="s">&#39;public&#39;</span><span class="p">)</span>
+<span class="go">{</span>
+<span class="go">    &#39;name&#39;: &#39;My favorites&#39;,</span>
+<span class="go">    &#39;movies&#39;: [{</span>
+<span class="go">        &#39;name&#39;: u&#39;Trainspotting&#39;,</span>
+<span class="go">        &#39;director&#39;: u&#39;Danny Boyle&#39;,</span>
+<span class="go">        &#39;release_date&#39;: &#39;1996-07-19T00:00:00.000000&#39;</span>
+<span class="go">    }, {</span>
+<span class="go">        &#39;name&#39;: u&#39;Total Recall&#39;,</span>
+<span class="go">        &#39;director&#39;: u&#39;Paul Verhoeven&#39;,</span>
+<span class="go">        &#39;release_date&#39;: &#39;1990-06-01T00:00:00.000000&#39;</span>
+<span class="go">    }]</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="serializable">
+<span id="exporting-serializable"></span><h3>Serializable<a class="headerlink" href="#serializable" title="Permalink to this headline">¶</a></h3>
+<p>Earlier we mentioned a <tt class="docutils literal"><span class="pre">&#64;serializable</span></tt> decorator.  You can write a function
+that will produce a value used during serialization with a field name matching
+the function name.</p>
+<p>That looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="o">...</span>
+<span class="kn">from</span> <span class="nn">schematics.types.serializable</span> <span class="kn">import</span> <span class="n">serializable</span>
+
+<span class="k">class</span> <span class="nc">Song</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">URLType</span><span class="p">()</span>
+
+    <span class="nd">@serializable</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">u&#39;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is what it looks like to use it.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">song</span> <span class="o">=</span> <span class="n">Song</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">artist</span> <span class="o">=</span> <span class="s">&#39;Fiona Apple&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;Werewolf&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="s">&#39;http://www.youtube.com/watch?v=67KGSJVkix0&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">id</span>
+<span class="go">&#39;Fiona Apple/Werewolf&#39;</span>
+</pre></div>
+</div>
+<p>Or here:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+<span class="go">{</span>
+<span class="go">    &#39;id&#39;: u&#39;Fiona Apple/Werewolf&#39;,</span>
+<span class="go">    &#39;artist&#39;: u&#39;Fiona Apple&#39;</span>
+<span class="go">    &#39;name&#39;: u&#39;Werewolf&#39;,</span>
+<span class="go">    &#39;url&#39;: u&#39;http://www.youtube.com/watch?v=67KGSJVkix0&#39;,</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="serialized-name">
+<span id="exporting-serialized-name"></span><h3>Serialized Name<a class="headerlink" href="#serialized-name" title="Permalink to this headline">¶</a></h3>
+<p>There are times when you have one name for a field in one place and another
+name for it somewhere else.  Schematics tries to help you by letting you
+customize the field names used during serialization.</p>
+<p>That looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">(</span><span class="n">serialized_name</span><span class="o">=</span><span class="s">&#39;person_name&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Notice the effect it has on serialization.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;Ben Weinman&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+<span class="go">{&#39;person_name&#39;: u&#39;Ben Weinman&#39;}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="serialize-when-none">
+<span id="exporting-serialize-when-none"></span><h3>Serialize When None<a class="headerlink" href="#serialize-when-none" title="Permalink to this headline">¶</a></h3>
+<p>If a value is not required and doesn&#8217;t have a value, it will serialize with a
+None value by default.  This can be disabled.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">song</span> <span class="o">=</span> <span class="n">Song</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+<span class="go">{&#39;url&#39;: None, &#39;name&#39;: None, &#39;artist&#39;: None}</span>
+</pre></div>
+</div>
+<p>You can disable at the field level like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Song</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">(</span><span class="n">serialize_when_none</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>And this produces the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Song</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+<span class="go">{&#39;artist&#39;: None}</span>
+</pre></div>
+</div>
+<p>Or you can disable it at the class level:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Song</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">StringType</span><span class="p">()</span>
+    <span class="k">class</span> <span class="nc">Options</span><span class="p">:</span>
+        <span class="n">serialize_when_none</span><span class="o">=</span><span class="bp">False</span>
+</pre></div>
+</div>
+<p>Using it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Song</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="more-information">
+<h4>More Information<a class="headerlink" href="#more-information" title="Permalink to this headline">¶</a></h4>
+<p>To learn more about <strong>Exporting</strong>, visit the <a class="reference internal" href="../api/transforms.html#api-doc-transforms"><em>Transforms API</em></a></p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Exporting</a><ul>
+<li><a class="reference internal" href="#terminology">Terminology</a></li>
+<li><a class="reference internal" href="#converting-data">Converting Data</a><ul>
+<li><a class="reference internal" href="#native-types">Native Types</a></li>
+<li><a class="reference internal" href="#primitive-types">Primitive Types</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#compound-types">Compound Types</a></li>
+<li><a class="reference internal" href="#customizing-output">Customizing Output</a><ul>
+<li><a class="reference internal" href="#roles">Roles</a></li>
+<li><a class="reference internal" href="#serializable">Serializable</a></li>
+<li><a class="reference internal" href="#serialized-name">Serialized Name</a></li>
+<li><a class="reference internal" href="#serialize-when-none">Serialize When None</a><ul>
+<li><a class="reference internal" href="#more-information">More Information</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="models.html"
+                        title="previous chapter">Models</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="importing.html"
+                        title="next chapter">Importing</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/usage/exporting.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="importing.html" title="Importing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Models"
+             >previous</a> |</li>
+        <li><a href="../index.html">Schematics 0.9.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013 j2labs.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
