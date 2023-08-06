@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkAction" id="aboutAction">
+    <property name="label" translatable="yes">_About</property>
+    <property name="tooltip" translatable="yes">Information about MovieList</property>
+    <property name="stock_id">gtk-about</property>
+    <signal name="activate" handler="on_aboutAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="addAction">
+    <property name="label" translatable="yes">_Add</property>
+    <property name="tooltip" translatable="yes">Add a new movie or series</property>
+    <property name="stock_id">gtk-add</property>
+    <signal name="activate" handler="on_addAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="copyAction">
+    <property name="label" translatable="yes">_Copy</property>
+    <property name="tooltip" translatable="yes">Copy a movie or series</property>
+    <property name="stock_id">gtk-copy</property>
+    <signal name="activate" handler="on_copyAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="deleteAction">
+    <property name="label" translatable="yes">_Delete</property>
+    <property name="tooltip" translatable="yes">Delete a movie or series</property>
+    <property name="stock_id">gtk-delete</property>
+    <signal name="activate" handler="on_deleteAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="editAction">
+    <property name="label" translatable="yes">_Edit</property>
+    <property name="tooltip" translatable="yes">Edit a movie or series</property>
+    <property name="stock_id">gtk-edit</property>
+    <signal name="activate" handler="on_editAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="fileNewAction">
+    <property name="label" translatable="yes">_New</property>
+    <property name="tooltip" translatable="yes">Start  a new Movie List</property>
+    <property name="stock_id">gtk-new</property>
+    <signal name="activate" handler="on_fileNewAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="fileOpenAction">
+    <property name="label" translatable="yes">_Open</property>
+    <property name="tooltip" translatable="yes">Open an existing Movie List file.</property>
+    <property name="stock_id">gtk-open</property>
+    <signal name="activate" handler="on_fileOpenAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="filePrintAction">
+    <property name="label" translatable="yes">Print</property>
+    <property name="tooltip" translatable="yes">Print the Movie List</property>
+    <property name="stock_id">gtk-print</property>
+    <signal name="activate" handler="on_filePrintAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="fileQuitAction">
+    <property name="label" translatable="yes">_Quit</property>
+    <property name="tooltip" translatable="yes">Exit the application.</property>
+    <property name="stock_id">gtk-quit</property>
+    <signal name="activate" handler="on_fileQuitAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="fileSaveAction">
+    <property name="label" translatable="yes">_Save</property>
+    <property name="tooltip" translatable="yes">Save the Movie List to the same file.</property>
+    <property name="stock_id">gtk-save</property>
+    <signal name="activate" handler="on_fileSaveAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="fileSaveAsAction">
+    <property name="label" translatable="yes">Save _As</property>
+    <property name="tooltip" translatable="yes">Save Movie List in a new file.</property>
+    <property name="stock_id">gtk-save-as</property>
+    <signal name="activate" handler="on_fileSaveAsAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="importAction">
+    <property name="label" translatable="yes">_Import</property>
+    <property name="tooltip" translatable="yes">Import csv data</property>
+    <property name="stock_id">gtk-convert</property>
+    <signal name="activate" handler="on_importAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="playAction">
+    <property name="label" translatable="yes">_Play Movie</property>
+    <property name="short_label" translatable="yes">_Play</property>
+    <property name="tooltip" translatable="yes">Play the selected movie</property>
+    <property name="stock_id">gtk-media-play</property>
+    <signal name="activate" handler="on_playAction_activate" swapped="no"/>
+  </object>
+  <object class="GtkTreeStore" id="movieTreeStore">
+    <columns>
+      <!-- column-name Title -->
+      <column type="gchararray"/>
+      <!-- column-name Date -->
+      <column type="gchararray"/>
+      <!-- column-name Director -->
+      <column type="gchararray"/>
+      <!-- column-name Duration -->
+      <column type="gchararray"/>
+      <!-- column-name Stars -->
+      <column type="gchararray"/>
+      <!-- column-name Genre -->
+      <column type="gchararray"/>
+      <!-- column-name Media -->
+      <column type="gchararray"/>
+      <!-- column-name Series -->
+      <column type="gboolean"/>
+    </columns>
+  </object>
+  <object class="GtkTreeModelFilter" id="movieTreeModelFilter">
+    <property name="child_model">movieTreeStore</property>
+  </object>
+  <object class="GtkTreeModelSort" id="movieTreeModelSort">
+    <property name="model">movieTreeModelFilter</property>
+  </object>
+  <object class="GtkWindow" id="window">
+    <property name="can_focus">False</property>
+    <signal name="destroy" handler="on_window_destroy" swapped="no"/>
+    <signal name="check-resize" handler="on_window_check_resize" swapped="no"/>
+    <child>
+      <object class="GtkBox" id="box">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkMenuBar" id="menubar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkMenuItem" id="fileMenuItem">
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">File utilities</property>
+                <property name="label" translatable="yes">_File</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="fileMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="fileNewImageMenuItem">
+                        <property name="related_action">fileNewAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="fileOpenImageMenuItem">
+                        <property name="related_action">fileOpenAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="fileSaveImageMenuItem">
+                        <property name="related_action">fileSaveAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="fileSaveAsImageMenuItem">
+                        <property name="related_action">fileSaveAsAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="fileQuitImageMenuItem">
+                        <property name="related_action">fileQuitAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="editMenuItem">
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Interact with the  movie entries</property>
+                <property name="label" translatable="yes">_Movie</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="editMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="editPlayImageMenuItem">
+                        <property name="related_action">playAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="separatormenuitem2">
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="editAddImageMenuItem">
+                        <property name="related_action">addAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="editCopyImageMenuItem">
+                        <property name="related_action">copyAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="editEditImageMenuItem">
+                        <property name="related_action">editAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="editDeleteImageMenuItem">
+                        <property name="related_action">deleteAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="toolsMenuItem">
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Tools for manipulating data, import/export	</property>
+                <property name="label" translatable="yes">_Tools</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="toolsMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="toolsImportImageMenuItem">
+                        <property name="related_action">importAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Import CSV data</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="helpMenuItem">
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Information</property>
+                <property name="label" translatable="yes">_Help</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="helpMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="helpAboutImageMenuItem">
+                        <property name="related_action">aboutAction</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkToolbar" id="toolbar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="toolbar_style">icons</property>
+            <child>
+              <object class="GtkToolButton" id="newFileButton">
+                <property name="related_action">fileNewAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">fileNewAction</property>
+                <property name="label" translatable="yes">New</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="openFileButton">
+                <property name="related_action">fileOpenAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">fileOpenAction</property>
+                <property name="label" translatable="yes">Open</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="saveFileButton">
+                <property name="related_action">fileSaveAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">fileSaveAction</property>
+                <property name="label" translatable="yes">Save</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="saveAsFileButton">
+                <property name="related_action">fileSaveAsAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">fileSaveAsAction</property>
+                <property name="label" translatable="yes">Save As</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="printFileButton">
+                <property name="related_action">filePrintAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">filePrintAction</property>
+                <property name="label" translatable="yes">Print</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="separator1">
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="addMovieButton">
+                <property name="related_action">addAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">addAction</property>
+                <property name="label" translatable="yes">Add Movie</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="copyMovieButton">
+                <property name="related_action">copyAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">copyAction</property>
+                <property name="label" translatable="yes">Copy Movie</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="editMovieButton">
+                <property name="related_action">editAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">editAction</property>
+                <property name="label" translatable="yes">Edit Movie</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="deleteMovieButton">
+                <property name="related_action">deleteAction</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="related_action">deleteAction</property>
+                <property name="label" translatable="yes">Delete Movie</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="separator2">
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolItem" id="filterMovieContainer">
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <child>
+                  <object class="GtkEntry" id="filterMovieEntry">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="invisible_char">•</property>
+                    <property name="primary_icon_stock">gtk-find</property>
+                    <property name="placeholder_text">Filter Text</property>
+                    <signal name="changed" handler="on_filterMovieEntry_changed" swapped="no"/>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="scrolledwindow">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
+            <property name="min_content_width">500</property>
+            <property name="min_content_height">300</property>
+            <child>
+              <object class="GtkTreeView" id="movieTreeView">
+                <property name="width_request">500</property>
+                <property name="height_request">300</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="vscroll_policy">natural</property>
+                <property name="model">movieTreeModelSort</property>
+                <property name="expander_column">titleColumn</property>
+                <property name="reorderable">True</property>
+                <property name="level_indentation">6</property>
+                <signal name="button-press-event" handler="on_movieTreeView_button_press_event" object="editMenu" swapped="yes"/>
+                <child internal-child="selection">
+                  <object class="GtkTreeSelection" id="movieTreeSelection"/>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="titleColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">fixed</property>
+                    <property name="min_width">126</property>
+                    <property name="title" translatable="yes">Title</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">0</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="titleRenderer"/>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="dateColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">fixed</property>
+                    <property name="fixed_width">55</property>
+                    <property name="title" translatable="yes">Date</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">1</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="dateRenderer"/>
+                      <attributes>
+                        <attribute name="text">1</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="directorColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">fixed</property>
+                    <property name="min_width">75</property>
+                    <property name="title" translatable="yes">Director</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">2</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="directorRenderer"/>
+                      <attributes>
+                        <attribute name="text">2</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="durationColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">fixed</property>
+                    <property name="fixed_width">45</property>
+                    <property name="title" translatable="yes">Time</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">3</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="durationRenderer"/>
+                      <attributes>
+                        <attribute name="text">3</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="starsColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">fixed</property>
+                    <property name="min_width">150</property>
+                    <property name="title" translatable="yes">Stars</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">4</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="starsRenderer"/>
+                      <attributes>
+                        <attribute name="text">4</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="genreColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">fixed</property>
+                    <property name="min_width">75</property>
+                    <property name="title" translatable="yes">Genre</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">5</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="genreRenderer"/>
+                      <attributes>
+                        <attribute name="text">5</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mediaColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">fixed</property>
+                    <property name="min_width">75</property>
+                    <property name="title" translatable="yes">Media</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">6</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mediaRenderer"/>
+                      <attributes>
+                        <attribute name="text">6</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkStatusbar" id="statusbar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">2</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
