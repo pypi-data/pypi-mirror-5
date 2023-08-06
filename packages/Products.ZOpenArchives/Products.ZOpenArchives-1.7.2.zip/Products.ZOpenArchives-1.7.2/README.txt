@@ -1,0 +1,113 @@
+======
+README
+======
+
+Please read docs/OAIPaper.pdf to follow the initial goal of the project.
+
+For system installation read docs/Debian-Ubuntu_Install.txt.
+
+OAI Configuration
+=================
+
+Create an Exist connector
+-------------------------
+
+In the Plone root create an object 'eXist Database Adapter'.
+
+- Id : exist_2
+- Title : Exist v2 prod
+- eXist Version Number : 2.1
+- eXist Server Name : IP or domain name but not 127.0.0.1 nor localhost
+- eXist Port : 8080
+- Encoding : utf-8
+- Username : guest
+- Password : guest
+- Path to XMLRPC Server : /exist/xmlrpc
+
+
+Create an OAI Repository
+------------------------
+
+In the Plone root create an object 'Exist Open Archive Repository'.
+
+- Id : oaiPlanetterre
+- Title : OAI Repository Planete Terre
+- ExistDA : exist_2
+- Root collection : /db/planetterre/metadata
+
+Now you have to check the Namespaces configuration: lom, oai_dc.
+
+Here, we need to have a DublinCore output from LOM files. To configure that you go
+in 'Namespaces/oai_dc' and add an XLST filter to transform lom in DublinCore.
+Filters are match the remote IP (user IP) to a specific XSL transformation.
+In our case we want that all incoming IP use the same transformation.
+Go in the 'XSL filters' tab and add:
+
+- IP Mask : *
+- XSL Filter : xsl/lom2dc.xsl
+- No XSL filter associatied : No
+- Active Filer : Yes
+
+
+Create a collection set
+-----------------------
+
+In the Repository root go in 'setsStorage' and create an object 'Exist Open Archive Set'.
+After the creation you have to configure many fields:
+
+- Set name        : geologie
+- Set spec        : ensdgesco:planetterre
+- Set description : your team signature
+- Set XPath :
+  - generic filter                          : *
+  - generic filter on Thokavi               : contains(*, 'Tho')
+  - specific on some tags filter on Thokavi : contains(*:classification/*:taxonPath/*:source/*:string, 'Tho')
+- Set publication date : $md//*:contribute[contains(*:role/*:value,"publisher")]/*:date/*:dateTime
+
+
+Tesing OAI
+----------
+
+The base root for testing is the OAI repository: http://your.servername.io/oaiPlanetterre'.
+
+You can test following verbs:
+
+- ?verb=ListSets
+- ?verb=Identify
+- ?verb=ListMetadataFormats
+- ?verb=ListRecords&metadataPrefix=oai_dc
+- ?verb=ListRecords&from=2010-01-01&metadataPrefix=lom&set=ensdgesco:planetterre
+- ?verb=ListIdentifiers&metadataPrefix=lom&until=2009-01-01&set=ensdgesco:planetterre
+
+
+Create an harvester
+-------------------
+
+In the Plone root create an object 'Exist Open Archive Aggregator'.
+
+Check for parameters:
+
+- Id : a free id in the Plone root
+- Default update : daily, weekly or monthly
+- ExistDA Identifier : exist_2
+- Root OAI collection aggregator : an existing path in your exist database where to store harvested collections ('/db/harvest').
+
+
+After creation you have already 'Namespaces', 'Tokens' and 'setsStorage' in the folder. You need
+to edit the default namespaces to fix some values.
+
+In 'Namespaces' you have 'lom' and 'oai_dc'. Check the configuration.
+
+Click on the button 'Add Exist Open Archives Harvester':
+
+- Id        : unisciel
+- Title     : unisciel
+- Site Host : trouver.unisciel.fr
+- Site url  : /oaiUnisciel
+- OAI Set   : ensdgesco:CSP
+
+Other fields are optionnal, you can submit.
+
+Go in your new harvest collection and choose the 'Update' tab. You should see a list of sets available on the server.
+Click on the button 'Harvest now' to test your configuration.
+

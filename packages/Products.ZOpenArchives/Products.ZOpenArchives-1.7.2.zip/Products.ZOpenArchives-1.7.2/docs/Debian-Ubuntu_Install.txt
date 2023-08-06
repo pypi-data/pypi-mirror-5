@@ -1,0 +1,108 @@
+Installation for Debian/Wheezy and Ubuntu/Raring
+================================================
+
+Plone requirements
+------------------
+
+::
+
+  sudo apt-get install build-essential libssl-dev zlib1g-dev libjpeg-dev libxml2-dev libxslt1-dev libreadline6-dev readline-common wv poppler-utils
+
+
+User creation
+-------------
+
+You should not install plone as root, even in a sandbox:
+
+::
+
+  sudo adduser --disabled-password --quiet  ploneoai
+  sudo -H -u ploneoai -s /bin/bash
+  cd
+
+Get and install Plone
+---------------------
+
+Go on Plone download page to download the latest version:
+
+::
+
+  wget https://launchpad.net/plone/4.3/4.3.1/+download/Plone-4.3.1r1-UnifiedInstaller.tgz
+  tar zxf Plone-4.3.1r1-UnifiedInstaller.tgz
+  cd Plone-4.3.1r1-UnifiedInstaller/
+  ./install.sh --static-lxml --instance=site --clients=2 --target=/home/ploneoai/Plone-OAI-ZEO --build-python zeo
+
+It will give you the admin password:
+
+::
+
+  Username: admin
+  Password: xxxxxxxxxxxx
+
+Note that we choose an installation with ZEO and 2 clients.
+
+
+Post installation
+-----------------
+
+Exist server yet take the 8080 port. We need to edit the buildout.cfg file to modify zeo client port with the new range from 8101 to 8102.
+
+::
+
+  vim buildout.cfg
+  # Search for [client1] then [client2] to modify the http-address parameter.
+  # Save and exit
+  bin/buildout
+
+
+OAI Installation
+----------------
+
+in the buildout.cfg file add in the eggs variable:
+
+::
+
+  eggs =
+    ...
+    enslyon.existda
+    Products.ZOpenArchives
+
+
+In the end of the buildout.cfg file in the versions parts:
+
+::
+
+  [versions]
+  ...
+  enslyon.existda = 1.6
+  Products.ZOpenArchives = 1.7.2
+
+
+Then build and restart:
+
+::
+
+  bin/buildout
+  bin/plonectl restart
+
+You can create your site and add your OAI connectors.
+
+
+Development
+-----------
+
+::
+
+  vim develop.cfg
+  # find [sources] part and add your product repository
+  # Products.ZOpenArchives = hg ssh://hg@bitbucket.org/pratic/products.zopenarchives
+  bin/buildout -c develop.cfg
+  bin/plonectl restart
+
+
+To go back on the normal installation build without option:
+
+::
+
+  bin/buildout
+  bin/plonectl restart

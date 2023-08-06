@@ -1,0 +1,118 @@
+<dtml-var manage_page_header>
+
+<dtml-var manage_tabs>
+
+<br>
+<p>XSL filters applies when the repository delivers metadatas within this namespace</p>
+<p><font color="grey">
+- XSL Filters are ordered and we take the first one corresponding to the ip client address mask
+<br>
+- IP mask is a substring of the IP and all values are allowed. '*' is not an escape char but can be used single to represent all the ip address.
+<br>IP example:
+<li>193.48.  is like 193.48.*.*</li>
+<li>168.2.1  is like 168.2.1*.*</li>
+<li>*        is like *.*.*.*</li>
+</font></p>
+
+<form action="<dtml-var "absolute_url()">" method="POST">
+
+  
+<dtml-in "getXSLFilters(active=0)">
+  <dtml-if sequence-start>
+    <table>
+      <tr>
+        <th>&nbsp;</th>
+        <th>IP mask</th>
+        <th>XSL filter</th>
+        <th>no XSL filter</th>
+        <th>Active</th> 
+      </tr>
+  </dtml-if>
+  
+  <tr>
+    <td>
+      <input type="checkbox" name="ids:list" value="<dtml-var "_['sequence-item']['id']">">
+    </td>
+    <td>
+      <input type="text" name="<dtml-var "_['sequence-item']['id']">_ipmask" value="<dtml-var "_['sequence-item']['ipMask']">">
+    </td>
+    <td>
+      <font color="grey">xmldb:exist:///db/&nbsp;</font><input type="text" size="35" name="<dtml-var "_['sequence-item']['id']">_xslFilter" value="<dtml-var "_['sequence-item']['xslFilter']">">
+    </td>
+    <td>
+      <input type="checkbox" name="<dtml-var "_['sequence-item']['id']">_noXSL" value="1" <dtml-if "_['sequence-item'].get('noXSL', '0')=='1'">checked="true"</dtml-if>>
+    </td>
+    <td>
+      <input type="checkbox" name="<dtml-var "_['sequence-item']['id']">_actif" value="1" <dtml-if "_['sequence-item']['actif']=='1'">checked="true"</dtml-if>>
+    </td>
+  </tr>
+  <dtml-if sequence-end>
+    </table>
+    <span>
+      <input type="submit" value="Up" name="moveUp:method">
+      <input type="submit" value="Down" name="moveDown:method">
+    </span>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <span>
+      <input type="submit" value="Save" name="editFilters:method">
+      <input type="submit" value="Delete" name="delFilters:method">
+    </span>
+  </dtml-if>
+<dtml-else>
+  <tr>
+    <td collspan="4">
+      <p style="font-weight:bold;">No filters defined for this namespace</p>
+    </td>
+  </tr>
+</dtml-in>
+  
+<hr>
+
+<p>Add a new filter</p>
+
+<table>
+  <tr>
+    <td>IP mask</td>
+    <td><input type="text" value="" name="new_ipmask"></td>
+  </tr>
+  <tr>
+    <td>XSL Filter</td>
+    <td><font color="grey">xmldb:exist:///db/&nbsp;</font><input type="text" size="35" value="" name="new_xslFilter"></td>
+  </tr>
+  <tr>
+    <td>no XSL filter associated</td>
+    <td><input type="checkbox" value="1" name="new_noXSL"></td>
+  </tr>
+  <tr>
+    <td>Active filter</td>
+    <td><input type="checkbox" value="1" name="new_actif"></td>
+  </tr>
+  <tr>
+    <td collspan="2">
+      <input type="submit" value="Add top" name="addFilterTop:method">
+      <input type="submit" value="Add bottom" name="addFilterBottom:method">
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<p>Test this IP</p>
+
+<table>
+  <tr>
+    <td>IP test</td>
+    <td><input type="text" value="" name="ip2Test"></td>
+  </tr>
+  <tr>
+    <td collspan="2">
+      <input type="submit" value="Test" name="testIP:method">
+    </td>
+  </tr>
+</table>
+
+
+
+</form>
+
+<dtml-var manage_page_footer>

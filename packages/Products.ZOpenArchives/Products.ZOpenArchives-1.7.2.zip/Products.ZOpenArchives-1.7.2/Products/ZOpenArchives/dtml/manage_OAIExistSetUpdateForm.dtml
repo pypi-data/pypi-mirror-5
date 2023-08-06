@@ -1,0 +1,83 @@
+<dtml-var manage_page_header>
+
+<dtml-var manage_tabs>
+
+
+<p class="form-help">This is a set definition for the eXist OAI Server.</p>
+
+<form action="manage_OAIExistSetUpdate">
+
+<table cellspacing="0">
+<tr><th align="left" valign="top">Set Name:</th>
+<td><input name="setName" size=50 value="&dtml-get_setName;"></td>
+</tr>
+<tr >
+<td style="border-bottom:solid 1px grey;">&nbsp;</td>
+<td style="border-bottom:solid 1px grey;"><i>a short human-readable string naming the set</i></td>
+</tr>
+
+
+<tr><th align="left" valign="top" style="padding-top:6px;">Set spec:</th>
+<td style="padding-top:6px;"><input name="setSpec" size=50 value="&dtml-get_setSpec;"></td>
+</tr>
+<tr>
+<td style="border-bottom:solid 1px grey;">&nbsp;</td>
+<td style="border-bottom:solid 1px grey;"><i>a colon [:] separated list indicating the path from the root of the set hierarchy to the respective node. Each element in the list is a string consisting of any valid URI unreserved characters, which must not contain any colons [:]. Since a setSpec forms a unique identifier for the set within the repository, it must be unique for each set. Flat set organizations have only sets with setSpec that do not contain any colons [:].</i></td>
+</tr>
+
+<tr><th align="left" valign="top" style="padding-top:6px;">Set description:</th>
+<td style="padding-top:6px;">
+<textarea name="setDescription" cols="50" rows="10"><dtml-var "get_setDescription()"></textarea>
+</td>
+</tr>
+<tr>
+<td style="border-bottom:solid 1px grey;">&nbsp;</td>
+<td style="border-bottom:solid 1px grey;"><i>an optional and repeatable container that may hold community-specific XML-encoded data about the set; the accompanying Implementation Guidelines document provides suggestions regarding the usage of this container. Definde by the norme, the description must be a valid DC xml. You can leave this field empty as it's optional.</i></td>
+</tr>
+
+<tr><th align="left" valign="top" style="padding-top:6px;">Set XPath:</th>
+<td style="padding-top:6px;"><i>XQuery filter applied in function of the metadata prefix used<br>
+It will be used in this way inside the XQuery: let $mdSet := $md[<b>the xquery filter</b>]<br>
+Filter examples:<br>
+contains(*:identifier, 'http://monsite.fr')
+</i></td>
+</tr>
+<tr>
+<td style="border-bottom:solid 1px grey;">&nbsp;</td>
+
+<td style="padding-top:6px;border-bottom:solid 1px grey;">
+<dtml-in "get_myNamespaceStorage().objectValues('Exist Open Archive Namespace')">
+  <dtml-let dicoNS="_['sequence-item'].get_nsDictionary()">
+  <dtml-if sequence-start>
+    <table>
+  </dtml-if>
+    <tr>
+      <td>
+        <dtml-var "dicoNS['shortname']"> (<dtml-var "dicoNS['prefix']">) <dtml-var "dicoNS['prefix']">_xfilter
+      </td>
+      <td>
+        <input name="<dtml-var "dicoNS['prefix']">_xfilter" size=50 value="<dtml-var "get_setNSXPath(dicoNS['prefix'])">"> <dtml-var "testSetFilter(metadataPrefix=dicoNS['prefix'], setSpec=get_setSpec())">
+     </td>
+    </tr>
+  <dtml-if sequence-end>
+    </table>
+  </dtml-if>
+  </dtml-let>
+</dtml-in>
+</td>
+</tr>
+
+<tr><th align="left" valign="top" style="padding-top:6px;border-bottom:solid 1px grey;">Set Metadata Publication Date:</th>
+<td style="padding-top:6px;border-bottom:solid 1px grey;"><i>Template to find document metadata publication date.</i>
+<br/><input name="setPublicationDate" size=100 value="&dtml-get_setPublicationDate;">
+<br/><b>Example:</b>
+<br/><i>xs:dateTime(concat(string($md//lom:lifeCycle/lom:contribute[contains(lom:role/lom:value,"author") and position() = 1]/lom:date/lom:dateTime), 'T00:00:00Z'))</i>
+</td>
+</tr>
+
+<tr><td colspan=2 align="left" style="padding-top:6px;"><input type="submit" value="submit"></td></tr>
+</table>
+
+</form>
+
+<dtml-var manage_page_footer>
