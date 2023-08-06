@@ -1,0 +1,63 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="plone">
+<body>
+
+<metal:content-core fill-slot="main"
+            tal:define="refs context/getReferencedContent;
+                        plone_view context/@@plone;
+                        getIcon nocall:plone_view/getIcon;
+                        ">
+    <h1> 
+        <metal:field use-macro="python:context.widget('title', mode='view')">
+            Body text
+        </metal:field>
+    </h1>
+    <div tal:condition="not: refs" class="warning" i18n:translate="label_no_content_references_configured">No content references configured</div>
+    <table class="listing" tal:condition="refs">
+        <thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th>Type</th>
+                <th>Path</th>
+                <th>Title</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tal:loop repeat="ref refs">
+                <tr>
+                    <td tal:define="item_icon python:getIcon(ref['obj'])">
+                        <img tal:replace="structure item_icon/html_tag" />
+                    </td>
+                    <td>
+                        <span tal:replace="ref/portal_type" />
+                    </td>
+                    <td>
+                        <a tal:attributes="href ref/url" 
+                            tal:content="ref/relative_url"
+                        />
+                    </td>
+                    <td>
+                       <tal:if condition="ref/title">
+                           (<span tal:content="ref/title" />)
+                       </tal:if>
+                    </td>
+                    <td>
+                       <tal:if condition="ref/description">
+                           <div tal:content="target/description" class="formHelp" />
+                       </tal:if>
+                    </td>
+                </tr>
+            </tal:loop>
+        </tbody>
+    </table>
+</metal:content-core>
+
+</body>
+</html>
+
