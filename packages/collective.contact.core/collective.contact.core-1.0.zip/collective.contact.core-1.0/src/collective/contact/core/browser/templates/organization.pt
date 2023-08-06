@@ -1,0 +1,132 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="collective.contact.core">
+<body>
+
+<div metal:fill-slot="main">
+	<h1 tal:content="view/name"></h1>
+
+    <div id="type" class="field">
+         <label><tal:block i18n:translate="">Organization type</tal:block>:</label>
+         <span tal:content="view/type"
+               i18n:translate="" />
+    </div>
+
+    <div id="organizations" class="field" tal:condition="view/parent_organizations">
+        <label><tal:block i18n:translate="">Parent organizations</tal:block>:</label>
+        <ul>
+        <tal:block tal:repeat="organization view/parent_organizations">
+            <li><a tal:attributes="href organization/absolute_url">
+                <span tal:replace="organization/Title"
+                      i18n:translate="" />
+            </a></li>
+        </tal:block>
+        </ul>
+    </div>
+
+    <div class="field" tal:condition="view/email">
+        <label><tal:block i18n:translate="">Email</tal:block>:</label>
+        <span tal:content="view/email"
+              i18n:translate="" />
+    </div>
+
+    <div class="field" tal:condition="view/phone">
+        <label><tal:block i18n:translate="">Phone number</tal:block>:</label>
+        <span tal:content="view/phone"
+              i18n:translate="" />
+    </div>
+
+    <div class="field" tal:condition="view/cell_phone">
+        <label><tal:block i18n:translate="">Cell phone number</tal:block>:</label>
+        <span tal:content="view/cell_phone"
+              i18n:translate="" />
+    </div>
+
+    <div class="field" tal:condition="view/im_handle">
+        <label><tal:block i18n:translate="">IM handle</tal:block>:</label>
+        <span tal:content="view/im_handle"
+              i18n:translate="" />
+    </div>
+
+    <div id="address"
+         tal:replace="structure view/render_address" />
+
+    <div id="sub_organizations" class="field" tal:condition="view/sub_organizations">
+        <label><tal:block i18n:translate="">Organizations in this organization</tal:block>:</label>
+        <ul>
+        <tal:block tal:repeat="sub_org view/sub_organizations">
+            <li><a tal:attributes="href sub_org/getURL">
+                <span tal:replace="sub_org/Title"
+                      i18n:translate="" />
+            </a></li>
+        </tal:block>
+        </ul>
+    </div>
+
+    <div id="positions" class="field" tal:condition="view/positions">
+        <label><tal:block i18n:translate="">Positions in this organization</tal:block>:</label>
+        <ul>
+        <tal:block tal:repeat="position view/positions">
+            <li tal:define="held_positions position/get_held_positions|nothing">
+              <a tal:attributes="href position/absolute_url">
+                <span tal:replace="position/Title"
+                      i18n:translate=""></span></a><tal:semicolon i18n:translate="colon">:
+               </tal:semicolon><tal:person condition="held_positions">
+               <tal:block repeat="held_position held_positions">
+                 <a
+                   tal:define="person held_position/get_person"
+                   tal:attributes="href person/absolute_url">
+                   <span tal:replace="person/Title"
+                         i18n:translate="" />
+                 </a>
+               </tal:block>
+            </tal:person><tal:nobody condition="not:held_positions" i18n:translate="">Not assigned</tal:nobody>
+            </li>
+        </tal:block>
+        </ul>
+    </div>
+
+    <div id="other-contacts" class="field" tal:condition="view/othercontacts">
+        <label i18n:translate="">Other contacts in this organization:</label>
+        <ul>
+        <tal:block tal:repeat="contact view/othercontacts">
+            <li><a tal:attributes="href contact/absolute_url">
+                <span tal:replace="contact/Title"
+                      i18n:translate="" />
+            </a></li>
+        </tal:block>
+        </ul>
+    </div>
+
+    <tal:addnew
+           tal:define="ajax_load request/ajax_load|nothing"
+           tal:condition="python: not ajax_load and view.can_add">
+        <a href="@@add-contact" class="addnewcontactfromorganization"
+           i18n:translate=""
+           tal:attributes="href string:${context/absolute_url}/@@add-contact">
+          Create <tal:i18n i18n:name="name">Contact</tal:i18n></a>
+        <script tal:replace="structure view/addnew_script"></script>
+    </tal:addnew>
+
+    <tal:block tal:repeat="field view/ttw_fields">
+        <div class="field" tal:define="widget python: view.widgets[field]" tal:condition="widget/value">
+            <label><tal:block tal:content="python: widget.label" i18n:translate="" />:</label>
+            <span tal:content="structure widget/render" />
+        </div>
+    </tal:block>
+
+    <fieldset tal:repeat="group view/groups"
+              tal:attributes="id python:''.join((group.prefix, 'groups.', group.__name__)).replace('.', '-')">
+        <legend tal:content="group/label" />
+        <div class="field" tal:repeat="widget group/widgets/values">
+            <label tal:content="widget/label" />
+            <br />
+            <div tal:content="structure widget/render" />
+        </div>
+    </fieldset>
+
+</div>
+
+</body>
+</html>
