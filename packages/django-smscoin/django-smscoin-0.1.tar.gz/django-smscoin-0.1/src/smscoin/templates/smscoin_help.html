@@ -1,0 +1,38 @@
+{% load i18n %}
+<div id="ui" class="dropdown">
+  <select id="select_provider">
+    <option value="-">{% trans "Choose a country (provider)" %}</option>
+    {% for country_name, items in providers %}
+    {% if items|length > 1 or items.0.name %}
+    <optgroup label="{{ country_name }}">
+      {% for provider in items %}
+        <option value="{{ provider.pk }}">{{ provider.name }}</option>
+      {% endfor %}
+    </optgroup>
+    {% else %}
+    <option value="{{ items.0.pk }}">{{ country_name }}</option>
+    {% endif %}
+    {% endfor %}
+  </select>
+</div>
+
+{% for country_name, items in providers %}
+{% for provider in items %}
+  <div id="instructions_{{ provider.pk }}" class="instructions" style="display: none">
+    <p>{% trans "Send a message" %} <span class="message_text">{{ provider.prefix }} {{ key }}</span> {% trans "to the number" %} <span class="shortcode">{{ provider.number }}</span>.</p>
+    <p>{% trans "Cost of the communication" %}  — <span class="message_cost">{{ provider.price }} {{ provider.currency }} ({% if provider.vat %}{% trans "including VAT" %}{% else %}{% trans "not including VAT" %}{% endif %})</span>.</p>
+    <p class="notes">{{ provider.notice }}</p>
+  </div>
+{% endfor %}
+{% endfor %}
+
+<script type="text/javascript">
+function showInstructions() {
+	$(".instructions").hide();
+	$("#instructions_"+$(this).val()).show();
+}
+
+$(function(){
+	$("#select_provider").change(showInstructions);
+});
+</script>
