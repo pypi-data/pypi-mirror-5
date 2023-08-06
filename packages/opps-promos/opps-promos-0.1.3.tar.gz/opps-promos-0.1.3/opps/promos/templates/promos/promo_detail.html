@@ -1,0 +1,115 @@
+{% load images_tags endless %}
+
+ <a href="{% url 'promos:list_promos'%}">< All promos </a><br/>
+ Opps Promo Detail
+
+ <hr>
+
+{% if error %}
+    <div class="alert alert-error">
+      {{ error }}
+    </div>
+{% endif %}
+
+<h1>{{ promo.title }}</h1>
+<div>{{ promo.headline|safe }}</div>
+
+{% if promo.main_image %}
+<img src="{% image_url promo.main_image.image.url width=600  %}" width=600 />
+{% endif %}
+
+<h3> Join </h3>
+<div>{{ promo.description|safe }}</div>
+
+
+{# If user is not authenticated show login form #}
+{% if not request.user.is_authenticated %}
+
+    Don't you have an account? <a href="#"> Register </a><br />
+    Or Login <br/>
+    <form action="{% url "accounts:login" %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+        Email:
+        <input type="text" name="username" value="{{ email }}" /><br />
+        password:
+        <input type="password" name="password" value="" /><br />
+
+        <input type="submit" value="Log In" />
+    </form>
+
+    <a href="{% url "socialauth_begin" "facebook" %}?next={{ request.get_full_path }}">Connect with  Facebook </a><br />
+    <a href="{% url "accounts:password_reset" %}">Forgot</a> your password?
+
+{# user is authenticated, check if not answered yet #}
+{% elif not answered and not success %}
+
+    <form method="post" {% if promo.has_upload %} enctype="multipart/form-data" {% endif %}>
+        {% csrf_token %}
+        {% if promo.has_textfield %}
+        <div>
+            <label for="answer"> Your answer </label><br />
+            <textarea id="answer" name="answer" required></textarea>
+        </div>
+        {% endif %}
+
+        {% if promo.has_upload %}
+        <div>
+            <label for="answer"> Upload a file </label><br />
+            <input type="file" name="answer_file" id="answer_file" required />
+        </div>
+        {% endif %}
+
+        {% if promo.has_urlfield %}
+        <div>
+            <label for="answer"> Inform the media URL i.e: youtube.com/xxx </label><br />
+            <input type="text" name="answer_url" id="answer_url" required />
+        </div>
+        {% endif %}
+        <div>
+            <input type="checkbox" name="agree" value="1" id="agree" required />
+            <label for="agree">I agree with terms.</label>
+       </div>
+
+        <input type="submit" value="Join">
+    </form>
+
+{# just answered success message #}
+{% elif success %}
+
+Thanks for joining the promo!
+
+{# User already answered #}
+{% else %}
+
+ You already answered this promo
+
+{% endif %}
+
+<br />
+
+<a href="#" id="display-rules"> Rules </a>
+{# The link above should load the rules in a  modal #}
+<div id="rules-modal" style="display:none;">
+{{ promo.rules|safe }}
+</div>
+
+
+{%if promo.display_answers %}
+    <h2> Answers </h2>
+    {% paginate answers %}
+        {% for answer in answers %}
+
+          <div>
+            <p> {{ answer.answer }}</p>
+            <span> <strong>{{ answer.user.get_full_name }}</strong> in {{ answer.date_insert }}</span>
+          </div>
+
+        {% empty %}
+
+         No answers yet, be the first!
+
+        {% endfor %}
+
+    {% show_pages %}
+{% endif %}
