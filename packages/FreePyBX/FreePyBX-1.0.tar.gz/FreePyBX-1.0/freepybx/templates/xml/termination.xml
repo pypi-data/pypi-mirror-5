@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document type="freeswitch/xml"
+          xmlns:py="http://genshi.edgewall.org/"
+          xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+          xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+          xmlns="http://www.w3.org/1999/xhtml">
+<include>
+    <context name="public">
+        <extension name="unloop">
+            <condition field="$${unroll_loops}" expression="^true$$"/>
+            <condition field="$${sip_looped_call}" expression="^true$$">
+                <action application="deflect" data="$${destination_number}"/>
+            </condition>
+        </extension>
+        <!--
+        Tag anything pass thru here as an outside_call so you can make sure not
+        to create any routing loops based on the conditions that it came from
+        the outside of the switch.
+        -->
+        <!--<extension name="outside_call" continue="true">-->
+            <!--<condition>-->
+                <!--<action application="set" data="outside_call=true"/>-->
+                <!--<action application="export" data="RFC2822_DATE=$${strftime(%a, %d %b %Y %T %z)}"/>-->
+            <!--</condition>-->
+        <!--</extension>-->
+
+        <extension name="call_debug" continue="true">
+            <condition field="$${call_debug}" expression="^true$$" break="never">
+                <action application="info"/>
+            </condition>
+        </extension>
+
+        <extension name="Customer1">
+            <condition field="network_addr" expression="^(157\.238\.178\.130|157\.238\.178\.60)$$"/>
+            <condition field="destination_number" expression="^(\+1|1|01191)?(\d{6,20})$$">
+                <action application="ring_ready" />
+                <action application="export" data="context=157.238.178.130"/>
+                <action application="set" data="hangup_after_bridge=true"/>
+                <action application="set" data="continue_on_fail=true"/>
+                <action application="bridge" data="sofia/sbc/$$0@67.216.35.162"/>
+                <action application="bridge" data="sofia/sbc/$$0@64.136.174.30"/>
+            </condition>
+        </extension>
+
+        <extension name="Customer2">
+            <condition field="network_addr" expression="^(209\.222\.91\.85)$$"/>
+            <condition field="destination_number" expression="^(\+1|1|01191|011)?(\d{6,20})$$">
+                <action application="ring_ready" />
+                <action application="export" data="context=209.222.91.85"/>
+                <action application="set" data="hangup_after_bridge=true"/>
+                <action application="set" data="continue_on_fail=true"/>
+                <action application="bridge" data="sofia/sbc/$$0@67.216.35.162"/>
+                <action application="bridge" data="sofia/sbc/$$0@64.136.174.30"/>
+            </condition>
+        </extension>
+
+        <extension name="Customer3">
+            <condition field="network_addr" expression="^(199\.27\.244\.7|199\.27\.244\.9)$$"/>
+            <condition field="destination_number" expression="^(\+1|1|01191)?(\d{6,20})$$">
+                <action application="ring_ready" />
+                <action application="export" data="context=199.27.244.7"/>
+                <action application="set" data="hangup_after_bridge=true"/>
+                <action application="set" data="continue_on_fail=true"/>
+                <action application="bridge" data="sofia/sbc/$$0@67.216.35.162"/>
+                <action application="bridge" data="sofia/sbc/$$0@64.136.174.30"/>
+            </condition>
+        </extension>
+
+        <extension name="Customer4">
+            <condition field="network_addr" expression="^(109\.200\.11\.110)$$"/>
+            <condition field="destination_number" expression="^(\+1|1|01191)?(\d{6,20})$$">
+                <action application="ring_ready" />
+                <action application="export" data="context=109.200.11.110"/>
+                <action application="set" data="hangup_after_bridge=true"/>
+                <action application="set" data="continue_on_fail=true"/>
+                <action application="bridge" data="sofia/sbc/$$0@67.216.35.162"/>
+                <action application="bridge" data="sofia/sbc/$$0@64.136.174.30"/>
+            </condition>
+        </extension>
+
+        <py:for each="gw in c.term_customers">
+            <extension name="${gw.context}">
+                <condition field="network_addr" expression="^(${gw.escaped_ips})$$"/>
+                <condition field="destination_number" expression="^(\+1|${gw.pattern})?(\d{6,20})$$">
+                    <action application="ring_ready" />
+                    <action application="export" data="context=${gw.context}"/>
+                    <action application="set" data="hangup_after_bridge=true"/>
+                    <action application="set" data="continue_on_fail=true"/>
+                    <py:for each="ip in gw.term_gateway_ip_arr">
+                        <action application="bridge" data="sofia/sbc/$$0@${ip}"/>
+                    </py:for>
+                </condition>
+            </extension>
+        </py:for>
+
+        <extension name="no_match">
+            <condition field="destination_number" expression="^(.*)$$">
+                <action application="hangup" data="CALL_REJECTED"/>
+            </condition>
+        </extension>
+
+        <!--
+        You can place files in the public directory to get included.
+        -->
+        <!--
+        If you have made it this far lets challenge the caller and if they authenticate
+        lets try what they dialed in the default context. (commented out by default)
+        -->
+        <!--
+        <extension name="check_auth" continue="true">
+          <condition field="$${sip_authorized}" expression="^true$$" break="never">
+        <anti-action application="respond" data="407"/>
+          </condition>
+        </extension>
+
+        <extension name="transfer_to_default">
+          <condition>
+        <action application="transfer" data="$${destination_number} XML default"/>
+          </condition>
+        </extension>
+        -->
+    </context>
+</include>
+</document>
