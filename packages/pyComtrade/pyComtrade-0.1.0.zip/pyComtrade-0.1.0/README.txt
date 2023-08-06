@@ -1,0 +1,37 @@
+Description
+===============
+
+pyComtrade is a python module that provides you a transparent way for reading and writing oscillographic files stored in IEEE Comtrade format.
+
+Comtrade stands for COMmon format for Transient Data Exchange for power systems. It is a file format standardised by the IEEE that is used to store transient signals from Digital Fault Recorders, Oscillographs or Digital Protective Relays.
+
+pyContrade was created by Miguel Moreto at Federal Technological University of Parana - Brazil
+
+
+Feel free to use the module in your program. Don't forget that pyComtrade is licensed under the GNU version 3 license. For more info about this read the *COPYING.txt*.
+
+Install
+===============
+
+Binaries
+---------------
+
+Use the executables (win32 or win64). The binaries was generated for Python 2.7. If you have different version, install from source.
+
+From source (windows and linux)
+------------------------------- 
+
+Extract the source .zip file.
+
+Run::
+
+    python.exe setup.py install
+
+Usage
+===============
+
+Se **example1.py** at the source file.
+
+Thanks for using pyComtrade module.
+
+
