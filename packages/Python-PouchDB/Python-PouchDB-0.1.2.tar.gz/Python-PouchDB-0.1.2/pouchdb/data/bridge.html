@@ -1,0 +1,105 @@
+<html>
+	<script type='text/javascript'>
+		var objects = {};
+		var functions = {};
+		var functionCounter = 0;
+
+		function createCallback(id) {
+			return function() {
+				asyncMap(modifyArg, arguments, function (result) {
+					result.length = result._count;
+					var callbackArgs = toArray(result);
+					gate.callbackCalled(id, JSON.stringify(callbackArgs));
+				});
+			}
+		}
+
+		function asyncMap(func, data, callback) {
+			var result = {_count: 0};
+			var count = 0;
+			function createMapCallback(key) {
+				return function (item) {
+					result[key] = item;
+					result._count += 1;
+					if (count === result._count) {
+						callback(result);
+					}
+				};
+			}
+			for (var key in data) {
+				//setTimeOut so count gets time to be set to the correct
+				//value.
+				//
+				//currentKey because key doesn't have the same value
+				//anymore when the function is called (the loop has
+				//moved on).
+				count += 1;
+				setTimeout(function (currentKey) {
+					try {
+						func(data[currentKey], createMapCallback(currentKey));
+					} catch (e) {
+						//Just pass in undefined instead of crashing.
+						//
+						//(Context specific for Python-PouchDB):
+						//Most likely it's just an XHR object that
+						//generates an InvalidStateError while
+						//serializing some property of it that no user
+						//would ever want to access...
+						createMapCallback(currentKey)(undefined);
+					}
+				}, 0, key);
+			}
+			if (!count) {
+				callback(result);
+			}
+		}
+
+		function modifyArg(arg, callback) {
+			if (arg && arg.constructor === Blob) {
+				blobToBase64(arg, function (base64) {
+					callback({
+						type: arg.type,
+						data: base64
+					});
+				});
+			} else if (typeof arg === "object" && arg !== null && arg.constructor !== Array && arg.constructor !== Date) {
+				//recursion
+				asyncMap(modifyArg, arg, function (newArg) {
+					delete newArg._count;
+					callback(newArg);
+				});
+			} else if (typeof arg === "function") {
+				functionCounter += 1;
+				functions[functionCounter] = arg;
+				callback({
+					type: "_js-returned-function",
+					functionId: functionCounter
+				});
+			} else {
+				callback(arg);
+			}
+		}
+
+		function blobToBase64(blob, cb) {
+			var reader = new FileReader();
+			reader.onload = function() {
+				var dataUrl = reader.result;
+				var base64 = dataUrl.split(',')[1];
+				cb(base64);
+			};
+			reader.readAsDataURL(blob);
+		}
+
+		function toArray(arrayLike) {
+			var result = [];
+			for (var i = 0; i < arrayLike.length; i += 1) {
+				result.push(arrayLike[i]);
+			}
+			return result
+		}
+	</script>
+	<script type='text/javascript'>
+		/* pouchdb is inserted down here: */
+		%s
+	</script>
+</html>
