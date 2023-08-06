@@ -1,0 +1,48 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="producepublish">
+
+    <metal:fill fill-slot="main" tal:define="result view/debugAnchors">
+        <h1 i18n:translate="label_debug_anchors">Anchors</h1>
+        <div class="formHelp" i18n:translate="help_debug_anchors">
+            The anchor debug view display all internal anchors to tables,
+            images etc. for all documents.  This view does not serve any
+            particular usage and is considered for internal and debugging
+            purposes only.
+        </div>
+        <table class="listing" tal:condition="result" id="debug-anchors">
+            <thead>
+                <tr>
+                    <th i18n:translate="label_document">Document</th>
+                    <th i18n:translate="label_internal_links">Internal links</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tal:loop repeat="d result">
+                    <tr tal:attributes="class python: repeat['d'].even() and 'even' or 'odd'">
+                        <td>
+                            <a tal:attributes="href d/url" 
+                               tal:content="string:${d/title} (${d/id})" />
+                            <div class="formHelp" tal:content="d/description" />
+                        </td>
+                        <td>    
+                            <span tal:condition="not: d/links" i18n:translate="label_no_anchors_found">No anchors found</span>
+                            <ul>
+                                <li tal:repeat="link d/links">
+                                    <span tal:attributes="class python: link['found'] and 'link-found' or 'link-not-found'"
+                                          tal:content="link/text" />
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </tal:loop>
+            </tbody>
+        </table>
+        <a tal:attributes="href context/absolute_url" i18n:translate="label_back_to_conversion">Back to conversion folder</a>
+    </metal:fill>
+</html>

@@ -1,0 +1,96 @@
+<dl class="portlet portletPublishedContent"
+    i18n:domain="producepublish"
+    tal:define="portal context/portal_url/getPortalObject">
+
+    <dt class="portletHeader">
+        <span class="portletTopLeft"></span>
+        <span i18n:translate="label_publishedcontent_navigation">
+           Table of contents
+        </span>
+        <span class="portletTopRight"></span>
+    </dt>
+
+    <dd class="portletItem odd" tal:define="toc view/getTableOfContents">
+        <table tal:repeat="toc_item toc" tal:attributes="class toc_item/css_classes" >
+            <thead tal:condition="python: len(toc) > 1">
+                <tr>
+                    <th colspan="2" class="toc-document">
+                        <a tal:attributes="href toc_item/url"
+                            tal:content="toc_item/title" />
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr tal:repeat="row toc_item/links" class="top-entry">
+                    <td tal:condition="nothing" class="toc-index" tal:content="structure row/index" />
+                    <td tal:attributes="class string:toc-text-${row/level}">
+                        <a tal:attributes="href row/href"
+                           tal:content="structure row/text" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <tal:def define="files view/getPdfFiles">
+            <div class="pdf-files" tal:condition="files">
+                <div class="pdf-file" tal:repeat="brain view/getPdfFiles">
+                    <img tal:attributes="src string:${portal/absolute_url}/pdf_icon.gif" />
+                    <a target="_new" 
+                       tal:content="brain/Title"
+                       tal:attributes="href string:${brain/getURL}/download">
+                       PDF
+                   </a>
+                  (<span tal:replace="python: view.getObjSize(brain.getId)" />)
+                </div>
+            </div>
+        </tal:def>
+
+        <div class="epub" tal:condition="view/haveEPUB">
+            <a tal:attributes="href string:${view/folderURL}/index.epub">
+                <img tal:attributes="src string:${portal/absolute_url}/epub_icon.gif" />
+                <span i18n:translate="label_epub">EPUB </span>
+            </a>
+            (<span tal:replace="python: view.getObjSize('index.epub')" />)
+        </div>
+
+        <div class="s5" tal:condition="view/haveS5">
+            <a tal:attributes="href string:${view/folderURL}/index_s5.html">
+                <img src="++resource++zopyx.authoring/presentation.png" />
+                <span i18n:translate="label_presentation_mode">Presentation view</span>
+            </a>
+            &nbsp;
+            <a tal:attributes="href string:javascript:window.open('${view/folderURL}/index_s5.html', 'S5', 'type=fulLWindow, fullscreen, scrollbars=yes')">
+                [<span i18n:translate="label_fullscreen">fullscreen</span>]
+            </a>
+        </div>
+
+        <div class="download">
+            <a tal:attributes="href string:${view/folderURL}/@@download_all">
+                <img tal:attributes="src string:${portal/absolute_url}/zip_icon.gif" />
+                <span i18n:translate="label_download_all_zip">ZIP</span>
+            </a>
+        </div>
+
+        <div class="mailto">
+            <a id="mailto-overlay-link" tal:attributes="href string:${context/absolute_url}/sendto_form2">
+                <img tal:attributes="src string:${portal/absolute_url}/mail_icon.gif" />
+                <span i18n:translate="label_send_link">Send link</span>
+            </a>
+        </div>
+
+        <script type="text/javascript">
+        var $j = jQuery.noConflict();
+         $j(document).ready(function() {
+            $j('#mailto-overlay-link').each(function(i) {
+                var anchor = $j(this);
+                anchor.prepOverlay({
+                        subtype: 'ajax',
+                        width: '70%'
+                    }   
+                );  
+            }); 
+        });
+        </script>
+
+    </dd>
+</dl>

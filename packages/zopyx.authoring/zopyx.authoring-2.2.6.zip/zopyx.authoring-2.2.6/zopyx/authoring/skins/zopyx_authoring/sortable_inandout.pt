@@ -1,0 +1,219 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="plone">
+  <head><title></title></head>
+  <body>
+
+    <metal:view_macro define-macro="view">
+
+
+     <tal:block tal:condition="python:hasattr(field, 'relationship')">
+        
+      <tal:block  tal:define="targets python:context.getRefs(field.relationship)"
+                  tal:condition="targets">
+
+        <a href="#"
+           tal:define="obj python:targets[0]"
+           tal:condition="not:field/multiValued"
+           tal:attributes="href obj/absolute_url; class python:obj.portal_type.replace(' ', '_')"
+           tal:content="python:obj.Title() or obj.absolute_url(relative=1)">
+          Sole target object's title
+        </a>
+
+        <ul tal:condition="field/multiValued">
+          <li tal:repeat="obj targets">
+            <a href="#"
+               tal:attributes="href obj/absolute_url; class python:obj.portal_type.replace(' ', '_')"
+               tal:content="python:obj.Title() or obj.absolute_url(relative=1)">
+              Target Title
+            </a>
+          </li>
+        </ul>
+
+      </tal:block>
+     </tal:block>
+
+      <tal:block 
+            tal:condition="not:python:hasattr(field, 'relationship')"
+            tal:define="vocab python:field.Vocabulary(here);
+                        value python:accessor();
+                        display python:context.displayValue(vocab, value);"
+            tal:replace="structure display" />
+
+    </metal:view_macro>
+
+    <metal:define define-macro="edit">
+
+        <script type="text/javascript">
+
+            var STYLES = {
+               'default' : [
+                    'styles_standalone.css',
+                    'single_aggregated_bookmarks.css',
+                    'single_aggregated_toc.css',
+                    'images.css',
+                    'lists.css',
+                    'tables.css',
+                    'hyphenation.css',
+                    'landscape_table.css',
+                    'page_numbers.css',
+                    'footnotes.css',
+                    'fonts.css',
+                    ],
+            }
+
+            function presets(id, mode) {
+                var options_list = document.getElementById(id+ '_options');
+                var styles_list = document.getElementById(id);
+
+                for (var i=styles_list.options.length-1; i>=0; i--) {
+                    var value = styles_list.options[i].value;
+                    var text = styles_list.options[i].text;
+                    add_to_list(options_list, value, text);
+                }
+            
+                empty_list(styles_list);
+
+                for (i in STYLES[mode]) {
+                    var v = STYLES[mode][i];
+                    add_to_list(styles_list, v, v);
+                    for (var j=options_list.options.length-1; j>=0; j--) {
+                        if (options_list.options[j].value == v)
+                            delete_from_list(options_list, j);
+                    }
+                }
+                select_list(styles_list);
+            }
+
+        </script>
+      <metal:use use-macro="field_macro | context/widgets/field/macros/edit">
+        <metal:fill fill-slot="widget_body"
+                    tal:define="vocab python:field.Vocabulary(here);
+                                selectionview context/@@at_selection_widget;
+                                selection python:selectionview.getSelected(vocab, value);
+                                vlen python:len(vocab)">
+
+          <input type="hidden"
+                 value=""
+                 tal:condition="not:field/required|nothing"
+                 tal:attributes="name string:$fieldName:default:list;" />
+
+          <div>
+                <table style="border:none;margin:0em;padding:0em;margin-right:0.5em;width:auto;" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding-left:0em;padding-top:0em;">
+                      <select
+                        class="firstToFocus"
+                        multiple="multiple"
+                        tal:attributes="name string:${fieldName}_options;
+                                        id string:${fieldName}_options;
+                                        size widget/size;
+                                        onDblClick string:javascript:inout_moveKeywords('${fieldName}_options','${fieldName}','${fieldName}')">
+      
+                        <tal:block tal:repeat="vocab_item vocab">
+                          <option
+                            tal:define="label python:vocab.getValue(vocab_item)"
+                            tal:condition="python:not vocab_item in selection"
+                            tal:attributes="value vocab_item;"
+                            tal:content="label"
+                            i18n:translate="">
+                            option
+                          </option>
+                        </tal:block>
+      
+                      </select>
+                    </td>
+      
+                    <td style="vertical-align:middle;padding-left:0.5em;padding-right:0.5em">
+                      <input type="button" class="context" value="&gt;&gt;"
+                             tal:attributes="onClick string:javascript:inout_moveKeywords('${fieldName}_options','${fieldName}','${fieldName}')"
+                             />
+                      <br />
+                      <input type="button" class="context" value="&lt;&lt;"
+                             tal:attributes="onClick string:javascript:inout_moveKeywords('${fieldName}','${fieldName}_options','${fieldName}')"
+                             />
+                    </td>
+                    <td>
+                              <select
+                                  multiple="multiple"
+                                  tal:attributes="name string:${fieldName}:list;
+                                                  id string:${fieldName};
+                                                  size widget/size;
+                                                  onDblClick string:javascript:inout_moveKeywords('${fieldName}','${fieldName}_options','${fieldName}')">
+                          
+                                  <tal:block tal:repeat="single_value selection">
+                                    <option
+                                      tal:attributes="value single_value;"
+                                      tal:content="python:vocab.getValue(single_value)"
+                                      selected="selected"
+                                      i18n:translate="">
+                                       option
+                                    </option>
+                                  </tal:block>
+                                  </select>
+                    </td>
+                    <td valign="top" id="select-list">
+                        <input type="button" 
+                            class="context select-list"
+                            tal:attributes="onclick string:javascript:entry_to_top(document.getElementById('$fieldName'), document.getElementById('$fieldName').selectedIndex)" 
+                            i18n:attributes="value"
+                            value="Top" 
+                        />
+                        <input type="button" 
+                            class="context select-list"
+                            tal:attributes="onclick string:javascript:entry_up(document.getElementById('$fieldName'), document.getElementById('$fieldName').selectedIndex)" 
+                            i18n:attributes="value"
+                            value="Up" 
+                        />
+                        <input type="button" 
+                            class="context select-list"
+                            tal:attributes="onclick string:javascript:entry_down(document.getElementById('$fieldName'), document.getElementById('$fieldName').selectedIndex)" 
+                            i18n:attributes="value"
+                            value="Down" 
+                        />
+                        <input type="button" 
+                            class="context select-list"
+                            tal:attributes="onclick string:javascript:entry_to_bottom(document.getElementById('$fieldName'), document.getElementById('$fieldName').selectedIndex)" 
+                            i18n:attributes="value"
+                            value="Bottom" 
+                        />
+                        <br/>
+                        <input type="button" 
+                            class="context select-list"
+                            tal:attributes="onclick string:javascript:select_list(document.getElementById('$fieldName'))" 
+                            i18n:attributes="value"
+                            value="Select all" 
+                        />
+                        <input type="button" 
+                            class="context unselect-list"
+                            tal:attributes="onclick string:javascript:unselect_list(document.getElementById('$fieldName'))" 
+                            i18n:attributes="value"
+                            value="Unselect all" 
+                        />
+                        <br/>
+                        <input type="button" 
+                            class="context"
+                            tal:attributes="onclick string:javascript:presets('$fieldName', 'default')" 
+                            i18n:attributes="value label_presets_recursive"
+                            value="Default presets" 
+                            i18n:domain="producepublish"
+                        />
+                    </td>
+                  </tr>
+                </table>
+          </div>
+          <metal:addable metal:use-macro="context/widgets/addable_support/macros/addable"/>
+
+        </metal:fill>
+      </metal:use>
+    </metal:define>
+
+    <div metal:define-macro="search">
+      <div metal:use-macro="context/widgets/multiselection/macros/edit">
+      </div>
+    </div>
+
+  </body>
+</html>
