@@ -1,0 +1,23 @@
+{% extends "djstripe/base.html" %}
+
+{% block title %}Payment History{% endblock title %}
+
+{% block content %}
+    <ul class="breadcrumb">
+      <li><a href="{% url 'djstripe:account' %}">Home</a></li>
+      <li class="active">Payment History</li>
+    </ul>
+    {% include "djstripe/includes/_history_table.html" %}
+{% endblock content %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+    $(function() {
+        $.post("{% url 'djstripe:sync_history' %}", function(data) {
+            $('#history-table').html(data);
+            $('.in-progress-gif').hide();
+        });
+    });
+</script>
+{% endblock javascript %}
