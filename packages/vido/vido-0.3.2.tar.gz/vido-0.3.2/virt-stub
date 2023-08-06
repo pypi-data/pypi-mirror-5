@@ -1,0 +1,117 @@
+#!/usr/bin/python3.3 -S
+import fcntl
+import json
+import os
+import subprocess
+import urllib.parse
+import tempfile
+import termios
+import types
+
+conf = json.loads(
+    urllib.parse.unquote(os.environ['VIDO_CONFIG']),
+    object_hook=lambda x: types.SimpleNamespace(**x))
+
+# Open this early so that clear_dirs/rw_dirs won't interfere
+exit_status_file = open(conf.ipc + '/exit-status', 'w')
+
+if conf.virt != 'userns':
+    # Do this before scanning mountinfo
+    # Skip in userns (already mounted, and already namespaced)
+    subprocess.check_call('mount -t proc proc /proc'.split())
+
+mounted = set()
+with open('/proc/self/mountinfo') as mounts:
+    for line in mounts:
+        items = line.split()
+        idx = items.index('-')
+        fstype = items[idx + 1]
+        opts1 = items[5].split(',')
+        opts2 = items[idx + 3].split(',')
+        readonly = 'ro' in opts1 + opts2
+        intpath = items[3]
+        mpoint = items[4]
+        # dev is bogus for virtual filesystems
+        dev = items[idx + 2]
+        mounted.add((fstype, mpoint))
+
+
+def ensure_mount(fstype, mpoint):
+    if (fstype, mpoint) in mounted:
+        return
+    subprocess.check_call('mount -t'.split() + [fstype, '--', fstype, mpoint])
+
+ensure_mount('sysfs', '/sys')
+
+subprocess.check_call('mount -t tmpfs tmpfs /run'.split())
+# Or set CONFIG_DEVTMPFS_MOUNT
+try:
+    ensure_mount('devtmpfs', '/dev')
+except subprocess.CalledProcessError:
+    # XXX Debian/Ubuntu ship uml kernels without devtmpfs
+    if conf.virt != 'uml':
+        raise
+
+if not os.path.exists('/dev/fd'):
+    subprocess.check_call('ln -sT /proc/self/fd /dev/fd'.split())
+
+# Set controlling tty
+if conf.virt != 'userns':
+    os.setsid()
+    fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+
+    # Reset windows size
+    # If this is resized after boot, call `resize` manually.
+    # The guest won't get SIGWINCH.
+    try:
+        subprocess.call(['resize'], stdout=subprocess.DEVNULL)
+    except OSError:
+        # Not installed
+        pass
+
+# At least the Debian and Ubuntu UML package uses this
+if conf.virt == 'uml':
+    subprocess.call(
+        'mount -t hostfs -o /usr/lib/uml/modules hostfs /lib/modules'.split(),
+        stderr=subprocess.DEVNULL)
+
+env = vars(conf.env)
+cwd = env['PWD']
+
+
+for dn in conf.rw_dirs:
+    tdn = tempfile.mkdtemp()
+    subprocess.check_call('mount -t tmpfs tmpfs --'.split() + [tdn])
+    subprocess.check_call(
+        'mount -t overlayfs overlayfs'.split()
+        + ['-olowerdir={},upperdir={}'.format(dn, tdn), dn])
+
+# a workaround from before overlayfs
+if False:
+    for dn in conf.rw_dirs_oldkernel:
+        tdn = tempfile.mkdtemp()
+        subprocess.check_call('mount -t tmpfs tmpfs --'.split() + [tdn])
+        # XXX will end at the first unreadable file
+        subprocess.call(
+            ['cp', '-aT', '--', dn, tdn], stderr=subprocess.DEVNULL)
+        subprocess.check_call(['mount', '--move', '--', tdn, dn])
+
+for dn in conf.clear_dirs:
+    subprocess.check_call('mount -t tmpfs tmpfs --'.split() + [dn])
+
+if hasattr(conf, 'net'):
+    subprocess.check_call(
+        'ip addr add dev eth0'.split() + [conf.net.host])
+    subprocess.check_call('ip link set eth0 up'.split())
+    subprocess.check_call(
+        'ip route add default via'.split() + [conf.net.router]
+        + 'dev eth0'.split())
+
+for i, disk in enumerate(conf.disks):
+    env['VIDO_DISK{}'.format(i)] = disk
+
+rcode = subprocess.call(conf.cmd, cwd=cwd, env=env)
+exit_status_file.write('%d' % rcode)
+exit_status_file.close()
+subprocess.check_call('/sbin/poweroff -f'.split())
+

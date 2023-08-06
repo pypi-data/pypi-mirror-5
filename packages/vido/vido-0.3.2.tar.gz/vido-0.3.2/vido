@@ -1,0 +1,287 @@
+#!/usr/bin/python3.3 -S
+import argparse
+import ctypes
+import json
+import os
+import pwd
+import shutil
+import subprocess
+import sys
+import tempfile
+import types
+import urllib.parse
+
+
+def path_resolve(cmd):
+    cmd0 = cmd
+
+    if '/' not in cmd:
+        cmd = shutil.which(cmd)
+        assert cmd, cmd0
+
+    cmd = os.path.abspath(cmd)
+    assert os.path.exists(cmd), cmd0
+    return cmd
+
+
+def fatal(msg):
+    print(msg, file=sys.stderr)
+    sys.exit(2)
+
+
+try:
+    assert False
+except AssertionError:
+    pass
+else:
+    fatal('Assertions must be enabled')
+
+script = path_resolve(sys.argv[0])
+
+assert script.endswith('/vido')
+runner = os.path.dirname(script) + '/virt-stub'
+assert os.path.exists(runner)
+
+
+def kopt_safe(st):
+    # The kernel cmdline doesn't support any kind of quoting
+    # Mustn't contain any whitespace (see string.whitespace, ' \t\n\r\v\f')
+    return len(st.split()) == 1
+
+assert kopt_safe(runner)
+
+# We only really need to quote whitespace and escape unicode
+# maybe str.replace would suffice
+KCMD_SAFE = ":/?#[]@" + "!$&'()*+,;=" + "{}\"\\"
+assert kopt_safe(KCMD_SAFE)
+conf = types.SimpleNamespace()
+
+
+def quote_config():
+    return urllib.parse.quote(
+        json.dumps(vars(conf), separators=(',', ':')), safe=KCMD_SAFE)
+
+# HOME and TERM seem to be set by the kernel (as well as root and the kernel
+# cmdline), the rest would be set by a shell
+ALWAYS_PASS_ENV = 'HOME TERM PWD PATH SHELL'.split()
+
+parser = argparse.ArgumentParser()
+sp_virt = parser.add_argument_group('Choice of virtualisation')
+sp_virt.add_argument(
+    '--uml', action='store_const', dest='virt', const='uml',
+    help='Run a UML kernel (default)')
+sp_virt.add_argument(
+    '--kvm', action='store_const', dest='virt', const='kvm',
+    help='Run a standard kernel with QEMU and KVM')
+sp_virt.add_argument(
+    '--userns', action='store_const', dest='virt', const='userns',
+    help='Don\'t enter a new kernel, just create a user namespace'
+    ' container (needs CONFIG_USER_NS)')
+sp_virt.set_defaults(virt='uml')
+
+# no virt-specific handling required
+sp_common = parser.add_argument_group('Common options')
+sp_common.add_argument(
+    '--pass-env', dest='pass_env',
+    nargs='+', default=[], metavar='NAME',
+    help='Environment variables to preserve')
+sp_common.add_argument(
+    '--clear-dirs', dest='clear_dirs', default=[], nargs='+', metavar='DIR',
+    help='Directories that will become empty and writable')
+sp_common.add_argument(
+    '--rw-dirs', dest='rw_dirs', default=[], nargs='+', metavar='DIR',
+    help='Directories that will have a writable overlay (requires overlayfs)')
+
+# need kernel virt
+sp_kernel = parser.add_argument_group('Kernel options')
+sp_kernel.add_argument(
+    '--kernel', metavar='KERNEL', help='Kernel executable')
+sp_kernel.add_argument(
+    '--gdb', action='store_true', help='Run the kernel in a debugger')
+sp_kernel.add_argument(
+    '--mem', help='Memory limit (use KMG suffixes)')
+sp_kernel.add_argument(
+    '--kopts', dest='kopts', default=[], nargs='+', metavar='KOPT',
+    help='Append to the kernel command line')
+sp_kernel.add_argument(
+    '--disks', dest='disks', default=[], nargs='+', metavar='DISK',
+    help='Block devices and disk images to expose through'
+    ' $VIDO_DISK0 onwards')
+
+# need kvm
+sp_kvm = parser.add_argument_group('KVM-only options')
+# slirp is unmaintained outside of qemu
+sp_kvm.add_argument(
+    '--net', action='store_true',
+    help='Configure the network (unnecessary with userns)')
+# uml doesn't know how to drop privileges
+sp_kvm.add_argument(
+    '--sudo', action='store_true',
+    help='Temporarily raise privileges before entering the kernel'
+    ' (useful to open block devices)')
+sp_kvm.add_argument(
+    '--qemu-runner', help='qemu-system-* command')
+
+sp_cmd = parser.add_argument_group(
+    'Command', 'Use two dashes (--) to separate the command'
+    ' from prior flags')
+sp_cmd.add_argument(
+    'cmd', nargs='*', metavar='CMD',
+    help='Command and arguments to run; defaults to a shell')
+
+args = parser.parse_args()
+
+if 'PWD' not in os.environ:
+    os.environ['PWD'] = os.getcwd()
+
+pass_env = ALWAYS_PASS_ENV + [
+    var for var in args.pass_env if var in os.environ]
+
+cmd = args.cmd or [os.environ['SHELL']]
+cmd[0] = path_resolve(cmd[0])
+
+kcmd = ['rw', 'quiet', 'init=' + runner]
+
+conf.env = {var: os.environ[var] for var in pass_env}
+conf.cmd = cmd
+
+for dn in args.rw_dirs:
+    assert os.path.exists(dn), dn
+conf.rw_dirs = args.rw_dirs
+
+for dn in args.clear_dirs:
+    assert os.path.exists(dn), dn
+conf.clear_dirs = args.clear_dirs
+
+assert all(map(kopt_safe, args.kopts))
+kcmd.extend(args.kopts)
+
+
+def pass_disks(disk_prefix):
+    assert len(args.disks) <= 26
+    conf.disks = [
+        '/dev/' + disk_prefix + chr(ord('a') + i)
+        for i in range(len(args.disks))]
+
+
+if args.sudo and args.virt != 'kvm':
+    fatal('--sudo is not supported with {}'.format(args.virt))
+if args.qemu_runner and args.virt != 'kvm':
+    fatal('--qemu-runner is not supported with {}'.format(args.virt))
+if args.net and args.virt != 'kvm':
+    fatal('--net is not supported with {}'.format(args.virt))
+if args.gdb and args.virt not in 'kvm uml'.split():
+    fatal('--gdb is not supported with {}'.format(args.virt))
+if args.kopts and args.virt not in 'kvm uml'.split():
+    fatal('--kopts is not supported with {}'.format(args.virt))
+if args.disks and args.virt not in 'kvm uml'.split():
+    fatal('--disks is not supported with {}'.format(args.virt))
+if args.mem is not None:
+    if args.virt not in 'kvm uml'.split():
+        fatal('--mem is not supported with {}'.format(args.virt))
+else:
+    args.mem = '128M'
+if args.kernel and args.virt not in 'kvm uml'.split():
+    fatal('--kernel is not supported with {}'.format(args.virt))
+
+
+ipc_dir = tempfile.TemporaryDirectory(prefix='vido-', suffix='.ipc')
+conf.ipc = ipc_dir.name
+
+conf.virt = args.virt
+
+if args.virt == 'kvm':
+    if args.qemu_runner is None:
+        qemu = 'qemu-system-' + os.uname().machine
+    else:
+        qemu = args.qemu_runner
+
+    if args.kernel is None:
+        # Those may not work out of the box, need 9p+virtio built-in
+        # building a custom initramfs would work around that
+        args.kernel = '/boot/vmlinuz-' + os.uname().release
+
+    qcmd = [
+        qemu,
+        '-m', args.mem, '-enable-kvm',
+        '-serial', 'mon:stdio', '-nographic',
+        '-fsdev', 'local,id=root,path=/,security_model=none',
+        '-device', 'virtio-9p-pci,fsdev=root,mount_tag=/dev/root',
+        '-kernel', args.kernel]
+
+    if args.net:
+        # Can't get virtio to work (btw, I get a sit0 not eth0)
+        #qcmd += ['-netdev', 'user', '-net', 'nic,model=virtio']
+        qcmd += ['-net', 'user,net=10.0.2.0/24,host=10.0.2.2,dns=10.0.2.3',
+                 '-net', 'nic']
+        # Not passing dns, sharing the host's resolv.conf
+        # Suggest a port-forward for the local resolver case
+        conf.net = dict(host='10.0.2.15/24', router='10.0.2.2')
+
+    if args.sudo:
+        qcmd += ['-runas', pwd.getpwuid(os.getuid()).pw_name]
+
+    if args.gdb:
+        qcmd += ['-s']
+        # We can't use the -S flag to wait for gdb, any breakpoints set
+        # at early startup would be unusable:
+        # http://thread.gmane.org/gmane.comp.emulators.qemu/80327
+        print('Please run: gdb -ex "target remote :1234" ./vmlinux')
+
+    for dri in args.disks:
+        qcmd += ['-drive',
+                 'file={},if=virtio'.format(dri.replace(',', ',,'))]
+    pass_disks('vd')
+
+    # Needs CONFIG_SERIAL_8250_CONSOLE=y
+    kcmd += ['rootfstype=9p', 'rootflags=trans=virtio', 'console=ttyS0']
+    kcmd.append('VIDO_CONFIG=' + quote_config())
+    qcmd += ['-append', ' '.join(kcmd)]
+
+    if args.sudo:
+        subprocess.check_call(['sudo'] + qcmd, executable='/usr/bin/sudo')
+    else:
+        subprocess.check_call(qcmd)
+elif args.virt == 'uml':
+    gdb_cmd = [
+        'gdb',
+        '-ex', 'handle SIGSEGV pass nostop noprint',
+        '-ex', 'handle SIGUSR1 nopass stop print',
+        '--args']
+
+    kcmd += ['rootfstype=hostfs', 'mem=' + args.mem]
+
+    kcmd += ['ubd{}={}'.format(*el) for el in enumerate(args.disks)]
+    pass_disks('ubd')
+
+    if args.kernel is None:
+        args.kernel = '/usr/bin/linux.uml'
+
+    kcmd.append('VIDO_CONFIG=' + quote_config())
+    if args.gdb:
+        subprocess.check_call(gdb_cmd + [args.kernel] + kcmd)
+    else:
+        subprocess.check_call([args.kernel] + kcmd)
+elif args.virt == 'userns':
+    conf.disks = []
+    libc = ctypes.CDLL('libc.so.6', use_errno=True)
+    CLONE_NEWUSER = 0x10000000
+    CLONE_NEWNS = 0x00020000
+    orig_uid = os.getuid()
+    orig_gid = os.getgid()
+    if libc.unshare(CLONE_NEWUSER | CLONE_NEWNS) != 0:
+        raise OSError(ctypes.get_errno())
+    with open('/proc/self/uid_map', 'w') as mf:
+        mf.write('0 {} 1\n'.format(orig_uid))
+    with open('/proc/self/gid_map', 'w') as mf:
+        mf.write('0 {} 1\n'.format(orig_gid))
+    os.setuid(0)
+    os.setgid(0)
+    os.setgroups([])
+    subprocess.check_call([runner], env=dict(VIDO_CONFIG=quote_config()))
+else:
+    assert False, args.virt
+
+with open(conf.ipc + '/exit-status') as ef:
+    sys.exit(int(ef.read()))
+
