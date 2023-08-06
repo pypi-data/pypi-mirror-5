@@ -1,0 +1,200 @@
+Metadata-Version: 1.1
+Name: django-blackhole
+Version: 0.1.7
+Summary: Django application that let's you work in your templates apart from having or not the
+corresponding views created.
+
+Home-page: https://github.com/ikame/django-blackhole
+Author: ikame
+Author-email: anler86@gmail.com
+License: MIT
+Description: Django-Blackhole
+        ================
+        
+        Django application that let's you work in your templates apart from having or not the corresponding views created. This is very useful if you (or a member of your project) are working in a template and don't want to get bothered by if the view of your template is not done or is in an incomplete state or you have to be logged in and so on.
+        With this plugin you can easily access the template you want to work on, set context data directly via the url or set context data via fixtures.
+        
+        Features
+        --------
+        
+        - Design your template without having the corresponding view created.
+        - Pass data to your template via the url.
+        - Specify a json fixture file in the url with your context data.
+        - Patch Django's url reverse to avoid those annoying url reverse errors when working solely in a template.
+        
+        Tutorial
+        --------
+        
+        In order to start using this plugin, you need to:
+        
+        1. Add application to your INSTALLED_APPS:
+        .. code-block:: python
+        
+           INSTALLED_APPS += ('blackhole',)
+        
+        2. Include plugin urls in your project urls:
+        
+        .. code-block:: python
+        
+           if settings.DEBUG:
+               urlpatterns += patterns('', ('^_blackhole/', include('blackhole.urls'))
+        
+        With that in place you should be able to access the url:
+        
+        ``/_blackhole/templates/<template name>/?<template data>``
+        
+        Let's say you have the following template:
+        
+        .. code-block:: bash
+        
+           myapp/
+             templates/
+                404.html
+                myapp/
+                  hello.jinja
+        
+        
+        Accessing the template through an url
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        You can access those templates through the urls:
+        
+        ``/_blackhole/templates/404.html``
+        
+        and
+        
+        ``/_blackhole/templates/myapp/hello.jinja``
+        
+        Passing data to the templates
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        If you have a **message** variable in **hello.jinja** you can set that variable with:
+        
+        ``/_blackhole/templates/myapp/hello.jinja?message=hola``
+        
+        You can also set nested values. Let's say you have the variable **person.name** in **hello.jinja**, you can set that variable with:
+        
+        ``/_blackhole/templates/myapp/hello.jinja?person.name=john``
+        
+        Passing data to the templates via fixtures
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        If your template is too complex to set all the data it needs via the url you can use instead a fixture and specify that fixture via the url. Let's say you have:
+        
+        .. code-block:: bash
+        
+           myapp/
+             fixtures/
+               myapp_template_data.json
+             templates/
+        
+        If now you access:
+        
+        ``/_blackhole/templates/myapp/hello.jinja?_fixture=myapp_template_data``
+        
+        The template context will be updated with the context defined in the fixture. For example, if you have the fixture:
+        
+        .. code-block:: json
+        
+          {
+            "name": "some name",
+            "owner": {
+              ...
+            }
+          }
+        
+        the template context will have the variable ``name`` set to ``some name`` and the variable ``owner`` set
+        to the dictionary associated to the owner key in the fixture.
+        
+        
+        Visualizing the template in raw format
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        If you append ``/raw/`` to the url you can see the template in raw format:
+        
+        ``/_blackhole/templates/myapp/hello.jinja/raw/``
+        
+        The raw format is just the same response returned with ``text/plain`` as the *Content-Type*.
+        
+        If you want to receive the response in another Content-Type just set the ``_mime`` param. By default the charset is utf-8 but you can also set it via the ``_charset`` param:
+        
+        ``/_blackhole/templates/myapp/hello.jinja?message=hola&_mime=text/csv&_charset=utf-16``
+        
+        Installation
+        ------------
+        
+        To install, simply:
+        
+        .. code-block:: bash
+        
+            $ pip install django-blackhole
+        
+        Or, directly from the main repository:
+        
+        .. code-block:: bash
+        
+            $ pip install -e git+https://github.com/ikame/django-blackhole.git#egg=blackhole
+        
+        See `project's website`_ for more information.
+        
+        .. _project's website: https://github.com/ikame/django-blackhole
+        .. :changelog:
+        
+        History
+        -------
+        
+        0.1.7 (Tue 29 Oct 2013 08:07:50 PM CET)
+        +++++++++++++++++++++++++++++++++++++++
+        
+        - Fixtures support. Now you can specify a fixture via the url and the data in
+        that fixture is available in the context
+        - Adding support for _mime and _charset GET param options to set response's
+        mimetype and charset
+        - Adding docs
+        
+        0.1.5 (Wed 16 Oct 2013 04:52:02 PM CEST)
+        ++++++++++++++++++++++++++++++++++++++++
+        
+        - Updating docs
+        - Returning raw template as utf-8
+        
+        0.1.5 (Wed 16 Oct 2013 04:41:47 PM CEST)
+        ++++++++++++++++++++++++++++++++++++++++
+        
+        - Fixing an introduced errors in urls.py
+        
+        0.1.4 (Wed 16 Oct 2013 04:34:30 PM CEST)
+        ++++++++++++++++++++++++++++++++++++++++
+        
+        - Using the new url `/templates/<template name>/raw` you are able to see
+        the template in raw (Content type: text/plain) format.
+        
+        0.1.3 (Thu 10 Oct 2013 10:58:08 AM CEST)
+        ++++++++++++++++++++++++++++++++++++++++
+        
+        - Changing setup.py to include the main package
+        
+        0.1.2 (Thu 10 Oct 2013 10:58:08 AM CEST)
+        ++++++++++++++++++++++++++++++++++++++++
+        
+        - Removing version from the package
+        
+        0.1.1 (Thu 10 Oct 2013 10:58:08 AM CEST)
+        ++++++++++++++++++++++++++++++++++++++++
+        
+        - Updating documentation examples
+        
+        0.1.0 (Thu 10 Oct 2013 10:58:08 AM CEST)
+        ++++++++++++++++++++++++++++++++++++++++
+        
+        - First version!
+        
+Keywords: django debug views templates
+Platform: UNKNOWN
+Classifier: Framework :: Django
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Utilities
