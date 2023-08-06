@@ -1,0 +1,213 @@
+=======
+Summary
+=======
+
+Cube for data input/output, import and export
+
+
+Massive Store
+=============
+
+The Massive Store is a CW store used to push massive amount
+of data using pure SQL logic, thus avoiding CW checks.
+It is faster than other CW stores (it does not check eid at each step,
+it use COPY FROM method), but is less safe (no data integrity securities),
+and does not return an eid while using create_entity function.
+
+WARNING: This store may be only used with PostgreSQL for now, as it
+relies on the COPY FROM method, and on specific PostgreSQL tables
+to get all the indexes.
+
+It should be used as following:
+
+    # Initialize the store
+    store = MassiveObjectStore(session)
+    # Initialize the Relation table
+    store.init_rtype_table('Person', 'lives', 'Location')
+
+    # Import logic
+    ...
+    store.create_entity('Person', ...)
+    store.create_entity('Location', ...)
+
+    # Flush the data in memory to sql database
+    store.flush()
+
+    # Import logic
+    ...
+    store.create_entity('Person', ...)
+    store.create_entity('Location', ...)
+    # Person_iid and location_iid are unique iid that are data dependant (e.g URI)
+    store.relate_by_iid(person_iid, 'lives', location_iid)
+    ...
+
+    # Flush the data in memory to sql database
+    store.flush()
+
+    # Build the meta data
+    store.flush_meta_data()
+
+    # Convert the relation
+    store.convert_relations('Person', 'lives', 'Location')
+
+    # Clean the store / rebuild indexes
+    store.cleanup()
+
+In this case,  iid_subj and iid_obj represent an unique id
+(e.g. uri, or id from the imported database) that can be used to create
+relations after importing entities.
+
+
+
+
+RDF Store
+=========
+
+The RDF Store is used to import RDF data into a CubicWeb data, based on a Yams <-> RDF schema conversion.
+The conversion rules are stored in a XY structure.
+
+
+Building an XY structure
+------------------------
+
+You have to create a file (usually called `xy.py`) in your cube, and import the dataio version of xy::
+
+
+    from cubes.dataio import xy
+
+
+You have to register the different prefixes (common prefixes as skos or foaf are already registered)::
+
+    xy.register_prefix('diseasome', 'http://www4.wiwiss.fu-berlin.de/diseasome/resource/diseasome/')
+
+
+By default, the entity type is based on the rdf property "rdf:type", but you may changed it using::
+
+   xy.register_rdf_etype_property('skos:inScheme')
+
+
+It is also possible to give a specific callback to determine the entity type from the rdf properties::
+
+   def _rameau_etype_callback(rdf_properties):
+       if 'skos:inScheme' in rdf_properties and 'skos:prefLabel' in rdf_properties:
+       	  return 'Rameau'
+
+   xy.register_etype_callback(_rameau_etype_callback)
+
+
+
+The URI is fetched from the "rdf:about" property, and can be normalized using a specific callback::
+
+    def normalize_uri(uri):
+    	if uri.endswith('.rdf'):
+           return uri[:-4]
+	return uri
+
+    xy.register_uri_conversion_callback(normalize_uri)
+
+
+
+Defining the conversion rules
+-----------------------------
+
+
+Then, you may write the conversion rules:
+
+ - xy.add_equivalence allows you to add a basic equivalence between entity type / attribute / relations,
+   and RDF properties. You may use "*" as a wild cart in the Yams part.
+   E.g. for entity types::
+
+	xy.add_equivalence('Gene', 'diseasome:genes')
+	xy.add_equivalence('Disease', 'diseasome:diseases')
+
+   E.g. for attributes::
+
+   	xy.add_equivalence('* name', 'diseasome:name')
+	xy.add_equivalence('* label', 'rdfs:label')
+	xy.add_equivalence('* label', 'diseasome:label')
+	xy.add_equivalence('* class_degree', 'diseasome:classDegree')
+	xy.add_equivalence('* size', 'diseasome:size')
+
+
+   E.g. for relations::
+
+      xy.add_equivalence('Disease close_match ExternalUri', 'diseasome:classes')
+      xy.add_equivalence('Disease subtype_of Disease', 'diseasome:diseaseSubtypeOf')
+      xy.add_equivalence('Disease associated_genes Gene', 'diseasome:associatedGene')
+      xy.add_equivalence('Disease chromosomal_location ExternalUri', 'diseasome:chromosomalLocation')
+      xy.add_equivalence('* sameas ExternalUri', 'owl:sameAs')
+      xy.add_equivalence('Gene gene_id ExternalUri', 'diseasome:geneId')
+      xy.add_equivalence('Gene bio2rdf_symbol ExternalUri', 'diseasome:bio2rdfSymbol')
+
+
+ - A base URI can be given to automatically determine if a Resource should be considered
+   as an external URI or an internal relation::
+
+      xy.register_base_uri('http://www4.wiwiss.fu-berlin.de/diseasome/resource/')
+
+
+   A more complex logic can be used by giving a specific callback::
+
+     def externaluri_callback(uri):
+     	 if uri.startswith('http://www4.wiwiss.fu-berlin.de/diseasome/resource/'):
+            if uri.endswith('disease') or uri.endswith('gene'):
+               return False
+	    return True
+	 return True
+
+     xy.register_externaluri_callback(externaluri_callback)
+
+
+
+The values of attributes are built based on the Yams type. But you could use a specific
+callback to compute the correct values from the rdf properties::
+
+	 def _convert_date(_object, datetime_format='%Y-%m-%d'):
+	     """ Convert an rdf value to a date """
+	     try:
+		return datetime.strptime(_object.format(), datetime_format)
+	     except:
+	        return None
+
+         xy.register_attribute_callback('Date', _convert_date)
+
+or::
+
+	def format_isbn(rdf_properties):
+    	    if 'bnf-onto:isbn' in rdf_properties:
+	       isbn = rdf_properties['bnf-onto:isbn'][0]
+	       isbn = [i for i in isbn if i in '0123456789']
+	       return int(''.join(isbn)) if isbn else None
+
+	xy.register_attribute_callback('Manifestation formatted_isbn', format_isbn)
+
+
+
+Importing data
+--------------
+
+Data may thus be imported using the "import-rdf" command of cubicweb-ctl::
+
+
+    cubicweb-ctl import-rdf <my-instance> <filer-or-folder>
+
+The default library used for reading the data is "rdflib" but one may use "librdf" using the "--lib" option.
+
+It is also possible to force the rdf-format (it is automatically determined, but this may sometimes lead to errors),
+using the "--rdf-format" option.
+
+
+
+Exporting data
+--------------
+
+The view 'rdf' may be called and will create a RDF file from the result set. It is a modified version of the
+CubicWeb RDFView, that take into account the more complex conversion rules from the dataio cube.
+The format can also be forced (default is XML) using the "--format" option in the url (xml, n3 or nt).
+
+
+
+Examples
+--------
+
+Examples of use of dataio rdf import could be found in the nytimes and diseasome cubes.
