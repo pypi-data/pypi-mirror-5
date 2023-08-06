@@ -1,0 +1,30 @@
+{% extends 'polls/base.html' %}
+
+{% block content %}
+    {{ block.super }}
+        <div class="row poll">
+            <a href="{% url 'poll_add' %}">Add a Poll</a>
+        </div>
+    {% for object in object_list %}
+        <div class="row poll">
+            <p class="lead">{{ object.question }}</p>
+            {% include 'polls/partial/navigation.html' %}
+        </div>
+    {% endfor %}
+        <ul class="pagination">                
+    {% if object_list.has_previous %}
+            <li><a href="?page={{ object_list.previous_page_number }}">&laquo;</a></li>
+    {% endif %}
+    {% for page in object_list.paginator.page_range %}
+            <li{% if page == object_list.paginator.num_pages %} class="current"{% endif %}>
+                <a href="?page={{ page }}">{{ page }}</a>
+            </li>
+    {% endfor %}
+    {% if contacts.has_next %}
+            <li><a href="?page={{ object_list.next_page_number }}">&raquo;</a></li>
+    {% endif %}
+        </ul>
+        <div class="row poll">
+            <a href="{% url 'poll_add' %}">Add a Poll</a>
+        </div>
+{% endblock %}
