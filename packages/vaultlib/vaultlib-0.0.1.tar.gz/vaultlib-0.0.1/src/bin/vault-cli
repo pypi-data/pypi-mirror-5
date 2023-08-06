@@ -1,0 +1,135 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+"""
+will need to be re-written at some point.
+"""
+import vaultlib
+import argparse
+import os
+import json
+
+"""
+Requires the following environment variables:
+
+VAULT_PROTOCOL
+VAULT_HOST
+VAULT_PORT
+VAULT_DATABASE
+"""
+
+vault_protocol = os.environ.get('VAULT_PROTOCOL')
+vault_host = os.environ.get('VAULT_HOST')
+vault_port = int(os.environ.get('VAULT_PORT'))
+vault_database = os.environ.get('VAULT_DATABASE')
+
+if os.environ.get('VAULT_VERIFY') == "true":
+    vault_verify = True
+else:
+    vault_verify = False
+
+
+parser = argparse.ArgumentParser(description='Manage databags')
+parser.add_argument('cmd', nargs='*', help='[add, list, show, delete]')
+parser.add_argument('--databag', type=open, help='specify .json databag')
+parser.add_argument('--key', help='specify encryption key')
+args = parser.parse_args()
+
+if args.cmd[0] == "add":
+    """
+    Add databag to vault
+    if --key is specified we encrypt..
+    """
+
+    try:
+        vault = vaultlib.Storage(
+            vault_protocol,
+            vault_host,
+            vault_port,
+            vault_database,
+            vault_verify,
+        )
+    except Exception as e:
+        print e
+
+    if args.databag:
+        try:
+            databagRaw = json.load(args.databag)
+        except Exception as e:
+            print e
+
+        databag = vaultlib.Databag(
+            databagRaw.get('_id'),
+            databagRaw.get('data'),
+        )
+    else:
+        "need a databag"
+
+    if args.key:
+        try:
+            pk = vaultlib.Key(filename=args.key).private
+            databag.encrypt(pk)
+        except Exception as e:
+            print e
+
+    vault.add_databag(databag)
+
+elif args.cmd[0] == "list":
+
+    try:
+        vault = vaultlib.Storage(
+            vault_protocol,
+            vault_host,
+            vault_port,
+            vault_database,
+            vault_verify,
+        )
+    except Exception as e:
+        print e
+
+    databags = vault.list_databags()
+    for i in databags:
+        print i.id
+
+elif args.cmd[0] == "show":
+    """
+    Add databag to vault
+    if --key is specified we decrypt..
+    """
+
+    try:
+        vault = vaultlib.Storage(
+            vault_protocol,
+            vault_host,
+            vault_port,
+            vault_database,
+            vault_verify,
+        )
+    except Exception as e:
+        print e
+
+    databag = vault.get_databag(args.cmd[1])
+
+    if args.key:
+        try:
+            pk = vaultlib.Key(filename=args.key).private
+            databag.decrypt(pk)
+        except Exception as e:
+            print e
+
+    print json.dumps(databag.__dict__, indent=4)
+
+elif args.cmd[0] == "delete":
+
+    try:
+        vault = vaultlib.Storage(
+            vault_protocol,
+            vault_host,
+            vault_port,
+            vault_database,
+            vault_verify,
+        )
+    except Exception as e:
+        print e
+
+    databags = vault.delete_databag(args.cmd[1])
