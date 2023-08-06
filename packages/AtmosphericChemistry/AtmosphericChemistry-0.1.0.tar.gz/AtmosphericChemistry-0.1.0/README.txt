@@ -1,0 +1,84 @@
+=============================
+Atmospheric Chemistry Package
+=============================
+
+This collection of python classes and routines facilitates the exploration,
+construction, and conversion of (gas-phase) chemical mechanisms 
+(the system of differential equations that are solved in numerical models 
+of atmospheric chemistry and transport). It consists of the following key elements:
+
+1. The **Compound** class describing various physical and chemical properties of 
+individual molecules or lumped substances and defining their names in various
+common chemistry schemes. 
+
+2. The **speciesTable** class which collects the compound information from all
+molecules and handles reading and writing this information from or to csv
+files.
+
+3. The **Reaction** class describing gas-phase chemical reactants, products,
+product yields, the rate coefficient term(s) and optional tags, comments,
+and reaction labels.
+
+4. The **Mechanism** class which contains a list of reactions and additional 
+variables, comments, and other information and handles in- and output from
+and to various file formats (mech, csv, kpp, mozpp, racm).
+
+Additional utilities allow computation of molecular weights based on the 
+elemental composition of a molecule and queries of the Pubchem and Master
+Chemical Mechanism databases to obtain additional information about a compound
+(e.g. SMILES code, IUPAC name, etc.). There is even a rudimentary algebra 
+class (mathTree) included, which allows scanning of mathematical expressions
+and factorisation.
+
+The main purpose of this package is the interconversion of chemical mechanisms
+from one format to another, including the translation of species names from
+the namespace of one model to that of another model. It has been developed originally 
+because of the author's need to perform an intercomparison of various mechanisms
+with the help of a specific chemical boxmodel (CAABA/MECCA, see http://www.mecca.messy-interface.org/),
+but it may also be useful for other purposes, and the author will be grateful for 
+feedback on various use cases as well as suggestions for improvement. 
+
+Conversion of a chemical mechanism is possible in only 4 lines of code::
+
+    from ac.gasphase.mechanism import Mechanism
+	m = Mechanism.from_mech(inputfilename)
+	m.translate_to_model('tm5')
+	m.write_kpp_mecca(outputfilename)
+	
+This will read a mechanism in the 'mech' format, translate all species names to the TM5 
+namespace and write out species and equations files for the Kinetic Preprocessor (KPP,
+see http://people.cs.vt.edu/~asandu/Software/Kpp/).
+
+It is also easily possible to test all reactions for mass conservation::
+
+    m.check_mass_balance()
+	
+or to find out which reactions involve a specific reactant, say HO2::
+
+    rlist = m.find_reactions(['HO2'])
+	for r in rlist:
+	    print r.to_mech()
+
+A number of applications of the ac package are provided in the *bin* directory of
+this distribution.
+
+Requirements
+============
+
+Most of the functionality of the AtmosphericChemistry package requires only python 
+standard libraries and numpy. However, if you want to use the pubchem or mcm_query
+routines to access compound information from internet databases, you will also need
+urllib, urllib2, lxml.html, json, time.
+
+
+Author
+======
+
+Martin G. Schultz, IEK-8, Forschungszentrum Juelich, Germany
+
+A Acknowledgements
+==================
+
+Matt Swain for providing the PubChemPy module which is included in this package
+for cross-referencing compound information in the master species table.
+Snehal Waychal for providing the mcm_query module and for packaging this up.

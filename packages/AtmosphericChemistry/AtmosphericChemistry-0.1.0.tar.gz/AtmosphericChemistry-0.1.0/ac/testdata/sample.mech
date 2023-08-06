@@ -1,0 +1,311 @@
+SAMPLE INPUT FILE IN MECH FORMAT
+
+This format has been specifically designed to allow easy ediing yet preserve as much metadata
+on reactions as possible.
+Note: This is only a sample file and does not contain a valid chemical mechanism.
+
+# namespace for finding compounds in speciestable
+MODEL: MOZ_MIM2
+
+
+Description of labels:
+S : stratosphere only
+aer: aerosol reaction
+cph: reaction  to be included in calculation of heating rates
+tau: constant decay
+ion: ion reaction
+elec: electron reaction
+juser1: CAM-CHEM/WACCM photolysis - userdefined
+juser2: CAM-CHEM/WACCM photolysis - userdefined
+syn: synthetic tracer reaction
+
+
+REACTIONS
+! =======================================================================
+! SECTION Rn 
+! =======================================================================
+
+Rn -> Pb                                                     : 2.1e-6 ;
+
+! =======================================================================
+! SECTION (Tropospheric) Ox Reactions
+! =======================================================================
+O3 + hv -> O1D + O2_1D                                       : jO3_a ; 
+O3 + hv -> O + O2                                            : jO3_b ; 
+O + O2 + M -> O3 + M                                         : kO_O2 ;
+O + O3 -> 2*O2                                               : 8.000e-12*exp(-2060./T) ; cph ! JPL(2011)
+O + O + M -> O2 + M                                          : kO_O ;                    ! not in JPL(2011)
+O1D + N2 -> N2 + O                                           : 2.150e-11*exp(110./T) ; cph
+O1D + H2O -> 2*OH                                            : 1.630e-10*exp(60./T) ;     ! JPL(2011)
+
+! =======================================================================
+! SECTION (Tropospheric) HOx Reactions
+! =======================================================================
+H + O2 + M -> HO2 + M                                        : ktroe(4.400e-32,1.3,7.500e-11,-0.2,0.6) ; cph ! JPL(2011)
+H + O3 -> O2 + OH                                            : 1.400e-10*exp(-470./T) ; cph  ! JPL(2011)
+H2 + O -> H + OH                                             : 1.600e-11*exp(-4570./T) ; 
+H2 + OH -> H + H2O                                           : 2.800e-12*exp(-1800./T) ;  ! JPL(2011)
+OH + O -> H + O2                                             : 1.800e-11*exp(180./T) ; cph ! JPL(2011)
+OH + OH -> H2O + O                                           : 1.800e-12 ;               ! JPL(2011)
+HO2 + O -> O2 + OH                                           : 3.000e-11*exp(200./T) ; cph ! JPL(2011)
+HO2 + OH -> H2O + O2                                         : 4.800e-11*exp(250./T) ; cph ! JPL(2011)
+HO2 + O3 -> OH + 2*O2                                        : 1.000e-14*exp(-490./T) ; cph ! JPL(2011)
+HO2 + HO2 -> H2O2 + O2                                       : kHO2_HO2 ;  
+H2O2 + OH -> H2O + HO2                                       : 1.800e-12 ;               ! JPL(2011)
+H2O2 + hv -> 2*OH                                            : jH2O2 ; 
+
+! =======================================================================
+! SECTION NOx Reactions
+! =======================================================================
+N2D + O2 -> NO + O1D                                         : 5.000e-12 ; cph, S
+N2D + O -> N + O                                             : 7.000e-13 ; cph, S
+
+N + OH -> H + NO                                             : 5.000e-11 ; S
+N + O2 -> NO + O                                             : 1.500e-11*exp(-3600./T) ; cph, S ! JPL(2011)
+
+N2O + hv -> N2 + O1D                                         : jN2O ; S
+
+NO + hv -> N + O                                             : jNO ; juser1, S
+NO + HO2 -> NO2 + OH                                         : 3.300e-12*exp(270./T) ; cph ! JPL(2011)
+
+NO2 + hv -> NO + O                                           : jNO2 ; 
+NO2 + O -> NO + O2                                           : 5.100e-12*exp(210./T) ; cph ! ref?
+NO2 + O + M -> NO3 + M                                       : ktroe(2.500e-31,1.8,2.200e-11,0.7,0.6) ;  ! JPL(2011)
+NO2 + O3 -> NO3 + O2                                         : 1.200e-13*exp(-2450./T) ;  ! JPL(2011)
+
+NO3 + hv -> NO2 + O                                          : jNO3_a ; 
+NO3 + hv -> NO + O2                                          : jNO3_b ; 
+NO3 + NO -> 2*NO2                                            : 1.500e-11*exp(170./T) ;  ! JPL(2011)
+
+HNO3 + hv -> NO2 + OH                                        : jHNO3 ; 
+HNO3 + OH -> H2O + NO3                                       : kHNO3_OH ;  ! usrrxt: X=M6.5e-34*exp(1335/T); X/(1+X/(2.7e-17*exp(2199/T)))+2.4e-14*exp(460/T) - JPL(2011)
+
+NO + OH -> HONO                                              : ktroe(7.000e-31,2.6,3.600e-11,0.1,0.6) ;  ! JPL(2011)
+HONO + OH -> H2O + NO2                                       : 1.800e-11*exp(-390./T) ;  ! JPL(2011)
+
+NO2 + HO2 + M -> HO2NO2 + M                                  : kNO2_HO2 ;  ! JPL(2011)
+
+NO2 + NO3 + M -> N2O5 + M                                    : kNO2_NO3 ;  ! JPL(2011)
+N2O5 + hv -> NO2 + NO3                                       : jN2O5_a ; 
+N2O5 + hv -> NO + O + NO3                                    : jN2O5_b ; 
+N2O5 + M -> NO2 + NO3 + M                                    : kN2O5 ;  ! usrrxt: usr04*exp(-11000/T)/2.7e-27  JPL(2011)
+
+! =======================================================================
+! SECTION C1 oxidation
+!
+!     precursors: CO, CH4, CH3OH, HCN, CH3CN
+! =======================================================================
+CO2 + hv -> CO + O                                           : jCO2 ; S
+CH4 + hv -> CH3O2 + H                                        : jCH4_a ; S
+CH4 + hv -> 1.44*H2 + 0.18*CH2O + 0.18*O + 0.66*OH + 0.44*CO2 + 0.38*CO + 0.05*H2O : jCH4_b ; S 
+
+CO + OH -> CO2 + H                                           : kCO_OH ; ! usrrxt: JPL(2011), Table 2-1
+CO + OH + M -> CO2 + HO2 + M                                 : ktroe(5.900e-33,1.4,1.100e-12,-1.3,0.6) ; 
+CH4 + OH -> CH3O2 + H2O                                      : 2.450e-12*exp(-1775./T) ;  ! JPL(2011)
+CH3OH + OH -> CH2O + HO2 + H2O                               : 2.900e-12*exp(-345./T) ;  ! JPL(2011)
+
+CH3O2 + NO -> CH2O + NO2 + HO2                               : 1.960e-12*exp(403./T) ;  ! Orlando&Tyndall (2012)
+CH3O2 + HO2 -> CH3OOH + O2                                   : 3.800e-13*exp(730./T) ;  ! Orlando&Tyndall (2012)
+CH3O2 + CH3O2 -> 2*CH2O + 2*HO2                              : 7.400e-13*exp(-520./T) ;  ! Atkinson et al.(2006)
+CH3O2 + CH3O2 -> CH2O + CH3OH                                : 2.330e-14*exp(678./T) ;   ! own fit for T=240-300K
+
+CH2O + NO3 -> CO + HO2 + HNO3                                : 6.000e-13*exp(-2058./T) ; ! ref?
+
+CH3OOH + hv -> CH2O + H + OH                                 : jCH3OOH ; 
+CH3OOH + OH -> 0.7*CH3O2 + 0.3*OH + 0.3*CH2O + H2O           : 3.800e-12*exp(200./T) ;   ! JPL(2011)
+
+
+! =======================================================================
+! SECTION C2 oxidation
+!
+!     precursors: C2H2, C2H4, C2H6, C2H5OH
+! =======================================================================
+C2H4 + CL + M -> HO2 + 2*CO + HCL + M                       : ktroe(1.60e-29, 3.3, 3.1e-10, 1.0, 0.6)
+C2H6 + CL -> HCL + C2H5O2                                   : 7.20e-11*exp(-70./T)
+
+C2H2 + OH + M -> 0.65*(GLYOXAL + OH) + 0.35*(HCOOH + HO2 + CO) + M : ktroe(5.500e-30,0.,8.300e-13,-2.,0.6) ;  ! JPL(2011)
+C2H4 + OH + M -> 0.75*EO2 + 0.25*(2*CH2O + HO2) + M         : ktroe(1.000e-28,4.5,7.500e-12,0.85,0.6) ;  ! JPL(2011), includes activated EO decomposition
+C2H6 + OH -> C2H5O2 + H2O                                    : 7.660e-12*exp(-1020./T) ;    ! JPL(2011)
+
+CH3CHO + hv -> CH3O2 + CO + HO2                              : jCH3CHO ; 
+CH3CHO + OH -> CH3CO3 + H2O                                  : 4.630e-12*exp(350./T) ;      ! JPL(2011)
+
+C2H5O2 + NO -> CH3CHO + HO2 + NO2                            : 2.620e-12*exp(373./T) ;      ! Orlando&Tyndall (2012)
+C2H5O2 + HO2 -> C2H5OOH + O2                                 : 7.400e-13*exp(700./T) ;      ! Orlando&Tyndall (2012)
+C2H5O2 + C2H5O2 -> 1.6*CH3CHO + 1.2*HO2 + 0.4*C2H5OH         : 7.600e-14 ;                  ! Orlando&Tyndall (2012)
+C2H5OOH + hv -> CH3CHO + HO2 + OH                            : jCH3OOH ; 
+C2H5OOH + OH -> 0.5*C2H5O2 + 0.5*CH3CHO + 0.5*OH + H2O       : 3.800e-12*exp(200./T) ;      ! no data, analog to CH3OOH+OH
+
+CH3CO3 + NO -> CH3O2 + CO2 + NO2                             : 7.500e-12*exp(290./T) ;      ! Orlando&Tyndall (2012)
+CH3CO3 + NO2 + M -> PAN + M                                  : kCH3CO3_NO2 ;
+CH3CO3 + HO2 -> 0.4*CH3COOOH + 0.2*(CH3COOH + O3) + 0.4*(OH + CH3O2 + CO2) : 5.200e-13*exp(980./T) ;  ! Orlando&Tyndall (2012)
+
+PAN + hv -> 0.6*(CH3CO3 + NO2) + 0.4*(CH3O2 + NO3 + CO2)     : jPAN ; 
+PAN + M -> CH3CO3 + NO2 + M                                  : kPAN ;
+GLYALD + hv -> 2*HO2 + CO + CH2O                             : jGLYALD ; 
+
+! =======================================================================
+! SECTION C3 oxidation
+!
+!     precursors: C3H6, C3H8, CH3COCH3 (acetone)
+! =======================================================================
+
+C3H6 + OH + M -> M + PO2                                     : ktroe(8.000e-27,3.5,3.000e-11,0.,0.5) ;  ! IUPAC 2006
+
+C3H7O2 + NO -> 0.82*CH3COCH3 + NO2 + HO2 + 0.27*CH3CHO       : 2.900e-12*exp(350./T) ;      ! Orlando&Tyndall, 2012, 0.27*CH3CHO for 0.18*CH3CH2CHO
+C3H7OOH + hv -> 0.82*CH3COCH3 + OH + HO2 + 0.27*CH3CHO       : jCH3OOH ; 
+
+PO2 + NO -> CH2O + CH3CHO + HO2 + NO2                        : 4.200e-12*exp(180./T) ;      ! CAM-CHEM
+PO2 + HO2 -> O2 + POOH                                       : 7.500e-13*exp(700./T) ;      ! CAM-CHEM
+CH3COCHO + hv -> CH3CO3 + CO + HO2                           : jGLYOXAL ; 
+CH3COCHO + OH -> CH3CO3 + CO + H2O                           : 8.400e-13*exp(830./T) ;      ! CAM-CHEM
+
+
+! =======================================================================
+! SECTION (Stratospheric) Ox reactions
+! =======================================================================
+O2 + hv -> O + O1D                                           : jO2_a ; juser1, S
+
+! =======================================================================
+! SECTION (Stratospheric) O1D reactions
+! =======================================================================
+O1D + CFC11 -> 2*CL + COFCL                                  : 2.020e-10 ; S
+O1D + CFC12 -> 2*CL + COF2                                   : 1.204e-10 ; S
+O1D + CH4 -> CH3O2 + OH                                      : 1.310e-10 ; S
+
+! =======================================================================
+! SECTION (Stratospheric) HOx reactions
+! =======================================================================
+H2O + hv -> H + OH                                           : jH2O_a ; S
+
+! =======================================================================
+! SECTION (Stratospheric) photo-ionisation reactions
+! =======================================================================
+O + hv -> Op + e                                             : jEUV_01 ; juser2, S
+O + hv -> Op + e                                             : jEUV_02 ; juser2, S
+CO2 + hv -> CO + O                                           : jEUV_26 ; juser2, S
+
+! =======================================================================
+! SECTION (Stratospheric) inorganic halogen reactions
+! =======================================================================
+CL + O3 -> CLO + O2                                          : 2.300e-11*exp(-200./T) ; 
+CL + H2 -> H + HCL                                           : 3.050e-11*exp(-2270./T) ; 
+CLO + OH -> CL + HO2                                         : 7.400e-12*exp(270./T) ; S
+CLO + OH -> HCL + O2                                         : 6.000e-13*exp(230./T) ; S
+CLO + HO2 -> HOCL + O2                                       : 2.600e-12*exp(290./T) ; S
+HOCL + OH -> CLO + H2O                                       : 3.000e-12*exp(-500./T) ; S
+CLONO2 + hv -> CL + NO3                                      : jCLONO2_a ; S
+CLONO2 + CL -> CL2 + NO3                                     : 6.500e-12*exp(135./T) ; S
+OCLO + hv -> CLO + O                                         : jOCLO ; S
+
+BR + O3 -> BRO + O2                                          : 1.600e-11*exp(-780./T) ; S
+BR + HO2 -> HBR + O2                                         : 4.800e-12*exp(-310./T) ; S
+BRO + HO2 -> HOBR + O2                                       : 4.500e-12*exp(460./T) ; S
+BRO + NO -> BR + NO2                                         : 8.800e-12*exp(260./T) ; S
+BRO + NO2 + M -> BRONO2 + M                                  : ktroe(5.200e-31,3.2,6.900e-12,2.9,0.6) ; S
+BRO + CLO -> BR + OCLO                                       : 9.500e-13*exp(550./T) ; S
+HBR + OH -> BR + H2O                                         : 5.500e-12*exp(200./T) ; S
+HBR + O -> BR + OH                                           : 5.800e-12*exp(-1500./T) ; S
+BRONO2 + hv -> BRO + NO2                                     : jBRONO2_b ; S
+BRONO2 + O -> BRO + NO3                                      : 1.900e-11*exp(215./T) ; S
+
+! =======================================================================
+! SECTION (Stratospheric) organic halogen reactions
+! =======================================================================
+CH3BR + hv -> BR + CH3O2                                     : jCH3BR ; S 
+CH3BR + OH -> BR + H2O + HO2                                 : 2.350e-12*exp(-1300./T) ; S
+CH3BR + CL -> HCL + HO2 + BR                                 : 1.400e-11*exp(-1030./T) ; S
+CHBR3 + hv -> 3*BR                                           : jCHBR3 ; S
+CHBR3 + CL -> 3*BR + HCL                                     : 4.850e-12*exp(-850./T) ; S
+
+CH3CL + hv -> CH3O2 + CL                                     : jCH3CL ; S
+CH3CCL3 + OH -> H2O + 3*CL                                   : 1.640e-12*exp(-1520./T) ; S
+
+CFC11 + hv -> 2*CL + COFCL                                   : jCFCL3 ; S
+CFC12 + hv -> 2*CL + COF2                                    : jCF2CL2 ; S
+
+! =======================================================================
+! SECTION (Tropospheric) heterogeneous reactions
+! =======================================================================
+HO2 -> 0.5*H2O2                                              : het_HO2_tropo ;             ! HO2_aer 
+NO2 -> 0.5*OH + 0.5*NO + 0.5*HNO3                            : het_NO2_tropo ;             ! NO2_aer 
+SO2 + OH -> SO4                                              : kSO2_OH ; 
+DMS + OH -> SO2                                              : 1.2e-11*exp(-280./T) ;  ! JPL(2011)
+
+
+
+VARIABLES
+! =======================================================================
+! SECTION heterogeneous rate coefficients
+! =======================================================================
+het_N2O5_tropo
+
+! =======================================================================
+! SECTION photolysis labels (must have cross section data for these)
+! =======================================================================
+jACET
+jCF3BR
+jCH2O_a
+jCH2O_b
+jCH3BR
+jCH3CCL3
+jCL2O2
+jCLONO2_a
+jCLONO2_b
+jCO2
+jH2O_c
+jHCFC141B
+jHO2NO2_b
+jHOBR
+jNO3_a
+
+! =======================================================================
+! SECTION gas-phase reaction coefficients
+! =======================================================================
+kO_O2 = 6.e-34*(300./T)^2.4*M   ! JPL(2011)
+kO_O = 4.23e-28/T^2*M           ! not in JPL(2011)
+kHO2_HO2 = (3.e-13*exp(460./T)+2.1e-33*M*exp(920./T))*(1+1.4e-21*H2O*exp(2200./T)) ! JPL(2011)
+k0_HNO3_OH = 2.4e-14*exp(460./T)
+k2_HNO3_OH = 2.7e-17*exp(2199./T)
+k3_HNO3_OH = 6.5e-34*exp(1335./T)
+kHNO3_OH =  k0_HNO3_OH + k3_HNO3_OH*M / (1. + k3_HNO3_OH*M/k2_HNO3_OH)
+kNO2_HO2 = ktroe(2.000e-31,3.4,2.900e-12,1.1,0.6)
+kHO2NO2 = kNO2_HO2 * exp(-10900./T) / 2.1e-27
+kNO2_NO3 = ktroe(2.000e-30,4.4,1.400e-12,0.7,0.6)
+kN2O5 = kNO2_NO3 * exp(-10991./T) / 3.0e-27
+kCO_OH = kactivation(1.5e-13, -0.6, 2.1e9, -6.1, 0.6)    ! JPL(2011)
+kPAN = kCH3CO3_NO2 * exp(-14000./T) / 9.0e-29
+kMPAN = kPAN
+
+kRO2_HO2 = 7.500e-13*exp(700./T)  ! Orlando (p.c.)
+kRO2_CH3O2 = 1.000e-12            ! Orlando (p.c.)
+kRO2_CH3CO3 = 1.000e-11           ! Orlando (p.c.)
+
+het_HO2_tropo
+het_NO2_tropo
+het_NO3_tropo
+het_N2O5_tropo
+
+ip_O3_a
+
+
+
+FUNCTIONS
+# Troe expression for 3-body reactions
+k0(k0_300, n) = k0_300 * (300./T)^n
+kinf(kinf_300, m) = kinf_300 * (300./T)^m
+kratio() = k0() * M / kinf()
+kfexp() = 1./(1. + log(kratio())^2)
+ktroe(k0_300, n, kinf_300, m, fc) = k0()*M/(1.+kratio()) * fc^kfexp() 
+
+# activation reaction (CO + OH + M) -- uses the same kratio and kfexp as ktroe
+kactivation(k0_300, n, kinf_300, m, fc) = k0()/(1.+kratio()) * fc^kfexp()
+
+N(fc) = 0.75 - 1.27 * log(fc)
+kfexp_iupac() = 1./(1. + log(kratio()/N())^2)
+k_3rd_iupac(k0_300, n, kinf_300, m, fc) = k0()*M/kratio() * fc^kfexp_iupac() 
+
+END
+
+Additional comments can be inserted after the END tag. 
+This should be used for a revision history of the mechanism file.

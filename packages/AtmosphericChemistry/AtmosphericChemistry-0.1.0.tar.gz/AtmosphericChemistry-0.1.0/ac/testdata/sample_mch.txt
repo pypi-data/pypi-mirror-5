@@ -1,0 +1,421 @@
+!! **********************************************************************
+!!  FILE:        SAMPLE.mch - SAMPLE FILE FOR PYTHON AtmospheicChemistry Package
+!!  DATE:        Sept 4, 2012 - update ACT+HO reaction
+!!  NOTE:        This is not a valid chemical mechanism and should only be used for 
+!!               testing of the python package AtmosphericChemistry!
+!!  LAST UPDATE: Sept 4, 2012
+!!  --------------------------------------------------------------------
+!!  For information on the complete mechanism, please see 
+!!  Reference: W.R. Stockwell, F. Kirchner, M. Kuhn, and S. Seefeld, "A 
+!!  New Mechanism for Regional Atmospheric Chemistry Modeling", J. of
+!!  Geophys. Res., 1997.
+!! and contact the authors.
+!!  --------------------------------------------------------------------
+! **********************************************************************
+!
+001 O3              ->      O3P         O2
+PHOTOLYSIS
+! --- CROSS SECTIONS: NASA 2006
+! QUANTUM YIELDS: ASSUMED TO BE 1-Q.Y.(O3->O1D)
+
+002 O3              ->      O1D         O2
+PHOTOLYSIS
+! --- CROSS SECTIONS: NASA 2006
+! QUANTUM YIELDS: NASA 2006
+
+003 H2O2            ->      HO          HO
+PHOTOLYSIS
+! --- C.S. NASA 2006  Q.Y. is believed to be unity
+
+004 NO2             ->      O3P         NO
+PHOTOLYSIS
+!  --- C.S. AND Q.Y. NASA 2006
+
+010 HCHO            ->      H2          CO
+PHOTOLYSIS
+! --- CROSS SECTIONS AND QY: NASA 2006
+
+011 HCHO            ->      HO2         HO2         CO
+PHOTOLYSIS
+! --- CROSS SECTIONS AND QY: NASA 2006
+
+021 GLY             ->      H2     2.00 CO   
+PHOTOLYSIS
+! --- REACTION (2) IN NASA 2006
+! --- C.S. AND Q.Y.: NASA 2006
+
+032 PAN             ->      ACO3        NO2
+PHOTOLYSIS
+! --- JPL 2006
+
+033 PAN             ->      MO2         CO2         NO3
+PHOTOLYSIS
+! --- JPL 2006
+
+042 O1D   H2O       ->  2.0 HO
+THERMAL  A-FACT  2.14E-10  E/R  0.0
+!  --- IUPAC WEB VERSION JANUARY 2008
+
+043 HO    H2        ->      H2O         HO2
+THERMAL  A-FACT  7.70E-12  E/R  2100.0
+!  --- IUPAC WEB VERSION OCTOBER 2006
+
+044 HO    HO2       ->      H2O         O2
+THERMAL  A-FACT  4.80E-11  E/R  -250.0
+!  --- IUPAC WEB VERSION OCTOBER 2006 
+
+045 HO2   HO2       ->      H2O2        O2
+SPECIAL RWK(#) = 2.2E-13*EXP(600./TEMP) +1.90E-33*CM*EXP(980./TEMP)
+!  --- IUPAC WEB VERSION OCTOBER 2006
+
+050 NO    HO2       ->      HO          NO2         
+THERMAL  A-FACT  3.45E-12  E/R   -270.0
+!  --- IUPAC WEB VERSION JANUARY 2008
+
+051 NO    HO2       ->      HNO3
+SPECIAL TMP3 = 3.45E-12*EXP(270/TEMP)
+SPECIAL TMP4 = (530/TEMP)+(4.8E-6)*PRES-1.73
+SPECIAL  RWK(#) = TMP3*TMP4/100
+! --- Cariolle ET AL. 2008
+! PRES - ATMOSPHERIC PRESSURE IN PASCAL
+! 1 pascal = 0.007500617 torr
+
+052 NO    NO    O2  ->  2.0 NO2
+THERMAL  A-FACT  3.30E-39  E/R  -530.0
+!  --- IUPAC WEB VERSION OCTOBER 2006
+
+053 HONO  HO        ->      H2O         NO2
+THERMAL  A-FACT  2.50E-12  E/R  -260.0
+!  --- IUPAC WEB VERSION OCTOBER 2006
+
+054 NO2   O3P       ->      NO          O2
+THERMAL  A-FACT  5.50E-12  E/R  -188.0
+!  --- IUPAC WEB VERSION OCTOBER 2006
+
+055 NO2   O3P       ->      NO3
+TROE  KO  2.50E-31  N  1.8  KINF  2.20E-11  M  0.7
+!  --- NASA 2006
+
+056 NO2   HO        ->      HNO3
+TROE  KO  1.51E-30  N  3.00 KINF  2.58E-11  M  0.0
+!  --- Mollner et al. 2010
+
+057 HNO3  HO        ->      NO3         H2O
+SPECIAL TMP0 = 2.4E-14*EXP(460/TEMP)
+SPECIAL TMP2 = 2.7E-17*EXP(2199/TEMP)
+SPECIAL TMP3 = 6.5E-34*EXP(1335/TEMP)*CM
+SPECIAL RWK(#) = TMP0 + TMP3/(1+TMP3/TMP2)
+!  --- IUPAC WEB VERSION OCTOBER 2006
+
+070 CO    HO        ->      HO2         CO2
+SPECIAL  RWK(#) = 1.44E-13*(1.+0.8*CM/4E19)
+!  --- IUPAC WEB VERSION OCTOBER 2006
+
+111 ROH   HO        ->      HO2    .184 ACD   .719  ALD
+THERMAL  A-FACT  2.60E-12  E/R  -200.0
+! --- BASED ON 2-PROPANOL - IUPAC 2006
+
+112 ETEG  HO        ->      HO2         ALD         
+THERMAL  A-FACT  1.47E-11  E/R     0.0
+!  --- ASCHMANN AND ATKINSON 1998 (ROOM TEMP ONLY)
+!  --- THIS IS THE DOMINANT LOSS MECHANISM FOR ETEG
+
+127 OLT   O3        -> 0.56 HCHO   0.44 ALD   0.43  CO
+&                      0.03 ORA1   0.06 ORA2  0.32  HO2
+&                      0.22 HO     0.06 MEK   0.01  ACD
+&                      0.01 CH4    0.01 HKET  0.02  ETH
+&                      .068 H2O2   0.08 MO2   0.06  ETHP
+&                      .015 HC3    0.04 HC3P  0.03  ACT
+&                      .006 HC5    0.02 HC5P  0.02  BALD
+&                      .032 BEN
+THERMAL  A-FACT  4.33E-15  E/R  1800.0
+!  --- RATE CONSTANT AND PRODUCTS ESTIMATED FROM MCM v3.1
+!  --- RATE CONSTANT IS TAKEN AS AVERAGE FOR US EMISSIONS
+!  --- new products for RACM2.5I.mch
+!  --- RACM2.5Ia.mch -- raise HO2 and lower HO yields
+
+128 OLI   O3        -> 0.46 HO     0.07 HO2   0.32  MO2
+&                      0.07 ETHP   0.04 HC3P  0.09  ACO3
+&                      0.37 CO     .026 H2O2  0.04  CH4
+&                      0.01 ETH    0.01 HC3   0.09  HCHO
+&                      .457 ACD    0.73 ALD   0.11  ACT
+&                      .017 KET    .044 HKET  .017  ORA2 
+THERMAL  A-FACT  4.40E-15  E/R  845.0 
+!  --- RATE CONSTANT AND PRODUCTS ESTIMATED FROM ATKINSON 1994 
+!  --- RATE CONSTANT IS TAKEN AS AVERAGE FOR US EMISSIONS 
+!  --- NEW PRODUCTS FOR 2.5J 
+
+129 DIEN  O3        -> 0.09 O3P    0.28 HO    0.30  HO2
+&                      0.03 MO2    0.15 ACO3  0.02  KETP
+&                      0.13 XO2    .001 H2O2  0.36  CO
+&                      0.35 OLT    0.90 HCHO  0.39  MACR  
+&                      0.15 ORA1   0.05 H2
+THERMAL  A-FACT  1.34E-14  E/R  2283.0
+! --- RATE CONSTANT ATKINSON AND AREY 2003
+! PRODUCTS SAME AS FOR ISO + O3
+
+130 ISO   O3        -> 0.25 HO     0.25 HO2   0.08  MO2
+&                      0.10 ACO3   0.10 MACP  0.09  H2O2
+&                      0.14 CO     0.58 HCHO  .461  MACR
+&                      .189 MVK    0.28 ORA1  .153  OLT
+THERMAL  A-FACT  7.86E-15  E/R  1913.
+!7.86E-15  1912  1.29E-17
+!  --- GEIGER ET AL. 2003 + propene yield from MCM
+!  --- MACR-MVK split according to Carter 1996
+
+131 API   O3        -> 0.85 HO     0.10 HO2   0.20  ETHP
+&                      0.42 KETP   0.14 CO    0.02  H2O2
+&                      0.65 ALD    0.53 KET
+THERMAL  A-FACT  5.00E-16  E/R   530.0
+!  --- ATKINSON AND AREY 2003
+
+132 LIM   O3        -> 0.85 HO     0.10 HO2   0.16  ETHP
+&                      0.42 KETP   0.02 H2O2  0.14  CO
+&                      0.46 OLT    0.04 HCHO  0.79  MACR
+&                      0.01 ORA1   0.07 ORA2
+THERMAL  A-FACT  2.95E-15  E/R   783.0
+!  --- ATKINSON AND AREY 2003
+
+133 MACR  O3        -> 0.19 HO     0.14 HO2   0.10  ACO3  
+&                      0.22 CO     0.50 MGLY  0.45  ORA1
+THERMAL  A-FACT  1.36E-15  E/R  2112.0
+! --- MACR= METHACROLEIN, ATKINSON 1994
+!  --- GEIGER ET AL. 2003
+! --- HO2 yield from MCM 3.2
+
+134 MVK   O3        -> 0.16 HO     0.11 HO2   0.28  ACO3
+&                      0.01 XO2    0.56 CO    0.10  HCHO
+&                      0.54 MGLY   0.07 ORA1  0.07  ORA2
+&                      0.10 ALD
+THERMAL  A-FACT  8.50E-16  E/R  1520.
+! rate from IUPAC06 - prods from MCM v3.2
+
+135 UALD  O3        -> .100 HO     .072 HO2   .008  MO2
+&                      .002 ACO3   0.10 XO2   .243  CO
+&                      .080 HCHO   .420 ACD   .028  KET
+&                      .491 GLY    .003 MGLY  .044  ORA1
+THERMAL  A-FACT  1.66E-18  E/R  0.0
+!  --- BASED ON CROTONALDEHYDE
+!  --- K AVE OF GROSJEAN AND GROSJEAN 1998 AND SATO ET
+!  --- AL. 2004
+!  --- Products based on Grosjean and Grosjean 1997
+
+136 DCB1  O3        -> 0.05 HO          HO2    0.60 RCO3
+&                      0.60 XO2    1.50 CO     0.05 HCHO
+&                      0.05 GLY    0.08 MGLY   0.65 OP2
+&                      0.50 CO2
+THERMAL  A-FACT  2.0E-16   E/R  0.0
+!  Products based on SAPRC07
+
+137 DCB2  O3        -> 0.05 HO          HO2    0.60 RCO3
+&                      0.60 XO2    1.50 CO     0.05 HCHO
+&                      0.05 GLY    0.08 MGLY   0.70 DCB1
+&                      0.65 OP2    0.50 CO2
+THERMAL  A-FACT  2.0E-16   E/R  0.0
+!  --- Products based on SAPRC07
+
+138 DCB3  O3        -> 0.05 HO          HO2    1.50 CO
+&                      0.48 GLY    0.70 DCB1   0.25 ORA1
+&                      0.25 ORA2   0.11 PAA    0.50 CO2
+THERMAL  A-FACT  9.0E-17   E/R  0.0
+!  --- new reaction for DCB3 - lower rate const by one order of magnitude
+!  --- Determined by fitting model simulations to chamber data.  
+!  --- Experiments EC331 (toluene + n-butane) were used.
+
+139 EPX   O3        -> 0.05 HO     1.50 HO2    1.50 CO
+&                      0.85 BALD        GLY    0.50 CO2
+THERMAL  A-FACT  5.0E-16   E/R  0.0
+!  --- CARTER 2000 -- increased A-FACT to be more like to OLI+O3 - WAS DCB1
+!  --- increase rate constant by a factor of 5
+
+140 MCTO  O3        ->      MCTP
+THERMAL  A-FACT  2.86E-13  E/R     0.0
+!PRODUCTS FROM MCM V3.1
+
+141 ETE   NO3       -> 0.80 OLNN   0.20 OLND
+THERMAL-T2  A-FACT  4.88E-18  E/R  2282.0
+!  --- RATE K ATKINSON AND AREY 2003
+
+142 OLT   NO3       -> 0.43 OLNN   0.57 OLND
+THERMAL  A-FACT  1.79E-13  E/R  450.0
+!  --- DIFFICULT TO LUMP BECAUSE OF VERY DIFFERENT K
+!  --- RATE CONSTANT SAME AS RACM1
+
+143 OLI   NO3       -> 0.11 OLNN   0.89 OLND
+THERMAL  A-FACT  8.64E-13  E/R  -450.
+!  --- DIFFICULT TO LUMP BECAUSE OF VERY DIFFERENT K
+!  --- RATE CONSTANT SAME AS RACM1
+
+144 DIEN  NO3       -> 0.90 OLNN   0.10 OLND  0.90  MACR
+THERMAL  A-FACT  1.00E-13  E/R     0.0
+! From ATKINSON AND AREY 2003, Value for 298
+
+145 ISO   NO3       ->      ISON
+THERMAL  A-FACT  3.03E-12  E/R   446.
+! --- GEIGER ET AL. 2003
+
+146 API   NO3       -> 0.10 OLNN   0.90 OLND
+THERMAL  A-FACT  1.19E-12  E/R  -490.0
+!  --- ATKINSON AND AREY 2003
+
+147 LIM   NO3       -> 0.71 OLNN   0.29 OLND
+THERMAL  A-FACT  1.22E-11  E/R     0.0
+!  --- RATE CONSTANT: ATKINSON AND AREY 2003
+!  --- PRODUCTS: SPITTLER ET AL, 2006
+
+148 HCHO  NO3       ->      HO2         CO          HNO3        
+THERMAL  A-FACT  2.00E-12  E/R  2440.0
+! --- RATE CONST ATKINSON ET AL. 2006 ATMOS CHEM PHYS V6
+!  (ACTUAL TEMP DEPENDENCE UNKNOWN)
+
+149 ACD   NO3       ->      ACO3        HNO3
+THERMAL  A-FACT  1.40E-12  E/R  1900.0
+!  --- NASA 2006 - BASED UPON PROPANAL
+
+150 ALD   NO3       ->      RCO3        HNO3
+THERMAL  A-FACT  3.76E-12  E/R  1900.0
+!  ---  (BASED ON PROPANAL)
+!  ---  USED PREFERRED VALUE OF K(298) ATKINSON ET AL.
+!  ---  TO FIND A FACTOR USING ACD E/R
+
+151 MACR  NO3       -> 0.68 HCHO   0.32 MACP  0.68  XO2
+&                      0.68 MGLY   0.32 HNO3  0.68  NO2 
+THERMAL  A-FACT  3.40E-15  E/R     0.0
+! --- GEOS-CHEM 9-02-04
+! --- RATE FROM IUPAC06
+
+152 UALD  NO3       ->      HO2         XO2   .668  CO    
+&                      .332 HCHO  .332  ALD         ONIT        
+THERMAL  A-FACT  5.02E-13  E/R  1076.0
+!  --- BASED ON CROTONALDEHYDE
+!  --- SALGADO ET AL. 2008
+
+153 GLY   NO3       ->      HO2   2.00  CO          HNO3        
+THERMAL  A-FACT  2.90E-12  E/R  1900.0
+! --- ASSUMED TO BE THE SAME AS 2*K(ALD)-K(ETH)
+! E/R FROM ALD + NO3
+
+154 MGLY  NO3       ->      ACO3        CO          HNO3 
+THERMAL  A-FACT  3.76E-12  E/R  1900.0
+!  --- ASSUMED TO SAME AS ALD + NO3 
+
+193 ACTP  NO        ->      ACO3        NO2         HCHO
+THERMAL  A-FACT  2.90E-12  E/R -300.0
+! --- JPL 2006 RATE CONSTANT
+
+204 ORAP  NO        ->      HO2         NO2         GLY         
+THERMAL  A-FACT  4.00E-12  E/R   0.0
+! --- RATE FROM ACTP + NO
+
+205 OLNN  NO        ->      HO2         NO2         ONIT
+THERMAL  A-FACT  4.00E-12  E/R    0.0
+! --- RATE K FROM HCP3 + NO
+
+206 OLND  NO        -> 2.00 NO2    .287 HCHO  1.24  ALD
+&                      .464 KET
+THERMAL  A-FACT  4.00E-12  E/R    0.0
+!  --- RATE K FROM HCP3 + NO
+
+207 ADCN  NO        -> 2.00 NO2         GLY         OP2
+THERMAL  A-FACT  2.70E-12  E/R  -360.
+!  --- PRODUCTS FROM MCM V3.1
+
+208 XO2   NO        ->      NO2
+THERMAL  A-FACT  4.00E-12  E/R   0.0
+!  --- KIRCHNER AND STOCKWELL, 1996
+
+209 BAL2  NO2       ->      ONIT       
+THERMAL  A-FACT  2.00E-11  E/R  0.0
+! --- Ferri et al. 2001 - rate constant Carter 2000
+
+210 CHO   NO2       ->      ONIT
+THERMAL  A-FACT  2.00E-11  E/R  0.0
+!  --- CARTER 2000
+
+211 MCTO  NO2       ->      ONIT
+THERMAL  A-FACT  2.08E-12  E/R     0.0
+!PRODUCTS FROM MCM V3.1
+
+212 MO2   HO2       ->      OP1
+THERMAL  A-FACT  4.10E-13  E/R -750.0
+!  --- NASA 2006
+
+213 ETHP  HO2       ->      OP2
+THERMAL  A-FACT  7.50E-13  E/R -700.0
+!  --- NASA 2006
+
+214 HC3P  HO2       ->      OP2
+THERMAL  A-FACT  1.66E-13  E/R -1300.0
+!  --- KIRCHNER AND STOCKWELL, 1996
+
+231 ACO3  HO2       -> 0.44 HO     0.44 MO2   0.15  ORA2
+&                      0.41 PAA    0.44 CO2
+THERMAL  A-FACT  4.3E-13  E/R  -1040.
+! --- products IUPAC 2008
+! --- Rate constant Tyndall et al. 2001
+
+232 RCO3  HO2       -> 0.44 HO     0.44 ETHP  0.15  ORA2   
+&                      0.41 PAA    0.44 CO2
+THERMAL  A-FACT  4.3E-13  E/R  -1040.
+! --- products IUPAC 2008
+! --- Rate constant Tyndall et al. 2001
+
+247 XO2   HO2       ->      OP2
+THERMAL  A-FACT  1.66E-13  E/R -1300.0
+!  --- AS PROP + HO2
+!  --- KIRCHNER AND STOCKWELL, 1996
+
+248 MO2   MO2       -> 0.74 HO2    1.37 HCHO  0.63  MOH
+THERMAL  A-FACT  9.50E-14  E/R  -390.0
+! --- RATE CONSTANT AS MO2 + MO2, TYNDALL ET AL. 2001
+! 33% RO + 67% ROH LIGHTFOOT 1992
+
+249 ETHP  MO2       ->      HO2    0.75 HCHO  0.75  ACD
+&                      .250 MOH    .250 EOH
+THERMAL  A-FACT  1.18E-13  E/R  -158.0
+! --- AS 2*SQRT(KM*KP)
+! --- KIRCHNER AND STOCKWELL, 1996; LEBRAS 1997
+
+250 HC3P  MO2       -> .894 HO2    .080 MO2   .026  ETHP
+&                      .026 XO2    .827 HCHO  .198  ALD
+&                      .497 KET    .050 GLY   .250  MOH 
+&                      .250 ROH
+THERMAL  A-FACT  9.46E-14  E/R  -431.0
+!  --- KIRCHNER AND STOCKWELL, 1996
+
+303 ACO3  ACO3      ->  2.0 MO2     2.0 CO2
+THERMAL  A-FACT  2.50E-12  E/R  -500.0
+!  --- LIGHTFOOT 1992, Rate constant Tyndall et al. 2001
+
+304 RCO3  ACO3      ->      MO2         ETHP  2.00  CO2
+THERMAL  A-FACT  2.50E-12  E/R  -500.0
+! --- LIGHTFOOT 1992, RATE CONST TYNDALL ET AL. 2001
+
+328 OLTP  NO3       -> 0.47 ALD    0.79 HCHO  0.79  HO2
+&                           NO2    0.18 MEK   0.02  ACD
+&                      0.09 ACT    
+THERMAL  A-FACT  1.20E-12  E/R   0.0
+!  --- ESTIMATED TO EQUAL TO MO2 AND ETHP
+!  --- KIRCHNER AND STOCKWELL, 1996
+
+329 OLIP  NO3       -> 0.86 HO2    0.72 ALD   0.11  KET
+&                           NO2    0.20 ACT   0.85  ACD
+&                      0.04 HKET   
+THERMAL  A-FACT  1.20E-12  E/R   0.0
+!  --- ESTIMATED TO EQUAL TO MO2 AND ETHP
+!  --- KIRCHNER AND STOCKWELL, 1996
+
+330 BENP  NO3       ->      HO2         NO2   0.50  DCB2
+&                      .500 DCB3        GLY
+THERMAL  A-FACT  1.20E-12  E/R  0.0
+!  --- PRODUCTS FROM MCMV3.1
+
+331 TLP1  NO3       ->      NO2         BALD
+THERMAL  A-FACT  1.20E-12  E/R   0.0
+! -- same as NO reaction but with different rate constant
+! --- NEW MECHANISM FOR TOL BASED ON CALVERT 2002 FOR TOL
+
+
+! END OF MECHANISM
+END
+

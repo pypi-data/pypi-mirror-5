@@ -1,0 +1,139 @@
+* SAMPLE INPUT FILE IN MOZPP FORMAT for AtmosphericChemistry Python package
+*
+* Note: This mechanism contains a subset of the CAMCHEM mechanism for testing the 
+* functionality of the python package. It does not constitute a valid chemical 
+* mechanism! If you are interested in the complete chemical mechanism of CAMCHEM
+* see the publication by J.F. Lamarque et al., 2012 and contact the authors.
+
+SPECIES
+
+      Solution
+ O3, O, O1D ->  O, N2O, NO, NO2, NO3, HNO3, HO2NO2, N2O5, H2, OH, HO2, H2O2
+ CH4, CO, CH3O2, CH3OOH, CH2O, CH3OH, C2H5OH
+ C2H4, EO -> HOCH2CH2O, EO2 -> HOCH2CH2O2, CH3COOH, GLYALD -> HOCH2CHO
+ C2H6, C2H5O2, C2H5OOH, CH3CHO, CH3CO3, CH3COOOH
+ C3H6, C3H8, C3H7O2, C3H7OOH, PO2 -> C3H6OHO2, POOH -> C3H6OHOOH
+ CH3COCH3, RO2 -> CH3COCH2O2, ROOH -> CH3COCH2OOH
+ BIGENE -> C4H8, ENEO2 -> C4H9O3
+ MEK -> C4H8O, MEKO2 -> C4H7O3, MEKOOH -> C4H8O3
+ SO2, DMS -> CH3SCH3, SO4, NH3, NH4, NH4NO3
+ Rn, Pb
+ HCN, CH3CN, C2H2, HCOOH, HOCH2OO
+      End Solution
+
+      Fixed
+ M, N2, O2, H2O
+      End Fixed
+
+      Col-int
+ O3 = 0.
+ O2 = 0.
+      End Col-int
+
+End SPECIES
+
+Solution Classes
+      Explicit
+       CH4, N2O, CO, Rn, Pb, H2, HCN, CH3CN
+      End Explicit
+      Implicit
+       O3, O1D, O, NO, NO2, NO3, HNO3, HO2NO2, N2O5, OH, HO2, H2O2
+       CH3O2, CH3OOH, CH2O, CH3OH, C2H5OH 
+       C2H4, EO, EO2, CH3COOH, GLYALD
+       C2H6, C2H5O2, C2H5OOH, CH3CHO, CH3CO3, CH3COOOH
+       C3H6, C3H8, C3H7O2, C3H7OOH, PO2, POOH, CH3COCH3, RO2, ROOH
+       SO2, DMS, SO4, NH3, NH4, NH4NO3, SOA
+      End Implicit
+End Solution Classes
+
+CHEMISTRY
+   Photolysis
+ [jo2->,jo2_b]          O2 + hv -> 2*O
+ [jo1d->,jo3_a]         O3 + hv -> O1D + O2
+ [jo3p->,jo3_b]         O3 + hv -> O + O2
+ [jn2o]                 N2O + hv -> O1D + N2
+ [jno2]                 NO2 + hv -> NO + O
+ [jn2o5->,jn2o5_a]      N2O5 + hv -> NO2 + NO3
+ [jhno3]                HNO3 + hv -> NO2 + OH
+ [jno3_a]               NO3 + hv -> .89*NO2 + .11*NO + .89*O3
+ [jno3_b]               NO3 + hv -> .89*NO2 + .11*NO + .89*O3
+ [jch3co3h->,.28*jh2o2] CH3COOOH + hv -> CH3O2 + OH  + CO2    
+ [jpan]                 PAN + hv -> .6*CH3CO3 + .6*NO2 + .4*CH3O2 + .4*NO3 + .4*CO2
+   End Photolysis
+
+   Reactions
+ [usr_O_O2]   O + O2 + M -> O3 + M
+          O + O3 -> 2*O2                                                 ; 8e-12, -2060
+ [o1d_n2] O1D + N2 -> O + N2                                             ; 2.1e-11, 115
+ [o1d_o2] O1D + O2 -> O + O2                                             ; 3.2e-11, 70
+ [ox_l1]  O1D + H2O -> 2*OH                                              ; 2.2e-10
+          H2 + O1D -> HO2 + OH                                           ; 1.1e-10
+          H2 + OH -> H2O + HO2                                           ; 2.8e-12, -1800
+          O + OH -> HO2 + O2                                             ; 2.2e-11, 120
+          HO2 + O -> OH + O2                                             ; 3e-11, 200
+ [ox_l2]  OH + O3 -> HO2 + O2                                            ; 1.7e-12, -940
+ [ox_l3]  HO2 + O3 -> OH + 2*O2                                          ; 1.e-14, -490
+ [usr_HO2_HO2]   HO2 + HO2 -> H2O2 + O2
+          H2O2 + OH -> H2O + HO2                                         ; 2.9e-12, -160
+          OH + HO2 -> H2O + O2                                           ; 4.8e-11, 250
+ [tag_NO2_NO3] NO2 + NO3 + M -> N2O5 + M                                ; 2.e-30,4.4, 1.4e-12,.7, .6
+ [usr_N2O5_M] N2O5 + M -> NO2 + NO3 + M
+ [tag_NO2_OH] NO2 + OH + M -> HNO3 + M                                   ; 1.80e-30, 3.0, 2.8e-11, 0.0, 0.6
+ [usr_HNO3_OH] HNO3 + OH -> NO3 + H2O
+          NO3 + NO -> 2*NO2                                              ; 1.5e-11, 170
+ [tag_NO2_HO2]   NO2 + HO2 + M -> HO2NO2 + M                             ; 2.0e-31,3.4, 2.9e-12,1.1, .6
+          CH2O + OH -> CO + H2O +HO2                                     ; 9.e-12
+          CO + OH + M -> CO2 + HO2 + M                                   ; 5.90e-33, 1.4,  1.10e-12, -1.3, 0.6
+ [usr_CO_OH_b] CO + OH -> CO2 + HO2         
+          CH3OH + OH -> HO2 + CH2O                                       ; 7.3e-12,-620
+          HCOOH + OH -> HO2 + CO2 + H2O                                  ; 4.5e-13
+ [tag_C2H4_OH]  C2H4 + OH + M -> .75*EO2 + .5*CH2O + .25*HO2 + M         ; 1.e-28,.8, 8.8e-12,0., .6
+ [ox_l6]  C2H4 + O3 -> CH2O + .12*HO2 + .5*CO + .12*OH + .5*HCOOH        ; 1.2e-14, -2630
+          C2H6 + OH -> C2H5O2 + H2O                                      ; 8.7e-12, -1070
+ [ox_p5]  C2H5O2 + NO -> CH3CHO + HO2 + NO2                              ; 2.6e-12, 365
+          C2H5O2 + HO2 -> C2H5OOH + O2                                   ; 7.5e-13, 700
+          C2H5O2 + CH3O2 -> .7 * CH2O + .8 * CH3CHO + HO2                ; 2.e-13
+	                   + .3 * CH3OH + .2 * C2H5OH
+          C2H5O2 + C2H5O2 -> 1.6 * CH3CHO + 1.2 * HO2 + .4 * C2H5OH      ; 6.8e-14
+          C2H5OOH + OH -> .5 * C2H5O2 + .5 * CH3CHO + .5 * OH            ; 3.8e-12, 200
+          CH3CHO + OH -> CH3CO3 + H2O                                    ; 5.6e-12, 270
+          CH3CHO + NO3 -> CH3CO3 + HNO3                                  ; 1.4e-12, -1900
+ [ox_p4]  CH3CO3 + NO -> CH3O2 + CO2 + NO2                               ; 8.1e-12, 270
+ [tag_CH3CO3_NO2]  CH3CO3 + NO2 + M -> PAN + M                           ; 8.5e-29,6.5, 1.1e-11,1., .6
+          CH3CO3 + HO2 -> .75*CH3COOOH + .25*CH3COOH + .25*O3            ; 4.3e-13, 1040
+          ONIT + OH -> NO2 + CH3COCHO                                    ; 6.8e-13
+          CH3COCHO + OH -> CH3CO3 + CO + H2O                               ; 8.4e-13,830
+          CH3COCHO + NO3 -> HNO3 + CO + CH3CO3                             ; 1.4e-12, -1860
+          HYAC + OH -> CH3COCHO + HO2                                      ; 3.e-12
+
+*C4
+          Rn -> Pb                                                         ; 2.1e-6
+*het/aerosol rxns
+ [usr_N2O5_aer]  N2O5 -> 2 * HNO3
+ [usr_NO3_aer]  NO3  -> HNO3
+ [usr_SO2_OH]  SO2 + OH -> SO4
+          DMS + OH -> SO2                                                  ; 9.6e-12,-234.
+          NH3 + OH -> H2O                                                  ; 1.7e-12, -710.
+   End Reactions
+
+   Ext Forcing
+      NO <- dataset
+      CO <- dataset
+      SO2 <- dataset
+   End Ext Forcing
+
+   END CHEMISTRY
+
+   SIMULATION PARAMETERS
+
+     Version Options
+        model   = cam
+        machine = demo
+        architecture = hybrid
+        vec_ftns  = on
+        multitask = on
+        namemod = on
+        modules = on
+     End Version Options
+
+   END SIMULATION PARAMETERS
