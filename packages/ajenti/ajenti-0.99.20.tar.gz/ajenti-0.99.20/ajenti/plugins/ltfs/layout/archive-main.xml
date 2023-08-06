@@ -1,0 +1,162 @@
+<vc>
+    <right>
+        <hc>
+            <label text="Search" />
+            <textbox id="search-query" />
+            <button id="search-files" icon="search" text="Files" />
+            <button id="search-tapes" icon="search" text="Tape info" />
+        </hc>
+    </right>
+    <hc>
+        <button id="add" text="Add tape" icon="plus" />
+    </hc>
+
+    <body id="search-results">
+        <pad>
+            <label text="Tapes" style="bold" />
+            <bind:collection bind="tapes" id="tapes">
+                <dt bind="__items">
+                    <dtr>
+                        <dth text="Name" /> 
+                        <dth text="Custom A" /> 
+                        <dth text="Custom B" /> 
+                        <dth text="Custom C" /> 
+                        <dth text="Custom D" /> 
+                        <dth />
+                    </dtr>
+                </dt>
+
+                <bind:template>
+                    <dtr>
+                        <dtd>
+                            <label bind="name" />
+                            <icon icon="warning-sign" id="tape-warning" />
+                        </dtd>
+                        <dtd>
+                            <label bind="custom_a" />
+                        </dtd>
+                        <dtd>
+                            <label bind="custom_b" />
+                        </dtd>
+                        <dtd>
+                            <label bind="custom_c" />
+                        </dtd>
+                        <dtd>
+                            <label bind="custom_d" />
+                        </dtd>
+                        <dtd width="1"> 
+                            <hc>
+                                <tooltip text="Edit">
+                                    <button icon="pencil" id="edit" style="mini" />
+                                </tooltip>
+                                <tooltip text="Remove from DB">
+                                    <button icon="remove" id="delete" style="mini" warning="Remove this tape from DB?" />
+                                </tooltip>
+                            </hc>
+                        </dtd>
+                    </dtr>
+                </bind:template>
+            </bind:collection>
+        </pad>
+
+        <pad>
+            <vc>
+                <label text="Files" style="bold" />
+                <hc>
+                    <label id="page-indicator" />
+                    <button id="page-prev" icon="chevron-left" text="Prev page" />
+                    <button id="page-next" icon="chevron-right" text="Next page" />
+                    <button id="select-all" icon="list" text="Select all" />
+                    <button id="restore" icon="refresh" text="Restore" />
+                    <button id="clear" icon="ban-circle" text="Clear" />
+                </hc>
+                <bind:collection bind="nodes" id="nodes">
+                    <dt bind="__items">
+                        <dtr>
+                            <dth width="1" />
+                            <dth text="Tape" />
+                            <dth text="Path" />
+                            <dth text="Checksum" />
+                        </dtr>
+                    </dt>
+
+                    <bind:template>
+                        <dtr>
+                            <dtd>
+                                <checkbox bind="selected" />
+                            </dtd>
+                            <dtd binder:context="tape">
+                                <label bind="name" />
+                            </dtd>
+                            <dtd forcewidth="300">
+                                <hc>
+                                    <label id="pad" />
+                                    <label bind="filepath" />
+                                </hc>
+                            </dtd>
+                            <dtd>
+                                <label bind="checksum" />
+                            </dtd>
+                        </dtr>
+                    </bind:template>
+                </bind:collection>
+            </vc>
+        </pad>
+
+        <dialog id="restore-dialog" visible="False"
+            buttons="[
+                {'text':'OK', 'id':'ok'},
+                {'text':'Cancel', 'id':'cancel'},
+            ]">
+            
+            <label style="bold" text="Creating a restore job" />
+    
+            <formline text="Name">
+                <textbox bind="name" />
+            </formline>
+
+            <formline text="Destination">
+                <hc>
+                    <label bind="destination" />
+                    <button id="restore-destination-select" text="Select" />
+                </hc>
+            </formline>
+
+            <formline>
+                <checkbox bind="export" text="Export tape" />
+            </formline>
+        </dialog>
+
+        <opendirdialog id="restore-destination-dialog" visible="False" root="/mnt" />
+
+        <dialog id="tape-dialog" visible="False"
+            buttons="[
+                {'text':'Save', 'id':'save'},
+                {'text':'Reindex', 'id':'reindex'},
+                {'text':'Cancel', 'id':'cancel'},
+            ]">
+            <pad>
+                <formline text="Root path" id="root-line">
+                    <textbox bind="root" />
+                </formline>
+
+                <formline text="Name">
+                    <textbox bind="name" />
+                </formline>
+
+                <formline text="Custom field A">
+                    <textbox bind="custom_a" />
+                </formline>
+                <formline text="Custom field B">
+                    <textbox bind="custom_b" />
+                </formline>
+                <formline text="Custom field C">
+                    <textbox bind="custom_c" />
+                </formline>
+                <formline text="Custom field D">
+                    <textbox bind="custom_d" />
+                </formline>
+            </pad>
+        </dialog>
+    </body>
+</vc>
