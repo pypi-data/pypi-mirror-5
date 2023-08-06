@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using Measurement Objects &mdash; python-measurement 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="python-measurement 1.0 documentation" href="../index.html" />
+    <link rel="prev" title="Measures" href="measures.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="measures.html" title="Measures"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python-measurement 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-measurement-objects">
+<h1>Using Measurement Objects<a class="headerlink" href="#using-measurement-objects" title="Permalink to this headline">¶</a></h1>
+<p>You can import any of the above measures from <cite>measurement.measures</cite>
+and use it for easily handling measurements like so:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">measurement.measures</span> <span class="kn">import</span> <span class="n">Weight</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span> <span class="o">=</span> <span class="n">Weight</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mi">135</span><span class="p">)</span> <span class="c"># Represents 135lbs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">w</span>
+<span class="go">135.0 lb</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">w</span><span class="o">.</span><span class="n">kg</span>
+<span class="go">61.234919999999995</span>
+</pre></div>
+</div>
+<p>You can create a measurement unit using any compatible unit and can transform
+it into any compatible unit.  See <a class="reference internal" href="measures.html"><em>Measures</em></a> for information about which
+units are supported by which measures.</p>
+<p>To access the raw value of a unit in the unit it was defined in, you can use
+the &#8216;value&#8217; property:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">w</span><span class="o">.</span><span class="n">value</span>
+<span class="go">135.0</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="guessing-measurements">
+<h1>Guessing Measurements<a class="headerlink" href="#guessing-measurements" title="Permalink to this headline">¶</a></h1>
+<p>If you happen to be in a situation where you are processing a list of
+value/unit pairs (like you might find at the beginning of a recipe), you can
+use the <cite>guess</cite> function to give you a measurement object.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">measurement.utils</span> <span class="kn">import</span> <span class="n">guess</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">guess</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="s">&#39;mg&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="go">Weight(g=10.0)</span>
+</pre></div>
+</div>
+<p>By default, this will check all built-in measures, and will return the first
+measure having an appropriate unit.  You may want to constrain the list of
+measures checked (or your own measurement classes, too) to make sure
+that your measurement is not mis-guessed, and you can do that by specifying
+the <tt class="docutils literal"><span class="pre">measures</span></tt> keyword argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">measurement.measures</span> <span class="kn">import</span> <span class="n">Distance</span><span class="p">,</span> <span class="n">Temperature</span><span class="p">,</span> <span class="n">Volume</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">guess</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="n">measures</span><span class="o">=</span><span class="p">[</span><span class="n">Distance</span><span class="p">,</span> <span class="n">Volume</span><span class="p">,</span> <span class="n">Temperature</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="go">Temperature(f=24)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">It is absolutely possible for this to misguess due to common measurement
+abbreviations overlapping &#8211; for example, both Temperature and Energy
+accept the argument <tt class="docutils literal"><span class="pre">c</span></tt> for representing degrees celsius and calories
+respectively.  It is advisible that you constrain the list of measurements
+to check to ones that you would consider appropriate for your input data.</p>
+</div>
+<p>If no match is found, a <tt class="docutils literal"><span class="pre">ValueError</span></tt> exception will be raised:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">guess</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="n">measures</span><span class="o">=</span><span class="p">[</span><span class="n">Distance</span><span class="p">,</span> <span class="n">Volume</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+  File <span class="nb">&quot;measurement/utils.py&quot;</span>, line <span class="m">61</span>, in <span class="n">guess</span>
+    <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">__name__</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">measures</span><span class="p">])</span>
+<span class="gr">ValueError</span>: <span class="n">No valid measure found for 24 f; checked Distance, Volume</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using Measurement Objects</a></li>
+<li><a class="reference internal" href="#guessing-measurements">Guessing Measurements</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="measures.html"
+                        title="previous chapter">Measures</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/topics/use.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="measures.html" title="Measures"
+             >previous</a> |</li>
+        <li><a href="../index.html">python-measurement 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Adam Coddington.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
