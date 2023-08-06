@@ -1,0 +1,13 @@
+========
+VProtect
+========
+
+vprotect is a simple tool that allows changing a process's memory protection
+flags in Windows.
+
+Memory protection flags here refer to the memory protection constants are are
+used to signify the protection that each page in memory has. Examples of such
+constants include PAGE_EXECUTE, PAGE_EXECUTE_READ, PAGE_NOACCESS, and so on.
+
+The set of constants, and their corresponding values, may be found here:
+http://msdn.microsoft.com/en-us/library/windows/desktop/aa366786(v=vs.85).aspx
