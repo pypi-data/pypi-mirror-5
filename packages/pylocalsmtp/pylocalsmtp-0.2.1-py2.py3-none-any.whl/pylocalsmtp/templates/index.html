@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="/medias/css/style.css" />
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/sockjs-client/0.3.4/sockjs.min.js"></script>
+<title>PyLocalSmtp Inbox</title>
+<script>
+  var total_inbox = 0;
+  var unread_inbox = 0;
+
+  function insertMail(mail){
+    div_id = "mail_" + mail.id;
+    css_class = 'mail';
+    if (mail.read == false) {
+      css_class = css_class + " unread"
+      unread_inbox++;
+    }
+    $("#inbox").prepend("<div class='"+css_class+"' id='"+div_id+"' data-mail-id='"+mail.id+"'><div><b>#"+mail.id+" "+mail.subject+"</b><br>"+mail.sent_date+"</div></div>");
+    total_inbox++;
+    update_inbox_count();
+  }
+
+  function update_inbox_count(){
+    $("#inbox_count").text(unread_inbox+"/"+total_inbox);
+    if(unread_inbox > 0){
+      $('title').text("("+unread_inbox+") PyLocalSmtp Inbox")
+    }else{
+      $('title').text("PyLocalSmtp Inbox");
+
+    }
+  }
+
+  function read(mail_id){
+    $('.mail').removeClass('read_on');
+    if($("#mail_" + mail_id).hasClass("unread")){
+      unread_inbox--;
+      
+    }
+    update_inbox_count();
+    $("#mail_" + mail_id).removeClass("unread").addClass("read_on");
+    $.getJSON('/mail/'+mail_id+"/", function(data) {
+      $("#mail_detail").empty();
+      $("#mail_detail").append("<h2>" + data.subject + "</h2>");
+      $("#mail_detail").append("De: " + data.mail_from + "<br/>");
+      $("#mail_detail").append("A: " + data.mail_to + "<br/>");
+      $("#mail_detail").append("Date: " + data.sent_date);
+      $("#mail_detail").append("<div class='mail_body'>" + data.body_html + "</div>");
+    });
+  }
+
+  $(function() {
+    var sent = 0;
+    var recv = 0;
+
+    $.getJSON('/mail/', function(data) {
+      for (var i = data.object_list.length - 1; i >= 0; i--) {
+        insertMail(data.object_list[i]);
+      };
+    });
+
+    $("#inbox").on('click', ".mail", function(){
+      read($(this).attr('data-mail-id'));
+    });
+
+
+    var conn = new SockJS('/inbox');
+    conn.onopen = function() {
+      conn.send();
+    };
+    conn.onmessage = function(e) {
+      recv += 1;
+      insertMail(e.data);
+    }
+
+  });
+</script>
+</head>
+<body>
+  <div class="wrapper">
+    <header><h1>PyLocalSmtp</h1></header>
+    <div id="main">
+      <div class="top_details">Inbox (<span id="inbox_count">0</span>)</div>
+      <div class="row">
+        <div class="third">
+          <div id="inbox"></div>
+        </div>
+        <div class="twothird">
+          <div id="mail_detail"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div id="msg"></div>
+
+
+</body>
+</html>
