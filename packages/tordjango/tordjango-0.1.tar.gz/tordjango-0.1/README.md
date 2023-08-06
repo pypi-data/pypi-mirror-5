@@ -1,0 +1,35 @@
+TorDjango
+=====================
+
+This is a simple management command that serves a Django project using Tornado.
+
+    python manage.py runtornado [8000, 8001, ...]
+
+Requirements
+------------
+
+- Django
+- Tornado
+
+`runtornado` Command
+--------
+
+The management command `runtornado` takes the following arguments:
+
+- `--reload`: Use code change auto-reloader
+- `--static`: Serve static files
+- `--multiple`: Use multiple processes (one per CPU core; `--reload` 
+    will be ignored)
+
+Note: `--multiple` requires that the Tornado ioloop be uninitialized
+before the management command completes. If it has already been
+initialized (say, by an application that's adding callbacks somewhere),
+the server will fail to start. `--multiple` is incompatible with the
+code reloader, and `--reload` will be ignored.
+
+TODO
+----
+
+- Configuration option for specifying additional Tornado handlers.
+
+
