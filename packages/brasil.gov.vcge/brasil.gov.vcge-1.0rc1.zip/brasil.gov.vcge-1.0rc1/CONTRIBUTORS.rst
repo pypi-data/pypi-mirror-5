@@ -1,0 +1,8 @@
+Contribuidores
+-----------------
+
+* Equipe do Governo Eletrônico -- concepção da barra, diretrizes 
+  de uso 
+
+* Comunidade PloneGov.Br -- Implantação em Plone
+
