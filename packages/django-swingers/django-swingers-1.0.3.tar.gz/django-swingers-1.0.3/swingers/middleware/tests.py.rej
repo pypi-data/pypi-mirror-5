@@ -1,0 +1,55 @@
+--- tests.py
++++ tests.py
+@@ -273,8 +276,50 @@
+ 
+         self.assertTrue(len(resp_without_middleware.content) >
+                         len(resp_with_middleware.content))
+-        self.assertEqual(len(resp_with_middleware.content),
+-                         len(resp_with_middleware.content))
++
++    def test_JsCssCompressorWorks(self):
++        # TODO: this should be a bit smarter and at least check that the
++        # compressed css/js files make sense, might need to use selenium
++        view = 'test-create-duck2'
++        self.client.login(username='test', password='test')
++        # keeps doctype
++        # minify everything but js/css with @data-compress="false"
++        resp_with_middleware = self.client.get(reverse(view))
++        self.assertEqual(resp_with_middleware.status_code, 200)
++        self.assertTrue(resp_with_middleware.content.lower().startswith(
++            '<!doctype html>'))
++        self.assertEqual(resp_with_middleware.content.count('<script'), 2)
++        self.assertEqual(
++            resp_with_middleware.content.count('<style') +
++            resp_with_middleware.content.count('rel="stylesheet"'), 2
++        )
++
++        # check compress cache works
++        resp_with_middleware2 = self.client.get(reverse(view))
++        self.assertEqual(resp_with_middleware2.status_code, 200)
++        self.assertTrue(resp_with_middleware2.content.lower().startswith(
++            '<!doctype html>'))
++
++        self.assertEqual(resp_with_middleware.content,
++                         resp_with_middleware2.content)
++
++        # don't compress when debug toolbar is shown
++        DEBUG_TOOLBAR_CONFIG = {'SHOW_TOOLBAR_CALLBACK': lambda x: True}
++        with self.settings(DEBUG=True,
++                           DEBUG_TOOLBAR_CONFIG=DEBUG_TOOLBAR_CONFIG):
++            resp_without_middleware = self.client.get(reverse(view))
++            self.assertEqual(resp_without_middleware.status_code, 200)
++            self.assertTrue(resp_without_middleware.content.lower().startswith(
++                '<!doctype html>'))
++            self.assertEqual(
++                resp_without_middleware.content.count('<script'), 3)
++            self.assertEqual(
++                resp_without_middleware.content.count('<style') +
++                resp_without_middleware.content.count('rel="stylesheet"'), 3
++            )
++
++        self.assertTrue(len(resp_without_middleware.content) >
++                        len(resp_with_middleware.content))
+ 
+ 
+ CACHES = {
