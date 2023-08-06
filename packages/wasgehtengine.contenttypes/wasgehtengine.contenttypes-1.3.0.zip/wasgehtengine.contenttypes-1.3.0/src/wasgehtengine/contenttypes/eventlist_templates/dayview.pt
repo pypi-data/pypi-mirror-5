@@ -1,0 +1,48 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:tal="http://xml.zope.org/namespaces/tal" xmlns:metal="http://xml.zope.org/namespaces/metal"
+	xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+	metal:use-macro="context/main_template/macros/master" i18n:domain="wasgehtengine.contenttypes">
+	<body>
+
+		<metal:content-core fill-slot="main">
+			<metal:content-core define-macro="main">
+
+				<header>
+					<h1 tal:content="python:view.day.strftime('%A, %d.%m.')" />
+
+					<a tal:attributes="href view/previous">Previous</a>
+					<a tal:attributes="href view/next">Next</a>
+				</header>
+				<ul id="eventsList" class="itemList">
+					<li tal:repeat="event view/events">
+						<article class="event">
+							<header>
+								<h2 class="event-title">
+									<a tal:attributes="href event/absolute_url" tal:content="event/title" />
+								</h2>
+								<div class="event-metainfo">
+									<a tal:condition="event/venue" tal:attributes="href event/venue/to_object/absolute_url"
+										tal:content="event/venue/to_object/title" />
+									<time class="eventBegin"
+										tal:attributes="datetime python:event.period.start.isoformat()"
+										tal:content="python:event.period.start.strftime('%H:%M')" />
+									<tal:if condition="event/period/end">
+										<span>-</span>
+										<time class="eventEnd"
+											tal:attributes="datetime python:event.period.end.isoformat()"
+											tal:content="python:event.period.end.strftime('%H:%M')" />
+									</tal:if>
+									<span> Uhr</span>
+									<span tal:condition="event/website" class="event-website">
+										<a tal:attributes="href event/website" class="external">Veranstalterseite</a>
+									</span>
+								</div>
+							</header>
+							<p class="event-description" tal:content="event/description" />
+						</article>
+					</li>
+				</ul>
+			</metal:content-core>
+		</metal:content-core>
+	</body>
+</html>
