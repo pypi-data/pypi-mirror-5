@@ -1,0 +1,55 @@
+#!/usr/bin/python
+#-*- coding: utf-8 -*-
+
+import argparse
+import sys
+import pip
+import ConfigParser as config
+import os
+import traceback
+
+from deploy_class import *
+from deploy_class.executors import ConsoleInterface
+from deploy_class.argparser import ArgParser
+import json
+from deploy_class.globals import bcolors
+
+CONFIG_PATH = "./deploy.config"
+LOCAL_PROJECT_PATH = None
+DEPLOYERS = {}
+
+
+def parseConfig(config_path = CONFIG_PATH):
+    global CONFIG_PATH, LOCAL_PROJECT_PATH
+    if not os.path.exists(config_path):
+        raise ValueError("Config with path %s doesn't exist"%config_path)
+    
+    with open(config_path, "r") as fd:
+        config = json.loads(fd.read())
+      
+    for branch in config:
+        DEPLOYERS[branch] = Deployer(**config[branch])
+
+
+
+def main(argv = sys.argv):
+    global DEPLOYERS
+    if not os.path.exists(CONFIG_PATH):
+        raise ValueError("You must create %s"%CONFIG_PATH)
+    
+    parseConfig()
+    
+    arg_parser = ArgParser(DEPLOYERS)
+    if argv[1] == "console":
+        arg_parser.console()
+    else:
+        arg_parser.parse(argv[1:])
+    
+
+if __name__ == "__main__":
+    main()
+
+    
+    
+    
+    
