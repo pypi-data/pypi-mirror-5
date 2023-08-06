@@ -1,0 +1,80 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="producepublish">
+
+    <metal:fill fill-slot="main">
+        <metal:call tal:define="dummy python: context.restrictedTraverse('@@sync')(redirect=False)" />
+
+        <h1> 
+            <span i18n:translate="AuthoringTemplate">AuthoringTemplate</span>:
+            <span tal:content="context/Title" />
+        </h1>
+        <div class="warning" tal:condition="context/getResourceOnFilesystem" i18n:translate="warning_template_is_readonly">
+            This template uses a file-system based registered resource directory (<span tal:replace="context/getResourceOnFilesystem" />).
+            <br/>
+            The resources are not editable through the web.
+        </div>
+
+        <table id="authoring-template">
+            <thead>
+                <tr>
+                    <th i18n:translate="label_templates">Templates</th>
+                    <th i18n:translate="label_stylesheets">Stylesheets</th>
+                    <th i18n:translate="label_cover_pages">Cover pages</th>
+                    <th i18n:translate="label_binary_resources">Binary resources</th>
+                    <th i18n:translate="label_image_resources">Image resources</th>
+                    <th i18n:translate="label_calibre_profiles">Calibre profiles</th>
+                </tr>
+            </thead>
+            <tbody tal:define="read_only context/getResourceOnFilesystem;
+                               view_name python: read_only and '@@view_readonly' or 'view'">
+                <tr>
+                    <td>
+                        <div tal:repeat="brain python: context.getFolderContents(contentFilter=dict(portal_type='AuthoringMasterTemplate', sort_on='sortable_title'))">
+                            <a tal:attributes="href string:${brain/getURL}/$view_name" tal:content="brain/Title | brain/getId" />
+                        </div>
+                    </td>
+
+                    <td>
+                        <div tal:repeat="brain python: context.getFolderContents(contentFilter=dict(portal_type='AuthoringStylesheet', sort_on='sortable_title'))">
+                            <a tal:attributes="href string:${brain/getURL}/$view_name" tal:content="brain/Title | brain/getId" />
+                        </div>
+                    </td>
+
+                    <td>
+                        <div tal:repeat="brain python: context.getFolderContents(contentFilter=dict(portal_type='AuthoringCoverPage', sort_on='sortable_title'))">
+                            <a tal:attributes="href string:${brain/getURL}/$view_name" tal:content="brain/Title | brain/getId" />
+                        </div>
+                    </td>
+
+                    <td>
+                        <div tal:repeat="brain python: context.getFolderContents(contentFilter=dict(portal_type='AuthoringBinaryResource', sort_on='sortable_title'))">
+                            <a tal:condition="not: read_only" tal:attributes="href string:${brain/getURL}/$view_name" tal:content="brain/Title | brain/getId" />
+                            <span tal:condition="read_only" tal:content="brain/Title | brain/getId" />
+                        </div>
+                    </td>
+
+                    <td>
+                        <div tal:repeat="brain python: context.getFolderContents(contentFilter=dict(portal_type='AuthoringImageResource', sort_on='sortable_title'))">
+                            <a tal:condition="not: read_only" tal:attributes="href string:${brain/getURL}/$view_name" tal:content="brain/Title | brain/getId" />
+                            <span tal:condition="read_only" tal:content="brain/Title | brain/getId" />
+                        </div>
+                    </td>
+
+                    <td>
+                        <div tal:repeat="brain python: context.getFolderContents(contentFilter=dict(portal_type='AuthoringCalibreProfile', sort_on='sortable_title'))">
+                            <a tal:attributes="href string:${brain/getURL}/$view_name" tal:content="brain/Title | brain/getId" />
+                        </div>
+                    </td>
+
+                </tr>
+            </tbody>
+        </table>
+
+    </metal:fill>
+</html>
