@@ -1,0 +1,781 @@
+% options draft, arxiv, submit, target
+\documentclass[neutral,proc,reqno]{ml-gen}
+
+\usepackage{upref,mathrsfs,enumerate} % maybe amscd
+
+%Footnotes
+%\usepackage[symbol]{footmisc}
+%\usepackage{perpage}
+%\MakePerPage[5]{footnote}
+
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,backref=page]{hyperref}
+\usepackage{local}
+
+%% DRAFT ONLY
+\opt{draft}{
+\usepackage{showlabels}
+\renewcommand{\showlabelfont}{\scriptsize\ttfamily}
+}
+
+%% nicer fonts
+\renewcommand{\rmdefault}{pplj}
+\usepackage{euler}
+\usepackage{noweb}
+\usepackage{shortvrb}
+\MakeShortVerb{\|}
+\usepackage{listings}
+
+%\setcounter{tocdepth}{1}
+%\numberwithin{equation}{subsection}
+
+\tolerance=2000 
+\emergencystretch=20pt 
+%}}}
+% TITLE AND ABSTRACT %{{{
+\begin{document}
+\lstset{%
+language=Python,
+basicstyle=\small,
+%commentstyle=\ttfamily,
+%identifierstyle=\ttfamily,
+%showspaces=true,
+%stringstyle=\ttfamily,
+columns=fullflexible}
+
+\title[\texttt{pnw}]{\texttt{pnw} -- A text manipulation and literate
+programming tool written in \texttt{python}}
+
+\author{Matthias Lesch}
+\address{Mathematisches Institut,
+Universit\"at Bonn,
+Endenicher Allee 60,
+53115 Bonn,
+Germany}
+
+\email{ml@matthiaslesch.de, lesch@math.uni-bonn.de}
+\urladdr{www.matthiaslesch.de, www.math.uni-bonn.de/people/lesch}
+%
+%\thanks{Partially supported by the 
+%        Hausdorff Center for Mathematics}
+
+%\subjclass[2010]{Primary XXX; Secondary XXX}
+
+% draft, submit only
+\opt{draft,submit}{
+\date{\today}
+}
+\date{Version: \input{hginfo.blg}}
+\begin{abstract}
+pnw is a text processing tool with a wide range of applications. It can
+be used to compile chunks of text from various sources into a new text
+file. The advantage over cut-and-paste techniques is that changes in the
+source file are automatically followed. Secondly, we provide a thin
+wrapper around the pandoc document converter. Therefore, chunks of text
+can be converted from and to a wide range of lightweight markup
+languages as well as html and tex/latex. Although literate programming
+has become a little out of fashion, pnw can be used as a literate
+programming tool, too. Not surprisingly, pnw itself and its
+documentation is written using pnw. pnw is remotely inspired by noweb
+and heavily inspired by (even borrowing part of the syntax from)
+\href{https://pypi.python.org/pypi/antiweb/0.2.2}{antiweb}. An important
+feature of pnw, which is not present in antiweb, is the support of
+namespaces. This allows to create reusable \emph{block libraries} which
+can be imported and addressed in a \emph{dot-notation syntax} similar to
+python modules.
+
+A pnw file is a text file with tags defining named blocks of text. In a
+way this is similar to an xml file. Tags may be hidden behind comment
+characters, such that the file remains processable by another program.
+The blocks of text from various pnw files can be processed and rendered
+by another pnw file.
+
+\end{abstract}
+
+\maketitle
+\tableofcontents
+%\listoffigures
+
+\newpage
+%}}}
+
+% SECTION 1 
+\section{\pnw\ language syntax}
+\subsection{pnw tags}
+
+A line is recognized as a pnw tag if it is of the form
+
+\begin{lstlisting}
+<whitespace><one non-word character>@tagname(args,kwargs)
+\end{lstlisting}
+The indent (length of the whitespace) is significant for some tags. The
+non-word character is completely arbitrary. Typically one might use a
+language specific comment character (\lstinline!%! for latex,
+\lstinline!#! for python) here. In the following we either use
+\lstinline!#!, the python comment character, or omit it altogether and
+write tags in the form \lstinline!@tagname!. Here is a quick summary of
+the available pnw tags:
+
+\begin{description}
+\item[\textbf{\#@block(name,args,kwargs)}]
+Starts block name; one may also write \lstinline!chunk! instead of
+\lstinline!block!, they are synonymous. A block ends at
+
+\begin{itemize}
+\item
+  the start of another block or an \lstinline!#@end! with a smaller or
+  equal indent,
+\item
+  another \lstinline!#@! tag with a smaller indent,
+\item
+  the end of the file.
+\end{itemize}
+Several blocks may have the same name if they have the same indent. Then
+these blocks are combined into a \emph{chunk} of that name and the
+individual subblocks are named name1, name2 etc.
+
+\textbf{Beware}: due to namespace notation, Block names may NOT contain
+dots.
+
+\item[\textbf{\#@end}]
+Explicit end of a block, indent is significant.
+
+\item[\textbf{\#@import(fname,nspace)}]
+Imports file fname into nspace. This means that the blocks and chunks in
+fname can be addressed as nspace.name. Within fname blocks/chunks can
+address each other without nspace prefix. This is analogous to the
+python import statement.
+
+\item[\textbf{\#@include(name)}]
+Includes the block/chunk name instead of this line. The indent is
+significant: the indent of the \textbar{}\#@include\textbar{} statement
+is added when rendering the content of block/chunk name.
+
+\end{description}
+All other lines outside of blocks are ignored. The content of each
+namespace nspace is collected in the block (resp. chunk if several files
+are imported into the same namespacefile fname) nspace.
+
+
+\subsection{options, markup languages}
+
+The syntax for the |block|/|chunk| tag is similar to the syntax for |python|
+functions. In detail
+\begin{lstlisting}
+    chunk(arg1,arg2,...,argn,kwarg1=value1,...,kwargm=valuem)
+\end{lstlisting}
+So far the following options are available
+\begin{description}
+    \item[remove] Removes block completely from its parent block.
+\end{description}        
+Furthermore, the following keyword arguments are observed:
+\begin{description}
+    \item[format=\{pandoc format\}] Specifies the formatting of the following
+        block. Any format which |pandoc| can handle is allowed. E.g. if a
+        block is |markdown| formatted and it includes another block using the
+        include directive, the program tries to convert that block into
+        |markdown| as well.
+\end{description}        
+
+
+\section{Usage}
+\subsection{CLI}
+Command line usage is as follows
+\begin{lstlisting}
+pnw <options> <file>
+\end{lstlisting}
+where |<file>| is the pnw file. The following options are available
+\begin{description}
+    \item[-R, --chunk |<chname>|] Extracts chunk |chname| and renders it.
+    \item[-F] Renders whole file as one chunk.
+    \item[-f, --format] Output format, can be any format supported by
+        |pandoc|.     
+    \item[-t, --tree] Show document tree.
+    \item[-d, --depth] Traverses the tree up to depth d. Nodes of depths
+        d are indicated as |<<name>>|, as in noweb, and not expanded any further.
+\end{description}        
+
+\subsubsection{Example}
+The command
+\begin{lstlisting}
+pnw -Rmoduledoc -flatex pnw.pnw > pnw.tex
+\end{lstlisting}
+renders the chunk |moduledoc| from the source file |pnw.pnw| in latex
+format and writes the result to the file |pnw.tex|.
+
+\subsection{\lstinline!python! module}
+
+The public interface consists of the following functions and classes,
+
+\begin{lstlisting}
+class Block():
+    def __init__(self,text,fname,lineno,parent_block = None, parent_chunk = None):
+class Chunk(Block):
+    def __init__(self,name,block):
+def registerblock(name,block):
+def pnwimport(fname,nspace,line=None):
+\end{lstlisting}
+We have the following global variables:
+
+\begin{description}
+\item[\textbf{paths}]
+Search path for files
+
+\item[\textbf{imports}]
+Dictionary mapping imported filenames to their associated namespaces
+
+\item[\textbf{chunks}]
+Dictionary of Chunks and Blocks
+
+\item[\textbf{roots}]
+Set of Root Nodes
+
+\item[\textbf{rootchunks}]
+Set of Root Chunks
+
+\end{description}
+\subsubsection{function \lstinline!pnwimport!}
+
+This is the main function for using pnw as a python module. The file
+\lstinline!fname! is parsed and its blocks/chunks are read into the
+namespace \lstinline!nspace!. The argument \lstinline!line! is used
+internally for conveying error information and it can be ignored by
+external user.
+
+Indent is taken care of in chunk defs, not in imports, so the
+indentation of import statement is irrelevant.
+
+\subsubsection{\lstinline!class Block!}
+
+This is the base class for nodes of the document tree. For each line of
+a pnw document an instance of \lstinline!Block! is created. A
+\lstinline!Block! needs the following default information:
+
+\begin{description}
+\item[\textbf{text}]
+The (line of) text
+\item[\textbf{fname}]
+The name of the file
+\item[\textbf{lineno}]
+Line number of the text line
+\end{description}
+\textbf{Important attributes:}
+
+\begin{description}
+\item[\textbf{parent\_ block}]
+the parent block in the document tree
+
+\item[\textbf{parent\_chunk}]
+if several blocks have the same name they are combined into a
+\lstinline!Chunk!. This attribute points to the parent \lstinline!Chunk!
+
+\item[\textbf{children}]
+list of child nodes
+
+\item[\textbf{args,kwards}]
+list of args, resp. dictionary of keyword args found in () after the tag
+
+\item[\textbf{tag}]
+name of the tag
+
+\item[\textbf{indent}]
+indentation (int) of the block/chunk
+
+\end{description}
+\textbf{Public methods:}
+
+\begin{lstlisting}
+def expand(self,indent=0,depth=0,toformat=None):
+def render(self,indent=0,depth=0,toformat=None):
+\end{lstlisting}
+\lstinline!expand! returns a list of lines, render just joins them into
+a string. \lstinline!indent! and \lstinline!toformat! are hopefully
+self-explanatory. \lstinline!depth! is the recursion level up to which
+\lstinline!includes! are expanded. Beyond that level
+\lstinline!include(foo)! is rendered as \lstinline!<<foo>>! with the
+correct indentation.
+
+\subsubsection{\lstinline!class Chunk(Block)!}
+
+A Chunk is a node which is outside the normal document tree. A
+\lstinline!Chunk! \lstinline!cname! is created when a second
+\lstinline!Block! \lstinline!cname! is found. All \lstinline!n! Blocks
+of name \lstinline!cname! become children of the newly created
+\lstinline!Chunk!. The Blocks are renamed \lstinline!cnamei! where
+\lstinline!i! runs from \lstinline!1! to \lstinline!n!.
+
+\subsubsection{function \lstinline!registerblock!}
+
+Fills the dictionary \lstinline!chunks! and takes care of the tree
+structure. If the name does not yet exist, the block is added to the
+dictionary \lstinline!chunks! with key \lstinline!name!. Otherwise, if
+necessary, a new chunk \lstinline!name! is created and the block is
+appended to its list of children.
+
+\subsubsection{Example}
+
+Assuming that pnw is installed, from the main directory of the pnw
+package open an interactive python session, I recommend to use
+\lstinline!ipython!, and write
+
+\begin{lstlisting}
+import pnw
+pnw.pnwimport('pnw.pnw','')
+\end{lstlisting}
+Now you can explore the pnw document tree of the \lstinline!pnw.pnw!
+source file by inspecting the dictionary
+
+\begin{lstlisting}
+pnw.chunks
+\end{lstlisting}
+To see the structure of a block, just print its repr
+
+\begin{lstlisting}
+pnw.chunks['moduledoc']
+\end{lstlisting}
+To render it, try
+
+\begin{lstlisting}
+print pnw.chunks['moduledoc'].render(indent=0,depth=2,toformat='rst')
+\end{lstlisting}
+\section{A more detailed example}
+
+The pnw source consists of one file \lstinline!pnw.pnw!. It is a working
+python file containing pnw tags hidden behind the \lstinline!#! comment
+character. To produce a clean python file we invoke (compare the
+makefile in the main directory)
+
+\begin{lstlisting}
+python ./pnw.pnw  -F pnw.pnw > pnw.py
+\end{lstlisting}
+The \lstinline!-F! directive means that the whole file is treated as one
+block named \lstinline!u''!. The previous command is used when
+installing pnw for the first time.
+
+The main driver file for the documentation is \lstinline!pnw-doc.pnw! in
+the \lstinline!doc! directory. Here is the head of this file
+
+\begin{lstlisting}
+@chunk(main,format=latex)
+@path(../..)
+@path(..)
+@import(latex-blocks.tex)
+@import(md-blocks)
+@import(pnw.pnw)
+@include(ltxheader)
+\end{lstlisting}
+First the whole file is declared to be a block named \emph{main} which
+is \lstinline!latex! formatted. Then we add the first two parent
+directories to the search path for imports. Then the files
+\lstinline!latex-blocks.tex!, \lstinline!md-blocks!, \lstinline!pnw.pnw!
+are included into the main namespace \lstinline!u''!. The block
+\lstinline!ltxheader!, which contains what its name says, and which can
+be found in \lstinline!latex-blocks.tex! is included.
+
+\lstinline!pnw-doc.pnw! contains a little of the documentation written
+in \lstinline!latex!. Mostly, it includes blocks from other files. The
+bulk of the documentation, written in \lstinline!markdown!, can be found
+in \lstinline!md-blocks!.
+
+Finally, an executable \lstinline!latex! file is produced by invoking
+
+\begin{lstlisting}
+pnw -Rmain pnw-doc.pnw > pnw-doc.tex
+\end{lstlisting}
+\section{Implementation details}
+
+\subsection{Parsing the document tree}
+
+\subsubsection{Constants}
+
+Constants
+
+\begin{lstlisting}
+""" The strings in `options`, `keywords`, and `texttypes`
+are inserted into the module's namespace as uppercase. I.e.
+COLLAPSE = `collapse` etc.
+"""
+
+options = [u'collapse',u'remove']
+keywords = [u'chunk',u'block',u'end',u'import',u'include',u'path']
+texttypes = [u'text',u'empty']
+tags = list(keywords)
+tags.extend(texttypes)
+reserved_words = list()
+reserved_words.extend(keywords)
+reserved_words.extend(texttypes)
+reserved_words.extend(options)
+
+for item in reserved_words:
+    globals()[item.upper()] = item
+\end{lstlisting}
+\subsubsection{pnwimport}
+
+Code for the function \lstinline!pnwimport!
+
+\begin{lstlisting}
+def pnwimport(fname,nspace,line=None):
+    if line is None:
+        line = Block(u'Command Line','CLI',0)
+    imports[fname] = nspace
+    f = None
+    for path in paths:
+        tmpname = os.path.join(path,fname)
+        try:
+             f = open(tmpname,"r")
+        except IOError:
+            continue
+        break
+    if f is None:
+        raise PNWError(line,"Could not open file %s"%fname)
+    else:
+        with f:
+            linegen=enumerate(f.read().split('\n'),1)
+            rootblock = Block(u'#@chunk(%s)'%nspace,fname,lineno = 0)
+            rootblock.indent = -1
+            registerblock(nspace,rootblock)
+            parse_block(linegen,rootblock)
+\end{lstlisting}
+\subsubsection{parse\_block}
+
+Code of \lstinline!parse_block!, used by \lstinline!pnwimport!
+
+\begin{lstlisting}
+def parse_block(linegen,node): 
+    lineno,text = linegen.next()
+    line = Block(text,node.fname,lineno,node)
+    while True:
+        if line.tag == IMPORT:
+            imp_fname,imp_nspace = line.args[0:2]
+            if imp_fname in imports:
+                raise PNWError(line, "pnw does dot support multiple \
+                        imports of the same file, file already imported")
+            pnwimport(imp_fname,imp_nspace,line)
+        elif (line.tag in keywords and line.indent < node.indent) or\
+                (line.tag in [END,BLOCK,CHUNK] and line.indent <= node.indent): 
+            # our block ends here
+            return (line,lineno)
+        elif line.tag in [BLOCK,CHUNK]:
+            registerblock(line.args[0],line)
+            if REMOVE not in line.args:
+               node.append(line) # we need to append this node
+            line,lineno=parse_block(linegen,line)
+            continue
+        elif (line.tag in [EMPTY,TEXT]) and line.indent < node.indent:
+                raise PNWError(line,u'indentation error')
+        else:
+            node.append(line)
+        if line.tag in [INCLUDE]: 
+            # is here, because node must get appended, list here those directives which need nspace adjustment
+            line.args[0] = format_nspace(line.nspace,line.args[0])
+        # if we are here, we need to get a new line or close up
+        try:
+            lineno,text = linegen.next()
+            line = Block(text,node.fname,lineno,node)
+        except StopIteration:
+            # end of file reached, add a #@end with correct indentaton
+            lineno+=1
+            line = Block(u'#@end',node.fname,lineno,node)
+            line.indent = -1
+            return (line,lineno)
+\end{lstlisting}
+\subsubsection{Class Block}
+
+Code of Class Block
+
+\begin{lstlisting}
+class Block():
+    def __init__(self,text,fname,lineno,parent_block = None, parent_chunk = None):
+        self.text = text
+        self.name = u''
+        self.fname = fname
+        self.lineno = lineno
+        self.parent_block = parent_block
+        self.parent_chunk = parent_chunk
+        self.children = []
+        self.parse()
+
+    @property
+    def nspace(self):
+        return imports[self.fname]
+
+    @property
+    def format(self):
+        return self.kwargs.get('format')
+
+    def append(self,block):
+        block.parent_block = self
+        self.children.append(block)
+
+    def expand(self,indent=0,depth=0,toformat=None):
+        # this is really ugly, find better solution that
+        # fiddling with negative indents
+        if self.indent < 0:
+            selfind = 0
+        else:
+            selfind = self.indent
+        res = []
+        if self.children and depth > 0:
+            for child in self.children:
+                res.extend(child.expand(indent+child.indent-selfind,depth-1,toformat=self.format))
+        else:        
+            if self.tag == TEXT: # return verbatim
+                res.append(u' ' * indent + self.text[selfind:])
+            elif self.tag == EMPTY:
+                res.append(self.text)
+            elif self.tag == INCLUDE: 
+                # ch gets expanded *instead* of self, thus depth is same
+                ch = chunks[self.args[0]]
+                res.extend(ch.expand(indent,self.depth or\
+                    depth,toformat=toformat))
+            if self.tag in [BLOCK,CHUNK]:
+                res.append(u' ' * (indent) +'<<'+self.name+'>>\n') 
+        tmp = u'\n'.join(res)
+        if self.tag in [BLOCK,CHUNK] and toformat and self.format:
+            tmp = convert(tmp,toformat,self.format)
+            res = tmp.split('\n')
+        return res 
+
+    def render(self,indent=0,depth=0,toformat=None):
+        return u'\n'.join(self.expand(indent,depth,toformat))
+
+    def parse(self):
+        #TODO arbitrary non-word char instead of only % #
+        m=re.match("(?P<indent>\s*)(%|#)@(?P<tag>\w*)(\((?P<args>.*)\)){0,1}",self.text)
+        if m:
+            d = m.groupdict()
+            tag = d['tag'] #m.group(2)
+            if tag not in tags:
+                logger.error(errmsg(self,"Unknown Tag %s"%tag))
+            self.tag = tag
+            if d['args']:
+                args,kwargs = parseargs(d['args'])
+            else: 
+                args = [u'',u'']
+                kwargs = dict()
+            self.indent = len(d['indent'])
+            self.args = args
+            self.kwargs = kwargs
+            while len(self.args) < 2:
+                self.args.append(u'')
+            if self.tag in [BLOCK,CHUNK]:
+                self.name = args[0]
+                self.tag = BLOCK
+            # tags we process just here on the fly
+            if self.tag == PATH:
+                paths.insert(0,args[0])
+            if self.tag == INCLUDE:
+                if self.args[1]:
+                    try:
+                        self.depth = int(self.args[1])
+                    except:
+                        raise PNWError(self,"optional argument of\
+                        include tag must be a nonnegative integer") 
+                else:
+                    self.depth = None
+            return (tag,args,self.indent)
+        elif m is None:
+            if self.text.strip() == u'':
+                self.tag = EMPTY
+                self.indent = 256
+            else:    
+                self.tag = TEXT
+                self.indent = len(self.text) - len(self.text.lstrip())
+            return None
+
+    def _repr(self,depth=256,indent = 0):
+        res = []
+        if self.tag not in [TEXT,EMPTY]:
+            try:
+               res.append(u' '*indent+u'--- <BLOCK %s:%s:%i:%s: %s '%\
+                       (self.name,self.fname,self.lineno,self.tag,\
+                       self.text.rstrip("\n").strip())+u'>')
+            except:
+                #strace()
+                pass
+        if depth > 0:
+            for child in self.children:
+                res.extend(child._repr(depth-1,indent+4))
+        return res
+
+    def __repr__(self):
+        if self.tag in keywords:
+            return u'\n'.join(self._repr())
+        else:
+            return u'--- <TEXT %s:%i:%s: %s'%(self.fname,self.lineno,\
+                    self.tag,self.text.rstrip("\n").strip())+u'>'
+\end{lstlisting}
+\subsubsection{Class Chunk}
+
+Bla
+
+\begin{lstlisting}
+class Chunk(Block):
+    def __init__(self,name,block):
+        Block.__init__(self,block.text,block.fname,block.lineno)
+        self.__id__ = CHUNK
+        self.indent = block.indent # cannot be parsed from block.text, 
+                                   # since we play around with indent -1
+        self.name = name
+        self.tag  = CHUNK
+        self.append(block)
+
+    def append(self,block):
+        if block.indent != self.indent:
+            raise PNWError(block,"All blocks in a chunk must have the same\
+                            indentation level")
+        block.parent_chunk = self
+        self.children.append(block)
+
+    def _repr(self,depth=256):
+        res = []
+        res.append(u'<Chunk %s:%s:%i:%s: %s'%(self.name,self.fname,\
+                self.lineno,self.tag,self.text.rstrip('\n'))+u'>')
+        for child in self.children:
+            res.extend(child._repr(depth = depth))
+        return res    
+
+    def __repr__(self):
+        return u'\n'.join(self._repr())
+\end{lstlisting}
+\subsection{The CLI interface}
+
+Bla
+
+\begin{lstlisting}
+def CLI():
+    import argparse
+    parser = argparse.ArgumentParser(description =cli_description,
+    usage="pnw options [Filename]")
+    parser.add_argument("nw",nargs='?',help="The pnw file",default = None)
+    parser.add_argument('-v','--version',
+            help='Show version and exit',action = 'store_true')
+    parser.add_argument("-R","--chunk",
+            help="Extract and render chunk",type = str, default = '')
+    parser.add_argument("-F","--file", help="Render whole file",action = 'store_true')
+    parser.add_argument("-t",'--tree', help='Show Doc Tree',action = 'store_true')
+    parser.add_argument('-f','--format', 
+            help = u'Output format', type = str, default = None)
+    parser.add_argument("-d", help='depth of tree',type = int, default = 256)
+    parser.add_argument('-a','--debug',
+            help = 'show arguments and do nothing', action='store_true')
+    args=parser.parse_args()
+    if args.nw:
+        pnwimport(args.nw,u'')
+    if args.version:
+        print banner()
+    elif args.debug:
+        print args
+        raise SystemExit('Exit')
+    elif args.tree:
+        print showchunks(depth = args.d)
+    else:
+        print chunks[args.chunk].render(depth = args.d, toformat = args.format)
+
+if __name__ == "__main__":
+    CLI()
+\end{lstlisting}
+\subsection{Pandoc Interface}
+
+Bla
+
+\begin{lstlisting}
+def dummyconverter(source,to,format):
+    "dummyconverter"
+    return source
+
+formats = {'md': 'markdown',
+           'tex': 'latex'}
+
+def _convert(source,to,format):
+    """pandoc converter"""
+    format = formats.get(format,format)
+    to = formats.get(to,to)
+    p = subprocess.Popen(
+            ['pandoc','--to='+to,'--from='+format,'--listings'],
+            stdin = subprocess.PIPE,
+            stdout = subprocess.PIPE)
+    return p.communicate(source)[0]
+# check for pandoc
+try:
+    p = subprocess.Popen(
+            ['pandoc','-h'],
+            stdin = subprocess.PIPE,
+            stdout = subprocess.PIPE)
+    pandoc = True
+except OSError:
+    logger.error("pandoc not available")
+    pandoc = False
+
+if pandoc:
+    convert = _convert
+else:    
+    convert = dummyconverter
+\end{lstlisting}
+\subsection{Helper and convenience functions}
+
+Bla
+
+\begin{lstlisting}
+def format_nspace(nspace,name):
+    """ if name contains a dot it is returned verbatim, otherwise
+    returns nspace.name.  """
+    if u'.' in name or not nspace: 
+        return name
+    else:
+        return nspace+u'.'+name
+
+def findroot(b):
+    """ Traverses the doc tree upwards and returns the root node
+    corresponding to `b`."""
+    while b.parent_block is not None:
+        b = b.parent_block
+    return b
+
+def findrootchunk(b):
+    """ Traverses the parent chunks upwards and returns the root chunk
+    node corresponding to `b`."""
+    while b.parent_chunk is not None:
+        b = b.parent_chunk
+    return b    
+
+def findroots():
+    """ Fills the sets `roots` and `rootchunks`."""
+    for b in chunks.values():
+        roots.add(findroot(b))
+        b = findrootchunk(b)
+        if isinstance(b,Chunk):
+            rootchunks.add(b)
+
+def parseargs(x):
+    """ `x` is a string of the form
+
+        arg1,...,argn,kwarg1=value1,...,kwargm=valuem
+
+    `(kw)argj` may *not* contain comma or `=`. Positional args are
+    collected in list `args`, keyword args are collected in dict
+    `kwargs`. Returns `(args,kwargs)`."""
+    rawargs=[item.strip() for item in x.split(',')]
+    args=list()
+    kwargs=dict()
+    for item in rawargs:
+        if not '=' in item:
+            args.append(item)
+        else:
+            key,value = item.split('=',1)
+            key = key.strip()
+            value = value.strip()
+            kwargs[key] = value
+    return (args,kwargs)        
+\end{lstlisting}
+
+
+
+%}}} 
+\bibliography{localbib}
+\bibliographystyle{amsalpha-lmp}
+
+% CUT AND PASTE MATERIAL
+%\section{Cut- and paste material}
+\end{document}
+
+

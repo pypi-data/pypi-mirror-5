@@ -1,0 +1,153 @@
+%%% ====================================================================
+%%% @LaTeX-file{
+%%%    filename  = "ml-gen.cls",
+%%% }
+%%% ====================================================================
+%%% derived from gen-j-l.cls ams
+% This file is a frontend to the ams latex classes book, proc, amsart
+% It likely does NOT work with other classes
+% 
+% options:
+% draft: text block shifted to upper left area leaving more space
+%        for margin notes, also labels are displayed.
+% arxiv: logo in upper left corner shows version info plus "posted on arXiv"
+% preprint: except for logo, same as arxiv
+% submit: neutral printout for submission.
+% target: delegates choice of option to \UseOption macro
+% option a4paper can be given
+% ams classes then adjust paperwidth, paperheight
+% and textheight to 54.5pc
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesClass{ml-gen}[2013/09/13]
+\typeout{ml-gen.cls front end to AMS latex classes, c 2010-2013 Matthias Lesch
+ml@matthiaslesch.de}
+
+% Default class is amsart
+% options: book, proc will load amsbook resp. amsproc
+% We graft our own logo though. amsbook has no logo
+% TODO upon next book project :-)
+\newcommand{\ml@class}{amsart}
+\AtEndOfClass{\let\article@logo\ml@logo}
+\DeclareOption{book}{\def\ml@class{amsbook}}
+\DeclareOption{proc}{\def\ml@class{amsproc}\AtEndOfClass{\let\procart@logo\ml@logo}}
+
+% takes care of hg version info stored in file hginfo.blg
+\def\mlSetRCSInfo#1{\def\mlRCSInfo{#1}}
+% if hginfo.blg does not exist we set mlRCSInfo to \relax
+\InputIfFileExists{hginfo.blg}{\relax}{\mlSetRCSInfo\relax}
+%DEPRECATED \def\mlSetVersion#1{\def\mlVersion{#1}}%
+%DEPRECATED \let\mlVersion\mlRCSInfo
+\def\ml@logo{%
+  \set@logo{%
+    \publname\ \@dateposted\\
+    Version:  \mlRCSInfo          %DEPRECATED \mlVersion
+    }}    
+
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{\ml@class}}
+
+\DeclareOption{neutral}{%
+\providecommand{\UseOption}{neutral}
+\AtEndOfClass{
+\def\publname{\relax}
+\def\datename{Version:}
+%\let\article@logo\relax
+%\let\procart@logo\relax
+\textwidth33pc
+\calclayout}
+%\PassOptionsToClass{twoside,11pt}{\ml@class}
+\PassOptionsToPackage{final}{math60}
+}
+
+\DeclareOption{arxiv}{%
+\providecommand{\UseOption}{arxiv}
+\AtEndOfClass{
+\def\publname{Posted on ArXiV}
+\def\datename{\textit{Version}:}
+\textwidth33pc
+\calclayout}
+
+\PassOptionsToClass{twoside,11pt}{\ml@class}
+\PassOptionsToPackage{final}{math60}
+}
+
+\DeclareOption{preprint}{%
+\AtEndOfClass{
+\def\publname{PREPRINT}
+\def\datename{\textit{Versioninfo}:}
+\textwidth33pc
+\calclayout}
+
+\PassOptionsToClass{twoside,11pt}{\ml@class}
+\PassOptionsToPackage{final}{math60}
+}
+
+\DeclareOption{draft}{%
+\providecommand{\UseOption}{draft}
+\PassOptionsToClass{oneside,draft,11pt}{\ml@class}
+\AtEndOfClass{%
+    \def\publname{DRAFT}
+    \def\datename{\textit{Date}:}
+    \textwidth33pc
+    \calclayout
+    \advance \oddsidemargin-1in
+    \advance \evensidemargin-1in
+    \advance \topmargin-1in
+    \advance \marginparwidth2cm
+    }
+}
+
+\DeclareOption{submit}{%
+\providecommand{\UseOption}{submit}
+\PassOptionsToClass{twoside,final}{\ml@class}
+    \def\publname{Submitted}
+    \AtEndOfClass{
+        \def\datename{\textit{Date}:}}
+\PassOptionsToPackage{final}{math60}
+}
+
+\DeclareOption{target}{%
+% Takes care of the target options, 
+% sends option based on value of \UseOption
+% \UseOption belongs to package optional.sty
+% default is arxiv
+% recall: providecommand does nothing if command exists!
+\providecommand{\UseOption}{arxiv}
+\ExecuteOptions{\UseOption}
+}
+
+\ProcessOptions
+\LoadClass{\ml@class}[1996/10/24]
+%\RequirePackage{amsmath,amssymb,amsmath}  % for technical non-math writing
+%\RequirePackage{math60,mlthm}             
+\RequirePackage{optional}
+
+% This is code which is executed AFTER the amsclass is loaded
+% amsclass defines the command \dateposted.
+\dateposted{\today}
+
+% copied from amsclass.cls
+% only title font changed
+% consider latex packages titlesec, sectsty, fncychap, memoir ??
+\def\part{\@startsection{part}{0}%
+\z@{\linespacing\@plus\linespacing}{.5\linespacing}%
+{\Large\bfseries\sffamily\raggedright}}
+
+% 0.7 in line 2 from here inserted.
+\def\section{\@startsection{section}{1}%
+  \z@{0.7\linespacing\@plus\linespacing}{.5\linespacing}%
+  {\large\bfseries\sffamily}}
+
+\def\subsection{\@startsection{subsection}{2}%
+  \z@{.5\linespacing\@plus.7\linespacing}{-.5em}%
+  {\normalfont\bfseries\sffamily}}
+  
+\def\subsubsection{\@startsection{subsubsection}{3}%
+ \z@{.5\linespacing\@plus.7\linespacing}{-.5em}%
+{\normalfont\sffamily\itshape}}
+ 
+%\def\@secnumfont{\bfseries}  
+%\def{\datename}{\textit{Version}:}
+\def\ISSN{\relax}
+
+\endinput

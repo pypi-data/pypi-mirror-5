@@ -1,0 +1,152 @@
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% vim: filetype=tex tabstop=4 expandtab shiftwidth=4 softtabstop=4
+% pnw documentation
+%% TOPMATTER ------------------------------------------------%{{{
+%@chunk(main)
+%@path(../..)
+% options draft, arxiv, submit, target
+\documentclass[target,proc,reqno]{ml-gen}
+
+\usepackage{upref,mathrsfs,enumerate} % maybe amscd
+
+%Footnotes
+%\usepackage[symbol]{footmisc}
+%\usepackage{perpage}
+%\MakePerPage[5]{footnote}
+
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,backref=page]{hyperref}
+\usepackage{local}
+
+%% DRAFT ONLY
+\opt{draft}{
+\usepackage{showlabels}
+\renewcommand{\showlabelfont}{\scriptsize\ttfamily}
+}
+
+%% nicer fonts
+\renewcommand{\rmdefault}{pplj}
+\usepackage{euler}
+\usepackage{noweb}
+\usepackage{shortvrb}
+\MakeShortVerb{\|}
+\usepackage{listings}
+
+%\setcounter{tocdepth}{1}
+%\numberwithin{equation}{subsection}
+
+\tolerance=2000 
+\emergencystretch=20pt 
+%}}}
+% TITLE AND ABSTRACT %{{{
+\begin{document}
+\lstset{%
+language=Python,
+basicstyle=\small,
+%commentstyle=\ttfamily,
+%identifierstyle=\ttfamily,
+%showspaces=true,
+%stringstyle=\ttfamily,
+columns=fullflexible}
+
+\title[\texttt{pnw}]{\texttt{pnw} -- A \texttt{noweb} inspired literate
+programming tool written in \texttt{python}}
+
+\author{Matthias Lesch}
+\address{Mathematisches Institut,
+Universit\"at Bonn,
+Endenicher Allee 60,
+53115 Bonn,
+Germany}
+
+\email{ml@matthiaslesch.de, lesch@math.uni-bonn.de}
+\urladdr{www.matthiaslesch.de, www.math.uni-bonn.de/people/lesch}
+%
+\thanks{Partially supported by the 
+        Hausdorff Center for Mathematics}
+
+\subjclass[2010]{Primary XXX; Secondary XXX}
+
+% draft, submit only
+\opt{draft,submit}{
+\date{\today}
+}
+
+\begin{abstract}
+%include(moduledoc)    
+\end{abstract}
+
+\maketitle
+\tableofcontents
+%\listoffigures
+
+\newpage
+%}}}
+
+% SECTION 1 
+\section{\pnw}
+%@import(pnw.pnw)
+%@include(moduledoc)
+\phantomsection
+\subsection{\pnw\ tags}
+\begin{description}
+ \item[\#@chunk(name)]\hfill\\
+Starts block name. A block ends at
+\begin{itemize}
+ \item the start of another block or an |#@end| with a smaller or equal
+  indent,
+ \item another |#@| tag with a smaller indent
+ \item the end of the file
+\end{itemize}  
+Several blocks may have the same name if they have the same indent. Then these
+blocks are combined into a \emph{chunk} of that name and the individual
+subblocks are named name1, name2 etc.
+\item[\#@end]\hfill\\ Explicit end of a block, indent is significant.
+\item[\#@import(fname,nspace)]\hfill\\
+Imports file fname into nspace. This means that the blocks and chunks in
+fname can be addressed as nspace.name. Within fname blocks/chunks can
+address each other without nspace prefix. This is analogous to the python
+import statement.
+\item[\#@include(name)]\hfill \\
+Includes the block/chunk name instead of this line.  The indent is
+significant: the indent of the |#@include| statement is added when rendering
+the conent of block/chunk name.
+\end{description}
+
+All other lines outside of blocks are ignored. The content of each namespace
+nspace is collected in the block (resp. chunk if several files are imported
+into the same namespacefile fname) nspace.
+
+\section{Usage}
+\subsection{CLI}
+Command line usage is as follows
+\begin{lstlisting}
+pnw <options> <file>
+\end{lstlisting}
+where |<file>| is the pnw file. The following options are available
+\begin{description}
+    \item[-R, --chunk |<chname>|] Extracts chunk |chname| and renders it.
+    \item[-t, --tree] Show document tree.
+    \item[-d, --depth] Traverses the tree up to depth d. Nodes of depths
+        d are indicated as |<<name>>|, as in noweb, and not expanded any further.
+\end{description}        
+
+\subsection{\python\ module}
+The public interface consists of the function |pnwimport| and the two classes,
+%@include(API)
+as well as the global variables
+%@include(globals)
+
+%@include(Block doc)
+
+%@include(globals doc)
+
+%@include(Chunk doc)
+
+%}}} 
+\bibliography{localbib}
+\bibliographystyle{amsalpha-lmp}
+
+% CUT AND PASTE MATERIAL
+%\section{Cut- and paste material}
+\end{document}
+

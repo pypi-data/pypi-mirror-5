@@ -1,0 +1,160 @@
+% -*- coding: utf-8 -*-
+% vim: tw=70 tabstop=4 expandtab shiftwidth=4 softtabstop=4
+
+# collection chunks
+#@chunk(API)
+#@include(Block head)
+    #@include(Block init)
+#@include(Chunk head)
+    #@include(Chunk init)
+#@include(registerblock)
+#@include(pnwimport)    
+
+
+#@end
+
+%@chunk(example short,format=md)
+Assuming that pnw is installed, from the main directory of the pnw package
+open an interactive python session, I recommend to use `ipython`, and write
+
+    import pnw
+    pnw.pnwimport('pnw.pnw','')
+
+Now you can explore the pnw document tree of the `pnw.pnw` source file by
+inspecting the dictionary 
+
+    pnw.chunks
+
+To see the structure of a block, just print its repr
+
+    pnw.chunks['moduledoc']
+
+To render it, try
+
+    print pnw.chunks['moduledoc'].render(indent=0,depth=2,toformat='rst')
+%@end    
+
+%@chunk(example detail,format=md)
+The pnw source consists of one file `pnw.pnw`. It is a working python file
+containing pnw tags hidden behind the `#` comment character. To produce a
+clean python file we invoke (compare the makefile in the main directory)
+
+    python ./pnw.pnw  -F pnw.pnw > pnw.py
+
+The `-F` directive means that the whole file is treated as one block named
+`u''`. The previous command is used when installing pnw for the first time.
+
+The main driver file for the documentation is `pnw-doc.pnw` in the `doc`
+directory. Here is the head of this file
+
+#@set(tagspecial=!)    
+    #@chunk(main,format=latex)
+    #@path(../..)
+    #@path(..)
+    #@import(latex-blocks.tex)
+    #@import(md-blocks)
+    #@import(pnw.pnw)
+    #@include(ltxheader)
+#!set(tagspecial=default)    
+
+First the whole file is declared to be a block named *main* which is `latex`
+formatted. Then we add the first two parent directories to the search path
+for imports. Then the files `latex-blocks.tex`, `md-blocks`, `pnw.pnw` are
+included into the main namespace `u''`. The block `ltxheader`, which contains
+what its name says, and which can be found in `latex-blocks.tex` is included.
+
+`pnw-doc.pnw` contains a little of the documentation written in `latex`.
+Mostly, it includes blocks from other files. The bulk of the documentation, 
+written in `markdown`, can be found in `md-blocks`.
+
+Finally, an executable `latex` file is produced by invoking
+
+    pnw -Rmain pnw-doc.pnw > pnw-doc.tex
+%@end
+
+%@chunk(pymodule-md,format=md)
+## ``python`` module
+
+The public interface consists of the following functions and classes,
+
+    %@include(API)
+
+%@include(globals doc)
+
+### function `pnwimport`
+%@include(pnwimport doc)
+
+### `class Block`
+%@include(Block doc)
+
+### `class Chunk(Block)`
+%@include(Chunk doc)
+
+### function `registerblock`
+%@include(registerblock doc)
+
+### Example
+
+%@include(example short)
+
+# A more detailed example
+
+%@include(example detail)    
+
+# Implementation details
+
+## Parsing the document tree
+
+### Constants
+
+Constants
+
+    %@include(constants)
+
+### pnwimport
+
+Code for the function `pnwimport`
+
+    %@include(pnwimport)
+    %@include(pnwimport code)
+
+### parse_block
+
+Code of `parse_block`, used by `pnwimport`
+
+    %@include(parseblock)
+
+### Class Block
+
+Code of Class Block
+
+    %@include(Block head)
+    %@include(Block code)
+
+### Class Chunk
+
+Bla
+
+    %@include(Chunk head)
+    %@include(Chunk code)
+
+## The CLI interface
+
+Bla
+
+    %@include(CLI)
+
+## Pandoc Interface
+
+Bla
+
+    %@include(pandoc)
+
+## Helper and convenience functions
+
+Bla
+
+    %@include(helperfunctions)
+
+%@end
+
