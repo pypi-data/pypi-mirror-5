@@ -1,0 +1,58 @@
+---
+- networks:
+  - name: mgmt
+    external: true
+    autostart: true
+    ip: 10.0.10.1
+
+  - name: int
+    ip: 10.0.20.1
+
+  - name: ext
+    external: true
+    ip: 192.168.101.1
+
+- vms:
+  - name: controller 
+    vcpus: 1
+    ram: 2048 
+    template: precise64.qcow2
+    netdevs:
+    - network: mgmt
+      ip: 10.0.10.10
+    - network: ext
+      ip: 192.168.101.10
+
+  - name: netnode 
+    vcpus: 2
+    ram: 1024 
+    template: precise64.qcow2
+    netdevs:
+    - network: mgmt
+      ip: 10.0.10.11
+    - network: int
+      ip: 10.0.20.11
+    - network: ext
+      ip: 192.168.101.11 
+
+  - name: compute1 
+    vcpus: 2
+    kvm_nested: True
+    ram: 2048 
+    template: precise64.qcow2
+    netdevs:
+    - network: mgmt
+      ip: 10.0.10.12
+    - network: int
+      ip: 10.0.20.12
+
+  - name: compute2 
+    vcpus: 2
+    kvm_nested: True
+    ram: 2048 
+    template: precise64.qcow2
+    netdevs:
+    - network: mgmt
+      ip: 10.0.10.13
+    - network: int
+      ip: 10.0.20.13
