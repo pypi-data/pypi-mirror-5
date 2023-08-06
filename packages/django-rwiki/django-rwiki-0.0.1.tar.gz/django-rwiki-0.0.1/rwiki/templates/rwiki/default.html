@@ -1,0 +1,105 @@
+{% extends "site_base.html" %}
+
+{% block "metas" %}
+    <title>{{ page.title }} &#8212; {{ settings.SITE_TITLE }}</title>
+    <meta name="description" content="{{ page.text|striptags|truncatewords:50 }}" />
+{% endblock "metas" %}
+
+{% block "metainfo" %}
+    <h1>{{ page.title }} &#8212; {{ settings.SITE_TITLE }}</h1>
+    <p>{{ page.text|striptags|truncatewords:50 }}</p>
+{% endblock "metainfo" %}
+
+{% block "breadcrumbs" %}
+    <ul class="breadcrumb">
+      <li><a href="{% url app_blog-index %}">{{ _('Home') }}</a> <span class="divider">/</span></li>
+      {% for b in breadcrumbs %}
+      <li><a href="{% url app_wiki-detail b %}">{{ b }}</a> <span class="divider">/</span></li>
+      {% endfor %}
+      <li class="active"><a href="{% url app_wiki-detail page.slug %}">{{ last }}</a></li>
+    </ul>
+{% endblock "breadcrumbs" %}
+
+{% block "content" %}
+<section id="posts">
+    <article class="post wiki">
+        <h2>{{ page.title }}</h2>
+        <div class="render">{{ page.text|safe }}</div>
+        <div class="source hidden">{{ page.text }}</div>
+
+        <div class="actionbuttons clearfix hidden-phone">
+            <div class="btn-group pull-right">
+                {% if perms.rwiki.change_page %}<a href="{% url app_wiki-edit page.slug %}" class="btn btn-mini"><i class="icon-edit"></i> Edit</a>{% endif %}
+                <a href="javscript:void(0)" class="btn btn-mini" onclick="$('.history').slideToggle('slow');"><i class="icon-reorder"></i> History</a>
+                <a href="javascript:void(0);" class="btrender btn btn-mini hidden" onclick="$(this).addClass('hidden');$('.btsource').removeClass('hidden');$('.source').addClass('hidden');$('.render').removeClass('hidden')"><i class="icon-file-text"></i> Rendered</a>
+                <a href="javascript:void(0);" class="btsource btn btn-mini" onclick="$(this).addClass('hidden');$('.btrender').removeClass('hidden');$('.render').addClass('hidden');$('.source').removeClass('hidden');"><i class="icon-file-text"></i> Source</a>
+                {% if perms.rwiki.del_page %}<a href="{% url app_wiki-del page.slug %}" class="btn btn-mini btn-danger delwiki"><i class="icon-remove"></i> Delete</a>{% endif %}
+            </div>
+        </div>
+
+        <div class="history">
+            <h3>History</h3>
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>{{_('Date') }}</th>
+                        <th>{{_('Comment') }}</th>
+                        <th>{{_('User') }}</th>
+                        <th>{{_('Diff') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>{{ h.revision.date_created }}</td>
+                    <!-- <td>{{ h.field_dict }}</td>
+                    <td>{{ h.patch }}</td> -->
+                    <td>{{ h.revision.comment }}</td>
+                    <td>{{ h.revision.user }}</td>
+                    <td><a href="javascript:void(0)" role="button" class="btn" onclick="$('#revision-{{ h.revision.id }}').slideToggle('slow');"><i class="icon-random"></i></a></td>
+                </tr>
+                <tr id="revision-{{ h.revision.id }}" class="hide">
+                    <td colspan="4">
+                        <table style="width: 100%" class="table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 100%">{{ _('Diff') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width: 100%">{{ h.patch|safe }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 100%">
+                                        {% if perms.rwiki.reverse %}<a href="{% url app_wiki-revert page.id h.revision.id %}" class="btn btn-primary confirm">{{ _('Revert') }}</a>{% endif %}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </td>
+                </tr>
+
+                <div class="modal hide" >
+                    <div class="modal-header">
+                        <button class="close" data-dismiss="modal">&times;</button>
+                        <h3>{{ _('Diff') }} *current* vs *{{ h.revision.date_created }}*</h3>
+                    </div>
+                    <div class="modal-body">
+                        {{ h.patch|safe }}
+                    </div>
+                    <div class="modal-footer">
+                        <a href="#" class="btn btn-primary" data-dismiss="modal">Revert</a>
+                        <a href="#" class="btn" data-dismiss="modal">Close</a>
+                    </div>
+                </div>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock "content" %}
+
+{% block "tagcloud" %}
+{% endblock "tagcloud" %}
