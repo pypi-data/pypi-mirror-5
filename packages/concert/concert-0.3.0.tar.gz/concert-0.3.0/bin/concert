@@ -1,0 +1,43 @@
+#! python
+
+import sys
+import argparse
+import concert
+import concert.session
+import concert.ui.commands as command
+
+
+def _get_docstring_summary(doc):
+    if doc and doc.find('.'):
+        return doc[:doc.find('.')]
+    return doc
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--version',
+                        action='version',
+                        version="Concert v%s " % concert.__version__)
+
+    subparsers = parser.add_subparsers(title="Concert commands",
+                                       metavar="")
+
+    for cmd_name, cmd_args in command.ARGUMENTS.items():
+        func = getattr(command, cmd_name)
+        summary = _get_docstring_summary(func.__doc__)
+
+        cmd_parser = subparsers.add_parser(cmd_name, help=summary)
+        cmd_parser.set_defaults(func=func)
+
+        for arg in cmd_args.keys():
+            cmd_parser.add_argument(arg, **cmd_args[arg])
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
+    args = parser.parse_args()
+    func = args.func
+    del args.func
+    func(**vars(args))
