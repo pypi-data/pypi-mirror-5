@@ -1,0 +1,96 @@
+#!/usr/bin/python -tt
+# pakrat - A tool for mirroring and versioning YUM repositories.
+# Copyright 2013 Ryan Uber <ru@ryanuber.com>. All rights reserved.
+#
+# MIT LICENSE
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+# 
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+import os
+import sys
+import pakrat
+from optparse import OptionParser
+
+parser = OptionParser(version='pakrat %s' % pakrat.__version__,
+    usage='\n'.join([
+        'pakrat [options]\n',
+        'Repositories are declared using two options: name and',
+        'url. The "--name" and "--url" options may be repeated',
+        'to declare multiple repositories. Repository names and',
+        'URLs are matched up according to their position on the',
+        'command line.',
+        '',
+        'The exit code will be one of:',
+        '   0: All repos successfully synced',
+        '   1: All repos failed to sync',
+        '   2: Some repos failed to sync, others succeeded.'
+    ]))
+parser.add_option('--repoversion', default=None,
+    help=('The version of the repository to create. By default, the '
+	  'repositories will not be versioned.'))
+parser.add_option('--name', action='append',
+    help='The name of a YUM repository. (repeatable)') 
+parser.add_option('--baseurl', action='append',
+    help='The baseurl of a repository (repeatable)')
+parser.add_option('--outdir', type='string', default=os.getcwd(),
+    help='The root output directory to store repository data. Default '
+         'is the current working directory.')
+parser.add_option('--repofile', default=[], action='append',
+    help=('The path to a YUM repository configuration file. '
+         '(repeatable)'))
+parser.add_option('--repodir', default=[], action='append',
+    help=('The path to a YUM repos.d-style directory of configs '
+          '(repeatable)'))
+parser.add_option('--delete', action='store_true', default=False,
+    help=('Delete packages that are no longer at the remote source. '
+          'This option does nothing if --repoversion is passed.'))
+
+options, args = parser.parse_args()
+
+repos = []
+
+if options.name and options.baseurl:
+    if len(options.name) != len(options.baseurl):
+        print 'Each repository must have a name and URL.'
+        sys.exit(1)
+    for name, baseurl in zip(options.name, options.baseurl):
+        repos.append(pakrat.repo.factory(name=name, baseurls=[baseurl]))
+
+if len(repos) < 1 and len(options.repofile) < 1 and len(options.repodir) < 1:
+    parser.print_help()
+    sys.exit(1)
+
+numrepos, numfails, elapsed = pakrat.sync(
+    basedir=options.outdir,
+    repoversion=options.repoversion,
+    objrepos=repos,
+    repofiles=options.repofile,
+    repodirs=options.repodir,
+    delete=options.delete
+)
+
+print 'Finished in %s' % elapsed
+
+if numfails == 0:
+    sys.exit(0)
+elif numrepos == numfails:
+    sys.exit(1)
+else:
+    sys.exit(2)
