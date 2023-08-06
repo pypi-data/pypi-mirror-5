@@ -1,0 +1,53 @@
+#!/usr/bin/python
+
+"""
+Command line tool which accepts Stata commands, executes them, and returns text output.
+"""
+import os
+import json
+import subprocess
+import sys
+from hashlib import sha1
+
+
+# make a statpipe config file to store preferences
+statrc = os.path.expanduser('.statrc')
+try:
+    prefs = json.loads(open(statrc).read())
+except IOError:
+    print "No config file found, writing defaults to %s\n" % (statrc,)
+    prefs = {
+        'STATA_EXECUTABLE': "/Applications/Stata/Stata.app/Contents/MacOS/Stata"
+    }
+    open(statrc, "w").write(json.dumps(prefs))
+
+# complain if we can't find Stata itself
+if not os.path.isfile(prefs['STATA_EXECUTABLE']):
+    raise Exception("Stata executable not found at {}. Try editing ~/.statrc to tell me where it is.".format(prefs['STATA_EXECUTABLE']))
+
+
+# make a local .statpipe directory to store output to enable debugging
+if not os.path.isdir(".statpipe"):
+    os.mkdir(".statpipe")
+os.chdir(".statpipe")
+
+# save the temporary files under a hash of the code so we can cache things
+code = sys.stdin.read()
+codehash = sha1(code).hexdigest()
+tmpdo = "{}.do".format(codehash)
+tmplog = "{}.log".format(codehash)
+
+
+if not os.path.exists(tmplog):
+    sys.stderr.write("Running code now\n")
+    with open(tmpdo, 'w') as f:
+        f.write(code + "\n")
+    result = subprocess.check_output([prefs['STATA_EXECUTABLE'], "-q", "-b", "-e", "do", tmpdo])
+else:
+    sys.stderr.write("Cached output re-used\n")
+
+with open(tmplog, 'r') as f:
+    # delete some crufty extra space
+    log = "".join(f.readlines()[2:-3])
+
+sys.stdout.write(log)
