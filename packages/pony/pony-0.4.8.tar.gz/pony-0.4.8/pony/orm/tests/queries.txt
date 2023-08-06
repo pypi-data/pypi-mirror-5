@@ -1,0 +1,342 @@
+# Testing queries from documentation (CRUD):
+
+Schema:
+pony.orm.examples.estore
+
+>>> Product.get(name="Product1")
+
+SELECT "id", "name", "description", "picture", "price", "quantity"
+FROM "Product"
+WHERE "name" = ?
+
+>>> Product.select(lambda p: p.price > 100)
+
+SELECT "p"."id", "p"."name", "p"."description", "p"."picture", "p"."price", "p"."quantity"
+FROM "Product" "p"
+WHERE "p"."price" > 100
+
+>>> x = 100
+>>> Product.select(lambda p: p.price > x)
+
+SELECT "p"."id", "p"."name", "p"."description", "p"."picture", "p"."price", "p"."quantity"
+FROM "Product" "p"
+WHERE "p"."price" > ?
+
+>>> Product.select(lambda p: p.price > 100).order_by(lambda p: desc(p.price))
+
+SELECT "p"."id", "p"."name", "p"."description", "p"."picture", "p"."price", "p"."quantity"
+FROM "Product" "p"
+WHERE "p"."price" > 100
+ORDER BY "p"."price" DESC
+
+>>> Product.select(lambda p: p.price > 100).order_by(desc(Product.price))
+
+SELECT "p"."id", "p"."name", "p"."description", "p"."picture", "p"."price", "p"."quantity"
+FROM "Product" "p"
+WHERE "p"."price" > 100
+ORDER BY "p"."price" DESC
+
+>>> Product.select(lambda p: p.price > 100).order_by(desc(Product.price), Product.name)
+
+SELECT "p"."id", "p"."name", "p"."description", "p"."picture", "p"."price", "p"."quantity"
+FROM "Product" "p"
+WHERE "p"."price" > 100
+ORDER BY "p"."price" DESC, "p"."name"
+
+>>> Product.select(lambda p: p.price > 100).order_by("desc(p.price), p.name")
+
+SELECT "p"."id", "p"."name", "p"."description", "p"."picture", "p"."price", "p"."quantity"
+FROM "Product" "p"
+WHERE "p"."price" > 100
+ORDER BY "p"."price" DESC, "p"."name"
+
+>>> Product.order_by(lambda p: desc(p.price))[:10]
+
+SELECT "p"."id", "p"."name", "p"."description", "p"."picture", "p"."price", "p"."quantity"
+FROM "Product" "p"
+ORDER BY "p"."price" DESC
+LIMIT 10
+
+
+# Testing declarative queries from documentation:
+
+# TODO
+
+# Testing aggregation queries from documentation:
+
+Schema:
+pony.orm.examples.presentation
+
+>>> sum(s.gpa for s in Student if s.group.number == 101)
+
+SELECT coalesce(SUM("s"."gpa"), 0)
+FROM "Student" "s"
+WHERE "s"."group" = 101
+
+>>> count(s for s in Student if s.gpa > 3)
+
+SELECT COUNT(*)
+FROM "Student" "s"
+WHERE "s"."gpa" > 3
+
+
+>>> min(s.name for s in Student if "Philosophy" in s.courses.name)
+
+SELECT MIN("s"."name")
+FROM "Student" "s"
+WHERE 'Philosophy' IN (
+    SELECT "t-1"."course_name"
+    FROM "Course_Student" "t-1"
+    WHERE "s"."id" = "t-1"."student"
+    )
+
+>>> max(s.dob for s in Student if s.group.number == 101)
+
+SELECT MAX("s"."dob")
+FROM "Student" "s"
+WHERE "s"."group" = 101
+
+>>> avg(s.gpa for s in Student if s.group.dept.number == 44)
+
+SELECT AVG("s"."gpa")
+FROM "Student" "s", "Group" "group-1"
+WHERE "group-1"."dept" = 44
+  AND "s"."group" = "group-1"."number"
+
+>>> select(s for s in Student if s.group.number == 101 and s.dob == max(s.dob for s in Student if s.group.number == 101))
+
+SELECT "s"."id", "s"."name", "s"."dob", "s"."tel", "s"."gpa", "s"."group"
+FROM "Student" "s"
+WHERE "s"."group" = 101
+  AND "s"."dob" = (
+    SELECT MAX("s"."dob")
+    FROM "Student" "s"
+    WHERE "s"."group" = 101
+    )
+
+>>> select(g for g in Group if avg(s.gpa for s in g.students) > 4.5)
+
+SELECT "g"."number", "g"."major", "g"."dept"
+FROM "Group" "g"
+WHERE (
+    SELECT AVG("s"."gpa")
+    FROM "Student" "s"
+    WHERE "g"."number" = "s"."group"
+    ) > 4.5
+
+>>> select(g for g in Group if avg(g.students.gpa) > 4.5)
+
+SELECT "g"."number"
+FROM "Group" "g"
+  LEFT JOIN "Student" "student-1"
+    ON "g"."number" = "student-1"."group"
+GROUP BY "g"."number"
+HAVING AVG("student-1"."gpa") > 4.5
+
+>>> select((s.group, min(s.gpa), max(s.gpa)) for s in Student)
+
+SELECT "s"."group", MIN("s"."gpa"), MAX("s"."gpa")
+FROM "Student" "s"
+GROUP BY "s"."group"
+
+>>> count(s for s in Student if s.group.number == 101)
+
+SELECT COUNT(*)
+FROM "Student" "s"
+WHERE "s"."group" = 101
+
+>>> select((g, count(g.students)) for g in Group if g.dept.number == 44)
+
+SELECT "g"."number", COUNT(DISTINCT "student-1"."id")
+FROM "Group" "g"
+  LEFT JOIN "Student" "student-1"
+    ON "g"."number" = "student-1"."group"
+WHERE "g"."dept" = 44
+GROUP BY "g"."number"
+
+>>> select((s.group, count(s)) for s in Student if s.group.dept.number == 44)
+
+SELECT "s"."group", COUNT(DISTINCT "s"."id")
+FROM "Student" "s", "Group" "group-1"
+WHERE "group-1"."dept" = 44
+  AND "s"."group" = "group-1"."number"
+GROUP BY "s"."group"
+
+>>> select((g, count(s for s in g.students if s.gpa <= 3), count(s for s in g.students if s.gpa > 3 and s.gpa <= 4), count(s for s in g.students if s.gpa > 4)) for g in Group)
+
+SELECT "g"."number", (
+    SELECT COUNT(DISTINCT "s"."id")
+    FROM "Student" "s"
+    WHERE "g"."number" = "s"."group"
+      AND "s"."gpa" <= 3
+    ), (
+    SELECT COUNT(DISTINCT "s"."id")
+    FROM "Student" "s"
+    WHERE "g"."number" = "s"."group"
+      AND "s"."gpa" > 3
+      AND "s"."gpa" <= 4
+    ), (
+    SELECT COUNT(DISTINCT "s"."id")
+    FROM "Student" "s"
+    WHERE "g"."number" = "s"."group"
+      AND "s"."gpa" > 4
+    )
+FROM "Group" "g"
+
+>>> select((s.group, count(s.gpa <= 3), count(s.gpa > 3 and s.gpa <= 4), count(s.gpa > 4)) for s in Student)
+
+SELECT "s"."group", COUNT(case when "s"."gpa" <= 3 then 1 else null end), COUNT(case when "s"."gpa" > 3 AND "s"."gpa" <= 4 then 1 else null end), COUNT(case when "s"."gpa" > 4 then 1 else null end)
+FROM "Student" "s"
+GROUP BY "s"."group"
+
+>>> left_join((g, count(s.gpa <= 3), count(s.gpa > 3 and s.gpa <= 4), count(s.gpa > 4)) for g in Group for s in g.students)
+
+SELECT "g"."number", COUNT(case when "s"."gpa" <= 3 then 1 else null end), COUNT(case when "s"."gpa" > 3 AND "s"."gpa" <= 4 then 1 else null end), COUNT(case when "s"."gpa" > 4 then 1 else null end)
+FROM "Group" "g"
+  LEFT JOIN "Student" "s"
+    ON "g"."number" = "s"."group"
+GROUP BY "g"."number"
+
+>>> select((s.dob.year, avg(s.gpa)) for s in Student)
+
+SELECT cast(substr("s"."dob", 1, 4) as integer), AVG("s"."gpa")
+FROM "Student" "s"
+GROUP BY cast(substr("s"."dob", 1, 4) as integer)
+
+Schema:
+pony.orm.examples.estore
+
+>>> select((item.order, sum(item.price * item.quantity)) for item in OrderItem if item.order.id == 123)
+
+SELECT "item"."order", coalesce(SUM(("item"."price" * "item"."quantity")), 0)
+FROM "OrderItem" "item"
+WHERE "item"."order" = 123
+GROUP BY "item"."order"
+
+>>> select((order, sum(order.items.price * order.items.quantity)) for order in Order if order.id == 123)
+
+SELECT "order"."id", (
+    SELECT coalesce(SUM(("orderitem-1"."price" * "orderitem-1"."quantity")), 0)
+    FROM "OrderItem" "orderitem-1"
+    WHERE "order"."id" = "orderitem-1"."order"
+    )
+FROM "Order" "order"
+WHERE "order"."id" = 123
+
+>>> select((item.order, item.order.total_price, sum(item.price * item.quantity)) for item in OrderItem if item.order.total_price < sum(item.price * item.quantity))
+
+SELECT "item"."order", "order-1"."total_price", coalesce(SUM(("item"."price" * "item"."quantity")), 0)
+FROM "OrderItem" "item", "Order" "order-1"
+WHERE "item"."order" = "order-1"."id"
+GROUP BY "item"."order", "order-1"."total_price"
+HAVING "order-1"."total_price" < coalesce(SUM(("item"."price" * "item"."quantity")), 0)
+
+Schema:
+pony.orm.examples.presentation
+
+>>> select((s.group, count(s)) for s in Student  if s.group.dept.number == 44 and avg(s.gpa) > 4)
+
+SELECT "s"."group", COUNT(DISTINCT "s"."id")
+FROM "Student" "s", "Group" "group-1"
+WHERE "group-1"."dept" = 44
+  AND "s"."group" = "group-1"."number"
+GROUP BY "s"."group"
+HAVING AVG("s"."gpa") > 4
+
+>>> select(g for g in Group if max(g.students.gpa) < 4)
+
+SELECT "g"."number"
+FROM "Group" "g"
+  LEFT JOIN "Student" "student-1"
+    ON "g"."number" = "student-1"."group"
+GROUP BY "g"."number"
+HAVING MAX("student-1"."gpa") < 4
+
+>>> select(g for g in Group if JOIN(max(g.students.gpa) < 4))
+
+SELECT "g"."number"
+FROM "Group" "g"
+  LEFT JOIN (
+    SELECT "student-1"."group" AS "group", MAX("student-1"."gpa") AS "expr-1"
+    FROM "Student" "student-1"
+    GROUP BY "student-1"."group"
+    ) "t-1"
+    ON "g"."number" = "t-1"."group"
+WHERE "t-1"."expr-1" < 4
+GROUP BY "g"."number"
+
+>>> select(s.group for s in Student if max(s.gpa) < 4)
+
+SELECT "s"."group"
+FROM "Student" "s"
+GROUP BY "s"."group"
+HAVING MAX("s"."gpa") < 4
+
+>>> select((s.group, avg(s.gpa)) for s in Student) .order_by(lambda: avg(s.gpa))
+
+SELECT "s"."group", AVG("s"."gpa")
+FROM "Student" "s"
+GROUP BY "s"."group"
+ORDER BY AVG("s"."gpa")
+
+>>> select((s.group, avg(s.gpa)) for s in Student) .order_by(lambda: desc(avg(s.gpa)))
+
+SELECT "s"."group", AVG("s"."gpa")
+FROM "Student" "s"
+GROUP BY "s"."group"
+ORDER BY AVG("s"."gpa") DESC
+
+>>> select((s.group, avg(s.gpa)) for s in Student).order_by(2)
+
+SELECT "s"."group", AVG("s"."gpa")
+FROM "Student" "s"
+GROUP BY "s"."group"
+ORDER BY 2
+
+>>> select((s.group, avg(s.gpa)) for s in Student).order_by(-2)
+
+SELECT "s"."group", AVG("s"."gpa")
+FROM "Student" "s"
+GROUP BY "s"."group"
+ORDER BY 2 DESC
+
+>>> select(sum(s.gpa) for s in Student)
+
+SELECT coalesce(SUM("s"."gpa"), 0)
+FROM "Student" "s"
+
+>>> select(s.gpa for s in Student).sum()
+
+SELECT coalesce(SUM("s"."gpa"), 0)
+FROM "Student" "s"
+
+
+# Other tests
+
+Schema:
+pony.orm.examples.presentation
+
+>>> select(s for s in Student if s.gpa > 3)
+
+SELECT "s"."id", "s"."name", "s"."dob", "s"."tel", "s"."gpa", "s"."group"
+FROM "Student" "s"
+WHERE "s"."gpa" > 3
+
+Oracle:
+SELECT "s"."ID", "s"."NAME", "s"."DOB", "s"."TEL", "s"."GPA", "s"."GROUP"
+FROM "STUDENT" "s"
+WHERE "s"."GPA" > 3
+
+>>> select(s for s in Student if s.group.number == 1)
+
+SELECT "s"."id", "s"."name", "s"."dob", "s"."tel", "s"."gpa", "s"."group"
+FROM "Student" "s"
+WHERE "s"."group" = 1
+
+Oracle:
+SELECT "s"."ID", "s"."NAME", "s"."DOB", "s"."TEL", "s"."GPA", "s"."GROUP"
+FROM "STUDENT" "s"
+WHERE "s"."GROUP" = 1
+
+
+
