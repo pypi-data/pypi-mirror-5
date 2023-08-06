@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+from pkg_resources import resource_filename
+from subprocess import call
+import os.path
+import shutil
+import tempfile
+import pykaryote.test
+
+def get_filename(resource_name):
+    """Returns the filename of a test configuration resource file.
+    """
+    return resource_filename('pykaryote.test', os.path.join('test_data',
+                             'pyk-utils', resource_name))
+
+if __name__ == '__main__':
+    data_dir = tempfile.mkdtemp(prefix='pykaryote-test')
+    test_config = get_filename('test.cfg')
+    analyzer_dir = os.path.join(data_dir, 'Test', 'analyzer')
+
+    commands = [
+    ['python', '-m', 'unittest', 'pykaryote.test.test'],
+    ['pyk-run', '-c', test_config, '-d', data_dir],
+    ['pyk-analyze', '-s', os.path.join(data_dir, 'Test'), analyzer_dir],
+    ['pyk-mass-run', '-d', os.path.join(data_dir, 'batch'), test_config, '2'],
+    ['pyk-analyze', '-s', os.path.join(data_dir, 'batch'), '-b', 
+    os.path.join(data_dir, 'batch')],
+    ['pyk-compare', '-s', test_config, '-c', get_filename('cmp.cfg'), '-d',
+    data_dir],
+    ['pyk-comparison-graph', os.path.join(data_dir, 'Experiment')]
+    ]
+
+    messages = [
+    'Running pyunit tests',
+    'testing pyk-run ...',
+    'testing pyk-analyze ...',
+    'testing pyk-mass-run ...',
+    'testing batch analysis with pyk-analyze ...',
+    'testing pyk-compare ...',
+    'testing pyk-comparison-graph ...'
+    ]
+
+    for command, message in zip(commands, messages):
+        print message
+        print ' '.join(command)
+        return_code = call(command)
+        if return_code != 0:
+            print 'failed.'
+            break
+    shutil.rmtree(data_dir, ignore_errors=True)
+    print 'done.'

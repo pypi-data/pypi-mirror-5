@@ -1,0 +1,123 @@
+#!/usr/bin/python
+"""
+A script for running a batch of simulations, with multi-core 
+support. 
+
+Run ``python mass_run.py -h`` for more information.
+"""
+import matplotlib
+matplotlib.use('Agg') # for running without an x server
+from matplotlib.pylab import show
+from optparse import OptionParser
+import re
+import multiprocessing as mp
+import os.path
+
+from pylab import show, figure, subplots_adjust, savefig, subplot
+
+from pykaryote.utils.analysis import color_list
+from pykaryote.sim.simulation import Simulation # this may move elsewhere
+
+current_color = 0
+
+usage = "%prog [options] Config Number Config Number... \
+\n For each pair 'Config Number', 'Number' of simulations will be run \
+from the configuration file specifed by 'Config'"
+        
+def run_all_tests(configs, data, parallel=1, verbose=False):
+    """
+    Runs a suite of simulations from the specified config files.
+    """
+    if parallel != 1:
+        pool = mp.Pool(parallel)
+        pool.map(run_test,[[i,configs[i],data, verbose] for i in range(len(configs))])
+        pool.close()
+        pool.join()
+    else:    
+        for i in range(len(configs)):
+            run_test((i,configs[i],data, verbose))
+    from pykaryote.utils.analysis import Analyzer
+    analyzers = [Analyzer([os.path.join(data, "Test-%d" % i, "analyzer")]) 
+                 for i in range(len(configs))]
+    F = figure()
+    subplots_adjust(hspace = .25)
+    for a in analyzers:
+        update_mass_plot(a)
+    size = F.get_size_inches()
+    F.set_size_inches((size[0]*2, size[1]*2))
+    savefig(os.path.join(data, "Graph.png"))
+
+def run_test(args):
+    """
+    Runs one simulation, returning the Analyzer
+    """
+    i,config,data, verbose = args
+    print 'Test-%d'%i
+    sim = Simulation(config, name="Test-%d" % i, data = data)
+    try:
+        sim.run(verbose=verbose, log=True)
+    except Exception as err:
+        print err
+
+def get_config_list(args):
+    """
+    Takes the specified args and returns a list of configuration files, 
+    repeated based on how many simulations are needed.
+    """
+    default = "pykaryote/configs/sim.cfg"
+    if len(args) == 0:
+        return [default for _ in range(10)]
+    else:
+        configs = []
+        if len(args) %2 != 0:
+            raise Exception("Must have an even number of args 'config number \
+            config number...'")
+        for i in range(len(args)/2):
+            for _ in range(int(args[2*i+1])):
+                configs.append(args[2*i])
+        return configs
+        
+    
+def update_mass_plot(analyzer):
+    """
+    Adds analyzer's plots to the group plot. 
+    Note that if different simulations differ in number of generations, the 
+    plot may look somewhat incomplete.
+    
+    Similarly, if different fitness functions are used, the fitness data will 
+    not compare well. 
+    """
+    global color_list
+    global current_color
+    subplot(311)
+    analyzer.plot_fitness(color = color_list[current_color])
+    subplot(312)
+    analyzer.plot_genome_length(color = color_list[current_color])
+    subplot(313)
+    analyzer.plot_complexity(color = color_list[current_color], mass_mode = True)
+    current_color = (current_color + 1)%len(color_list)
+    
+if __name__ == '__main__':
+    parser = OptionParser(usage=usage)
+    parser.add_option('-d', '--data', dest='data', default='.'\
+    , help="The directory in which to store the log and analyzer data for the \
+simulations.  It is recommended that you choose a local directory e.g. \
+'/tmp/data' to avoid network overhead.")
+    parser.add_option('-p', '--parallelization', dest='parallel', \
+        default=1, type='int', \
+        help="Number of cores to use. 0 => use all avalible cores")
+    parser.add_option('-v', '--verbose', dest='verbose', action='store_true', \
+        default=False, help="Print the generation numbers as the \
+simulation progresses. If parallelization is enabled the generation \
+numbers of all currently running simulations will be printed.")
+    options, args = parser.parse_args()
+    if options.parallel == 0:
+        parallel = mp.cpu_count()
+    else:
+        parallel = options.parallel
+    
+    configs = get_config_list(args)
+    
+    run_all_tests(configs, data=options.data, parallel=parallel, 
+                  verbose=options.verbose)
+        

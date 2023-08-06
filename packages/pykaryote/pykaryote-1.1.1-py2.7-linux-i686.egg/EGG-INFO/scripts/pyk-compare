@@ -1,0 +1,38 @@
+#!/usr/bin/python
+"""
+compare.py is a script to run some simulations with slight variations. 
+
+Run ``python compare.py -h`` for more information.
+"""
+from optparse import OptionParser
+import os.path
+from pkg_resources import resource_filename
+from pykaryote.utils.comparison import Comparer,Grapher
+
+if __name__ == '__main__':
+    parser = OptionParser()
+    parser.add_option("-s","--sim-config", dest = "sim_config", 
+        default = resource_filename('pykaryote', 
+                                    os.path.join('configs', 'sim.cfg')),
+        help = "The template configuration file for the comparison")
+    parser.add_option("-c","--cmp-config", dest = "cmp_config",
+        default = resource_filename('pykaryote', 
+                                    os.path.join('configs', 'cmp.cfg')),
+        help = "The configuration file for the comparison")
+    parser.add_option("-n","--name", dest = "name", 
+        default = "Experiment",
+        help = "The name of the comparison")
+    parser.add_option("-d","--data", dest = "data", default = '.',
+        help = "The directory in which to store the simulation data from this \
+comparison. It is recommended that you choose a local directory e.g. \
+'/tmp/data' to avoid network overhead.") 
+    parser.add_option('--graph', action='store_true', dest='graph', default=False,
+        help = 'Saves graphs to a "graph" directory inside the data directory.')
+    options, args = parser.parse_args()
+    cmp = Comparer(options.sim_config, options.cmp_config, name = options.name, 
+                   data = options.data)
+    cmp.run()
+    if options.graph:
+        g = Grapher(os.path.join(options.data, options.name),
+                    os.path.join(options.data, options.name, 'cmp-0.cfg'))
+        g.save_all()

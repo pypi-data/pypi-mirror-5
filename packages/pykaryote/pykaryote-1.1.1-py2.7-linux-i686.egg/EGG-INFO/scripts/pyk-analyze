@@ -1,0 +1,56 @@
+#!/usr/bin/python
+"""
+A simple command line script to pull up and display data from a BC simulation.
+This is a standard frontend for analysis.py.
+
+Run ``python analyze.py -h`` for more information
+"""
+import matplotlib
+matplotlib.use('Agg') # for running without an x server
+from matplotlib.pylab import show
+import matplotlib.pyplot as plt
+from optparse import OptionParser
+import os
+import os.path
+import time
+from pykaryote.utils.analysis import Analyzer
+
+usage = "%prog [options] (optional) analyzer directories\n\
+ Default data location: \n\
+   $ python analyze.py\n\
+ Alternate locations\n\
+   $ python analyze.py  ~/mydata/analyzer/\n\
+ Multiple simulations\n\
+   $ python analyze.py  ~/mydata/analyzer1/ ~/mydata/analyzer2/ ~/mydata/analyzer3/ "
+
+def get_data(args):
+    if len(args) == 0:
+        return ["Test/analyzer/"]
+    else:
+        return args
+    
+if __name__ == '__main__':
+    parser = OptionParser(usage = usage)
+    parser.add_option("-b", "--batch", dest = "batch_dir", default = None, 
+        help = "Specify a batch folder containing several simulation logs, rather" \
+"than specifying each analyzer specifically. If this option is supplied, the" \
+"batch folder must contain *only* simulations you want to analyze, and the" \
+"analyzer directories must still be called 'analyzer\'")
+    parser.add_option("--csv", dest = "csv", action = "store_true", default = False,\
+        help = "Exports the analyzer data to sim_data.csv in the current directory,"\
+                "rather than plotting graphs")
+    parser.add_option("-s", '--save_dir', dest='save_dir', default='.', 
+                      help='Directory to save .png images to.')
+    options, args = parser.parse_args()
+    if options.batch_dir:
+        data = []
+        for folder in os.listdir(options.batch_dir):
+            if os.path.isdir(os.path.join(options.batch_dir, folder)):
+                data.append(os.path.join(options.batch_dir, folder, 'analyzer'))
+    else:
+        data = get_data(args)
+    ann = Analyzer(data)
+    if options.csv:
+        ann.export_all_as_csv("sim_data.csv")
+    else:
+        ann.save_all(options.save_dir)

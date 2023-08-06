@@ -1,0 +1,42 @@
+#!/usr/bin/python
+"""Profiles Pykaryote and displays statistics.
+
+Be sure to add '#cython: profile=True' to the beginning of all .pyx files
+and recompile to enable profiling.
+
+For detailed instructions, see profiling_howto.txt
+"""
+import time
+import pstats
+import cProfile
+import os.path
+from optparse import OptionParser
+from pkg_resources import resource_filename
+from pykaryote.utils.comparison import Comparer, Grapher
+
+if __name__ == '__main__':
+    stats_out = 'profile.prof'
+    # load config with seed set to 1337
+    sim_config = resource_filename('pykaryote.test', os.path.join('test_data',
+                                   'pyk-utils', 'profile-sim.cfg'))
+    cmp_config = resource_filename('pykaryote.test', os.path.join('test_data',
+                                   'pyk-utils', 'profile-cmp.cfg'))
+    name = 'Experiment'
+    data = '/tmp/pykaryote/profile'
+
+    cmp = Comparer(sim_config, cmp_config, name = name, 
+                       data = data)
+
+    print 'Make sure you have enabled profiling of cython files by adding'
+    print '\t\'# cython: profile=True\''
+    print 'to the top of all .pyx files and recompile pykaryote.\n'
+    print 'For more information, see the profiling section of pykaryote\'s '\
+          'documentation.\n'
+    raw_input('Press enter to continue...')
+
+    start = time.time()
+    cProfile.runctx('cmp.run()', globals(), locals(), stats_out)
+
+    print 'profile statistics saved to {}'.format(stats_out)
+    print 'runtime:', time.time() - start
+    print 'view results with \'python -m pstats {}\''.format(stats_out)
