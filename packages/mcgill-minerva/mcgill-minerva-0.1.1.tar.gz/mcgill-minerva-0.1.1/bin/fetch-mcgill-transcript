@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+import argparse
+import getpass
+import io
+import sys
+
+import minerva
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='fetch McGill transcript',
+        formatter_class=argparse.RawTextHelpFormatter)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-u', '--from_user', help='''email:password or sid:pin
+If the password (or pin) is omitted, will prompt for them.
+If the argument is omitted altogether, will look to the values of the
+MINERVA_USER and MINERVA_PASS environment variables.
+''')
+    group.add_argument('-f', '--from_file', help='''Read the transcript html
+from this file instead of fetching it.''')
+    return parser.parse_args()
+
+
+def get_user_credentials(auth):
+    if auth is None:
+        return None, None
+    if ':' in auth:
+        return auth.split(':', 1)
+    try:
+        password = getpass.getpass("Password for %s: " % auth)
+    except (EOFError, KeyboardInterrupt):
+        sys.stderr.write('\n')
+        sys.exit(0)
+    return auth, password
+
+
+def format_table(table):
+    """Formats a table, taking care to properly align the elements.
+
+    Args:
+      table: A list containing strings and lists of strings; the strings
+             are section headers, and the lists of strings are rows.
+             The lists of strings should all have the same length.
+    Returns:
+      The formatted table as a string.
+    """
+    widths = [0] * next(len(row) for row in table if isinstance(row, list))
+    for row in table:
+        if isinstance(row, list):
+            for i, column in enumerate(row):
+                widths[i] = max(len(column), widths[i])
+    buf = io.StringIO()
+    for row in table:
+        if isinstance(row, list):
+            line = '\t'.join(c.ljust(w) for c, w in zip(row, widths))
+            buf.write(u'\t%s\n' % line.decode('utf-8'))
+        else:
+            buf.write(u'%s\n' % row)
+    return buf.getvalue()
+
+
+def format_transcript(transcript):
+    def term_key(term):
+        semester, year = term.semester.split()
+        return year, {'Winter': 0, 'Summer': 1, 'Fall': 2}[semester]
+
+    table = [['Subject', 'Title', 'Credits', 'Grade', 'Average']]
+    for term in sorted(transcript.terms.values(), key=term_key):
+        header = term.semester
+        if term.gpa is not None and term.cum_gpa is not None:
+            header += ' (GPA: %s, cumulative: %s)' % (term.gpa, term.cum_gpa)
+        table.append(header)
+        table.extend([
+            course.subject, course.title,
+            str(int(course.credits) if int(course.credits) == course.credits
+                                    else course.credits),
+            course.grade or '', course.average or '',
+        ] for course in term.courses)
+    return format_table(table)
+
+
+def main():
+    args = parse_args()
+    if args.from_file:
+        with open(args.from_file, 'r') as f:
+            transcript = minerva.transcript.scrape(f.read())
+    else:
+        username, password = get_user_credentials(args.from_user)
+        client = minerva.login(username, password)
+        transcript = client.transcript()
+    print format_transcript(transcript)
+
+if __name__ == '__main__':
+    main()
