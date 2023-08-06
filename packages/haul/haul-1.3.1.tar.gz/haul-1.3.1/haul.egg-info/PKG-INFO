@@ -1,0 +1,237 @@
+Metadata-Version: 1.0
+Name: haul
+Version: 1.3.1
+Summary: An Extensible Image Crawler
+Home-page: https://github.com/vinta/Haul
+Author: Vinta Chen
+Author-email: vinta.chen@gmail.com
+License: The MIT License (MIT)
+
+Copyright (c) 2013 Vinta
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Description: Haul
+        ====
+        
+        .. image:: https://travis-ci.org/vinta/Haul.png?branch=master
+            :alt: Build Badge
+            :target: https://travis-ci.org/vinta/Haul
+        
+        .. image:: https://coveralls.io/repos/vinta/Haul/badge.png?branch=master
+            :alt: Coverage Badge
+            :target: https://coveralls.io/r/vinta/Haul
+        
+        .. image:: https://badge.fury.io/py/haul.png
+            :alt: Version Badge
+            :target: http://badge.fury.io/py/haul
+        
+        .. image:: https://d2weczhvl823v0.cloudfront.net/vinta/haul/trend.png
+            :alt: Bitdeli Badge
+            :target: https://bitdeli.com/free
+        
+        
+        Find thumbnails and original images from URL or HTML file.
+        
+        Demo
+        ====
+        
+        `Hauler on Heroku <http://hauler.herokuapp.com/>`_
+        
+        Installation
+        ============
+        
+        on Ubuntu
+        
+        .. code-block:: bash
+        
+            $ sudo apt-get install build-essential python-dev libxml2-dev libxslt1-dev
+            $ pip install haul
+        
+        on Mac OS X
+        
+        .. code-block:: bash
+        
+            $ pip install haul
+        
+        Fail to install haul? `It is probably caused by lxml <http://lxml.de/installation.html>`_.
+        
+        Usage
+        =====
+        
+        Find images from ``img src``, ``a href`` and even ``background-image``:
+        
+        .. code-block:: python
+        
+            import haul
+        
+            url = 'http://gibuloto.tumblr.com/post/62525699435/fuck-yeah'
+            result = haul.find_images(url)
+        
+            print(result.image_urls)
+            """
+            output:
+            [
+                'http://25.media.tumblr.com/3f5f10d7216f1dd5eacb5eb3e302286a/tumblr_mtpcwdzKBT1qh9n5lo1_500.png',
+                ...
+                'http://24.media.tumblr.com/avatar_a3a119b674e2_16.png',
+                'http://25.media.tumblr.com/avatar_9b04f54875e1_16.png',
+                'http://31.media.tumblr.com/avatar_0acf8f9b4380_16.png',
+            ]
+            """
+        
+        Find original (or bigger size) images with ``extend=True``:
+        
+        .. code-block:: python
+        
+            import haul
+        
+            url = 'http://gibuloto.tumblr.com/post/62525699435/fuck-yeah'
+            result = haul.find_images(url, extend=True)
+        
+            print(result.image_urls)
+            """
+            output:
+            [
+                'http://25.media.tumblr.com/3f5f10d7216f1dd5eacb5eb3e302286a/tumblr_mtpcwdzKBT1qh9n5lo1_500.png',
+                ...
+                'http://24.media.tumblr.com/avatar_a3a119b674e2_16.png',
+                'http://25.media.tumblr.com/avatar_9b04f54875e1_16.png',
+                'http://31.media.tumblr.com/avatar_0acf8f9b4380_16.png',
+                # bigger size, extended from above urls
+                'http://25.media.tumblr.com/3f5f10d7216f1dd5eacb5eb3e302286a/tumblr_mtpcwdzKBT1qh9n5lo1_1280.png',
+                ...
+                'http://24.media.tumblr.com/avatar_a3a119b674e2_128.png',
+                'http://25.media.tumblr.com/avatar_9b04f54875e1_128.png',
+                'http://31.media.tumblr.com/avatar_0acf8f9b4380_128.png',
+            ]
+            """
+        
+        Advanced Usage
+        ==============
+        
+        Custom finder / extender pipeline:
+        
+        .. code-block:: python
+        
+            from haul import Haul
+            from haul.compat import str
+        
+        
+            def img_data_src_finder(pipeline_index,
+                                    soup,
+                                    finder_image_urls=[],
+                                    *args, **kwargs):
+                """
+                Find image URL in <img>'s data-src attribute
+                """
+        
+                now_finder_image_urls = []
+        
+                for img in soup.find_all('img'):
+                    src = img.get('data-src', None)
+                    if src:
+                        src = str(src)
+                        now_finder_image_urls.append(src)
+        
+                output = {}
+                output['finder_image_urls'] = finder_image_urls + now_finder_image_urls
+        
+                return output
+        
+            MY_FINDER_PIPELINE = (
+                'haul.finders.pipeline.html.img_src_finder',
+                'haul.finders.pipeline.css.background_image_finder',
+                img_data_src_finder,
+            )
+        
+            GOOGLE_SITES_EXTENDER_PIEPLINE = (
+                'haul.extenders.pipeline.google.blogspot_s1600_extender',
+                'haul.extenders.pipeline.google.ggpht_s1600_extender',
+                'haul.extenders.pipeline.google.googleusercontent_s1600_extender',
+            )
+        
+            url = 'http://fashion-fever.nl/dressing-up/'
+            h = Haul(parser='lxml',
+                     finder_pipeline=MY_FINDER_PIPELINE,
+                     extender_pipeline=GOOGLE_SITES_EXTENDER_PIEPLINE)
+            result = h.find_images(url, extend=True)
+        
+        Run Tests
+        =========
+        
+        .. code-block:: bash
+        
+            $ cd tests
+            $ python test.py
+        
+        
+        History
+        =======
+        
+        1.3.1 (2013-10-24)
+        ++++++++++++++++++
+        
+        - Add `is_found` attribute for `HaulResult`
+        - Add `to_ordered_dict()` method for `HaulResult`
+        - `A demo site on Heroku <http://hauler.herokuapp.com/>`_
+        
+        
+        1.3.0 (2013-10-16)
+        ++++++++++++++++++
+        
+        - Use unicode for every string
+        - Fix running test.py from another directory
+        - Rename module `models` to `core`
+        - Remove in_ignorecase()
+        
+        
+        1.2.0 (2013-10-15)
+        ++++++++++++++++++
+        
+        - Improve error handling
+        
+        
+        1.1.0 (2013-10-04)
+        ++++++++++++++++++
+        
+        - Custom finder / extender pipeline support
+        
+        
+        1.0.0 (2013-10-03)
+        ++++++++++++++++++
+        
+        - Initial release
+        
+Keywords: haul web image content scraper parser crawler
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Natural Language :: Chinese (Traditional)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Multimedia :: Graphics
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Utilities
