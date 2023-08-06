@@ -1,0 +1,111 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# flo-check-homework-decorate-games --- Create flo-check-homework launchers for
+#                                       the specified games
+# Copyright (c) 2011, 2012, 2013 Florent Rougon
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 dated June, 1991.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING. If not, write to the
+# Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+# Boston, MA  02110-1301 USA.
+
+
+import sys, os, stat, re
+
+
+progname = os.path.basename(sys.argv[0])
+destdir = "/usr/local/games"
+realdir = "/usr/games"
+
+usage = """Usage: %(progname)s [OPTION ...]
+Create flo-check-homework launcher scripts for a list of programs.
+
+Standard input is expected to contain one line for each program, in
+the following format:
+
+PROGNAME <TAB> PRETTY_NAME [ <TAB> COMMAND_LINE ]
+
+where <TAB> denote tab characters (ASCII 9). Therefore, PRETTY_NAME
+may contain spaces. Every such line will lead to the creation of a
+shell script named %(destscript)s in which PRETTY_NAME will be
+enclosed in double quotes and COMMAND_LINE will be used as is. You
+can manage shell quoting issues accordingly.
+
+If COMMAND_LINE is omitted, %(realprogram)s will be run after
+successful results in flo-check-homework.
+
+Input lines containing only whitespace, or starting with optional
+whitespace followed by a '#' character, are treated as comments and
+thus ignored.
+
+Options:
+      --help                   display this message and exit""" \
+    % { "progname": progname,
+        "destscript": os.path.join(destdir, "PROGNAME"),
+        "realprogram": os.path.join(realdir, "PROGNAME") }
+
+if len(sys.argv) > 1 and sys.argv[1] == "--help":
+    print(usage)
+    sys.exit(0)
+
+blank_or_comment_line_cre = re.compile(r"^[ \t]*(#.*)?$")
+line_nb = 0
+
+for line in sys.stdin:
+    line_nb += 1
+
+    if blank_or_comment_line_cre.match(line) is not None:
+        continue
+
+    words = line[:-1].split('\t')
+
+    try:
+        name = words[0]
+    except IndexError:
+        sys.stderr.write("Empty name at line %u! Aborting.\n" % line_nb)
+        break
+
+    try:
+        pretty_name = words[1] or name
+    except IndexError:
+        sys.stderr.write("Only one column in line %u (see below)! "
+                         "Aborting:\n\n%s\n" % (line_nb, repr(line)))
+        break
+
+    cmdline = '\t'.join(words[2:]) or '"%s"' \
+        % os.path.join(realdir, '$(basename "$0")')
+
+    print('Creating launcher for "%s" (%s → %s)...' % (pretty_name, name,
+                                                        cmdline))
+
+    contents = """\
+#! /bin/sh
+
+set -- %(cmdline)s "$@"
+cmd="$1"
+
+if [ -x "$cmd" ]; then
+    LANG=fr_FR.UTF-8 flo-check-homework -p "%(pretty_name)s" -- "$@"
+else
+    echo "'$cmd' is not executable. Aborting." >&2
+    exit 1
+fi\n""" % { "pretty_name": pretty_name,
+            "cmdline": cmdline }
+
+    mode = 0
+    for attr in ("RUSR", "WUSR", "XUSR", "RGRP", "XGRP", "ROTH", "XOTH"):
+        mode |= getattr(stat, "S_I" + attr)
+
+    with open(os.path.join(destdir, name), mode="w", encoding="utf-8") as f:
+        os.fchmod(f.fileno(), mode)
+        f.write(contents)
