@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2012-2013, Calxeda Inc.
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+# * Neither the name of Calxeda Inc. nor the names of its contributors
+# may be used to endorse or promote products derived from this software
+# without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+# TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+
+
+import os
+import sys
+
+from optparse import OptionParser
+
+import cxmanage_api.fabric
+
+
+def main():
+    parser = OptionParser(
+        "usage: %prog [options] COMMAND ecmeIP", conflict_handler="resolve"
+    )
+    parser.add_option(
+        "-s", "--ssh",
+        action="store_const", const=True, dest="ssh", default=False,
+        help="Use the SPU IPs rather than ECME IPs"
+    )
+    parser.add_option(
+        "-n", "--nosync",
+        action="store_const", const=False, dest="sync", default=True,
+        help="Do not syncronize input across terminals"
+    )
+    parser.add_option(
+        "--virt-env",
+        action="store", type="string", dest="virt_env",
+        help="Calls workon <virtual_environment> before spawning a window"
+    )
+    parser.disable_interspersed_args()
+
+    (options, args) = parser.parse_args()
+    if len(args) == 0:
+        parser.print_help()
+        return -1
+    elif len(args) < 2:
+        parser.error("Need to specify COMMAND and ecmeIP")
+
+    command = " ".join(args[:-1])
+
+    if options.virt_env:
+        command = 'workon %s; ' % options.virt_env + command
+
+    ecmeip = args[-1]
+    name = '%s@%s' % (args[0], ecmeip)
+    fabric = cxmanage_api.fabric.Fabric(ecmeip)
+    ips = [node.ip_address for node in fabric.nodes.values()]
+    if options.ssh:
+        ips = fabric.get_server_ip().values()
+
+    for i, ip in enumerate(ips):
+        if i == 0:
+            os.system('tmux new-window -n "%s"' % name)
+            os.system('tmux send-keys "%s %s"' % (command, ip))
+            os.system('tmux send-keys Enter')
+            continue
+
+        os.system('tmux split-window -h')
+        os.system('tmux send-keys "%s %s"' % (command, ip))
+        os.system('tmux send-keys Enter')
+        os.system('tmux select-layout -t "%s" tiled >/dev/null' % name)
+
+    if options.sync:
+        os.system(
+            'tmux set-window-option -t "%s" synchronize-panes on >/dev/null' %
+            name
+        )
+
+
+if __name__ == '__main__':
+    sys.exit(main())
