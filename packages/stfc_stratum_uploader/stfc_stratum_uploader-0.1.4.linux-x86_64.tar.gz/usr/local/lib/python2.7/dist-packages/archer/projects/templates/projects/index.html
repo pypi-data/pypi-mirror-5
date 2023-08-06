@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% load bootstrap_toolkit %}
+{% load guardian_tags %}
+
+{% block content %}
+    <div class='row'>
+        <div class='span9'>
+            {% if package_sets %}
+                {% for project, can_upload, packages in package_sets %}
+                    <div class='row-fluid'>
+                        <div class='span3'>
+                            <a href="{% url 'projects:show' project.id %}">{{ project }}</a>
+                            {% if can_upload %}
+                                <a class='btn btn-small' title='Upload' href='{% url 'projects:upload' project.id %}'><i class='icon-upload'></i>Upload</a>
+                            {% endif %}
+                        </div>
+                        <div class='span6'>
+                            {% include 'projects/_list.html' with project=projec packages=packages %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class='span3'>
+            {% if latest_packages %}
+                <ul>
+                    {% for package in latest_packages %}
+                        <li><a href="{% url 'packages:show' package.id %}">{{ package.file }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No packages deployed recently.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
