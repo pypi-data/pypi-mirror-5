@@ -1,0 +1,435 @@
+#!/usr/bin/python
+# -*- python -*-
+
+import os
+import sys
+import signal
+import errno
+import time
+from datetime import datetime
+
+
+
+# Don't actually write log files.
+debug = 0
+
+
+# top-level directory location for the event log files.
+log_dir = '/tmp/ids_audit_logs'
+
+
+# desired ISO 8601 date/time format
+iso_8601_fmt = '%Y%m%dT%H%M%S.%fZ'
+
+
+# Need the location of the lock file so that any signal handlers
+# can remove the file when exiting the script
+lock_file_name = None
+
+
+# Try to acquire the lock for the log file lock_retries times.
+# Between attempts, sleep for retry_interval seconds
+lock_retries = 5
+retry_interval = 1
+
+
+# mappings of iRODS rule names to an "event type"
+# (intended to be more human understandable)
+rule_to_event = {
+    'acPostProcForOpen': 'open',
+    'acPostProcForCreate': 'create',
+    'acPostProcForPut': 'put',
+    'acPostProcForCopy': 'copy',
+    'acPostProcForRepl': 'replicate',
+    'acPostProcForObjRename': 'rename',
+    'acPostProcForFilePathReg': 'register',
+    'acPostProcForDelete': 'delete',
+    'acPostProcForCollCreate': 'createCollection',
+    'acPostProcForRmColl': 'removeCollection',
+    'acPostProcForModifyAccessControl': 'modACL',
+    'acPostProcForModifyAVUMetadata': 'modMetaData',
+    }
+
+
+
+def write_event_log(event, event_str):
+    """
+    Based on the details of the event, will open the appropriate
+    log file in which the event can be logged, and will write
+    the event_str to the log file.
+
+    Will cause the script to exit (and print and error message)
+    if some error is encountered.
+    """
+    if not event:
+        return
+    if ('target' not in event
+        or 'timestamp' not in event):
+        return
+
+    # we may be able to ignore this event
+    ignore_list = os.getenv('IDS_AUDIT_IGNORE_PATH')
+    
+    if (ignore_list
+        and len([coll for coll in ignore_list.split(':')
+                 if event['target'].startswith(coll)]) != 0):
+        return
+
+    # if debug is set, return success, but
+    # don't actually write anything
+    if debug > 0:
+        print(event_str)
+        return
+
+
+    # Log files are written into a directory structure that mirrors
+    # the iRODS namespace, rooted at 'log_dir'. For example, if the
+    # target of an event is '/zone/path/to/object', then the log file
+    # to be written will be located at 'log_dir/zone/path/to' in a
+    # log file named for the date in the timestamp field of the
+    # record (i.e. so there will be at most an audit log file per
+    # collection per day). It's the same for collections (i.e.
+    # the target '/zone/path/to/collection' will go into the log file
+    # 'log_dir/zone/path/to'.
+
+    # There are a few ways to set log_dir. Command line 'logdir' option,
+    # the 'IDS_AUDIT_LOGDIR' environment variable, or just setting
+    # log_dir at the top of the script. Precedences is CLI, env, variable.
+    global log_dir
+    if 'logdir' in event:
+        log_dir = event['logdir']
+    else:
+        log_dir = os.getenv('IDS_AUDIT_LOGDIR', log_dir)
+
+
+    # make sure the log directory exists and that it's writable,
+    # as we won't create it if it doesn't exist already
+    if not os.path.isdir(log_dir):
+        print('ERROR: %s: log directory %s does not exist, or is not a directory.'
+              % (sys.argv[0], log_dir))
+        sys.exit(0)
+    if not os.access(log_dir, os.W_OK):
+        print('ERROR: %s: cannot write to log directory %s'
+              % (sys.argv[0], log_dir))
+        sys.exit(0)
+
+
+    coll_part = os.path.dirname(event['target']).lstrip('/')
+    log_dir_name = os.path.join(log_dir, coll_part)
+
+    # create the needed paths to the log file
+    try:
+        os.makedirs(log_dir_name, 0700)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            pass
+        else:
+            print('ERROR: %s: creating log directory %s. Error is %s.'
+                  % (sys.argv[0], log_dir_name, e.strerror))
+            sys.exit(0)
+
+    log_file_name = os.path.join(log_dir_name, '_ids_audit_log.%s'
+                                 % (event['timestamp'][:8],))
+    lock_file_name = "%s.lck" % (log_file_name,)
+
+    # first we'll lock the log file by creating a lockfile
+    # beside the log file. The script will keep trying for
+    # some time to acquire the lock. Note: this scheme
+    # won't work properly on an NFS volume. Beware!
+    need_lock = True
+    global lock_retries
+    while need_lock and lock_retries > 0:
+        try:
+            lock_fd = os.open(lock_file_name, os.O_WRONLY|os.O_CREAT|os.O_EXCL, 0600)
+            os.write(lock_fd, "%d\n" % (os.getpid(),))
+            os.close(lock_fd)
+            need_lock = False
+        except OSError, e:
+            if e.errno == errno.EEXIST:
+                print('Another logger has the lock ... try again.')
+                time.sleep(retry_interval)
+                lock_retries -= 1
+            else:
+                print('ERROR: %s: error opening %s: %s'
+                      % (sys.argv[0], lock_file_name, e.strerror))
+                sys.exit(0)
+
+    # write to the event log
+    try:
+        old_mask = os.umask(077)
+        log_file = open(log_file_name, 'a')
+        log_file.write('%s\n' % (event_str,))
+        log_file.close()
+        os.umask(old_mask)
+    except OSError as e:
+        print('ERROR: %s: writing to log file %s: %s.'
+              % (sys.argv[0], log_file_name, e.strerror))
+        os.remove(lock_file_name)
+        sys.exit(0)
+
+    os.remove(lock_file_name)
+    return
+
+    
+data_obj_event_tmpl = (
+    '%(timestamp)s:%(type)s:%(user)s:%(target)s'
+    ':resource=%(resource)s'
+    )
+def data_obj_handler(event):
+    """
+    This event handler processes events that
+    target single data objects. It expects the
+    parameters 'target' and 'resource'
+    """
+    if not event:
+        return
+    if 'target' not in event:
+        print('ERROR: %s: missing "target" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'resource' not in event:
+        print('ERROR: %s: missing "resource" in %s event' % (sys.argv[0], event['type']))
+        return
+
+    write_event_log(event, data_obj_event_tmpl % event)
+
+    return
+
+    
+
+path_reg_event_tmpl = (
+    '%(timestamp)s:%(type)s:%(user)s:%(target)s'
+    ':resource=%(resource)s:srcpath=%(srcpath)s'
+    )
+def path_reg_handler(event):
+    """
+    This event handler processes events that
+    register existing files into iRODS. It expects
+    the target, resource and srcpath to be set.
+    """
+    if not event:
+        return
+    if 'target' not in event:
+        print('ERROR: %s: missing "target" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'resource' not in event:
+        print('ERROR: %s: missing "resource" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'srcpath' not in event:
+        print('ERROR: %s: missing "srcpath" in %s event' % (sys.argv[0], event['type']))
+        return
+
+    write_event_log(event, path_reg_event_tmpl % event)
+
+    return
+                                        
+
+
+coll_event_tmpl = (
+    '%(timestamp)s:%(type)s:%(user)s:%(target)s'
+    )
+def collection_handler(event):
+    """
+    This event handler processes events that
+    target single collections. It expects the
+    target parameter to be set.
+    """
+    if not event:
+        return
+    if 'target' not in event:
+        print('ERROR: %s: missing "target" in %s event' % (sys.argv[0], event['type']))
+        return
+
+    write_event_log(event, coll_event_tmpl % event)
+
+    return
+                                        
+
+
+rename_event_tmpl = (
+    '%(timestamp)s:%(type)s:%(user)s:%(target)s'
+    ':newname=%(newname)s'
+    )
+def rename_handler(event):
+    """
+    This event handler processes rename events
+    (both objects and collections). It expects
+    the attributes 'target' for the target of
+    the rename (i.e. the new name), and 'oldpath'
+    for the old name.
+    """
+    if not event:
+        return
+    if 'target' not in event:
+        print('ERROR: %s: missing "target" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'newname' not in event:
+        print('ERROR: %s: missing "newname" in %s event' % (sys.argv[0], event['type']))
+        return
+
+    write_event_log(rename_event_tmpl % event)
+
+    return
+                                        
+
+
+modify_acl_event_tmpl = (
+    '%(timestamp)s:%(type)s:%(user)s:%(target)s'
+    ':targetuser=%(targetuser)s,access=%(access)s,recursive=%(recursive)s'
+    )
+def modify_acl_handler(event):
+    """
+    This event handler processes change in
+    ACL events. It's expecting the attributes
+    target (target of the operation), targetuser,
+    access, and recursive.
+    """
+    if not event:
+        return
+    if 'target' not in event:
+        print('ERROR: %s: missing "target" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'targetuser' not in event:
+        print('ERROR: %s: missing "targetuser" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'access' not in event:
+        print('ERROR: %s: missing "access" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'recursive' not in event:
+        print('ERROR: %s: missing "recursive" in %s event' % (sys.argv[0], event['type']))
+        return
+
+    if event['recursive'] == '1':
+        event['recursive'] = 'true'
+    else:
+        event['recursive'] = 'false'
+
+    write_event_log(event, modify_acl_event_tmpl % event)
+
+    return
+    
+        
+
+modify_metadata_event_tmpl = (
+    '%(timestamp)s:%(type)s:%(user)s:%(target)s'
+    ':operation=%(operation)s,targettype=%(targettype)s'
+    ',attrname=%(attrname)s,attrval=%(attrval)s,attrunits=%(attrunits)s'
+    )
+def modify_metadata_handler(event):
+    """
+    This event handler processes change in
+    metadata events. It expects the attributes
+    target, targettype, attrname, attrval and attrunits.
+    """
+    if not event:
+        return
+    if 'target' not in event:
+        print('ERROR: %s: missing "target" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'operation' not in event:
+        print('ERROR: %s: missing "operation" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'targettype' not in event:
+        print('ERROR: %s: missing "targettype" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'attrname' not in event:
+        print('ERROR: %s: missing "attrname" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'attrval' not in event:
+        print('ERROR: %s: missing "attrval" in %s event' % (sys.argv[0], event['type']))
+        return
+    if 'attrunits' not in event:
+        print('ERROR: %s: missing "attrunits" in %s event' % (sys.argv[0], event['type']))
+        return
+
+    if event['targettype'] == '-d':
+        event['targettype'] = 'dataobject'
+    elif event['targettype'] == '-c':
+        event['targettype'] = 'collection'
+        
+    write_event_log(event, modify_metadata_event_tmpl % event)
+
+    return
+
+
+
+event_handlers = {
+    'open': data_obj_handler,
+    'create': data_obj_handler,
+    'put': data_obj_handler,
+    'copy': data_obj_handler,
+    'replicate': data_obj_handler,
+    'rename': rename_handler,
+    'register': path_reg_handler,
+    'delete': data_obj_handler,
+    'createCollection': collection_handler,
+    'removeCollection': collection_handler,
+    'modACL': modify_acl_handler,
+    'modMetaData': modify_metadata_handler,
+    }
+
+
+
+def script_cleanup(signal, frame):
+    """
+    In case the script gets killed by a signal
+    before it releases it's log file lock.
+    """
+    if lock_file_name:
+        os.remove(lock_file_name)
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+
+    # properly clean up on certain signals
+    signal.signal(signal.SIGHUP, script_cleanup)
+    signal.signal(signal.SIGINT, script_cleanup)
+    signal.signal(signal.SIGTERM, script_cleanup)
+
+    # parse command line arguments
+    event = {}
+
+    #
+    # All commands start with:
+    #   - rule name
+    #   - epoch timestamp
+    #   - user performing the action
+    if len(sys.argv) < 4:
+        print('ERROR: %s: missing leading arguments' % (sys.argv[0],))
+        sys.exit(0)
+
+    if sys.argv[1] not in rule_to_event:
+        print('ERROR: %s: unknown rule name %s' % (sys.argv[0], sys.argv[1]))
+        sys.exit(0)
+    else:
+        event['type'] = rule_to_event[sys.argv[1]]
+
+    try:
+        epoch = float(sys.argv[2])
+    except ValueError:
+        print('ERROR: %s: epoch argument must be a number' % (sys.argv[0],))
+        sys.exit(0)
+    event['timestamp'] = datetime.utcfromtimestamp(epoch).strftime(iso_8601_fmt)
+
+    if (sys.argv[3].find('#', 1, -1) == -1):
+        print('ERROR: %s: user argument must be in "user#zone" format' % (sys.argv[0],))
+        sys.exit(0)
+    event['user'] = sys.argv[3]
+
+    # the rest of the arguments are 'name=value' pairs
+    # parse them into the event dict
+    for index, arg in enumerate(sys.argv):
+        if index < 4:
+            continue
+        if arg.find('=', 1, -1) == -1:
+            print('ERROR: %s: malformed name/value argument: %s' % (sys.argv[0], arg))
+            sys.exit(0)
+        n, v = arg.split('=')
+        event[n] = v
+
+    # call the event-specific handler. The event-handler mostly just
+    # does parameter checking before logging the event
+    if event['type'] in event_handlers:
+        event_handlers[event['type']](event)
+        
+    sys.exit(0)

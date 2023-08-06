@@ -1,0 +1,498 @@
+#!/usr/bin/env python
+# -*- python -*-
+
+import sys
+import os
+import argparse
+
+from ids.users import get_irods_group, irods_user_exists
+from ids.utils import run_iquest, get_local_zone
+from ids.namespace import irods_mkdir, irods_setacls, irods_coll_exists, irods_coll_getacls
+
+
+
+def check_policy_groups(zone, org, verbose=False):
+    """
+    This function checks whether the groups that are
+    needed to support the IDS ACL policies on the
+    namespace exist.
+
+    Inputs:
+    - 'zone' is the zone for the namespace to check.
+      Will use the local zone if zone is None.
+    - 'org' is the name of the organization component
+      of the namespace to check. If set to None, the
+      top-level zone namespace will be checked against
+      the policy.
+    - If verbose is set, the function will print
+      informational messages such as what makes the
+      configuration out of compliance.
+
+    Returns:
+    - True - if the proper groups exist
+    - False - if not
+    """
+    complies = True
+
+    if not zone:
+        zone = get_local_zone(verbose)
+        if not zone:
+            # some error
+            return False
+
+
+    # Check that the groups 'ids-user#localzone' and
+    # (if org provided) check that 'ids-<org>#localzone'
+    # also exists. An error from underlying function
+    # calls will cause non-compliance to be flagged.
+    if org:
+        u = 'ids-%s#%s' % (org, zone)
+        rc = irods_user_exists(u, verbose)
+        if rc < 1:
+            if rc == 0 and verbose:
+                print('  group %s does not exist.' % (u,))
+            complies = False
+        elif verbose:
+            print('  group %s exists according to policy.' % (u,))
+    
+
+    u = 'ids-user#%s' % (zone,)
+    rc = irods_user_exists(u, verbose)
+    if rc < 1:
+        if rc == 0 and verbose:
+            print('  group %s does not exist.' % (u,))
+        complies = False
+    elif verbose:
+        print('  group %s exists according to policy.' % (u,))
+    
+    return complies
+
+    
+    
+        
+        
+def check_namespace_policy(zone, prefix, org, verbose=False):
+    """
+    This function will determine whether the given
+    organizational namespace complies with the IDS
+    policy for namespace.
+
+    Inputs:
+    - 'zone' is the zone namespace to check. Will
+      use the local zone if zone is None.
+    - 'prefix' is an optional root of the namespace to
+      check within. The first component of prefix must
+      be zone if prefix is provided.
+    - 'org' is the name of the organization component
+      of the namespace to check. If set to None, the
+      top-level zone namespace will be checked against
+      the policy.
+    - If verbose is set, the function will print
+      informational messages such as what makes the
+      configuration out of compliance.
+
+    Returns a dictionary keyed by policy namespace elements,
+    with each value being yet another dictionary describing
+    the level of compliance. The value dictionary has one key
+    to indicate existence ('exists'), and one key to indicate
+    whether the proper ACL has been applied ('acl').
+    """
+
+    ns_policy_report = {}
+    complies = True
+
+    if not zone:
+        zone = get_local_zone(verbose)
+        if not zone:
+            return (None, None)
+
+    if prefix and prefix.find('/' + zone) != 0:
+        if verbose:
+            print('Prefix %s not within zone %s' % (prefix, zone))
+        return (None, None)
+
+    if prefix and org:
+        path_prefix = os.path.join(prefix, org)
+    elif org:
+        path_prefix = os.path.join('/', zone, org)
+    else:
+        path_prefix = os.path.join('/', zone)
+
+
+    # check if the anonymous user is defined within the zone. if
+    # so, we'll check that it has the same ACLs set as the public group
+    include_anonymous = False
+    if irods_user_exists('anonymous#%s' % (zone,)) > 0:
+        include_anonymous = True
+
+
+    if verbose:
+        print('Checking path %s for IDS policy compliance.' % (path_prefix,))
+
+
+    # check that the top-level path exists
+    ns_policy_report[path_prefix] = {}
+    rc = irods_coll_exists(path_prefix, verbose)
+    if rc < 0:
+        # some error
+        return (None, None)
+    elif rc == 0:
+        # doesn't exist ... can return now
+        if verbose:
+            print('  path %s does not exist.' % (path_prefix,))
+        ns_policy_report[path_prefix]['exists'] = False
+        return (False, ns_policy_report)
+    else:
+        if verbose:
+            print('  path %s exists.' % (path_prefix,))
+        ns_policy_report[path_prefix]['exists'] = True
+
+
+    # check 'private'
+    path = os.path.join(path_prefix, 'private')
+    ns_policy_report[path] = {}
+    rc = irods_coll_exists(path)
+    if rc < 0:
+        return (None, None)
+    elif rc == 0:
+        if verbose:
+            print('  path %s does not exist.' % (path,))
+        ns_policy_report[path]['exists'] = False
+        complies = False
+    else:
+        if verbose:
+            print('  path %s exists.' % (path,))
+        ns_policy_report[path]['exists'] = True
+        # for this path, the only ACLs should be from:
+        # organizational users (or the organization's group)
+        # and zone local users and groups (like rodsadmins)
+        if verbose:
+            print('  checking ACLs on %s.' % (path,))
+        acl_list = irods_coll_getacls(path, verbose)
+        if acl_list:
+            # Bit confusing here. Get the list of users that
+            # have ACLs on the collection. Filter out users/groups
+            # from the ids-<organization> special group, then
+            # for the ACLs left over, if it's some other ids- group
+            # or the user isn't in the local zone, they shouldn't
+            # have an ACL.
+            group_list = get_irods_group('ids-%s' % (org,), verbose)
+            acl_users = [u for u in [acl[0] for acl in acl_list]
+                         if u not in group_list]
+            invalid_users = [u for u in acl_users
+                             if u.startswith('ids-')
+                             or not u.endswith('#%s' % (zone,))]
+            if invalid_users:
+                if verbose:
+                    print('  invalid ACLs on %s for users: %s'
+                          % (path, ' '.join(invalid_users)))
+                ns_policy_report[path]['acl'] = False
+                complies = False
+            else:
+                if verbose:
+                    print('  ACLs correct on %s.' % (path,))
+                ns_policy_report[path]['acl'] = True
+        else:
+            if verbose:
+                print('  required ACLs not present on path %s' % (path,))
+            ns_policy_report[path]['acl'] = False
+            complies = False
+            
+
+    # check 'shared'
+    path = os.path.join(path_prefix, 'shared')
+    ns_policy_report[path] = {}
+    rc = irods_coll_exists(path, verbose)
+    if rc < 0:
+        return (None, None)
+    elif rc == 0:
+        if verbose:
+            print('  path %s does not exist.' % (path,))
+        ns_policy_report[path]['exists'] = False
+        complies = False
+    else:
+        if verbose:
+            print('  path %s exists.' % (path,))
+        ns_policy_report[path]['exists'] = True
+        if verbose:
+            print('  checking ACLs on %s.' % (path,))
+        ns_policy_report[path]['acl'] = True
+        if verbose:
+            print('  no required ACLs for %s.' % (path,))
+
+
+    # check 'public'
+    path = os.path.join(path_prefix, 'public')
+    ns_policy_report[path] = {}
+    rc = irods_coll_exists(path, verbose)
+    if rc < 0:
+        return (None, None)
+    elif rc == 0:
+        if verbose:
+            print('  path %s does not exist.' % (path,))
+        ns_policy_report[path]['exists'] = False
+        complies = False
+    else:
+        if verbose:
+            print('  path %s exists.' % (path,))
+        ns_policy_report[path]['exists'] = True
+        if verbose:
+            print('  checking ACLs on %s.' % (path,))
+        acl_list = irods_coll_getacls(path, verbose)
+        acl_targets = [acl[0] for acl in acl_list]
+        group = 'public#%s' % (zone,)
+        if group in acl_targets:
+            if verbose:
+                print('  ACL for %s correct on %s.' % (group, path,))
+            ns_policy_report[path]['acl'] = True
+        else:
+            if verbose:
+                print('  no required \'read\' ACL for %s on path %s'
+                      % (group, path,))
+            ns_policy_report[path]['acl'] = False
+            complies = False
+        if include_anonymous:
+            anonymous = 'anonymous#%s' % (zone,)
+            if anonymous in acl_targets:
+                if verbose:
+                    print('  ACL for %s correct on %s.' % (anonymous, path,))
+            else:
+                if verbose:
+                    print('  no required \'read\' ACL for %s on path %s'
+                          % (anonymous, path,))
+                ns_policy_report[path]['acl'] = False
+                complies = False
+        
+
+    return (complies, ns_policy_report)
+
+
+
+def setup_namespace(zone, prefix, org, org_owner, verbose=False):
+    """
+    This function creates the required IDS namespace
+    according to the IDS policy document.
+
+    Inputs:
+    - 'zone' is the zone namespace element of the
+      path to be operated on. If zone is None, the
+      local zone name will be used.
+    - 'prefix' is an optional root of the namespace to
+      operate within. The first component of prefix must
+      be zone if prefix is provided.
+    - 'org' is the organizational component of the
+      path to be operated on. It will be created if
+      if doesn't already exist. If org is None, then
+      the policy namespace components will be created
+      in the top-level zone namespace (this should only
+      be done in special cases).
+    - 'org_owner' is an iRODS username who should own
+      the organizational sub-collections. If the user name
+      doesn't include '#', then the provided zone will be used
+    - 'verbose' if True, will cause informational
+      messages to be printed along the way.
+
+    Returns 0 on success, non-zero if some error occurred.
+    """
+
+    # process args
+    if org and not org_owner:
+        if verbose:
+            print('Must provide both organization name and organization owner arguments')
+        return 2
+        
+    if not zone:
+        zone = get_local_zone(verbose=verbose)
+        if not zone:
+            return 2
+
+    if prefix and prefix.find('/' + zone) != 0:
+        if verbose:
+            print('Prefix %s not within zone %s' % (prefix, zone))
+        return 2
+
+    if prefix and org:
+        path_prefix = os.path.join(prefix, org)
+    elif org:
+        path_prefix = os.path.join('/', zone, org)
+    else:
+        path_prefix = os.path.join('/', zone)
+
+    if org:
+        org_group = 'ids-%s#%s' % (org, zone)
+        if org_owner and org_owner.find('#') != -1:
+            org_user = org_owner
+        elif org_owner:
+            org_user = '%s#%s' % (org_owner, zone)
+    else:
+        org_group = None
+        org_user = None
+
+
+    # check if the anonymous user is defined within the zone
+    # if so, it will be given a 'read' ACL on the same
+    # collections as the 'public' group
+    include_anonymous = False
+    if irods_user_exists('anonymous#%s' % (zone,)) > 0:
+        include_anonymous = True
+
+
+    # top-level '/zone/organization' or '/prefix/organization' collection.
+    # 'public' and 'anonymous' get read ACLs so browsing can work
+    if org:
+        if verbose:
+            print('  creating collection %s' % (path_prefix,))
+        rc = irods_mkdir(path_prefix, verbose)
+        if rc:
+            return rc
+        acl_list = [['public#%s' % (zone,), 'read'], [org_user, 'own']]
+        if include_anonymous:
+            acl_list.append(['anonymous#%s' % (zone,), 'read'])
+        if verbose:
+            print('  setting default ACLs on %s' % (path_prefix,))
+        rc = irods_setacls(path_prefix, acl_list, verbose)
+        if rc:
+            return rc
+    else:
+        # if we're setting up '/zone', then we need need to make sure
+        # that 'public' and 'anonymous' can read and '/' and '/zone' so 
+        # browsing will work
+        acl_list = [['public#%s' % (zone,), 'read'],]
+        if include_anonymous:
+            acl_list.append(['anonymous#%s' % (zone,), 'read'])
+        if verbose:
+            print('  setting default ACLs on %s' % (path_prefix,))
+        rc = irods_setacls('/', acl_list, verbose)
+        if rc:
+            return rc
+        rc = irods_setacls(path_prefix, acl_list, verbose)
+        if rc:
+            return rc
+
+
+    # The following sub-collections are created, with the
+    # listed ACLs:
+    #
+    # top-level/private - organizational group read ACL
+    # top-level/shared  - 'ids-user' gets read ACL
+    # top-level/public  - 'public' gets read ACL
+    #
+
+    # private
+    path = os.path.join(path_prefix, 'private')
+    if verbose:
+        print('  creating collection %s' % (path,))
+    rc = irods_mkdir(path, verbose)
+    if rc:
+        return rc
+    if org:
+        # won't add this ACL if we're doing /zone/private
+        acl_list = [[org_group, 'read'], [org_user, 'own']]
+        if verbose:
+            print('  setting default ACLs on %s' % (path,))
+        rc = irods_setacls(path, acl_list, verbose)
+        if rc:
+            return rc
+
+    # shared
+    path = os.path.join(path_prefix, 'shared')
+    if verbose:
+        print('  creating collection %s' % (path,))
+    rc = irods_mkdir(path, verbose)
+    if rc:
+        return rc
+    acl_list = [['ids-user#%s' % (zone,), 'read'],]
+    if org:
+        acl_list.append([org_user, 'own'])
+    if verbose:
+        print('  setting default ACLs on %s' % (path,))
+    rc = irods_setacls(path, acl_list, verbose)
+    if rc:
+        return rc
+
+    # public
+    path = os.path.join(path_prefix, 'public')
+    if verbose:
+        print('  creating collection %s' % (path,))
+    rc = irods_mkdir(path, verbose)
+    if rc:
+        return rc
+    acl_list = [['public#%s' % (zone,), 'read'],]
+    if include_anonymous:
+        acl_list.append(['anonymous#%s' % (zone,), 'read'])
+    if org:
+        acl_list.append([org_user, 'own'])
+    if verbose:
+        print('  setting default ACLs on %s' % (path,))
+    rc = irods_setacls(path, acl_list, verbose)
+    if rc:
+        return rc
+
+    
+    return 0
+
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Set up or check a portion of the namespace according to IDS policies')
+    parser.add_argument('--zone', '-z',
+                        help='name of the zone to operate within')
+    parser.add_argument('--prefix', '-p',
+                        help='prefix pathname to base the namespace check or setup within')
+    parser.add_argument('--organization', '-o', dest='org',
+                        help='name of organization to check or setup')
+    parser.add_argument('--owner', '-u',
+                        help='user who should own the organization\'s namespace. Either "user" or "user#zone".')
+    parser.add_argument('--check', '-c', action='store_true', default=False,
+                        help='check namespace and report compliance against IDS policy')
+    parser.add_argument('--verbose', '-v', action='store_true', default=False,
+                        help='print progress messages')
+    args = parser.parse_args()
+
+
+    # if I'm doing a check, turn on verbose reporting
+    if args.check:
+        args.verbose = True
+
+
+    # if zone wasn't specified, make it the local zone
+    if not args.zone:
+        args.zone = get_local_zone(verbose=args.verbose)
+        if args.zone == None:
+            sys.exit(2)
+            
+
+    # check if needed users/groups exist
+    if args.verbose:
+        print('Checking whether required groups exist...')
+    if not check_policy_groups(args.zone, args.org, verbose=args.verbose):
+        print('Some required groups do not exist. Exiting.')
+        sys.exit(1)
+
+
+    # check the namespace
+    if args.check:
+        (complies, policy_report) = check_namespace_policy(args.zone,
+                                                           args.prefix,
+                                                           args.org,
+                                                           verbose=args.verbose)
+        if policy_report == None:
+            sys.exit(2)
+        elif complies:
+            sys.exit(0)
+        else:
+            sys.exit(1)
+
+
+    # set up the new namespace. If collections already exist according
+    # to policy, they won't be removed, but ACLs might be adjusted.
+    if args.verbose:
+        msg_str = 'Creating the IDS namespace for '
+        if args.org:
+            msg_str += 'organization \'%s\' in ' % (args.org,)
+        msg_str += 'zone \'%s\'.' % (args.zone,)
+        print msg_str
+
+    rc = setup_namespace(args.zone, args.prefix, args.org, args.owner, verbose=args.verbose)
+    sys.exit(rc)
