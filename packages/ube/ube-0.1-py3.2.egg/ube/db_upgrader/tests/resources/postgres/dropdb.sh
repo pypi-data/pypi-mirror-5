@@ -1,0 +1,1 @@
+dropdb -w -h localhost -p 5432 -U dbupgrader dbupgrader

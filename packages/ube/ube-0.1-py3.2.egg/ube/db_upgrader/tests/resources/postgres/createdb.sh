@@ -1,0 +1,1 @@
+createdb -w -h localhost -p 5432 -U dbupgrader dbupgrader "Test database for the dbupgrader library"
