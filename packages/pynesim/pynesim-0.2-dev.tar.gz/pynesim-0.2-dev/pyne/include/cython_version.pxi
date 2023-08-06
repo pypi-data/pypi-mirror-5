@@ -1,0 +1,4 @@
+# Cython compile-time version information
+DEF CYTHON_VERSION_MAJOR = 0
+DEF CYTHON_VERSION_MINOR = 18
+DEF CYTHON_VERSION_MICRO = 0
