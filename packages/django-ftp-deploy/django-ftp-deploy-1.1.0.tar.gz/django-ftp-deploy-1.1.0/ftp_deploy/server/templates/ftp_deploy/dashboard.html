@@ -1,0 +1,61 @@
+{% extends 'ftp_deploy/base.html' %}
+
+{% block content %}
+
+    <div class="row">
+        <div class="col-sm-12">
+            <form action="{% url 'ftpdeploy_dashboard' %}" method="post" id="service-filter" class="form-horizontal"> 
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="services" class="col-sm-1 control-label">Services</label>
+                    <div class="col-sm-5">
+                        <select name="services" class="form-control" placeholder="Select Service">
+                            <option></option>
+                            {% for service in services %}
+                                <option value="{{service.pk}}">{{service.repo_name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    
+                </div>
+            </form>
+        </div>
+    </div>
+    <span class="clearfix"></span>
+    <br>
+    <div class="row">
+        <div class="col-sm-6"><h3>Services</h3></div>
+        <div class="col-sm-6">
+            <div class="pull-right">
+                <a href="{% url 'ftpdeploy_service_add' %}" class="btn btn-success"><i class="fa fa-plus"></i> Add Service</a>
+            </div>
+        </div>
+    </div>
+    <span class="clearfix"></span>
+    <br>
+    <div class="row">
+        <div class="col-sm-12">
+            
+            <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Branch</th>
+                    <th>Number of Deploys</th>
+                    <th>Last Deploy Time</th>
+                    <th>Last Deploy User</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="service-list">
+                    {% include "ftp_deploy/service/list.html" %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% include "ftp_deploy/pagination.html" %}
+
+{% endblock content %}
