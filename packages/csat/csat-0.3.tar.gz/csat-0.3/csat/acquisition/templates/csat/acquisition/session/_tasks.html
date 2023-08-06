@@ -1,0 +1,22 @@
+{% import 'macros.html' as lib %}
+
+<section id="session-tasks">
+	{% if session.status == session.CONFIGURED %}
+	<h2>Collectors execution status</h2>
+	<div class="alert">
+		<strong>Not running!</strong> This acquisition session is not running. Run it now by using the appropriate button in the table above.
+	</div>
+	{% elif session.status == session.RUNNING %}
+	<h2>Collectors execution status</h2>
+	<div>
+		{% for collector in session.collectors.order_by('configurator').all() %}
+			{% if collector.status == collector.RUNNING %}
+			<div data-uuid="{{ collector.running_instance_id }}" class="collector-monitor">
+				<strong>{{ collector.get_collector().name }}</strong>
+				<ul class="tasks"></ul>
+			</div>
+			{% endif %}
+		{% endfor %}
+	</div>
+	{% endif %}
+</section>
