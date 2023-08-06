@@ -1,0 +1,221 @@
+Scores
+======
+
+
+Making a score from a LilyPond input string
+-------------------------------------------
+
+You can make an Abjad score from a LilyPond input string:
+
+<abjad>
+input = r'''
+\new Staff { e''4 d''8 ( c''8 ) d''4 g'4 }
+\new Staff { \clef bass c4 a,4 b,4 e4 }
+'''
+</abjad>
+
+<abjad>
+score = Score(input)
+</abjad>
+
+<abjad>
+show(score)
+</abjad>
+
+
+Making a score from a list of Abjad components
+----------------------------------------------
+
+You can also make a score from a list of other Abjad components:
+
+<abjad>
+treble_staff_1 = Staff("e'4 d'4 e'4 f'4 g'1")
+treble_staff_2 = Staff("c'2. b8 a8 b1")
+</abjad>
+
+<abjad>
+score = Score([treble_staff_1, treble_staff_2])
+</abjad>
+
+<abjad>
+show(score)
+</abjad>
+
+
+Understanding the interpreter representation of a score
+-------------------------------------------------------
+
+The interpreter representation of an Abjad score contains three parts:
+
+<abjad>
+score
+</abjad>
+
+``Score`` tells you the score's class.
+
+``3`` tells you the score's length (which is the number of top-level components
+the score contains).
+
+Curly braces ``{`` and ``}`` tell you that the music inside the score is
+interpreted sequentially rather than simultaneously.
+
+
+Inspecting the LilyPond format of a score
+-----------------------------------------
+
+Get the LilyPond input format of any Abjad object with ``lilypond_format``:
+
+<abjad>
+score.lilypond_format
+</abjad>
+
+Use ``f()`` as a short-cut to print the LilyPond format of any Abjad object:
+
+<abjad>
+f(score)
+</abjad>
+
+
+Selecting the music in a score
+------------------------------
+
+Slice a score to select its components:
+
+<abjad>
+score[:]
+</abjad>
+
+Abjad returns a selection.
+
+
+Inspecting a score's leaves
+---------------------------
+
+Get the leaves in a score with ``select_leaves()``:
+
+<abjad>
+score.select_leaves(allow_discontiguous_leaves=True)
+</abjad>
+
+Abjad returns a selection.
+
+
+Getting the length of a score
+-----------------------------
+
+Get the length of a score with ``len()``:
+
+<abjad>
+len(score)
+</abjad>
+
+The length of a score is defined equal to the number of top-level components
+the score contains.
+
+
+Inspecting duration
+-------------------
+
+Use the inspector to get the duration of a score:
+
+<abjad>
+inspect(score).get_duration()
+</abjad>
+
+
+Adding one component to the bottom of a score
+---------------------------------------------
+
+Add one component to the bottom of a score with ``append()``:
+
+<abjad>
+bass_staff = Staff("g4 f4 e4 d4 d1")
+bass_clef = contexttools.ClefMark('bass')
+bass_clef.attach(bass_staff)
+</abjad>
+
+<abjad>
+score.append(bass_staff)
+</abjad>
+
+<abjad>
+show(score)
+</abjad>
+
+
+Finding the index of a score component
+--------------------------------------
+
+Find the index of a score component with ``index()``:
+
+<abjad>
+score.index(treble_staff_1)
+</abjad>
+
+
+Removing a score component by index
+-----------------------------------
+
+Use ``pop()`` to remove a score component by index:
+
+<abjad>
+score.pop(1)
+</abjad>
+
+<abjad>
+show(score)
+</abjad>
+
+
+Removing a score component by reference
+---------------------------------------
+
+Remove a score component by reference with ``remove()``:
+
+<abjad>
+score.remove(treble_staff_1)
+</abjad>
+
+<abjad>
+show(score)
+</abjad>
+
+
+Inspecting whether or not a score contains a component
+------------------------------------------------------
+
+Use ``in`` to find out whether a score contains a given component:
+
+<abjad>
+treble_staff_1 in score
+</abjad>
+
+<abjad>
+treble_staff_2 in score
+</abjad>
+
+<abjad>
+bass_staff in score
+</abjad>
+
+
+Naming scores
+-------------
+
+You can name Abjad scores:
+
+<abjad>
+score.name = 'Example Score'
+</abjad>
+
+Score names appear in LilyPond input:
+
+<abjad>
+f(score)
+</abjad>
+
+But do not appear in notational output:
+
+<abjad>
+show(score)
+</abjad>

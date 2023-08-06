@@ -1,0 +1,108 @@
+contexttools.DynamicMark
+========================
+
+.. abjad-lineage:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark
+
+.. autoclass:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark
+
+.. only:: html
+
+   Attribute summary
+   -----------------
+
+   .. autosummary::
+
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.attach
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.composite_dynamic_name_to_steady_state_dynamic_name
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.detach
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.dynamic_name
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.dynamic_name_to_dynamic_ordinal
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.dynamic_ordinal_to_dynamic_name
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.effective_context
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.is_dynamic_name
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.lilypond_format
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.start_component
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.storage_format
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.target_context
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__call__
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__copy__
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__eq__
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__ne__
+      ~abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__repr__
+
+Bases
+-----
+
+- :py:class:`contexttools.ContextMark <abjad.tools.contexttools.ContextMark.ContextMark.ContextMark>`
+
+- :py:class:`marktools.Mark <abjad.tools.marktools.Mark.Mark.Mark>`
+
+- :py:class:`abctools.AbjadObject <abjad.tools.abctools.AbjadObject.AbjadObject.AbjadObject>`
+
+- :py:class:`__builtin__.object <object>`
+
+Read-only properties
+--------------------
+
+.. autoattribute:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.effective_context
+   :noindex:
+
+.. autoattribute:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.lilypond_format
+   :noindex:
+
+.. autoattribute:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.start_component
+   :noindex:
+
+.. autoattribute:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.storage_format
+   :noindex:
+
+.. autoattribute:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.target_context
+   :noindex:
+
+Read/write properties
+---------------------
+
+.. autoattribute:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.dynamic_name
+   :noindex:
+
+Methods
+-------
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.attach
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.detach
+   :noindex:
+
+Static methods
+--------------
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.composite_dynamic_name_to_steady_state_dynamic_name
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.dynamic_name_to_dynamic_ordinal
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.dynamic_ordinal_to_dynamic_name
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.is_dynamic_name
+   :noindex:
+
+Special methods
+---------------
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__call__
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__copy__
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__eq__
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__ne__
+   :noindex:
+
+.. automethod:: abjad.tools.contexttools.DynamicMark.DynamicMark.DynamicMark.__repr__
+   :noindex:

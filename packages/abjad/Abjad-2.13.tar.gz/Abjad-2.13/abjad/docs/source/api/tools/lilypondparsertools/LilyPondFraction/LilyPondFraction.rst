@@ -1,0 +1,36 @@
+lilypondparsertools.LilyPondFraction
+====================================
+
+.. abjad-lineage:: abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction
+
+.. autoclass:: abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction
+
+.. only:: html
+
+   Attribute summary
+   -----------------
+
+   .. autosummary::
+
+      ~abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction.__eq__
+      ~abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction.__ne__
+      ~abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction.__repr__
+
+Bases
+-----
+
+- :py:class:`abctools.AbjadObject <abjad.tools.abctools.AbjadObject.AbjadObject.AbjadObject>`
+
+- :py:class:`__builtin__.object <object>`
+
+Special methods
+---------------
+
+.. automethod:: abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction.__eq__
+   :noindex:
+
+.. automethod:: abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction.__ne__
+   :noindex:
+
+.. automethod:: abjad.tools.lilypondparsertools.LilyPondFraction.LilyPondFraction.LilyPondFraction.__repr__
+   :noindex:

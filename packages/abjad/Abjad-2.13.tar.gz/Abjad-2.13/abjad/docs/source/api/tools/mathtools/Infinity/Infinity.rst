@@ -1,0 +1,52 @@
+mathtools.Infinity
+==================
+
+.. abjad-lineage:: abjad.tools.mathtools.Infinity.Infinity.Infinity
+
+.. autoclass:: abjad.tools.mathtools.Infinity.Infinity.Infinity
+
+.. only:: html
+
+   Attribute summary
+   -----------------
+
+   .. autosummary::
+
+      ~abjad.tools.mathtools.Infinity.Infinity.Infinity.__eq__
+      ~abjad.tools.mathtools.Infinity.Infinity.Infinity.__ge__
+      ~abjad.tools.mathtools.Infinity.Infinity.Infinity.__gt__
+      ~abjad.tools.mathtools.Infinity.Infinity.Infinity.__le__
+      ~abjad.tools.mathtools.Infinity.Infinity.Infinity.__lt__
+      ~abjad.tools.mathtools.Infinity.Infinity.Infinity.__ne__
+      ~abjad.tools.mathtools.Infinity.Infinity.Infinity.__repr__
+
+Bases
+-----
+
+- :py:class:`abctools.AbjadObject <abjad.tools.abctools.AbjadObject.AbjadObject.AbjadObject>`
+
+- :py:class:`__builtin__.object <object>`
+
+Special methods
+---------------
+
+.. automethod:: abjad.tools.mathtools.Infinity.Infinity.Infinity.__eq__
+   :noindex:
+
+.. automethod:: abjad.tools.mathtools.Infinity.Infinity.Infinity.__ge__
+   :noindex:
+
+.. automethod:: abjad.tools.mathtools.Infinity.Infinity.Infinity.__gt__
+   :noindex:
+
+.. automethod:: abjad.tools.mathtools.Infinity.Infinity.Infinity.__le__
+   :noindex:
+
+.. automethod:: abjad.tools.mathtools.Infinity.Infinity.Infinity.__lt__
+   :noindex:
+
+.. automethod:: abjad.tools.mathtools.Infinity.Infinity.Infinity.__ne__
+   :noindex:
+
+.. automethod:: abjad.tools.mathtools.Infinity.Infinity.Infinity.__repr__
+   :noindex:

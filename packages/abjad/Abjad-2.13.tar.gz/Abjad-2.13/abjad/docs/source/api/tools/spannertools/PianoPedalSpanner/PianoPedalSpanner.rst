@@ -1,0 +1,147 @@
+spannertools.PianoPedalSpanner
+==============================
+
+.. abjad-lineage:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner
+
+.. autoclass:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner
+
+.. only:: html
+
+   Attribute summary
+   -----------------
+
+   .. autosummary::
+
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.append
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.append_left
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.attach
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.components
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.detach
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.extend
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.extend_left
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.fracture
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.fuse
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.get_duration
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.get_timespan
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.index
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.kind
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.leaves
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.override
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.pop
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.pop_left
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.set
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.style
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__call__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__contains__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__copy__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__eq__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__getitem__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__len__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__lt__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__ne__
+      ~abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__repr__
+
+Bases
+-----
+
+- :py:class:`spannertools.Spanner <abjad.tools.spannertools.Spanner.Spanner.Spanner>`
+
+- :py:class:`abctools.AbjadObject <abjad.tools.abctools.AbjadObject.AbjadObject.AbjadObject>`
+
+- :py:class:`__builtin__.object <object>`
+
+Read-only properties
+--------------------
+
+.. autoattribute:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.components
+   :noindex:
+
+.. autoattribute:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.leaves
+   :noindex:
+
+.. autoattribute:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.override
+   :noindex:
+
+.. autoattribute:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.set
+   :noindex:
+
+Read/write properties
+---------------------
+
+.. autoattribute:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.kind
+   :noindex:
+
+.. autoattribute:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.style
+   :noindex:
+
+Methods
+-------
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.append
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.append_left
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.attach
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.detach
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.extend
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.extend_left
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.fracture
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.fuse
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.get_duration
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.get_timespan
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.index
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.pop
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.pop_left
+   :noindex:
+
+Special methods
+---------------
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__call__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__contains__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__copy__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__eq__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__getitem__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__len__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__lt__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__ne__
+   :noindex:
+
+.. automethod:: abjad.tools.spannertools.PianoPedalSpanner.PianoPedalSpanner.PianoPedalSpanner.__repr__
+   :noindex:

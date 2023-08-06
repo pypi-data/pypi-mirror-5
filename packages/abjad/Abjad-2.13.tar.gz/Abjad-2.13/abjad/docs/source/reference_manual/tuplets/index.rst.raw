@@ -1,0 +1,263 @@
+Tuplets
+=======
+
+
+Making a tuplet from a LilyPond input string
+--------------------------------------------
+
+You can make an Abjad tuplet from a multiplier and a LilyPond input string:
+
+<abjad>
+tuplet = Tuplet(Fraction(2, 3), "c'8 d'8 e'8")
+show(tuplet)
+</abjad>
+
+
+Making a tuplet from a list of other Abjad components
+-----------------------------------------------------
+
+You can also make a tuplet from a multiplier and a list of other Abjad
+components:
+
+<abjad>
+leaves = [Note("fs'8"), Note("g'8"), Rest('r8')]
+tuplet = Tuplet(Fraction(2, 3), leaves)
+show(tuplet)
+</abjad>
+
+
+Understanding the interpreter representation of a tuplet
+--------------------------------------------------------
+
+The interprer representation of an tuplet contains three parts:
+
+<abjad>
+tuplet
+</abjad>
+
+``Tuplet`` tells you the tuplet's class.
+
+``2/3`` tells you the tuplet's multiplier.
+
+The list ``[fs'8, g'8, r8]`` shows the top-level components the tuplet
+contains.
+
+
+Understanding the string representation of a tuplet
+---------------------------------------------------
+
+The string representation of a tuplet contains four parts:
+
+<abjad>
+print tuplet
+</abjad>
+
+Curly braces ``{`` and ``}`` indicate that the tuplet's music is interpreted
+sequentially instead of simultaneously.
+
+The asterisks ``*`` denote a fixed-multiplier tuplet.
+
+``3:2`` tells you the tuplet's ratio.
+
+The remaining arguments show the top-level components of tuplet.
+
+
+Inspecting the LilyPond format of a tuplet
+------------------------------------------
+
+Get the LilyPond input format of any Abjad object with ``lilypond_format``:
+
+<abjad>
+tuplet.lilypond_format
+</abjad>
+
+Use ``f()`` as a short-cut to print the LilyPond format of any Abjad object:
+
+<abjad>
+f(tuplet)
+</abjad>
+
+
+Selecting the music in a tuplet
+-------------------------------
+
+Slice a tuplet to select its components:
+
+<abjad>
+tuplet[:]
+</abjad>
+
+
+Inspecting a tuplet's leaves
+----------------------------
+
+Get the leaves in a tuplet with ``select_leaves()``:
+
+<abjad>
+tuplet.select_leaves()
+</abjad>
+
+
+Getting the length of a tuplet
+------------------------------
+
+The length of a tuplet is defined equal to the number of top-level components
+the tuplet contains.
+
+Get the length of a tuplet with ``len()``:
+
+<abjad>
+len(tuplet)
+</abjad>
+
+
+Inspecting duration
+-------------------
+
+Use the inspector to get the duration of a voice:
+
+<abjad>
+inspect(tuplet).get_duration()
+</abjad>
+
+
+Understanding rhythmic augmentation and diminution
+--------------------------------------------------
+
+A tuplet with a multiplier less than ``1`` constitutes a type of rhythmic
+diminution:
+
+<abjad>
+tuplet.multiplier
+</abjad>
+
+<abjad>
+tuplet.is_diminution
+</abjad>
+
+A tuplet with a multiplier greater than ``1`` is a type of rhythmic
+augmentation:
+
+<abjad>
+tuplet.is_augmentation
+</abjad>
+
+
+Changing the multiplier of a tuplet
+-----------------------------------
+
+You can change the multiplier of a tuplet with ``multiplier``:
+
+<abjad>
+tuplet.multiplier = Multiplier(4, 5)
+show(tuplet)
+</abjad>
+
+
+Adding one component to the end of a tuplet
+--------------------------------------------
+
+Add one component to the end of a tuplet with ``append``:
+
+<abjad>
+tuplet.append(Note("e'4."))
+show(tuplet)
+</abjad>
+
+You can also use a LilyPond input string:
+
+<abjad>
+tuplet.append("bf8")
+show(tuplet)
+</abjad>
+
+
+Adding many components to the end of a tuplet
+---------------------------------------------
+
+Add many components to the end of a tuplet with ``extend``:
+
+<abjad>
+notes = [Note("fs'32"), Note("e'32"), Note("d'32"), Rest((1, 32))]
+tuplet.extend(notes)
+show(tuplet)
+</abjad>
+
+You can also use a LilyPond input string:
+
+<abjad>
+tuplet.extend("gs'8 a8") 
+show(tuplet)
+</abjad>
+
+
+Finding the index of a component in a tuplet
+--------------------------------------------
+
+Find the index of a component in a tuplet with ``index()``:
+
+<abjad>
+notes[1]
+</abjad>
+
+<abjad>
+tuplet.index(notes[1])
+</abjad>
+
+
+Removing a tuplet component by index
+------------------------------------
+
+Use ``pop()`` to remove the last component of a tuplet:
+
+<abjad>
+tuplet.pop()
+show(tuplet)
+</abjad>
+
+
+Removing a tuplet component by reference
+----------------------------------------
+
+Remove tuplet components by reference with ``remove()``:
+
+<abjad>
+tuplet.remove(tuplet[3])
+show(tuplet)
+</abjad>
+
+
+Overriding attributes of the LilyPond tuplet number grob
+--------------------------------------------------------
+
+Override attributes of the LilyPond tuplet number grob like this:
+
+<abjad>
+string = 'tuplet-number::calc-fraction-text'
+tuplet.override.tuplet_number.text = schemetools.Scheme(string)
+tuplet.override.tuplet_number.color = 'red'
+</abjad>
+
+We'll place the tuplet into a Staff object, so that LilyPond does not complain
+about the overrides we've applied, which lexically cannot appear in a
+``\score`` block.
+
+<abjad>
+staff = Staff([tuplet])
+show(staff)
+</abjad>
+
+See LilyPond's documentation for lists of grob attributes available.
+
+
+Overriding attributes of the LilyPond tuplet bracket grob
+---------------------------------------------------------
+
+Override attributes of the LilyPond tuplet bracket grob like this:
+
+<abjad>
+tuplet.override.tuplet_bracket.color = 'red'
+show(staff)
+</abjad>
+
+See LilyPond's documentation for lists of grob attributes available.

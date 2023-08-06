@@ -1,0 +1,73 @@
+#! /usr/bin/env python
+
+import os
+import pprint
+import re
+from abjad import abjad_configuration
+from abjad.tools import iotools
+
+
+directory_name_blacklist = (
+    'demos',
+    )
+
+file_name_blacklist = (
+    'ez_setup.py',
+    'getters.py',
+    'predicates.py',
+    'setup.py',
+    )
+
+class_definition_pattern = re.compile(r'\s*class\s+(\w+)')
+function_definition_pattern = re.compile(r'\s*def\s+(\w+)')
+
+def _find_multifunction_modules():
+    multifunction_modules = []
+    for parent_directory_path, subdirectory_names, file_names in os.walk('.'):
+
+        subdirectory_names_to_remove = []
+        for subdirectory_name in subdirectory_names:
+            if subdirectory_name in directory_name_blacklist:
+                subdirectory_names_to_remove.append(subdirectory_name)
+        for subdirectory_name in subdirectory_names_to_remove:
+            subdirectory_names.remove(subdirectory_name)
+
+        for file_name in file_names:
+            if file_name.endswith('.py') and file_name not in file_name_blacklist:
+                if not file_name.startswith('test_'):
+                    result = _has_multiple_public_function_definitions(
+                        parent_directory_path,
+                        file_name
+                        )
+                    if result:
+                        result_pair = (file_name, result)
+                        multifunction_modules.append(result_pair)
+    total = len(multifunction_modules)
+    if 0 < total:
+        pprint.pprint(multifunction_modules)
+        print ''
+    print 'Total modules with multiple public functions defined: %s' % total
+    print ''
+
+
+def _has_multiple_public_function_definitions(path, file_name):
+    function_names = [ ]
+    full_name = os.path.join(path, file_name)
+    for line in file(full_name, 'r').readlines():
+        match = class_definition_pattern.match(line)
+        if match is not None:
+            return False
+        match = function_definition_pattern.match(line)
+        if match is not None:
+            function_name = match.groups()[0]
+            if not function_name.startswith('_'):
+                function_names.append(function_name)
+    if 1 < len(function_names):
+        return function_names
+    else:
+        return False
+
+
+if __name__ == '__main__':
+    iotools.clear_terminal()
+    _find_multifunction_modules()
