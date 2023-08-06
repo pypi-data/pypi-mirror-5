@@ -1,0 +1,70 @@
+{% extends 'wheelcms_axle/base.html' %}
+
+{% block breadcrumb %}
+<div class="row">
+  <div class="span12">
+    <ul class="breadcrumb">
+        <li>
+            <a href="{{root.get_absolute_url}}">Home</a>
+        <span class="divider">/</span>
+        </li>
+        <li>
+          Search
+        {% if query %}
+          &rsaquo;&rsaquo; {{query}}
+        {% endif %}
+        </li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
+
+{% block base_main %}
+<div class="row">
+  <div class="span12">
+    <h3>Search</h3>
+  </div>
+</div>
+<div class="row">
+  <div class="span12">
+    <form method="get" action="." class="input-append">
+        {{form.q}}
+        <button type="submit" class="btn btn-primary">
+        <i class="icon-search icon-white"></i>
+        Search
+        </button>
+    </form>
+  </div>
+</div>
+{% if query %}
+<div class="row">
+  <div class="span12">
+    <table id="search_result_table" class="result-listing table table-hover">
+    <tr>
+      <th>Results ({{paginator.count}})</th>
+    </tr>
+
+    {% for result in page.object_list %}
+    <tr class="state-{{result.state}}">
+      <td>
+        <span class="title"><img class="icon" src="{{result.icon}}"><a href="{{ result.path }}">{{ result.title }}</a></span>
+        <span class="byline">{% if result.state == "private" %}<span class="badge badge-important">private</span>{%endif%} by {{result.owner}} &mdash; published {{result.publication}} &mdash; last modified {{result.modified}} {# &mdash; filed under foo, bar #}</span>
+        <p>{{result.description|default:''|safe}}</p>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td>
+        <p>No results found.</p>
+      </td>
+    </tr>
+    {% endfor %}
+    </table>
+  </div>
+</div>
+
+{% include "two.bootstrap/pagination.html" %}
+
+{% endif %}
+</div>
+{% endblock %}

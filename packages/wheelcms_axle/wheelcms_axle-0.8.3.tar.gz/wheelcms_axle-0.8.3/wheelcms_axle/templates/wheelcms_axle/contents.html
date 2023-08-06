@@ -1,0 +1,195 @@
+{% extends "wheelcms_axle/base.html" %}
+
+{% block javascript %}
+<script type="text/javascript" charset="utf-8">
+  function delete_dialog(deletes) {
+    /*
+     * 'deletes' contains jquery objects with valid path, title and type data attributes
+     */
+      $("#delete_modal").modal();
+      $("#delete_modal_list").empty();
+      for(var i = 0; i < deletes.length; i++) {
+          var $v = $(deletes[i]);
+          $("#delete_modal_list").append("<tr><td>" + $v.data('title') + "</td><td>" + $v.data('type') + "</td></tr>");
+          $("#delete_modal_list").append("<input type='hidden' name='selection' value='" + $v.data('path') + "'>");
+      };
+  }
+
+  $(document).ready(function() {
+    $("#contents_action_delete").click(function() {
+        /*
+         * The "delete" action button. Zero or more items may have been
+         * selected
+         */
+        var deletes = $("input[type='checkbox'][name='selection']:checked");
+
+        if(deletes.size()) {
+          delete_dialog(deletes);
+        }
+        return false;
+    });
+    $(".contents_item_remove").click(function() {
+        /*
+         * The small 'x' icon on a single entry.
+         */
+        delete_dialog([$(this)]);
+        return false;
+    });
+
+    $(".toggle-all").click(function(e) {
+        /* select/deselect all entries */
+        var boxes = $("input[type='checkbox'][name='selection']");
+        var state = $(this).attr("checked")?true:false;
+        boxes.attr("checked", state);
+        $(".toggleaction").attr("disabled", !state);
+    });
+    $(".sortable").sortable({
+        items: "tr.sortablerow",
+        stop: function(event, ui) {
+            var target = ui.item;
+            var target_path = target.data('ipath');
+            var before = target.prev("tr");
+            var after = target.next("tr");
+
+            if(before.hasClass("sortablerow") && before.data('url')) {
+                $.post("reorder", {rel: "after", target: target_path, ref: before.data('ipath')})
+            }
+            else {
+                $.post("reorder", {rel: "before", target: target_path, ref: after.data('ipath')})
+            }
+        }
+    });
+    $("input[name='selection']").change(function() {
+        // any button, not specifically the one that was clicked
+        if($("input[name='selection']:checked").length) {
+            $(".toggleaction").attr("disabled", false);
+        }
+        else {
+            $(".toggleaction").attr("disabled", true);
+        }
+    });
+  });
+</script>
+{% endblock %}
+
+{% block base_main %}
+<form class="contentsform" method="post" action="contents_actions_delete">
+{% csrf_token %}
+
+<div id="delete_modal" class="modal hide fade" tabindex="-1" role="dialog">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3>Delete?</h3>
+  </div>
+  <div class="modal-body">
+    <h4>Do you really want to delete:</h4>
+    <table class="table table-condensed table-striped table-bordered">
+    <thead>
+     <tr>
+      <th>Name</th>
+      <th>Type</th>
+     </tr>
+    <tbody id="delete_modal_list">
+    </tbody>
+    </table>
+    {% if 0 %}
+    <button class="btn">Advanced..</button>
+    {# show/hide separate section with detach / trashcan option(s) #}
+    {% endif %}
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+    <button id="delete_modal_confirm" class="btn btn-primary">Delete</button>
+  </div>
+</div>
+</form>
+
+{% if not spoke %}
+<h3>This node has no content attached.</h3>
+{% endif %}
+<h3>Content listing for "{{instance.content.title}}"</h3>
+<br>
+<form method="POST" action="contents_actions_cutcopypaste">
+{% csrf_token %}
+{% block listing_table %}
+  <table class="table table-condensed table-hover wheel-contentlist">
+    <thead>
+      <th><input class="toggle-all" type="checkbox"></th>
+      <th>Title</th>
+      <th>Translations</th>
+      <th>State</th>
+      <th></th>
+    </thead>
+    <tbody class="sortable">
+      {% if not instance.isroot %}
+      <tr class="clickrow" data-url="{{instance.parent.get_absolute_url}}list">
+        <td><i class="icon-circle-arrow-left"></i></td>
+        <td colspan="4">.. (parent)</td>
+      </tr>
+      {% endif %}
+      {% for child in children %}
+        {% with content=child.active.content spoke=child.active.content.spoke %}
+          {% if content %}
+            <tr class="sortablerow" data-url="{{content.get_absolute_url}}" data-ipath="{{child.ipath}}">
+              <td><input name="selection" type="checkbox" value="{{child.ipath}}"
+                   data-path="{{child.ipath}}"
+                   data-title="{{content.title}}"
+                   data-type="{{spoke.title}}"></td>
+              <td class="clickrow" data-url="{{content.get_absolute_url}}contents"><img src="{{spoke.icon_base}}/{{spoke.icon}}"> {{content.title}}</td>
+              <td>
+              {% for language, langcontent, lang_url in child.translations %}
+                {% if language == content.language %}
+                <strong><a href="{{lang_url}}">{{language}}</a></strong>
+                {% else %}
+                  {# add color depending on state; untranslated content has no state so no color #}
+                  <a href="{{lang_url}}" {% if not langcontent %}class="disabled-content"{% endif %}>{{language}}</a>
+                {% endif %}
+                {% if not forloop.last %}|{%endif%}
+              {% endfor %}
+              </td>
+              <td class="clickrow" data-url="{{content.get_absolute_url}}contents">{{spoke.state.label}}</td>
+              <td>
+                  <a href="{{content.get_absolute_url}}edit"><i class="icon-edit"></i></a>
+                  <a href="{{content.get_absolute_url}}"><i class="icon-eye-open"></i></a>
+                  <a href="#" data-title="{{content.title}}"
+                              data-type="{{spoke.title}}"
+                              data-path="{{child.ipath}}" class="contents_item_remove"><i class="icon-remove"></i></a>
+              </td>
+            </tr>
+          {% else %}
+            {# unattached node #}
+            <tr>
+              <td></td>
+              <td data-url="{{child.get_absolute_url}}" class="clickrow"><i class="icon-magnet"></i>Unattached node {{child.get_absolute_url}}</td>
+              <td data-url="{{child.get_absolute_url}}" class="clickrow" colspan="2">unattached</td>
+              <td>
+                  <a href="{{child.get_absolute_url}}"><i class="icon-eye-open"></i></a>
+                  <a href="#" data-title="Unattached node {{child.get_absolute_url}}"
+                              data-type="Node"
+                              data-path="{{child.ipath}}" class="contents_item_remove"><i class="icon-remove"></i></a>
+              </td>
+            </tr>
+          {% endif %}
+        {% endwith %}
+      {% empty %}
+        <tr>
+          <td colspan="5">No content</td>
+        </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="5">
+          <div class="btn-toolbar">
+            <div class="btn-group">
+              <button id="contents_action_cut" disabled="disabled" name="action" class="btn btn-small toggleaction" value="cut">Cut</button>
+              <button id="contents_action_copy" disabled="disabled" name="action" class="btn btn-small toggleaction" value="copy">Copy</button>
+              <button id="contents_action_paste" name="action" class="btn btn-small" {% if not can_paste %} disabled="disabled" {% endif %} value="paste">Paste</button>
+              <button id="contents_action_delete" disabled="disabled" class="btn btn-small toggleaction">Delete</button>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock %}
+</form>
+{% endblock %}
