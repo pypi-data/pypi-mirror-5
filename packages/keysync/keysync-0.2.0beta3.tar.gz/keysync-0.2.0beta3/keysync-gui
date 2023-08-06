@@ -1,0 +1,508 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function
+import functools
+import os
+import qrcode
+import sys
+import tempfile
+from Tkinter import *
+# Mac OS X 10.6's python doesn't ship with ttk because its 2.6 not 2.7 :-(
+if sys.platform != 'darwin':
+    from ttk import *
+# On Windows we need to force an early import of pkg_resources
+# to appease pyinstaller
+elif sys.platform == 'win32':
+    import pkg_resources
+from PIL import ImageTk, Image
+import tkFileDialog
+import tkMessageBox
+
+# if python < 2.7, get OrderedDict from a standalone lib
+if sys.version_info[0] == 2 and sys.version_info[1] < 7:
+    from ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
+
+import otrapps
+from otrapps.chatsecure import ChatSecureProperties
+
+
+def bind_close_window(toplevel, func):
+    toplevel.bind('<KeyPress-Escape>', func)
+    if sys.platform == 'darwin':
+        toplevel.bind('<Mod1-Key-w>', func)
+    else:
+        toplevel.bind('<Control-Key-w>', func)
+
+
+class MenuBar(Menu):
+
+    def __init__(self, parent):
+        Menu.__init__(self, parent)
+
+        fileMenu = Menu(self, tearoff=False)
+        self.add_cascade(label="File",underline=0, menu=fileMenu)
+        fileMenu.add_command(label='Convert', underline=1, command=parent.convert_to_local)
+        fileMenu.add_separator()
+        fileMenu.add_command(label="Exit", underline=1, command=self.quit)
+
+    def quit(self):
+        sys.exit(0)
+
+
+class App(Tk):
+
+    def __init__(self):
+        Tk.__init__(self)
+        self.iconsdir = self.find_iconsdir()
+        self.disableable = []
+        menubar = MenuBar(self)
+        self.config(menu=menubar)
+        if sys.platform == 'darwin':
+            self.macgrey = '#E8E8E8'
+            self.config(background=self.macgrey)
+            self.option_add('*Button.highlightBackground', self.macgrey)
+            self.option_add('*Entry.highlightBackground', self.macgrey)
+            self.option_add('*Frame.background', self.macgrey)
+            self.option_add('*Label.background', self.macgrey)
+            self.option_add('*Labelframe.background', self.macgrey)
+            self.option_add('*Menubutton.background', self.macgrey)
+        self.setupwindow(self)
+
+        self.check_timer()
+        if sys.platform == 'darwin':
+            self.check_android_file_transfer()
+
+
+    def find_iconsdir(self):
+        scriptdir = os.path.dirname(sys.argv[0])
+        paths = []
+        # Mac OS X py2app
+        paths.append(os.path.join(scriptdir, 'share', 'keysync'))
+        # Windows w/ pyinstaller
+        paths.append(os.path.join(os.environ.get('_MEIPASS2',scriptdir), 'icons'))
+        # UNIX
+        paths.append(os.path.join(scriptdir, '..', 'share', 'keysync'))
+        # when running in-place in the git repo
+        paths.append(os.path.join(scriptdir, 'icons'))
+        for path in paths:
+            if os.path.isdir(path):
+                return path
+        self.show_error("Could not find the icons folder!")
+
+
+    def check_timer(self):
+        print('check_timer')
+        self.check_mtp_mount()
+        self.check_android_file_transfer()
+        self._pendingjob = self.after(3000, self.check_timer)
+
+
+    def check_mtp_mount(self):
+        '''this checks whether MTP is mounted on a regular timer'''
+        if otrapps.util.mtp_is_mounted():
+            self.device_attached = True
+            if hasattr(otrapps.util, 'mtp'):
+                self.synclabel.configure(text=otrapps.util.mtp.devicename)
+            self.show('sync')
+        else:
+            self.device_attached = False
+            self.synclabel.configure(text='')
+            self.show('localcopy')
+
+
+    def check_android_file_transfer(self):
+        '''
+        Check if the "Android File Transfer" app is running, it will
+        claim the MTP device, and therefore prevent KeySync from
+        syncing to that device
+        '''
+        if self.device_attached:
+            apps = otrapps.util.which_apps_are_running(['Android File Transfer'])
+            if len(apps) > 0:
+                self.show('androidfiletransfer')
+
+
+    def show(self, status):
+        if status == 'sync':
+            self.androidfiletransferframe.pack_forget()
+            self.bottomframe.pack_forget()
+            self.errorframe.pack_forget()
+            self.qrframe.pack_forget()
+            self.syncframe.pack()
+        elif status == 'androidfiletransfer':
+            self.androidfiletransferframe.pack()
+            self.bottomframe.pack_forget()
+            self.errorframe.pack_forget()
+            self.qrframe.pack_forget()
+            self.syncframe.pack_forget()
+        elif status == 'error':
+            self.after_cancel(self._pendingjob)
+            self.androidfiletransferframe.pack_forget()
+            self.bottomframe.pack_forget()
+            self.errorframe.pack()
+            self.qrframe.pack_forget()
+            self.syncframe.pack_forget()
+        elif status == 'qrcode':
+            self.after_cancel(self._pendingjob)
+            self.androidfiletransferframe.pack_forget()
+            self.bottomframe.pack_forget()
+            self.errorframe.pack_forget()
+            self.setup_qrframe()
+            self.qrframe.pack()
+            self.syncframe.pack_forget()
+        else:
+            # the failsafe is syncing to a local file
+            self.androidfiletransferframe.pack_forget()
+            self.bottomframe.pack()
+            self.errorframe.pack_forget()
+            self.qrframe.pack_forget()
+            self.syncframe.pack_forget()
+
+
+    def setupwindow(self, master):
+        self.fromframe = Frame(master)
+        self.fromframe.pack(side=TOP, padx=15, pady=15)
+
+        img = Image.open(os.path.join(self.iconsdir, 'add.png'))
+        self.addimage = ImageTk.PhotoImage(img.resize((32, 32), Image.ANTIALIAS))
+        self.addframe = Frame(self.fromframe)
+        self.addframe.pack(side=RIGHT)
+        self.addbutton = Button(self.addframe, text="add other...",
+                                image=self.addimage, command=self.show_otherwindow)
+        self.disableable.append(self.addbutton)
+        # TODO add a command to the Button here, i.e.  command=self.dosomething
+        self.addbutton.pack(side=TOP, padx=16)
+        self.addlabel = Label(self.addframe, text='other...')
+        self.addlabel.pack(side=BOTTOM, padx=16)
+
+        # load all the app icons
+        self.app_icons = dict()
+        self.disabled_icons = dict()
+        for app in otrapps.apps_supported:
+            filename = os.path.join(self.iconsdir, app + '.png')
+            img = Image.open(filename).resize((64, 64), Image.ANTIALIAS)
+            self.app_icons[app] = ImageTk.PhotoImage(img)
+            self.disabled_icons[app] = ImageTk.PhotoImage(img.convert('LA'))
+
+        # store these to query if they are enabled/disabled
+        self.app_buttons = dict()
+        self.app_labels = dict()
+        for app in self.detectfiles():
+            frame = Frame(self.fromframe)
+            frame.pack(side=RIGHT)
+            button = Button(frame, text=app, image=self.app_icons[app],
+                            command=functools.partial(self.toggle_app_button, app))
+            button.pack(side=TOP)
+            self.app_buttons[app] = button
+            self.disableable.append(button)
+            label = Label(frame, text=app.title())
+            label.pack(side=BOTTOM)
+            self.app_labels[app] = label
+
+        self.bottomframe = Frame(master)
+        self.bottomframe.pack(expand=True, fill=X, anchor=S)
+
+        self.toframe = LabelFrame(self.bottomframe, text='Write ChatSecure Keystore')
+        self.toframe.pack(side=TOP, padx=15, pady=5, expand=True, fill=X)
+        self.nosyncmessage = Text(self.toframe, borderwidth=0,
+                                  background='pink', highlightbackground='pink',
+                                  insertborderwidth=0, height=4)
+        self.nosyncmessage.insert('1.0', """KeySync cannot find your Android device.  Make sure it is plugged into this computer's USB and visible in your file browser!  Otherwise, you can write the otr_keystore.ofcaes file to the folder that you choose below.""")
+        self.nosyncmessage.configure(state=DISABLED, wrap='word')
+        self.nosyncmessage.pack(side=TOP, expand=True, fill=X, anchor=NW, padx=5, pady=5)
+        self.tofolder = StringVar()
+        self.tofolder.set(os.path.normpath(os.path.expanduser('~/Desktop')))
+        self.filenameentry = Entry(self.toframe,
+                                   textvariable=self.tofolder)
+        self.filenameentry.pack(side=LEFT, expand=True, fill=X)
+        self.disableable.append(self.filenameentry)
+        self.choosebutton = Button(self.toframe, text='Choose...',
+                                   command=self.choose_tofolder)
+        self.choosebutton.pack(side=LEFT)
+        self.disableable.append(self.choosebutton)
+
+        self.writebutton = Button(self.bottomframe, command=self.convert_to_local,
+                             text="Write to ChatSecure otr_keystore.ofcaes file")
+        self.writebutton.pack(side=TOP, padx=15, pady=15)
+        self.disableable.append(self.writebutton)
+
+        # self.syncframe will be shown if direct ChatSecure syncing is
+        # available and self.bottomframe will be hidden.  If direct MTP
+        # syncing is not available, then vice versa.
+        self.syncframe = Frame(master)
+        self.syncframe.pack(expand=True, fill=BOTH, anchor=S)
+        self.synclabel = Label(self.syncframe)
+        self.synclabel.pack(padx=15, pady=15)
+        self.syncbutton = Button(self.syncframe, width='25',
+                                 command=self.convert_and_copy,
+                                 text="Sync to ChatSecure")
+        self.syncbutton.pack(padx=15, pady=15)
+        self.disableable.append(self.syncbutton)
+
+        # self.androidfiletransferframe will be shown if Google's
+        # Android File Transfer app is running.  It also uses libmtp
+        # to access the files on the device, and it conflicts with
+        # KeySync's use of libmtp.  Therefore it must not be running
+        # in order for the sync to work.
+        self.androidfiletransferframe = Frame(master)
+        self.androidfiletransferframe.pack(expand=True, fill=BOTH, anchor=S)
+        self.aftlabel = Label(self.androidfiletransferframe, background='pink',
+                              text='Android File Transfer cannot be running when KeySync is running!')
+        self.aftlabel.pack(padx=15, pady=15)
+        self.aftclosebutton = Button(self.androidfiletransferframe,
+                                      command=self.close_androidfiletransfer,
+                                      text='Close Android File Transfer')
+        self.aftclosebutton.pack(padx=15, pady=15)
+        self.disableable.append(self.aftclosebutton)
+
+        # show the QRCode upon successful conversion, the Labels are
+        # filled in later once the required data is generated
+        self.qrframe = Frame(master)
+        self.qrframe.pack(expand=True, fill=BOTH, anchor=S)
+        self.pwlabel = Label(self.qrframe)
+        self.pwlabel.pack(expand=True, fill=BOTH)
+        self.qrlabel = Label(self.qrframe)
+        self.qrlabel.pack(side=BOTTOM, expand=True, fill=BOTH)
+
+        # if the sync fails for whatever reason, show a special
+        # section for an error.
+        self.errorframe = Frame(master)
+        self.errorframe.pack(expand=True, fill=BOTH, anchor=S)
+        self.messagelabel = Label(self.errorframe, background='pink',
+                              text='Sync failed! Maybe the file is already on your device?')
+        self.messagelabel.pack(padx=15, pady=15)
+        self.tryagainlabel = Label(self.errorframe,
+                              text='Restart KeySync and try again.')
+        self.tryagainlabel.pack(padx=15, pady=15)
+
+
+    def close_androidfiletransfer(self):
+        otrapps.util.killall('Android File Transfer')
+
+
+    def show_error(self, error_msg):
+        print(error_msg)
+        tkMessageBox.showwarning("KeySync error", error_msg)
+        return
+
+    def toggle_app_button(self, app):
+        button = self.app_buttons[app]
+        label = self.app_labels[app]
+        if str(label.cget('state')) == 'normal':
+            button.configure(image=self.disabled_icons[app])
+            label.configure(state=DISABLED)
+        else:
+            button.configure(image=self.app_icons[app])
+            label.configure(state=NORMAL)
+
+    def set_app_enabled_state(self, enable):
+        if enable:
+            for widget in self.disableable:
+                widget.configure(state=NORMAL)
+        else:
+            for widget in self.disableable:
+                widget.configure(state=DISABLED)
+
+    def choose_tofolder(self):
+        dirname = tkFileDialog.askdirectory(initialdir=self.tofolder.get(),
+                                            title='Please select a directory')
+        if len(dirname) > 0:
+            dirname = os.path.normpath(dirname)
+            self.tofolder.set(dirname)
+
+    def choose_fromfolder(self):
+        dirname = tkFileDialog.askdirectory(initialdir=self.fromfolder.get(),
+                                            title='Please select a directory')
+        if len(dirname) > 0:
+            dirname = os.path.normpath(dirname)
+            self.fromfolder.set(dirname)
+
+    def show_otherwindow(self):
+        self.otherwindow = Toplevel(self)
+        bind_close_window(self.otherwindow, self.destroy_otherwindow)
+        if sys.platform == 'darwin':
+            self.otherwindow.configure(background=self.macgrey)
+        self.otherwindow.title('Choose an OTR app to read from')
+        self.otherwindow.transient(root)
+        self.otherwindow.resizable(False, False)
+        self.otherwindow.minsize(400, 150)
+
+        optionslist = sorted(otrapps.apps_supported)
+        self.fromframe = Frame(self.otherwindow)
+        self.fromframe.pack(side=TOP, fill=X, padx=15, pady=15)
+
+        self.fromfolder = StringVar()
+        self.fromfolder.set(self.getpath(optionslist[0]))
+        self.fromentry = Entry(self.fromframe, textvariable=self.fromfolder)
+        self.fromentry.pack(side=LEFT, expand=True, fill=X)
+        self.fromchoosebutton = Button(self.fromframe, text='Choose...',
+                                       command=self.choose_fromfolder)
+        self.fromchoosebutton.pack(side=LEFT)
+
+        self.appframe = Frame(self.otherwindow, borderwidth='3')
+        self.appframe.pack(side=TOP, fill=X, padx=15, pady=15)
+        self.applabel = Label(self.appframe, text='App:')
+        self.applabel.pack(side=LEFT)
+        self.fromapp = StringVar(root)
+        self.fromapp.set(optionslist[0]) # initial value
+        self.option = OptionMenu(self.appframe, self.fromapp, *optionslist,
+                                 command=self.select_app)
+        self.option.configure(width=20)
+        self.option.pack(side=LEFT)
+        self.applabel = Label(self.appframe, image=self.app_icons[self.fromapp.get()])
+        self.applabel.pack(side=RIGHT, expand=True, fill=X)
+
+        self.buttonframe = Frame(self.otherwindow)
+        self.buttonframe.pack(side=BOTTOM, anchor=SE, padx=15, pady=15)
+        self.cancelbutton = Button(self.buttonframe, text='Cancel',
+                                   command=self.otherwindow.destroy)
+        self.cancelbutton.pack(side=LEFT)
+        self.okbutton = Button(self.buttonframe, text='OK', width=6, state=DISABLED)
+        self.okbutton.pack(side=LEFT)
+        # this needs to happen last to make sure self.okbutton exists
+        # before self._validate_entry() is ever run
+        self.fromentry.configure(validate='focus', validatecommand=self._validate_entry)
+
+    def destroy_otherwindow(self, event=None):
+        if self.otherwindow:
+            self.otherwindow.destroy()
+
+    def select_app(self, app=None):
+        self.applabel.configure(image=self.app_icons[self.fromapp.get()])
+
+    def _validate_entry(self):
+        dir = self.fromfolder.get()
+        if os.path.exists(dir):
+            self.okbutton.configure(state=NORMAL)
+        else:
+            self.okbutton.configure(state=DISABLED)
+        for app in otrapps.apps_supported:
+            found = True
+            for f in otrapps.apps[app].files:
+                if not os.path.exists(f):
+                    found = False
+                    continue
+            if found:
+                # TODO set Options menu to app
+                self.applabel.configure(image=self.app_icons[app])
+                break
+
+
+    def getpath(self, app):
+        '''output the standard path of a given app'''
+        try:
+            return os.path.normpath(otrapps.apps[app].path)
+        except KeyError:
+            print("Invalid app: %s" % ( app ))
+            return None
+
+    def detectfiles(self):
+        '''detect which apps are installed based on the existence of OTR files'''
+        haveapps = []
+        for app in otrapps.apps:
+            if os.path.exists(otrapps.apps[app].path):
+                haveapps.append(app)
+        return haveapps
+
+    def setup_qrframe(self):
+        qr = qrcode.QRCode(border=4)
+        qr.add_data(ChatSecureProperties.password)
+        qr.make(fit=True)
+        img = qr.make_image()
+        self.tkimg = ImageTk.PhotoImage(img)
+        self.qrlabel.configure(image=self.tkimg)
+        pwtxt = ('Enter this password into ChatSecure: \n'
+                 + ChatSecureProperties.password
+                 + '\nor just scan this QRCode with ChatSecure:')
+        self.pwlabel.configure(text=pwtxt)
+
+    def _mtp_callback(self, sent, total):
+        '''a callback from mtp to update progress'''
+        print('MTP progress: ' + str(sent) + ' of ' + str(total))
+        self.synclabel.configure(text='Sent ' + str(sent) + ' of ' + str(total) + 'bytes...')
+        self.update_idletasks()
+
+    def convert(self):
+        '''run the conversion from one file set to another'''
+        ret = False
+        self.set_app_enabled_state(False)
+        keydict = dict()
+        for app in self.app_labels.keys():
+            if str(self.app_labels[app].cget('state')) == 'disabled':
+                continue
+            print('Parsing ', app)
+            try:
+                properties = otrapps.apps[app]
+                otrapps.util.merge_keydicts(keydict, properties.parse())
+            except KeyError:
+                print("Invalid app: %s" % ( app ))
+                self.show_error("Invalid app: %s" % ( app ))
+                return None
+        if len(keydict.keys()) > 0:
+            keydict = OrderedDict(sorted(keydict.items(), key=lambda t: t[0]))
+            otrapps.make_outdir(self.tofolder.get(), '')
+            ChatSecureProperties.write(keydict, self.tofolder.get())
+            if os.path.exists(os.path.join(self.tofolder.get(),
+                                           ChatSecureProperties.encryptedkeyfile)):
+                ret = True
+        return ret
+
+    def convert_to_local(self):
+        '''write the result to a local file'''
+        if self.convert():
+            self.show('qrcode')
+        else:
+            self.show('error')
+
+    def convert_and_copy(self):
+        '''run the conversion and copy the ChatSecure file into place on the
+        device's MTP mount'''
+        synced = False
+        if otrapps.util.mtp_is_mounted():
+            savedir = otrapps.util.get_mtp_mount_path()
+            self.tofolder.set(savedir)
+            self.convert()
+            if otrapps.util.MTPDummy and not isinstance(otrapps.util.mtp, otrapps.util.MTPDummy):
+                source = os.path.join(savedir, ChatSecureProperties.encryptedkeyfile)
+                target = ChatSecureProperties.encryptedkeyfile
+                mtp = otrapps.util.mtp
+                try:
+                    mtp.connect()
+                    mtp.send_file_from_file(source, target, callback=self._mtp_callback)
+                    mtp.disconnect()
+                    synced = True
+                except Exception as e:
+                    synced = False
+                    self.show_error('Cannot connect to device, try again!')
+                    self.set_app_enabled_state(True)
+                    self.check_timer()
+                    print('send_file_from_file failed with Exception: ', end=' ')
+                    print(e)
+        if synced:
+            self.show('qrcode')
+        else:
+            self.show('error')
+
+
+#------------------------------------------------------------------------------#
+# main
+
+root = App()
+windowingsystem = root.tk.call('tk', 'windowingsystem')
+
+root.title('KeySync')
+root.minsize(450, 300)
+
+# set the icon used in title bars and the system tray
+app_icon = ''
+if sys.platform == 'win32':
+    app_icon = os.path.join(root.find_iconsdir(), 'keysync.ico')
+#TODO implement darwin and unix
+
+if len(app_icon) > 0 :
+    root.tk.call('wm', 'iconbitmap', root, '-default', app_icon)
+
+root.mainloop()
