@@ -1,0 +1,44 @@
+{% extends "admin/change_form.html" %}
+{% load i18n l10n static %}
+{% load admin_urls %}
+
+{% block extrahead %}{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'css/gallery.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_label|capfirst|escape }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {% trans 'Set access policy' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module" style="float: right; margin-left: 1em;">
+    <p>{% trans "This will set the access policy for:" %}</p>
+    <div class="photo_list">
+        {% for photo in queryset %}
+        <a href="{{ photo.get_absolute_url }}"><img src="{% url 'gallery:photo-resized' preset='thumb' pk=photo.pk %}" width="128" height="128" alt="{{ photo }}"></a>
+        {% endfor %}
+    </div>
+</div>
+
+<form action="" method="POST">
+    {% csrf_token %}
+    {% for obj in queryset %}
+    <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}">
+    {% endfor %}
+    <input type="hidden" name="action" value="set_access_policy">
+    <fieldset class="module aligned">
+        {% for field in form %}
+        <div class="form-row{% if field.errors %} errors{% endif %}">
+            {{ field.errors }}
+            {{ field.label_tag }}{{ field }}
+        </div>
+    {% endfor %}
+    </fieldset>
+    <input type="submit" name="set_access_policy" value="{% trans 'Set access policy' %}">
+</form>
+{% endblock %}
