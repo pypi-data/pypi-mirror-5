@@ -1,0 +1,33 @@
+xquery version "1.0";
+declare namespace lom="http://ltsc.ieee.org/xsd/LOM";
+declare namespace db="http://docbook.org/ns/docbook";
+declare namespace lomfrens="http://pratic.ens-lyon.fr/xsd/LOMFRENS";
+
+let $res := doc("%(url_meta)s")/lom:lom,
+    $location := normalize-space($res/lom:technical/lom:location[1]/text()),
+    $description := normalize-space(replace($res/lom:general/lom:description/lom:string/text(), '&#xA;', ' ')),
+    $titre := normalize-space($res/lom:general/lom:title/lom:string/text())
+
+return
+    <center>
+    {if(starts-with($location, 'xmldb:exist://'))
+            then
+               <a href="{concat('%(site_url)s/XML', document-uri(root($res)))}" title="{$description}">
+                         {let $url_img := doc($location)/db:article//db:imageobject[1]/db:imagedata/@fileref
+                              return
+                                   if(contains($url_img, '/thumb?'))
+                                         then
+                                             <img src="{substring-before($url_img[1],'/thumb?')}/image_thumb?width=150" alt="{substring-before($url_img[1],'/thumb?')}/image_thumb?width=150"/>
+                                         else
+                                             <img src="{$url_img[1]}/image_mini" alt="{$url_img[1]}"/>
+
+                          }
+                         <p class="portletImageTitle" style="font-size:90%%;font-weight:normal;">{$titre}</p>
+                </a>
+                 
+            else
+              <a href="{$location}" title="{$description}" target="_blank">
+                       <p class="portletImageTitle" style="font-size:90%%;font-weight:normal;">{$titre}</p>
+               </a>
+       }
+       </center>

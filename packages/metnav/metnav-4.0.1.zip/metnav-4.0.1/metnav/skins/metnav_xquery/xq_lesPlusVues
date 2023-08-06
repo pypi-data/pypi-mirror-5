@@ -1,0 +1,29 @@
+xquery version "1.0";
+declare namespace lom="http://ltsc.ieee.org/xsd/LOM";
+declare namespace lomfrens="http://pratic.ens-lyon.fr/xsd/LOMFRENS";
+declare namespace xsl="http://www.w3.org/1999/XSL/Transform";
+declare namespace util="http://exist-db.org/xquery/util";
+
+let $res := doc("%(url_meta)s")/lom:lom,
+    $location := $res/lom:technical/lom:location[1]/text(),
+    $date_aff:= $res/lom:lifeCycle/lom:contribute[lom:role/lom:value='publisher']/lom:date/lom:dateTime/text(),
+    $description := normalize-space(replace($res/lom:general/lom:description/lom:string/text(), '&#xA;', ' ')),
+    $rscType := string-join(distinct-values($res/lomfrens:ensData/lomfrens:ensDocumentType/lomfrens:value/text()), ", "),
+    $titre := normalize-space($res/lom:general/lom:title/lom:string/text())
+
+return
+  <res>
+  <title>{$titre}</title>
+  <description>{$description}</description>
+  <url>{if(starts-with($location, 'xmldb:exist://'))
+    then
+      concat('%(site_url)s/XML', document-uri(root($res)))
+    else
+      $location
+    }</url>
+  <pubdate>{$date_aff}</pubdate>
+  <type>{$rscType}</type>
+</res>
+
+         
+ 

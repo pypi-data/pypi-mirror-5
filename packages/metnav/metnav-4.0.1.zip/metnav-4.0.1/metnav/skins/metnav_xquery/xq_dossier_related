@@ -1,0 +1,23 @@
+xquery version "1.0";
+
+declare namespace lom="http://ltsc.ieee.org/xsd/LOM";
+declare namespace lomfrens="http://pratic.ens-lyon.fr/xsd/LOMFRENS";
+
+let $res := doc('$URL')/lom:lom[(lom:relation/lom:kind/lom:value = 'ispartof')],
+    $dossiers := $res/lom:relation
+return   
+if (count($dossiers) > 0)
+	then
+              if (count($dossiers) = 1)
+		then
+			<div class="dossier-related">Cet article fait partie du dossier <a href="{replace($dossiers/lom:resource/lom:identifier/lom:entry/text(), 'http://culturesciencesphysique.ens-lyon.fr', '$PORTAL_URL')}"> <b>{$dossiers/lom:resource/lom:description/lom:string/text()}</b></a></div>
+		else
+			<ul class="dossier-related">
+				Cet article fait partie des dossiers :
+				{for $dossier in $dossiers
+				return
+                                     <li><a href="{$dossier/lom:resource/lom:identifier/lom:entry/text()}"><strong>{$dossier/lom:resource/lom:description/lom:string/text()}</strong></a></li>
+                                }
+			</ul>
+	else
+		""

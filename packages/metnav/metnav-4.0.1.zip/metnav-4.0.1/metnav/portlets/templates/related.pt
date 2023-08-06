@@ -1,0 +1,48 @@
+<!--tal:block tal:define="paths python:request.get('traverse_subpath', [])" tal:condition="python:len(paths)>0 and paths[-1].find('.xml')!=-1"-->
+<dl class="portlet" id="portlet-related"
+    tal:define="meta_url python:'/' + '/'.join(request.get('traverse_subpath', []));
+                mn_props nocall:view/metnav_properties;
+                href_blank mn_props/HREF_BLANK | python:True;
+                limit python:mn_props.getProperty('LIMIT_RELATED', 5);
+                icones context/icones;
+                related python:view.related(meta_url, nb_limit=limit)[:limit]"
+                tal:condition="related">
+
+    <dt class="portletHeader">
+        <span class="portletTopLeft"></span>
+        <span i18n:translate="box_related">Voir aussi</span>
+        <span class="portletTopRight"></span>
+    </dt>
+    <dd class="portletItem">
+        <div tal:repeat="obj related">
+            <div tal:define="num python:repeat['obj'].index" >
+                    <span tal:repeat="img python:context.getRscIcon(str(obj['res/type'][0]))">
+                    <img src="" alt="" style="border: 0"
+                         tal:attributes="src string:${context/portal_url}/icones/${img};
+                                         alt img;
+                                         title python:str(img.split('.')[0]);"/>
+
+                    </span>
+                    <span tal:condition="python:obj['res/url'][0].find('/profs/')!=-1 or obj['res/url'][0].find('/article-pro/')!=-1">
+                        <img src="" alt="accès restreint" tal:attributes="src string:${context/portal_url}/icones/lock_icon.gif"/>
+                    </span>
+                    <a href=""  tal:condition="python:obj['res/url'][0].find('/XML/db/')==-1 and href_blank==True" tal:attributes="href python:obj['res/url'][0];
+                                title python:obj['res/description'][0]" target="_blank">
+                        <span tal:content="python:obj['res/title'][0]"></span>
+                    </a>
+                    
+                    <a href=""  tal:condition="python:obj['res/url'][0].find('/XML/db/')==-1 and href_blank==False" tal:attributes="href python:obj['res/url'][0];
+                                title python:obj['res/description'][0]">
+                        <span tal:content="python:obj['res/title'][0]"></span>
+                    </a>
+                    <a href=""  tal:condition="python:obj['res/url'][0].find('/XML/db/')!=-1" tal:attributes="href python:obj['res/url'][0];
+                                title python:obj['res/description'][0]">
+                        <span tal:content="python:obj['res/title'][0]"></span>
+                    </a> -
+                    <span class="discreet" tal:content="python:here.toLocalizedTime(obj['res/pubdate'][0])"></span>
+
+            </div>
+        </div>
+
+    </dd>
+</dl><!--/tal:block-->

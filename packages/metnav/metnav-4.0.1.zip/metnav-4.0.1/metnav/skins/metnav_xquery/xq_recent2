@@ -1,0 +1,30 @@
+xquery version "1.0";
+declare namespace lom="http://ltsc.ieee.org/xsd/LOM";
+declare namespace lomfrens="http://pratic.ens-lyon.fr/xsd/LOMFRENS";
+
+let $date_debut := current-date() - xs:dayTimeDuration("P183D")
+(: ~6mois :)
+
+for $res in collection('%(meta_url)s')/lom:lom[lom:lifeCycle/lom:contribute[lom:role/lom:value='publisher']//lom:dateTime >= $date_debut][lom:lifeCycle/lom:contribute[lom:role/lom:value='publisher']//lom:dateTime <= adjust-date-to-timezone(current-date(),())]
+let $date_aff:= $res/lom:lifeCycle/lom:contribute[lom:role/lom:value='publisher']/lom:date/lom:dateTime/text(),
+    $rscType := string-join(distinct-values($res/lomfrens:ensData/lomfrens:ensDocumentType/lomfrens:value/text()), ", "),
+    $author := string-join(distinct-values($res/lom:lifeCycle/lom:contribute[lom:role/lom:value = "author"]/lom:entity), "| "),
+    $location    := $res/lom:technical/lom:location[1]/text(),
+    $titre := $res/lom:general/lom:title/lom:string/text(),
+    $description := $res/lom:general/lom:description/lom:string/text()
+
+order by $date_aff descending empty least
+return
+  <res>
+  <title>{$titre}</title>
+  <description>{$description}</description>
+  <url>{if(starts-with($location, 'xmldb:exist://'))
+    then
+      concat('%(site_url)s/XML', document-uri(root($res)))
+    else
+      $location
+    }</url>
+  <pubdate>{$date_aff}</pubdate>
+  <type>{$rscType}</type>
+  <author>{$author}</author>
+</res>

@@ -1,0 +1,38 @@
+﻿﻿    <dl class="portlet" id="portlet-mostView" 
+         tal:define="mn_props context/portal_properties/metnav_properties;
+                     href_blank mn_props/HREF_BLANK | python:True;">
+
+        <dt class="portletHeader">
+            <span class="portletTopLeft"></span>
+            <span tal:content="view/data/portlet_title">Les plus vues</span>
+            <span class="portletTopRight"></span>
+        </dt>
+
+        <dd tal:repeat="lien view/data/liens"
+            tal:attributes="class python: repeat['lien'].even() and 'portletItem even' or 'portletItem odd'">
+            <tal:results tal:define="objs python:view.getRStitle(lien);">
+                <tal:result tal:repeat="obj objs">
+                 <span tal:repeat="img python:context.getRscIcon(str(obj['res/type'][0]))">
+                    <img src="" alt="" style="border: 0"
+                         tal:attributes="src string:${context/portal_url}/icones/${img};
+                                         alt img;
+                                         title python:str(img.split('.')[0]);"/>
+                    </span>
+                    <a href=""  tal:condition="python:obj['res/url'][0].find('/XML/db/')==-1 and href_blank==True" tal:attributes="href python:obj['res/url'][0];
+                                title python:obj['res/description'][0]" target="_blank">
+                        <span tal:content="python:obj['res/title'][0]"></span>
+                    </a>
+                    <a href=""  tal:condition="python:obj['res/url'][0].find('/XML/db/')==-1 and href_blank==False" tal:attributes="href python:obj['res/url'][0];
+                                title python:obj['res/description'][0]">
+                        <span tal:content="python:obj['res/title'][0]"></span>
+                    </a>
+                    
+                    <a href=""  tal:condition="python:obj['res/url'][0].find('/XML/db/')!=-1" tal:attributes="href python:obj['res/url'][0];
+                                title python:obj['res/description'][0]">
+                        <span tal:content="python:obj['res/title'][0]"></span>
+                    </a> -
+                    <span class="discreet" tal:content="python:here.toLocalizedTime(obj['res/pubdate'][0])"></span>
+                </tal:result>
+           </tal:results>
+        </dd>
+    </dl>
