@@ -1,0 +1,107 @@
+Metadata-Version: 1.1
+Name: TestLiveServer
+Version: 0.0.1
+Summary: Simple utility for running a Flask development server for BDD/functional testing purposes.
+Home-page: http://github.com/peterhudec/testliveserver
+Author: Peter Hudec
+Author-email: peterhudec@peterhudec.com
+License: MIT
+Description: ================
+        Test Live Server
+        ================
+        
+        **Test Live Server** is a very simple utility for running
+        a Flask development server for **BDD/functional** testing purposes.
+        
+        I'm planning to add support for other frameworks in future.
+        
+        Usage
+        -----
+        
+        Add the **Test Live Server** capability to your Flask app by calling the
+        ``testliveserver.flask.live_server(app)`` function just before the ``app.run()``.
+        
+        .. code-block:: python
+        	
+        	from flask import Flask
+        
+        	DEBUG = True
+        	SECRET_KEY = 'development key'
+        	USERNAME = 'admin'
+        	PASSWORD = 'default'
+        
+        	app = Flask(__name__)
+        	app.config.from_object(__name__)
+        
+        	@app.route('/')
+        	def home():
+        	    return 'Home'
+        
+        	if __name__ == '__main__':
+        	    
+        	    # This does nothing unles you run this module with --testliveserver flag.
+        	    from testliveserver.flask import live_server
+        	    live_server(app)
+        	    
+        	    app.run()
+        
+        In your test setup call the ``testliveserver.start(app_main, port_number, timeout=10.0)``
+        function which will run the Flask app with the ``--testliveserver`` flag
+        and check whether the server started within specified timeout in seconds.
+        If the server started successfully, the function returns the process of the running app
+        which you can terminate in the teardown.
+        If the server didn't start within the timeout it raises an exception.
+        
+        .. code-block:: python
+        	
+        	import testliveserver
+        	import unittest
+        	from selenium import webdriver
+        
+        	class TestWebsite(unittest.TestCase):
+        	    
+        	    @classmethod
+        	    def setUpClass(cls):
+        	    	# Start the server
+        	        try:
+        	            cls.process = testliveserver.start('main.py', 8001)
+        	        except Exception as e:
+        	            # Skip all tests if not started in timeout.
+        	            raise unittest.SkipTest(e.message)
+        	        
+        	        # Start browser.
+        	        cls.browser = webdriver.Chrome()
+        	        cls.browser.implicitly_wait(3)
+        	    
+        	    @classmethod
+        	    def tearDownClass(cls):
+        	        # Stop server.
+        	        if hasattr(cls, 'process'):
+        	            cls.process.terminate()
+        	         
+        	        # Stop browser.
+        	        if hasattr(cls, 'browser'):
+        	            cls.browser.quit()
+        	    
+        	    def test_visit_start_page(self):
+        	    	self.browser.get('HTTP://127.0.0.1:8001')
+        	        page_text = self.browser.find_element_by_tag_name('body').text
+        	        self.assertIn('Home', page_text)
+        
+        
+        	if __name__ == '__main__':
+        	    unittest.main()
+Keywords: Flask,BDD,TDD,functional testing,live server
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: JavaScript
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
