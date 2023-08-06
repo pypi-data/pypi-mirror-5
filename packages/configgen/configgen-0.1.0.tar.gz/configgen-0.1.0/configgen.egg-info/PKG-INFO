@@ -1,0 +1,352 @@
+Metadata-Version: 1.1
+Name: configgen
+Version: 0.1.0
+Summary: a noble script configgens the smallest app
+Home-page: https://bitbucket.org/dystedium/configgen
+Author: wil paredes
+Author-email: configgen@dystedium.com
+License: UNKNOWN
+Description: =========
+        configgen
+        =========
+        
+        description
+        ===========
+        ``configgen`` is a tool and library for generating JSON files given a script
+        and set of options.  [#]_  it's useful when you have multiple configurations
+        that share some information, but change in different ways in different
+        contexts.  define your config info in one place and generate a version specific
+        to your app, cron jobs, or developer utilities, in development, staging, or
+        production, for your dev virtual machine or server environments,
+        in any combination.
+        
+        this is not intended to replace a full template language.
+        
+        the source code lives at bitbucket: https://bitbucket.org/dystedium/configgen
+        
+        .. [#] this totally wasn't written just to make the simpsons reference in the
+              short description.
+        
+        command line usage
+        ==================
+        ::
+        
+            usage: configgen [-h] [--config CONFIG] [--module] [--option OPTION]
+                             [--printconfig] [--squishee] [--no-replace] [--verbose]
+                             [--version]
+                             input [output]
+        
+            generate a config file given a python module and set of options
+        
+            positional arguments:
+              input                 where to get input class structure, by default this
+                                    expects a path to a file, also see help text for the
+                                    --module option
+              output                optional, file to output generated info to, default
+                                    prints to console
+        
+            optional arguments:
+              -h, --help            show this help message and exit
+              --config CONFIG, -c CONFIG
+                                    if there are multiple Config instances in the class
+                                    structure, the value of this parameter specifies which
+                                    one to output
+              --module, -m          interpret the input parameter as a module import with
+                                    dot notation, e.g. my.config.module, must be in python
+                                    path
+              --option OPTION, -o OPTION
+                                    an option string that will be used to choose between
+                                    several options in a set (may be passed multiple
+                                    times)
+              --printconfig, -p     print the converted config object to the console
+              --squishee, -s        make the converted config output less human-readable
+              --no-replace, -n      do not do internal string replacement in the output
+              --verbose, -v         increase console output
+              --version             show program's version number and exit
+        
+        command line examples
+        =====================
+        **disclaimer:** all of the below examples are for illustrative purposes only.
+        this is not a recommendation to do things like store production usernames and
+        passwords in plaintext files.
+        
+        basic usage
+        -----------
+        if ``hello.py`` contained the following::
+        
+            from configgen import Config
+        
+            cfg = Config(
+                _object='world', # keys starting with "_" are not output
+                _object__frog='ma baby', # options are separated from the key by "__"
+                statement='hello, {_object}', # string replacement
+                statement__frog__crowd='ribbit' # if multiple options are present, all must match
+                )
+        
+        ``configgen --printconfig hello.py`` would output::
+        
+            {
+                "statement": "hello, world"
+            }
+        
+        ``configgen --printconfig --option frog hello.py`` would output::
+        
+            {
+                "statement": "hello, ma baby"
+            }
+        
+        put the frog in front of a crowd with ``configgen -p -o frog -o crowd hello.py``::
+        
+            {
+                "statement": "ribbit"
+            }
+        
+        inheritance and string replacement
+        ----------------------------------
+        contents of ``inherit.py``::
+        
+            from configgen import Config, KeyValue, make_multi_key as MK
+        
+            # option strings
+            production = 'production'
+        
+            # define these field name strings in one place
+            projectName = 'projectName'
+            _db = '_db'
+            dbType = 'dbType'
+            user = 'user'
+            password = 'password'
+            host = 'host'
+        
+            # KeyValue objects have most of the same abilities as Config
+            site1=KeyValue(
+                projectName='site1',
+                _db={ # KeyValue values aren't restricted to base types
+                    dbType:'mysql',
+                    user:'testuser',
+                    password:'testpass', # use your best judgment
+                    host:'localserver'
+                    },
+                braces='{{}}' # actual { or } character escaping
+                )
+        
+            # since this is a normal python script, the usual syntax rules and patterns
+            # apply - parameters to KeyValue can be passed in a keyword argument dictionary
+            # using the ** syntax.  make_multi_key(), abbreviated here as MK(),
+            # is a convenience function for combining keys and options - because it just
+            # returns the concatenated string, it can't be used when using the
+            # KeyValue(parameter=value) style declaration.
+            site2 = KeyValue(**{
+                projectName:'site2',
+                _db:KeyValue(**{ # it is possible to nest KeyValue instances
+                    dbType:'postgresql',
+                    user:'testuser',
+                    password:'testpass',
+                    MK(user, production):'realuser',
+                    MK(password, production):'realpass', # use your best judgment
+                    host:'localserver',
+                    MK(host, production):'cloudserver'
+                    })
+                })
+        
+            # note that the string replacement here references fields inherited by
+            # the parent Config object.  also note the use of attribute-style access
+            # (via the "." operator) to reference fields in dictionaries/KeyValues
+            siteCfg = KeyValue(
+                rootPath='~/www/{projectName}',
+                databaseUrl='{_db.dbType}://{_db.user}:{_db.password}@{_db.host}'
+                )
+        
+            cfgSite1 = Config(inherits=site1, site=siteCfg)
+            cfgSite2 = Config(inherits=site2, site=siteCfg)
+        
+        if multiple Config objects are defined in a file, the one to output must be
+        specified with the --config or -c option.
+        
+        ``configgen --printconfig --config cfgSite1 inherit.py`` would output::
+        
+            {
+                "projectName": "site1",
+                "site": {
+                    "databaseUrl": "mysql://testuser:testpass@localserver",
+                    "rootPath": "~/www/site1"
+                },
+                "braces": "{}"
+            }
+        
+        ``configgen -p -c cfgSite2 inherit.py`` would output::
+        
+            {
+                "projectName": "site2",
+                "site": {
+                    "databaseUrl": "postgresql://testuser:testpass@localserver",
+                    "rootPath": "~/www/site2"
+                }
+            }
+        
+        ``configgen -p -c cfgSite2 -o production inherit.py`` would output::
+        
+            {
+                "projectName": "site2",
+                "site": {
+                    "databaseUrl": "postgresql://realuser:realpass@cloudserver",
+                    "rootPath": "~/www/site2"
+                }
+            }
+        
+        notes
+        -----
+        there is currently no simple way to emit a key/value pair only for
+        a specific option set.  there is a clunky way to do this::
+        
+            common = KeyValue(key1=value1, key2=value2)
+            extraField = KeyValue(inherits=common, key3=value3)
+            output = KeyValue(fields=common, fields__addkey3=extraField)
+        
+        the JSON generated by output will include key3 only when the option string
+        'addkey3' is present.
+        
+        library examples
+        ================
+        the ``configgen`` package can also be used as a library in a larger program.
+        the source of ``configgen.main`` is an example of basic usage.
+        
+        operation
+        =========
+        ``KeyValue`` string replacement
+        -------------------------------
+        when resolving named references to other parts of the KeyValue structure
+        during string replacement, the following steps are taken:
+        
+        1. define the ``KeyValue`` instance that contains the string begin resolved
+           as "nearest"
+        2. start searching at the following ``KeyValue`` instances for the entire
+           reference, continuing to the next one if the reference cannot be resolved:
+        
+           a. the nearest instance
+           b. the nearest instance's inherited fields, if present
+           c. the outermost ``KeyValue`` instance (usually the ``Config`` instance)
+           d. the outermost instance's inherited fields, if present
+        
+        3. while searching, if a named field is found in a ``KeyValue`` instance,
+           define that instance as "nearest" (overwriting any previous value)
+        4. if not found, emit an error, otherwise, if the replaced value is a string,
+           use the new nearest instance and begin a new string replacement operation
+           (allowing replaced strings to contain string replacement directives
+           themselves)
+        
+        TODO: create examples, for now, `the test.py script
+        <https://bitbucket.org/dystedium/configgen/src/tip/scripts/test.py>`_ has
+        some barely-commented examples
+        
+        building ``MultiValue`` sets
+        ----------------------------
+        adding multiple keys with the same base name and options separated by "__",
+        those keys are grouped and become a ``MultiValue``.  only one value will be
+        emitted into the JSON, selected based on the set of options provided to the
+        conversion function.  for now, a ``MultiValue`` set must contain a default
+        value, output when no options are provided.  any combination of the default
+        value and keys for specific option sets may be split across a ``KeyValue``
+        instance and its inherited values.  some examples::
+        
+            from configgen import Config, KeyValue, make_multi_key as MK
+        
+            # keys
+            multiValue0 = 'multiValue0'
+            multiValue1 = 'multiValue1'
+            multiValue2 = 'multiValue2'
+        
+            # options
+            one = 'one'
+            two = 'two'
+            three = 'three'
+        
+            # the make_multi_key() convenience function (imported here as "MK") helps
+            # define MultiValues in a KeyValue by joining all the string parameters with
+            # the option separator.
+            defaults = KeyValue(**{
+                multiValue0:'multiValue0 inherited, default',
+                MK(multiValue0, one):'multiValue0 inherited, options: one',
+                })
+        
+            # MultiValue keys can come from the inherited object.  when this happens,
+            # all of the relevant keys are copied to the inheriting KeyValue instance
+            # during construction and combined into a local MultiValue instance, so
+            # overrides from one KeyValue instance will not affect another instance
+            # that inherits from the same object.  if a key is defined with the same
+            # option set in both the inheriting and inherited KeyValue instances, the
+            # one in the inheriting instance is used.
+            # note that section0 does not define a default for multiValue0 - it's
+            # inherited from the defaults object.
+            section0 = KeyValue(inherits=defaults, **{
+                MK(multiValue0, one):'multiValue0 section0, options: one',
+                MK(multiValue0, two, three):'multiValue0 section0, options: two, three',
+                multiValue1:'multiValue1 section0, default',
+                MK(multiValue1, three):'multiValue1 section0, options: three',
+                #MK(multiValue2, two):'defining this by itself is an error (no default value)'
+                })
+        
+            # section1 overrides only the default value for multiValue0.  section1.multiValue2
+            # shows that the value type need not be the same across all of a MultiValue.
+            # section1.multiValue2 also demonstrates a case where multiple values have an
+            # option set of the same cardinality.  as long as the options "one" and "two"
+            # are mutually exclusive, this will not cause an error.
+            section1 = KeyValue(inherits=defaults, **{
+                multiValue0:'multiValue0 section1, default',
+                multiValue1:'multiValue1 section1, simple value',
+                multiValue2:None,
+                MK(multiValue2, one):{'info':'options: one'},
+                MK(multiValue2, two):{'info':'options: two'},
+                })
+        
+            cfg = Config(section0=section0, section1=section1)
+        
+        selecting a specific value in a ``MultiValue``
+        ----------------------------------------------
+        from the command line, specify the ``--option``/``-o`` option one or more times
+        to build a set of options to use when generating JSON output (the *generation
+        set*).  when using the ``configgen`` library directly, a python ``frozenset``
+        of options should be passed to the ``Config.convertToJson()`` function as the
+        generation set.  ``configgen`` uses the following criteria when selecting a
+        value, in order:
+        
+        1. a value whose option set matches the generation set exactly
+        2. the value whose option set is the largest common subset of the generation
+           set (ignoring any option sets that are disjoint)
+        3. the default value is used if no value's option set is a subset of the
+           generation set
+        
+        if there is a tie for the largest common option subset between values,
+        a ``configgen.LookupError`` *may* be raised.  this error can be avoided in
+        at least two ways:
+        
+        * the generation set matches one of the values' option sets exactly
+        * one or more of the options in the tied values' option sets are
+          mutually exclusive
+        
+        for example, given a MultiValue containing values with these option sets
+        (excluding the default value):
+        
+        A. ("server", "logToFile", "production")
+        B. ("server", "verbose", "staging")
+        C. ("server", "logToFile", "staging")
+        
+        here are example cases:
+        
+        * ("server", "logToFile", "production"): exact match for value A, use that one
+        * ("server", "verbose", "logToFile", "staging"): error, values B and C both
+          match 3 items in the generation set
+        * as long as "production" and "staging" never appear in the same generation
+          set alongside "server" and "logToFile", values A and C will not conflict
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Software Development :: Code Generators
+Classifier: Topic :: Text Processing :: Markup
+Classifier: Topic :: Utilities
