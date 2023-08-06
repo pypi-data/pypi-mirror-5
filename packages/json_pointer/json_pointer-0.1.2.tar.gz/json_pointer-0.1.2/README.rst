@@ -1,0 +1,36 @@
+.. image:: https://drone.io/bitbucket.org/eodolphi/json-pointer/status.png
+   :target: https://drone.io/bitbucket.org/eodolphi/json-pointer/latest
+
+JSON Pointer
+=============
+
+Simple implementation of the json-pointer spec:
+
+ http://tools.ietf.org/html/rfc6901
+
+
+Usage
+------------
+
+JSON pointer make it possible to retrieve arbitrary sub-objects from json objects.
+
+>>> import json_pointer
+>>> data = {'a': {'b': 'c'}, 'd': ['e', 'f', 'g']}
+
+>>> json_pointer.Pointer('/a/b').get(data)
+ 'c'
+>>> json_pointer.Pointer('/d/1').get(data)
+'f'
+
+It is also possible to set and unset data using pointers.
+
+>>> data = {'a': {'b': 'c'}, 'd': ['e', 'f', 'g']}
+
+>>> json_pointer.Pointer('/a/b').set('d')
+>>> json_pointer.Pointer('/a/c').set('h')
+>>> data
+ {'a': {'d': 'c', 'c': 'h'}, 'd': ['e', 'f', 'g']}
+
+>>> json_pointer.Pointer('/d/1').unset(data)
+ {'a': {'d': 'c', 'c': 'h'}, 'd': ['f', 'g']}
+
