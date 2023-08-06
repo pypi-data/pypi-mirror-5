@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rules
+    xmlns="http://namespaces.plone.org/diazo"
+    xmlns:css="http://namespaces.plone.org/diazo/css"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <!-- Nifty output settings -->
+    <xsl:strip-space elements="*"/>
+    <xsl:output method="xml" indent="yes" omit-xml-declaration="yes"/>
+
+    <!-- Identify Django error page -->
+    <xsl:variable name="django_error" select="//body/div[@id='summary'] and //body/div[@id='traceback'] and
+    //body/div[@id='requestinfo'] and //body/div[@id='explanation']" />
+
+    <!-- Skip Diazo -->
+    <notheme if="$django_error" /><!-- Django Error -->
+
+    <!-- Login page-->
+    <xsl:variable name="django_login" select="//body[@class='login']" />
+    <rules if="$django_login">
+        <theme href="login.html" />
+        <xi:include href="login.xml" />
+    </rules>
+
+    <!-- Title of the page -->
+    <replace css:theme-children="title"
+             css:content-children="title" />
+</rules>
