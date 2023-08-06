@@ -1,0 +1,249 @@
+\newcommand{\this}{paper}
+
+\documentclass{article}
+
+\title{\Huge Targeted characterisation of short structural variation.}
+\author{S.Y. Anvar, K.J. van der Gaag, J.W.F. van der Heijden,\\
+  R.H.A.M. Vossen, R.H. de Leeuw, M.H.A.M. Veltrop,\\
+  H.P.J. Buermans, J.S. Verbeek, J.T. den Dunnen, P. de Knijff,\\
+  J.F.J. Laros
+  \vspace{10pt}\\
+  Department of Human Genetics\\
+  Center for Human and Clinical Genetics\\
+  \texttt{j.f.j.laros@lumc.nl}}
+\date{\today}
+
+%\setlength{\parindent}{0pt}
+\frenchspacing
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract} \noindent
+\end{abstract}
+
+\section{Introduction}\label{introduction}
+
+\section{Materials and Methods}
+We developed a
+program\footnote{https://humgenprojects.lumc.nl/trac/dna-profile/} that
+implements the characterisation of short structural variation. In this section,
+we describe the functionality and design of this program. Calibration of the
+algorithms and output is done with optional command line arguments described in
+Table~\ref{tab:args}.
+
+\subsection{Input} \label{subsec:input}
+Our method expects two input files: one file containing sequencing data in
+\texttt{fasta} format and one file containing the library description. The
+format of this description is shown in Table~\ref{tab:library}. The last column
+of the description is a user friendly way of supplying a simple form of
+\emph{regular expressions}. It consists of a series of triples, each containing
+a sequence followed by two integers, which denote the minimum and maximum
+number of times the preceding sequence is expected. This notation of expected
+alleles is compiled to a regular expression, which is used to distinguish
+between known and unknown alleles.
+
+\subsection{Marker alignment} \label{subsec:align}
+Each pair of markers is aligned to each read by using a semi-global pairwise
+alignment, a modified version of the Smith-Waterman~\cite{LA1} algorithm. In
+this adaptation the alignment matrix is initialised with penalties for the
+aligned sequence, but not for the reference sequence. By using this approach,
+we can use the alignment matrix for the calculation of the minimum edit
+distance~\cite{Lev} between the aligned sequence and all substrings of the
+reference sequence. Finally, we use the alignment matrix to select the
+rightmost alignment with a minimum edit distance. To guarantee that this method
+is symmetrical with regard to \emph{reverse complement}, we align the reverse
+complement of the right marker to the reverse complement of the reference
+sequence.
+
+\subsection{Allele identification}
+If a marker pair can be aligned to either the forward or reverse complement of
+the reference sequence, we can select the area of interest by extracting the
+sequence between the alignment coordinates (see Section~\ref{subsec:align}) and
+by converting the selection to the forward orientation. This area of interest
+can then be matched to the regular expression (see Section~\ref{subsec:input})
+of that marker pair. Depending on the match, we either classify the area of
+interest as a known or new allele.
+
+\subsection{Optional classification of the input} \label{subsec:class}
+Apart from identification and quantification of known and new alleles, the
+program can also classify the sequencing data itself based on the alignment of
+the marker pairs. If the allele identification is successful, the input
+sequence in question is classified as either known, or new. If the
+identification is only partially successful, i.e., only the left or the right
+marker of the pair is identified, the input sequence is classified as having no
+beginning or no end.
+
+Based on this classification, overview tables (see
+Table~\ref{tab:overview}), marker specific partitions of the input data (see
+Table~\ref{tab:output}) and a file containing all unclassified reads can be
+made.
+
+\subsection{Output}
+The output of the analysis consists of an overview report that contains a
+general overview (total number of reads, number of matched pairs, number of
+newly identified alleles, etc.), an overview of the marker pair alignments
+(see Table~\ref{tab:marker}) and per marker pair a detailed overview of the
+identified alleles, both the expected ones and the newly identified ones (see
+Table~\ref{tab:allele}). For the expected alleles, the sequence of the allele
+is summarised according to the allele definition in the library.
+
+If an output directory is selected, a folder with this name will be created
+containing general overview tables and a \texttt{fasta} file containing
+unrecognised sequencing data (see Table~\ref{tab:overview})
+
+Per marker a subfolder is created containing the new alleles and split
+\texttt{fasta} files as described in Section~\ref{subsec:class}. The contents
+of this subfolder is shown in Table~\ref{tab:output}.
+
+\section{Discussion}
+
+\section{Conclusions and further research}
+
+\bibliography{$HOME/projects/bibliography}{}
+\bibliographystyle{plain}
+
+\appendix
+
+\section{Tables}
+\begin{table}[h]
+  \caption{Library definition.}
+  \label{tab:library}
+  \begin{center}
+    \begin{tabular}{l|l}
+      column & description\\
+      \hline
+      $1$ & Name of the marker pair.\\
+      $2$ & Sequence of the left marker.\\
+      $3$ & Sequence of the right marker.\\
+      $4$ & Description of the expected alleles.\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[]
+  \caption{Command line optional arguments.}
+  \label{tab:args}
+  \begin{center}
+    \begin{tabular}{l|c|l}
+      name & default & description\\
+      \hline
+      \texttt{-h} &        & Show a description of the usage.\\
+      \texttt{-m} & 0.08   & Number of mismatches per nucleotide.\\
+      \texttt{-r} & stdout & Name of the report file.\\
+      \texttt{-d} &        & Name of the output directory.\\
+      \texttt{-a} & 0      & Minimum count per allele.\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[h]
+  \caption{Generated overview files.}
+  \label{tab:overview}
+  \begin{center}
+    \begin{tabular}{l|l}
+      name & description\\
+      \hline
+      \texttt{unknown.fa}       & Reads classified as unknown.\\
+      \texttt{summary.csv}      & Global overview of total reads, matched
+        pairs, etc.\\
+      \texttt{markers.csv}      & General overview of marker pair alignments
+        (see Table~\ref{tab:marker}).\\
+      \texttt{knownalleles.csv} & Overview of all known alleles (see
+        Table~\ref{tab:knownnew}).\\
+      \texttt{newalleles.csv}   & Overview of all new alleles (see
+        Table~\ref{tab:knownnew}).\\
+      \texttt{nostart.csv}      & Overview of single right marker matches (see
+        Table~\ref{tab:nostartend}).\\
+      \texttt{noend.csv}        & Overview of single left marker matches (see
+        Table~\ref{tab:nostartend}).\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[h]
+  \caption{Structure of the known and new allele summary files.}
+  \label{tab:knownnew}
+  \begin{center}
+    \begin{tabular}{l|l}
+      name & description\\
+      \hline
+      name    & Name of the marker pair.\\
+      forward & Number of pair matches in forward orientation.\\
+      reverse & Number of pair matches in reverse orientation.\\
+      total   & Total number of pair matches.\\
+      allele  & Sequence of the area of interest.\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[h]
+  \caption{Structure of the no start- or end summary files.}
+  \label{tab:nostartend}
+  \begin{center}
+    \begin{tabular}{l|l}
+      name & description\\
+      \hline
+      name    & Name of the marker pair.\\
+      forward & Number of single marker matches in forward orientation.\\
+      reverse & Number of single marker matches in reverse orientation.\\
+      total   & Total number single marker matches.\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[h]
+  \caption{Generated output files per marker.}
+  \label{tab:output}
+  \begin{center}
+    \begin{tabular}{l|l}
+      name & description\\
+      \hline
+      \texttt{known.fa}         & Reads classified as known.\\
+      \texttt{new.fa}           & Reads classified as new.\\
+      \texttt{nostart.fa}       & Reads where only the left marker was found.\\
+      \texttt{noend.fa}         & Reads where only the right marker was
+        found.\\
+      \texttt{knownalleles.csv} & Table of known alleles (see
+        Table~\ref{tab:allele}).\\
+      \texttt{newalleles.csv}   & Table of new alleles (see
+        Table~\ref{tab:allele}).\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[h]
+  \caption{Marker overview.}
+  \label{tab:marker}
+  \begin{center}
+    \begin{tabular}{l|l}
+      name & description\\
+      \hline
+      name    & Name of the marker pair.\\
+      fPaired & Number of pair matches in forward orientation.\\
+      rPaired & Number of pair matches in reverse orientation.\\
+      fLeft   & Number of left marker matches in forward orientation.\\
+      rLeft   & Number of left marker matches in reverse orientation.\\
+      fRight  & Number of right marker matches in forward orientation.\\
+      rRight  & Number of right marker matches in reverse orientation.\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[h]
+  \caption{Allele overview.}
+  \label{tab:allele}
+  \begin{center}
+    \begin{tabular}{l|l}
+      name & description\\
+      \hline
+      allele  & Sequence of the area of interest.\\
+      total   & Number of times the allele was found.\\
+      forward & Number of times found in forward orientation.\\
+      reverse & Number of times found in reverse orientation.\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\end{document}
