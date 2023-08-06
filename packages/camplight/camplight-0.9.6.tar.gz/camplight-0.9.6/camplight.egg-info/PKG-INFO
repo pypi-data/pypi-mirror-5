@@ -1,0 +1,276 @@
+Metadata-Version: 1.1
+Name: camplight
+Version: 0.9.6
+Summary: Python implementation of the Campfire API
+Home-page: https://github.com/mlafeldt/camplight
+Author: Mathias Lafeldt
+Author-email: mathias.lafeldt@gmail.com
+License: MIT
+Description: Camplight
+        =========
+        
+        Camplight is a Python implementation of the `Campfire
+        API <https://github.com/37signals/campfire-api>`__.
+        
+        The project comes with a Python module that can be imported via
+        ``import camplight`` and a simple command-line tool named ``camplight``
+        to utilize it.
+        
+        Installation
+        ------------
+        
+        The easiest way to install Camplight and its dependencies:
+        
+        ::
+        
+            $ pip install camplight
+        
+        Alternatively, you can install it from source:
+        
+        ::
+        
+            $ git clone git://github.com/mlafeldt/camplight.git
+            $ cd camplight/
+            $ python setup.py install
+        
+        (Note that Camplight requires
+        `Requests <http://python-requests.org>`__.)
+        
+        API Usage
+        ---------
+        
+        .. code:: python
+        
+            from camplight import Request, Campfire
+        
+            request = Request('https://your-subdomain.campfirenow.com', 'your_token')
+            campfire = Campfire(request)
+        
+            account = campfire.account()
+            rooms = campfire.rooms()
+        
+            room = campfire.room('Danger')
+            room.join()
+            room.speak('ohai')
+            room.leave()
+        
+        Client Usage
+        ------------
+        
+        ::
+        
+            Usage: camplight [options] <command> [args]
+        
+            Options:
+              -h, --help            show this help message and exit
+              -u URL, --url=URL     set Campfire URL
+              -t TOKEN, --token=TOKEN
+                                    set API token for authentication
+              -r ROOM, --room=ROOM  set Campfire room
+              -v, --verbose         be more verbose
+        
+            Global commands:
+              account               get account information
+              rooms                 list available rooms
+              user [id]             get user information
+              presence              list rooms the user is present in
+              search <term>         search transcripts for term
+        
+            Room commands (require --room to be set):
+              status                get general room information
+              recent                list recent messages in the room
+              transcript            list all messages sent today to the room
+              uploads               list recently uploaded files in the room
+              join                  join the room
+              leave                 leave the room
+              lock                  lock the room
+              unlock                unlock the room
+              speak <message>       send a regular chat message
+              paste <message>       paste a message
+              play <sound>          play a sound
+              set-name <name>       change the room's name
+              set-topic <topic>     change the room's topic
+        
+            Environment variables:
+              CAMPFIRE_URL          same as --url
+              CAMPFIRE_TOKEN        same as --token
+              CAMPFIRE_ROOM         same as --room
+              CAMPFIRE_VERBOSE      same as --verbose
+        
+        Testing
+        -------
+        
+        |Build Status|
+        
+        After cloning the repository, run the test suite using:
+        
+        ::
+        
+            $ python setup.py test
+        
+        You can generate a coverage report using
+        `coverage.py <http://nedbatchelder.com/code/coverage/>`__. First,
+        install the coverage package:
+        
+        ::
+        
+            $ pip install coverage
+        
+        Now gather the data by running:
+        
+        ::
+        
+            $ coverage run setup.py test
+        
+        And create a report:
+        
+        ::
+        
+            $ coverage report
+        
+        You can also create a much nicer HTML report:
+        
+        ::
+        
+            $ coverage html
+        
+        Now open ``htmlcov/index.html`` in your browser.
+        
+        License
+        -------
+        
+        Camplight is licensed under the terms of the MIT License. See
+        `LICENSE <https://github.com/mlafeldt/camplight/blob/master/LICENSE>`__
+        file.
+        
+        Contact
+        -------
+        
+        -  Web: http://mlafeldt.github.com/camplight
+        -  Mail: mathias.lafeldt@gmail.com
+        -  Twitter: `@mlafeldt <https://twitter.com/mlafeldt>`__
+        
+        .. |Build Status| image:: https://travis-ci.org/mlafeldt/camplight.png?branch=master
+           :target: https://travis-ci.org/mlafeldt/camplight
+        
+        
+        History
+        =======
+        
+        v0.9.6 (Aug 12 2013)
+        --------------------
+        
+        -  Add optional date parameter to ``Room.transcript()``. Format must be
+           YYYY/MM/DD. Contributed by @luchux.
+        
+        v0.9.5 (Jul 16 2013)
+        --------------------
+        
+        -  Generate reStructuredText from markdown using
+           ``python setup.py doc``. I want to keep using markdown.
+        
+        v0.9.4 (Jul 16 2013)
+        --------------------
+        
+        -  Convert documentation to reStructuredText for PyPI.
+        -  Recommend using ``pip install camplight`` in README.
+        -  Define one file per line in MANIFEST.in.
+        
+        v0.9.3 (Jul 10 2013)
+        --------------------
+        
+        -  Add MANIFEST.in for PyPI.
+        
+        v0.9.2 (Jul 10 2013)
+        --------------------
+        
+        -  Fix setup.py for PyPI.
+        
+        v0.9.1 (Feb 18 2013)
+        --------------------
+        
+        -  Use HTTPretty as mock library for unit tests.
+        -  Add Travis build status to README.
+        -  Update classifiers in setup.py.
+        
+        v0.9 (Feb 15 2013)
+        ------------------
+        
+        -  Fix exit status of ``python setup.py test``.
+        -  Update copyright year in LICENSE file.
+        
+        v0.8 (Feb 8 2013)
+        -----------------
+        
+        -  Fix JSON decoding in case no text is returned. Reported by @astiam.
+        -  Travis: run tests against Python 3.3.
+        
+        v0.7 (Dec 19 2012)
+        ------------------
+        
+        -  Fix path to Camplight module in unit tests.
+        -  Update to Requests version 1.0.3.
+        
+        v0.6 (Nov 6 2012)
+        -----------------
+        
+        -  Use `pytest <http://pytest.org>`__ for unit testing.
+        
+        v0.5 (Oct 30 2012)
+        ------------------
+        
+        -  Add test coverage using
+           `coverage.py <http://nedbatchelder.com/code/coverage/>`__.
+           (@keimlink)
+        -  Properly set ``tests_require`` and ``extras_require`` in setup.py.
+           (@keimlink)
+        -  Work around dependency error returned by ``pip install`` by
+           hardcoding the current Camplight version in setup.py. (@jwilder)
+        
+        v0.4 (Aug 8 2012)
+        -----------------
+        
+        -  Add unit tests; run them via ``python setup.py test``.
+        -  Add Travis CI config.
+        -  Python 3 compatibility.
+        
+        v0.3 (Aug 6 2012)
+        -----------------
+        
+        -  Rewrite command-line interface from scratch.
+        -  Add dedicated Camplight exceptions.
+        -  Make use of ``Response.json`` from Requests v0.12.1.
+        -  Add verbose mode.
+        -  More sounds.
+        -  Tweak per-file docstrings.
+        -  Add ``setup.py``.
+        -  Add much more documentation.
+        
+        v0.2 (Oct 25 2011)
+        ------------------
+        
+        -  Use `requests <https://github.com/kennethreitz/requests>`__ as HTTP
+           library.
+        -  Move all HTTP/JSON handling to separate class.
+        -  Split up code into camplight package and runner script.
+        -  More pythonic coding style. Fix PEP8 errors.
+        -  Add ability to get account information (account.json).
+        -  More (undocumented) sounds.
+        -  Add MIT license text.
+        
+        v0.1 (May 30 2011)
+        ------------------
+        
+        -  First tagged version.
+        
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.3
