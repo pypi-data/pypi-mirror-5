@@ -1,0 +1,2580 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+ 
+<head id="Head">
+    <title>CGV 모바일</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta name="viewport" content="width=device-width" />
+
+    <link rel="apple-touch-icon" href="/Common/Images/cgvicon.png" /> 
+	<link rel="stylesheet" type="text/css" href="/Common/Css/base.css" />
+	<link rel="stylesheet" type="text/css" href="/Common/Css/layout.css" />
+	<link rel="stylesheet" type="text/css" href="/Common/Css/member.css" />
+	<link rel="stylesheet" type="text/css" href="/Common/Css/cgv.css" />
+	
+	<script language="javascript" type="text/javascript" src="/Common/js/jQuery/jquery-1.4.1.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/Common/js/jQuery/jquery.cookie.js"></script>
+	<script language="javascript" type="text/javascript" src="/Common/js/jQuery/jquery.corner.js"></script>
+	<script language="javascript" type="text/javascript" src="/Common/js/jQuery/jquery.blockUI.js"></script>
+	<script language="javascript" type="text/javascript" src="/Common/js/jQuery/jquery.alphanumeric.js"></script>
+	<script language="javascript" type="text/javascript" src="http://code.jquery.com/jquery-1.4.4.js"></script>
+	
+	<script type="text/javascript">
+	    var goHistoryBack = function() { window.history.go(-1); };
+	</script>
+</head>
+
+<body align="center">
+<div id="wrapper">
+
+<script type="text/javascript">
+    // 일반좌석 가격
+    var GENERAL_COST = 0;
+    var NOMAL_COST = 0;
+    var SWEET_COST = 0;
+    var VIBRATION_COST = 0;
+    var FORD_COST = 0;
+    var GOLD_COST = 0;
+    var PREMIUM_COST = 0;
+    var WIDEBOX_COST = 0;
+    var COUPLE_COST = 0;
+    var CINEKIDS_COST = 0;
+
+    // 학색좌석 가격
+    var STUDENT_COST = 0;
+    var NOMAL_S_COST = 0;
+    var SWEET_S_COST = 0;
+    var VIBRATION_S_COST = 0;
+    var FORD_S_COST = 0;
+    var GOLD_S_COST = 0;
+    var PREMIUM_S_COST = 0;
+    var WIDEBOX_S_COST = 0;
+    var COUPLE_S_COST = 0;
+    var CINEKIDS_S_COST = 0;
+
+    var GENERAL_COUNT = 0;
+    var STUDENT_COUNT = 0;
+    var nSelectedPerson = 0;
+    var nticketCount = 0;  
+
+    var objseatBeside_left = 0;
+    var objseatBeside_left_id; 
+    var objseatBeside_left_1 = 0;
+    var objseatBeside_left_1_id; 
+    var objseatBeside_right = 0; 
+    var objseatBeside_right_id;  
+    var objseatBeside_right_1 = 0;
+    var objseatBeside_right_1_id; 
+    var clickedSeat;              
+    var nAffectSeatCount = 0;
+    
+    var totalNumOfColumns = "35";
+    var totalNumOfRows = "12";
+
+    //스크린코드
+    var screenCd = "009";
+    //키즈관 타입
+    var kidsScreenType = "";
+
+    //선택 변수 값
+    var seatName;
+    var seatX;   
+    var seatY;   
+    var css_type;
+    var THEATER_CD = "0074";
+    var SCREEN_RATING_CD = ""; 
+
+    // 선택 완료 후 넘겨줘야 할 파라미터 값
+    var fSeatPrices = ""; 
+    var fSeatTickets = "";
+    var SEAT_RATING_CD1 = "01"; 
+    var SEAT_RATING_NM = ""; 
+    var SEAT_RATING_CD2 = "";
+    var isSpecialCheck = false;
+    var KIND_CD = ""; 
+
+    /* 좌석 가격 셋팅 */
+    
+                    NOMAL_COST = 17000
+    
+                    NOMAL_S_COST =14000  
+    
+
+    // 포맷 변경 (통화)
+    var formatCurrency = function (mValue) {
+	    var temp_str = String(mValue);
+		
+        for (var i = 0, retValue = String(), stop = temp_str.length; i < stop; i++) {
+	        retValue = ((i % 3) == 0) && i != 0 ? temp_str.charAt((stop - i) - 1) + "," + retValue : temp_str.charAt((stop - i) - 1) + retValue;
+        }
+	    
+        return retValue;
+    }
+
+    // 가격 총계 셋팅
+    var displayTotalPrice = function () {
+        var general_sum = parseInt($("#general_sum").text().replace(",", ""), 10);
+        var student_sum = parseInt($("#student_sum").text().replace(",", ""), 10);		
+
+//        var tatalLength = general_sum + student_sum;
+//	
+//        $("#total_sum").text(formatCurrency(general_sum + student_sum));
+//		
+//        switch(tatalLength.toString().length)
+//        {
+//            case 1:  $("#total_sum").css("width","22px"); break;
+//            case 2:  $("#total_sum").css("width","44px"); break;
+//            case 3:  $("#total_sum").css("width","66px"); break;
+//            case 4:  $("#total_sum").css("width","96px"); break;
+//            case 5:  $("#total_sum").css("width","117px"); break;
+//            case 6:  $("#total_sum").css("width","150px"); break;
+//        }       
+       
+        var total_sum = general_sum + student_sum + "";
+	    var total_sum_text = total_sum;
+
+//        if(total_sum.length < 6)
+//        {
+//            for(var i = total_sum.length; i < 6; i++)
+//            {
+//                total_sum_text = "0" + total_sum_text;
+//            }
+//        }
+//        if(total_sum.length >= 6)
+//        {
+//            $("#total_sum").css("letter-spacing", "7px");
+//        }
+//        else
+//        {
+//            $("#total_sum").css("letter-spacing", "7px");
+//        }
+
+        $("#total_sum").text(total_sum_text);
+
+//        $("#total_sum .line").css("position","absolute")
+//                             .css("top","0px")
+//                             .css("left","0px")
+//                             .css("border","0px #fff solid")
+//                             .css("width","100%")
+//                             .css("height","42px")
+//                             .css("padding-right","1px")
+//                             .css("background","url(\"/Common/Images/reservation/sum_line.png\") right no-repeat");
+    }
+
+    // 일반 onChange    
+    var setGeneralPersonCount = function () {
+        fSeatPrices = "";  
+	    fSeatTickets = ""; 
+
+        var $selectedSeat = $("#seat_table td[class*='selectedOn']");   //선택좌석
+
+        if ($selectedSeat.length > 0) {
+            if(confirm("인원 수정시\n\선택한 좌석 정보가 취소됩니다.\n계속 하시겠습니까?")) {
+                cancleSeat();
+//                $("#allcancel").click();
+//                return true;
+//            } else {
+//                return false;
+            }
+        }
+
+        var general_count = parseInt($("#general_count").text().replace(",", ""), 10);
+        var student_count = parseInt($("#student_count").text().replace(",", ""), 10);
+
+        var gr_count = parseInt($("#dr_general_count").val(), 10);
+
+        if ((gr_count + student_count) > 8) {
+            alert("최대 예매가능 인원은 8명입니다.");
+            $("#dr_general_count").val(general_count);
+            return;
+        }
+
+        var count = parseInt($("#dr_general_count").val(), 10);
+        GENERAL_COUNT = count;
+
+        var general_count = parseInt($("#general_count").text().replace(",", ""), 10);
+        var student_count = parseInt($("#student_count").text().replace(",", ""), 10);
+
+        /* 인원 및 가격 정보 셋팅 */
+        $("#general_count").text(count);
+        $("#general_sum").text(formatCurrency(GENERAL_COST * count));
+        $("[id*=hfGeneral_count]").val(GENERAL_COUNT);
+
+
+        for(var i=0; i < GENERAL_COUNT; i++) {
+	        if (fSeatPrices.length > 0) {
+		        fSeatPrices += ";";
+	        }
+		    
+	        if (fSeatTickets.length > 0) {
+		        fSeatTickets += ";";
+	        }
+		    
+	        fSeatPrices += GENERAL_COST;
+	        fSeatTickets += "01";
+        }
+
+        $("[id*=hfSeatPrices]").val(fSeatPrices );
+        $("[id*=hfSeatTickets]").val(fSeatTickets );
+        $("[id*=hfReserveCnt]").val(GENERAL_COUNT + STUDENT_COUNT);
+
+        displayTotalPrice();
+    }
+
+    // 학생 onChange
+    var setStudentPersonCount = function () {
+        var $selectedSeat = $("#seat_table td[class*='selectedOn']");   //선택좌석
+
+        if ($selectedSeat.length > 0) {
+            if(confirm("인원 수정시\n\선택한 좌석 정보가 취소됩니다.\n계속 하시겠습니까?")) {
+                cancleSeat();
+//                $("#allcancel").click();
+//                return false;
+//            } else {
+//                return false;
+            }
+        }
+
+        
+
+        // 일반 선택이 안되어 있으면 초기화
+        var _genera_count = parseInt($("#dr_general_count").val(), 10);
+        if(_genera_count == 0) {
+            fSeatPrices = "";
+            fSeatTickets = "";
+        }
+
+        var general_count = parseInt($("#general_count").text().replace(",", ""), 10);
+        var student_count = parseInt($("#student_count").text().replace(",", ""), 10);
+
+        var sd_count = parseInt($("#dr_student_count").val(), 10);
+
+        if ((sd_count + general_count) > 8) {
+            alert("최대 예매가능 인원은 8명입니다.");
+            $("#dr_student_count").val(student_count);
+            return;
+        }
+
+        var count = parseInt($("#dr_student_count").val(), 10);
+        STUDENT_COUNT = count;
+
+        $("#student_count").text(count);
+        $("#student_sum").text(formatCurrency(STUDENT_COST * count));
+        $("[id*=hfStudent_count]").val(STUDENT_COUNT );
+
+        for(var i=0; i < STUDENT_COUNT; i++) {
+            if (fSeatPrices.length > 0) {
+                fSeatPrices += ";";
+            }	
+        
+            if (fSeatTickets.length > 0) {
+                fSeatTickets += ";";
+            }
+        
+            fSeatPrices += STUDENT_COST;
+            fSeatTickets += "02";
+        }
+
+        $("[id*=hfSeatPrices]").val(fSeatPrices);
+        $("[id*=hfSeatTickets]").val(fSeatTickets);
+        $("[id*=hfReserveCnt]").val(GENERAL_COUNT + STUDENT_COUNT);
+
+        displayTotalPrice();
+    }
+
+    //좌통로거리 얻기
+    function getLeftWayValue(selectedXValue, selectedYValue) {
+        var index = 0;
+        var xValue = parseInt(selectedXValue, 10);
+        var yValue = parseInt(selectedYValue, 10);
+
+        while (xValue > 0) {
+            xValue = xValue - 1;
+            index++;
+            if ($("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("reservation") == "Pass") {
+                break;
+            }
+
+            if (xValue == 0) {
+                index = 0;
+            }
+        }
+        return index;
+    }
+
+    //우통로거리 얻기
+    function getRightWayValue(selectedXValue, selectedYValue) {
+        var index = 0;
+        var xValue = parseInt(selectedXValue, 10);
+        var yValue = parseInt(selectedYValue, 10);
+        var totalXNum = parseInt(totalNumOfColumns, 10) - 1;
+
+        while (xValue < totalXNum) {
+            xValue = xValue + 1;
+            index++;
+            if ($("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("reservation") == "Pass") {
+                break;
+            }
+
+            if (xValue == totalXNum) {
+                index = 0;
+            }
+        }
+        return index;
+    }
+
+    //좌좌석거리 얻기
+    function getLeftSeatValue(selectedXValue, selectedYValue) {
+        
+        var index = 0;
+        var myValue = parseInt(selectedXValue, 10);
+        var xValue = parseInt(selectedXValue, 10);
+        var yValue = parseInt(selectedYValue, 10);
+
+        while (xValue > 0) {
+            xValue = xValue - 1;
+            if (
+                $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("reservation") == "Pass"
+                || $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("reservation") == "No"
+                || $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("selectSeat") == "Y"
+                || $("#seat_table td[x=" + myValue + "][y=" + yValue + "]").attr("Seat_Relation_Code") != $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("Seat_Relation_Code")
+                || $("#seat_table td[x=" + myValue + "][y=" + yValue + "]").attr("KIND_CD") != $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("KIND_CD")
+                || $("#seat_table td[x=" + myValue + "][y=" + yValue + "]").attr("RATING_CD") != $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("RATING_CD")
+               ) 
+            {
+                break;
+            }
+
+            index++;
+        }
+        return index;
+    }
+
+    //우좌석거리 얻기
+    function getRightSeatValue(selectedXValue, selectedYValue) {
+        var index = 0;
+        var myValue = parseInt(selectedXValue, 10);
+        var xValue = parseInt(selectedXValue, 10);
+        var yValue = parseInt(selectedYValue, 10);
+        var totalXNum = parseInt(totalNumOfColumns, 10) - 1;
+
+        while (xValue < totalXNum) {
+            xValue = xValue + 1;
+            if (
+                $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("reservation") == "Pass"
+                || $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("reservation") == "No"
+                || $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("selectSeat") == "Y"
+                || $("#seat_table td[x=" + myValue + "][y=" + yValue + "]").attr("Seat_Relation_Code") != $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("Seat_Relation_Code")
+                || $("#seat_table td[x=" + myValue + "][y=" + yValue + "]").attr("KIND_CD") != $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("KIND_CD")
+                || $("#seat_table td[x=" + myValue + "][y=" + yValue + "]").attr("RATING_CD") != $("#seat_table td[x=" + xValue + "][y=" + yValue + "]").attr("RATING_CD")
+               )
+            {
+                break;
+            }
+
+            index++;
+        }
+        return index;
+    }
+
+    $(function () {
+        if (SCREEN_RATING_CD == "11") {
+            alert("4DX는 4세 미만, 신장 1m이하 어린이,\n임산부, 음주자, 디스크환자, 심장병,\n고/저혈압의 경우 관람이 제한됩니다.\n\n단, 보호자를 동반한 4~7세는 관람이\n가능하나 베이비시트는 소지 불가합니다.");
+        }
+        else if (SCREEN_RATING_CD == "06") {
+            if (kidsScreenType == "KIDS") {
+                alert("CINE KIDS(어린이)관을\n선택하셨습니다.\n\n선택하신 관은 5세~13세만\n이용할 수 있는\n어린이 전용 상영관입니다.\n\n보호자 고객일 경우\nCINE KIDS(일반)관을 선택하여\n이용하시기 바랍니다.");    
+            }
+            else {
+                alert("CINE KIDS(일반)관을\n선택하셨습니다.\n\n어린이 고객일 경우\nCINE KIDS(어린이)관을 선택하여\n이용하시기 바랍니다.");
+            }
+        }
+
+        if (("" == "01")||("" == "232")) {
+            alert("본 영화는 보호자를 동반하여도 청소년(영아, 유아 포함)은 관람하실 수 없으며,만 18세 이상이더라도 고등학교 재학중인 경우 관람이 불가능합니다.");
+        }
+
+        $("[id*=hfGeneral_count]").val(0);
+        $("[id*=hfStudent_count]").val(0);
+
+         /* 등급 가격 정보 책정 */
+//        var screename = "";
+//	    var temp_sname = screename.replace(/ /g,'')    	    
+//    	    
+//	    if(temp_sname == "골드클래스") {
+//	        SEAT_RATING_CD1 = "05";
+//	        isSpecialCheck = true;
+//	    }
+//    	      
+//	    if(temp_sname == "4DX") {
+//	        SEAT_RATING_CD1 = "04";
+//	        isSpecialCheck = true;
+//	    }
+
+//        if(temp_sname == "CINEKIDS(어린이)" || temp_sname == "CINEKIDS(성인)" ) {
+//            SEAT_RATING_CD1 = "08";
+//	        isSpecialCheck = true;
+//        }
+
+//        if(temp_sname == "프리미엄관") {
+//            SEAT_RATING_CD1 = "09";
+//	        isSpecialCheck = true;
+//        }
+        
+        //4DX
+        if (SCREEN_RATING_CD == "11") {
+            SEAT_RATING_CD1 = "04";
+	        isSpecialCheck = true;
+        }
+
+        //GOLDCLASS
+        if (SCREEN_RATING_CD == "04") {
+            SEAT_RATING_CD1 = "05";
+	        isSpecialCheck = true;
+        }
+
+        //CINEKIDS
+        if (SCREEN_RATING_CD == "06") {
+            if(kidsScreenType == "KIDS") {
+                SEAT_RATING_CD1 = "08";
+	            isSpecialCheck = true;
+            }
+        }
+
+        //프리미엄
+        if (SCREEN_RATING_CD == "15") {
+            SEAT_RATING_CD1 = "09";
+	        isSpecialCheck = true;
+        }
+
+        if(!isSpecialCheck) {
+	        switch (SEAT_RATING_CD1) {
+	            case "01" : 
+                    if(NOMAL_COST == 0 && NOMAL_S_COST == 0) { //SWEETBOX관
+                        GENERAL_COST = SWEET_COST; 
+                        STUDENT_COST = SWEET_S_COST;  
+                    }
+                    else {
+                        GENERAL_COST = NOMAL_COST; 
+	                    if(NOMAL_S_COST == 0) {
+	                        STUDENT_COST = GENERAL_COST;
+	                    } else {
+	                        STUDENT_COST = NOMAL_S_COST;
+	                    }
+                    }
+	                break; 
+	        }
+        } else {
+            switch (SEAT_RATING_CD1) {
+                case "04" : GENERAL_COST = FORD_COST;       STUDENT_COST = FORD_S_COST; break; 
+                case "05" : GENERAL_COST = GOLD_COST;       STUDENT_COST = GOLD_S_COST; break; 
+                case "08" : GENERAL_COST = CINEKIDS_COST;   STUDENT_COST = CINEKIDS_S_COST; break; 
+                case "09" : GENERAL_COST = PREMIUM_COST;    STUDENT_COST = PREMIUM_S_COST; break; 
+            }
+        }	 
+
+        // 가격정보가 없으면 인원 선택 불가
+        if(GENERAL_COST == 0) { $("#dr_general_count").attr("disabled", true); }
+        if(STUDENT_COST == 0) { $("#dr_student_count").attr("disabled", true); }
+
+        // 등급별 가격 정보 셋팅
+        $("#general_price").text(formatCurrency(GENERAL_COST));
+	    $("#student_price").text(formatCurrency(STUDENT_COST));
+        $("[id*=hfGeneral_Cost]").val(GENERAL_COST);
+        $("[id*=hfStudent_Cost]").val(STUDENT_COST);
+
+        // 좌석 선택
+        $("#seat_table td[reservation=Yes]").click(function () {
+            var $this = $(this);
+            seatName = $(this).attr("seatName");  
+            seatX = $(this).attr("x");            
+            seatY = $(this).attr("y");            
+            KIND_CD = $(this).attr("KIND_CD");    
+            SEAT_RATING_CD2 = $(this).attr("RATING_CD"); 
+            SEAT_RATING_NM = $(this).attr("RATING_NM");  
+            
+
+
+            clickedSeat = $("#seat_table td[x=" + seatX + "][y=" + seatY + "]");
+
+            nticketCount = GENERAL_COUNT + STUDENT_COUNT;
+
+
+            objseatBeside_left = parseInt(seatX, 10) - 1;
+            objseatBeside_left_id = $("#seat_table td[x=" + objseatBeside_left + "][y=" + seatY + "]");
+
+
+            objseatBeside_left_1 = parseInt(seatX, 10) - 2;
+            objseatBeside_left_1_id = $("#seat_table td[x=" + objseatBeside_left_1 + "][y=" + seatY + "]");
+
+            
+            objseatBeside_right = parseInt(seatX, 10) + 1;
+            objseatBeside_right_id = $("#seat_table td[x=" + objseatBeside_right + "][y=" + seatY + "]");
+
+            
+            objseatBeside_right_1 = parseInt(seatX, 10) + 2;
+            objseatBeside_right_1_id = $("#seat_table td[x=" + objseatBeside_right_1 + "][y=" + seatY + "]");
+
+            if (clickedSeat.attr("selectSeat") == "Y") {    //이미 선택 하였으면
+//                nSelectedPerson = 0;
+//                nAffectSeatCount = 0;
+
+//                // 초기화 시 CSS 변경 및 selectSeat값 지우기
+//                for (var i = 0; i < totalNumOfRows; i++) {
+//                    for (var j = 0; j < totalNumOfColumns; j++) {
+//                        if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("selectSeat") == "Y") {
+//                            if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "02") {          //스위트박스
+//                                css_type = "pointer sweet";
+//                            } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "03") {   //비트박스
+//                                css_type = "pointer Vabration";
+//                            } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "04") {   //4D
+//                                css_type = "pointer FORD";
+//                            } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "05") {   //골드클래스
+//                                css_type = "pointer GOLD";
+//                            } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "10") {   //와이드박스
+//                                css_type = "pointer widebox";
+//                            } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("KIND_CD") == "02") {     //장애인석
+//                                css_type = "pointer disabled";
+//                            } else {
+//                                css_type = "pointer available";
+//                            }
+//                        
+//                            $("#seat_table td[x=" + j + "][y=" + i + "]").removeAttr("class").attr("class", css_type).removeAttr("selectSeat");
+//                        }
+//                    }
+//                }
+            } else {
+                if (nticketCount > nSelectedPerson) {  
+
+                    if (checkTicket(THEATER_CD, SCREEN_RATING_CD, SEAT_RATING_CD2, nticketCount) == false) {
+                        return;
+                    }
+
+                    if (nSelectedPerson == 0) { 
+                        if (SEAT_RATING_CD2 == "01") { 
+                            if (KIND_CD == "02") {
+                                alert("고객님이 선택하신 좌석은 장애인석으로 일반고객은 예매하실 수 없는 좌석입니다.\n장애인석은 휠체어 전용좌석으로 일반고객은 현장에서 입장하실 수 없습니다.");
+                            }
+                            if(kidsScreenType == "ADULT"){
+                                alert("KIDS(일반)석을 선택하셨습니다.\n\n선택하신 좌석은\n보호자 전용좌석으로\n14세 미만 어린이 고객은\n이용하실 수 없습니다.\n\n어린이 고객일 경우\nCINE KIDS(어린이)관을 선택하여\n이용하시기 바랍니다.");
+                            }
+                            getSeatInfo(SEAT_RATING_CD2);  
+                        } else {
+                            if (SEAT_RATING_CD2 == "02") {
+                                var result = confirm("선택하신 좌석은 프리미엄 커플 좌석 " + SEAT_RATING_NM + "이며 변경금액으로 적용됩니다.\r\n계속하시겠습니까?");
+                            } else if (SEAT_RATING_CD2 == "03") {
+                                var result = confirm("선택하신 좌석은 사운드 진동 좌석 " + SEAT_RATING_NM + "이며 변경금액으로 적용됩니다.\r\n계속하시겠습니까?");
+                            } else if (SEAT_RATING_CD2 == "08") {
+                                alert("KIDS석을 선택하셨습니다.\n\n선택하신 좌석은\n어린이 전용좌석으로\n14세 이상 청소년 및 성인 고객은\n\n이용하실 수 없습니다.\n\n보호자 고객일 경우\nCINE KIDS(일반)관을 선택하여\n이용하시기 바랍니다.");    
+                                var result = true;
+                            } else if (SEAT_RATING_CD2 == "10") {
+                                var result = confirm("선택하신 좌석은 일반석보다 더 넓고 편안한 좌석 WIDEBOX이며 변경금액으로 적용됩니다.\r\n계속하시겠습니까?");
+                            } else if (SEAT_RATING_CD2 == "11") {
+                                var result = confirm("고객님이 선택하신 좌석은 2인 전용 커플석으로, 옆좌석은 타인에게 판매될 수 있습니다.\r\n계속하시겠습니까?");
+                            } else {
+                                var result = true;
+                            }
+
+                            if(result) { 
+                                getSeatInfo(SEAT_RATING_CD2); 
+                            } else {
+                                return;
+                            }          
+                        }
+                    } else {
+                        if (KIND_CD == "02") {
+                            alert("고객님이 선택하신 좌석은 장애인석으로 일반고객은 예매하실 수 없는 좌석입니다.\n장애인석은 휠체어 전용좌석으로 일반고객은 현장에서 입장하실 수 없습니다.");
+                        }
+
+                        if($("[id*=hfSeatSelectBool]").val() == "N") {          //일반석
+			                if(SEAT_RATING_CD2 != "01") {
+			                    alert("같은 등급의 좌석만 선택가능합니다.");
+			                    return;
+			                }
+			            } else if($("[id*=hfSeatSelectBool]").val() == "S") {   //스위트박스
+			                if(SEAT_RATING_CD2 != "02") {
+			                    alert("같은 등급의 좌석만 선택가능합니다.");
+			                    return ;
+			                }
+			            } else if($("[id*=hfSeatSelectBool]").val() == "V") {   //비트박스
+			                if(SEAT_RATING_CD2 != "03") {
+			                    alert("같은 등급의 좌석만 선택가능합니다.");
+			                    return ;
+			                }
+			            } else if($("[id*=hfSeatSelectBool]").val() == "F") {   //4D
+			                if(SEAT_RATING_CD2 != "04") {
+			                    alert("같은 등급의 좌석만 선택가능합니다.");
+			                    return ;
+			                }
+			            } else if($("[id*=hfSeatSelectBool]").val() == "W") {   //와이드박스
+			                if(SEAT_RATING_CD2 != "10") {
+			                    //alert("같은 등급의 좌석만 선택가능합니다.");
+                                alert("해당상영관의 WIDEBOX와 일반좌석은 개별 예매만 가능합니다.");
+			                    return ;
+			                }
+                        } else if($("[id*=hfSeatSelectBool]").val() == "C") {   //커플석
+			                if(SEAT_RATING_CD2 != "11") {
+			                    alert("같은 등급의 좌석만 선택가능합니다.");
+			                    return ;
+			                }
+			            }
+                    }
+
+                    var leftWay = getLeftWayValue(seatX, seatY);      
+                    var rightWay = getRightWayValue(seatX, seatY);    
+                    var leftSeat = getLeftSeatValue(seatX, seatY);    
+                    var rightSeat = getRightSeatValue(seatX, seatY);  
+                    var totalSeat = parseInt(leftSeat, 10) + parseInt(rightSeat, 10) + 1; 
+                    var restCount = nticketCount - nSelectedPerson;
+
+                    /* 상암 골드클래스면서 3명일때 */
+                    if (THEATER_CD == "0014" && SCREEN_RATING_CD == "04") {
+                        if (nticketCount == 3) {
+                            if (totalSeat == 3) {
+                                clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); 
+
+                                if (leftSeat == 0) {
+                                    objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                    objseatBeside_right_1_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                } else if (rightSeat == 0) {
+                                    objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                    objseatBeside_left_1_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                } else {
+                                    objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                    objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                }
+                                nAffectSeatCount = 3;
+                            } else {
+                                alert("3인 예매시 3자리 좌석만 선택 가능합니다.");
+                                return;
+                            }   
+                        } else {
+                            if (totalSeat == 2) {
+                                clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); //좌석선택
+
+                                if (leftSeat == 0) { 
+                                    objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                    nAffectSeatCount = 2;
+                                } else if (rightSeat == 0) {    
+                                    objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                    nAffectSeatCount = 2;
+                                }
+                            } else {
+                                alert("2인 예매시 2자리 좌석만 선택 가능합니다.");
+                                return; 
+                            }
+                        }
+                    } else {
+                        if (restCount != 1) {   
+                            if (totalSeat == 1) {
+                                clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); //좌석선택
+                                nAffectSeatCount = 1;
+                            } else {
+
+                                clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); //좌석선택
+
+                                if (leftSeat == 0) { 
+                                    objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                    nAffectSeatCount = 2;
+                                } else if (rightSeat == 0) { 
+                                    objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                    nAffectSeatCount = 2;
+                                } else {    //그외
+                                    if (totalSeat == 3) {  
+                                        objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                        nAffectSeatCount = 2;
+                                    } else if (totalSeat == 4) {
+                                        if (leftSeat == 1 && rightSeat == 2) {
+                                            objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else if (leftSeat == 2 && rightSeat == 1) {
+                                            objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        }
+                                    } else if (totalSeat == 5) {
+                                        if (leftSeat == 1 && rightSeat == 3) {
+                                            objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else if (leftSeat == 3 && rightSeat == 1) {
+                                            objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else if (leftSeat == 2 && rightSeat == 2) {
+                                            clickedSeat.removeAttr("class").attr("class", 'pointer available').removeAttr("selectSeat");    //선택제거
+                                            alert("다른좌석을 선택하여 주세요.");
+                                            nAffectSeatCount = 0;
+                                        }
+                                    } else if (totalSeat == 6) {
+                                        if (leftSeat == 1 && rightSeat == 4) {
+                                            objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else if (leftSeat == 2 && rightSeat == 3) {
+                                            objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else if (leftSeat == 3 && rightSeat == 2) {
+                                            objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else if (leftSeat == 4 && rightSeat == 1) {
+                                            objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        }
+                                    } else {
+                                        if (leftSeat == 1) {
+                                            objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else if (rightSeat == 1) {
+                                            objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                            nAffectSeatCount = 2;
+                                        } else {
+                                            if (totalSeat % 2 == 0) {
+                                                if (leftSeat % 2 == 0) {
+                                                    objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                                    nAffectSeatCount = 2;
+                                                } else {
+                                                    objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                                    nAffectSeatCount = 2;
+                                                }
+                                            } else {
+                                                if (leftSeat > rightSeat) {
+                                                    objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                                    nAffectSeatCount = 2;
+                                                } else if (leftSeat < rightSeat) {
+                                                    objseatBeside_right_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                                    nAffectSeatCount = 2;
+                                                } else {
+                                                    objseatBeside_left_id.attr("selectSeat", "Y").attr("class", 'selectedOn');
+                                                    nAffectSeatCount = 2;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+
+                            if (totalSeat == 1) {
+                                clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); //좌석선택
+                                nAffectSeatCount = 1;
+                            } else if (totalSeat == 2) {
+                                if (nticketCount == 1) {
+                                    clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); //좌석선택
+                                    nAffectSeatCount = 1;
+                                } else { 
+                                    if (leftSeat == 0 && objseatBeside_right_1_id.attr("selectSeat") == "Y") {
+                                        alert("다른좌석을 선택하여 주세요.");
+                                        return;
+                                    } else if (rightSeat == 0 && objseatBeside_left_1_id.attr("selectSeat") == "Y") {
+                                        alert("다른좌석을 선택하여 주세요.");
+                                        return;
+                                    } else {
+                                        clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); //좌석선택
+                                        nAffectSeatCount = 1;
+                                    }
+                                }
+                            } else {
+                                if (leftSeat == 1 || rightSeat == 1) {
+                                    alert("다른좌석을 선택하여 주세요.");
+                                    return;
+                                } else {
+                                    clickedSeat.attr("selectSeat", "Y").attr("class", 'selectedOn'); //좌석선택
+                                    nAffectSeatCount = 1;
+                                }
+                            }
+                        }
+                    }
+                    nSelectedPerson += nAffectSeatCount;    //선택인원 카운팅
+                } else if (nticketCount == 0) {
+                    alert("관람인원을 먼저 선택해주세요.");
+                } else if (nticketCount == nSelectedPerson) {
+                    alert("좌석을 모두 선택하였습니다.");
+                } else {
+                    alert("에러가 발생하였습니다.");
+                }
+            }
+
+            /* 선택 좌석 정보 셋팅 */
+
+            var selectedData = "";
+	        $("#seat_table td[class*='selectedOn']").each(function () {
+		        if (selectedData.length > 0) {
+			        selectedData += ",";
+		        }				
+		        selectedData += $(this).attr("seatName");
+	        });
+
+            var selectSeat = "";
+	        $("#seat_table td[class*='selectedOn']").each(function () {
+		        if (selectSeat.length > 0) {
+			        selectSeat += ";";
+		        }				 
+		        selectSeat += $(this).attr("SeatCd");
+	        });
+
+	        var selectRating = "";
+	        $("#seat_table td[class*='selectedOn']").each(function () {
+		        if (selectRating.length > 0) {
+			        selectRating += ";";
+		        }				 
+		        selectRating += $(this).attr("RATING_CD");
+	        });
+
+            $("[id*=hfSeatnms]").val(selectedData);
+	        $("[id*=hfSeats]").val( selectSeat);
+	        $("[id*=hfSeatRatings]").val(selectRating);
+
+
+            if (selectedData.length > 0) {
+		        $("#seat_title").text( "좌석선택 - " + selectedData);
+                var $selectedSeatCount = $("#seat_table td[class*='selectedOn']");
+                
+	            for( var i =0; i < $selectedSeatCount.length; i++) {
+	                $("#add_person li").remove();
+		            
+		            $("#seat_table td[class*='selectedOn']").each(function () {
+		      	        $("#add_person").append("<li class=\"style_general\">"+  $(this).attr("seatName")+"</li>");  
+	                });
+ 	            }
+	        } else {
+		        $("#seat_title").text( "좌석선택");
+	            $("#add_person li").remove();
+	        }
+
+            $("#select_person").add('<li class="style_general">'+selectedData+'</li>');
+        });
+
+        $("[id*=ibSelectTicket]").click(function () {
+		    $selectedSeat = $("#seat_table td[class*='selectedOn']");
+
+		    if ((GENERAL_COUNT + STUDENT_COUNT) != $selectedSeat.length) {
+			    alert("좌석 선택이 예매수량과 일치하지 않습니다. 다시 확인해 주세요.");
+			    return false;
+		    }
+		    return true;
+	    });
+    		
+        $("[id*=seat_clear]").click(function () {
+		    if( confirm("선택한 좌석 정보가 취소됩니다.\n계속하시겠습니까?")) {
+		        //$("#allcancel").click();
+                cancleSeat();
+		     	return true;
+		    } else {
+		        return false;
+		    }
+	    });
+
+        /* 좌석 선택 시 좌석 가격 책정 */
+        var getSeatInfo = function(mValue) {   
+            switch (mValue) {
+                case "01" : 
+                    GENERAL_COST = NOMAL_COST;
+                    if(NOMAL_S_COST == 0) {
+                        STUDENT_COST = GENERAL_COST;
+                    } else {
+                        STUDENT_COST = NOMAL_S_COST;
+                    }
+                
+                    $("[id*=hfSeatSelectBool]").val("N");
+                    break; 
+                case "02" : 
+                    // 스위트박스
+                    GENERAL_COST = SWEET_COST;  
+                    STUDENT_COST = SWEET_S_COST;  
+                    $("[id*=hfSeatSelectBool]").val("S");
+                    break;
+                case "03" : 
+                    // 바이브레이션
+                    GENERAL_COST = VIBRATION_COST; 
+                    STUDENT_COST = VIBRATION_S_COST; 
+                    $("[id*=hfSeatSelectBool]").val("V"); 
+                    break; 
+                case "04" : 
+                    // 4D
+                    GENERAL_COST = FORD_COST; 
+                    STUDENT_COST = FORD_S_COST;  
+                    $("[id*=hfSeatSelectBool]").val("F"); 
+                    break;
+                case "10" :
+                    // 와이드박스
+                    GENERAL_COST = WIDEBOX_COST; 
+                    STUDENT_COST = WIDEBOX_S_COST;  
+                    $("[id*=hfSeatSelectBool]").val("W"); 
+                    break;                    
+                case "11" :
+                    // 와이드박스
+                    GENERAL_COST = COUPLE_COST; 
+                    STUDENT_COST = COUPLE_S_COST;  
+                    $("[id*=hfSeatSelectBool]").val("C"); 
+                    break;                    
+            }
+    	     
+            $("#general_price").text(formatCurrency(GENERAL_COST));
+	        $("#student_price").text(formatCurrency(STUDENT_COST));
+    		 
+	        var g_count = parseInt($("#dr_general_count").val(), 10);
+	        var s_count = parseInt($("#dr_student_count").val(), 10);
+    		 
+	        $("#student_count").text(s_count);
+	        $("#general_count").text(g_count);
+            $("[id*=hfGeneral_Cost]").val( GENERAL_COST );
+            $("[id*=hfStudent_Cost]").val( STUDENT_COST );
+    	
+            $("#general_sum").text(formatCurrency(GENERAL_COST * g_count));
+            $("#student_sum").text(formatCurrency(STUDENT_COST * s_count));
+            
+            // 좌석정보로 화면 display
+            setGeneralPersonCount();
+            setStudentPersonCount();
+            displayTotalPrice();
+        };
+    });
+
+    // 좌석선택 다시하기
+    var cancleSeat = function() {
+        nSelectedPerson = 0;
+        nAffectSeatCount = 0;
+
+        // 초기화 시 CSS 변경 및 selectSeat값 지우기
+        for (var i = 0; i < totalNumOfRows; i++) {
+            for (var j = 0; j < totalNumOfColumns; j++) {
+                if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("selectSeat") == "Y") {
+                    if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "02") {          //스위트박스
+                        css_type = "pointer sweet";
+                    } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "03") {   //비트박스
+                        css_type = "pointer Vabration";
+                    } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "04") {   //4D
+                        css_type = "pointer FORD";
+                    } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "05") {   //골드클래스
+                        css_type = "pointer GOLD";
+                    } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "10") {   //와이드박스
+                        css_type = "pointer widebox";
+                    } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("RATING_CD") == "11") {   //커플석
+                        css_type = "pointer couple";
+                    } else if ($("#seat_table td[x=" + j + "][y=" + i + "]").attr("KIND_CD") == "02") {     //장애인석
+                        css_type = "pointer disabled";
+                    } else {
+                        css_type = "pointer available";
+                    }
+                        
+                    $("#seat_table td[x=" + j + "][y=" + i + "]").removeAttr("class").attr("class", css_type).removeAttr("selectSeat");
+                }
+            }
+        }
+
+        $("#seat_title").text("좌석선택");
+        $("#add_person li").remove();
+    }
+
+    // 특별관 정책 셋팅
+    var checkTicket = function(THEATER_CD, SCREEN_RATING_CD, SEAT_RATING_CD2, nticketCount) {
+        var result = true;
+        
+        if ((THEATER_CD == "P001" || THEATER_CD == "P004") && nticketCount != "2") {
+            alert("CINE de CHEF 상영관은 2인 예매만 가능합니다.");
+            result = false;
+        } else if (THEATER_CD == "0014" && SCREEN_RATING_CD == "04" && nticketCount != "2" && nticketCount != "3") {
+            alert("상암 골드클래스 상영관은 2인 또는 3인 예매만 가능합니다.");
+            result = false;
+        } else if (THEATER_CD != "0014" && SCREEN_RATING_CD == "04" && nticketCount != "2" && nticketCount != "4") {
+            alert("골드클래스 상영관은 2인 또는 4인 예매만 가능합니다.");
+            result = false;
+        } else if (SCREEN_RATING_CD == "03" && nticketCount != "1" && nticketCount != "2" && nticketCount != "4") {
+            alert("유로클래스 상영관은 1인, 2인 혹은 4인 예매만 가능합니다.");
+            result = false;
+        } else if (SEAT_RATING_CD2 == "02" && nticketCount != "2" && nticketCount != "4") {
+            alert("SWEETBOX 좌석은 2인 혹은 4인 예매만 가능합니다.");
+            result = false;
+        }
+        
+        return result;
+    }
+</script>
+
+<form name="frmSeat" method="post" action="Seat.aspx?TheaterCd=0074&amp;PlayYMD=20131109&amp;ScreenCd=009&amp;playNum=6" id="frmSeat">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwULLTIwODA3ODM3MjZkGAEFHl9fQ29udHJvbHNSZXF1aXJlUG9zdEJhY2tLZXlfXxYBBQ5pYlNlbGVjdFRpY2tldA==" />
+
+<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEWDwKt7dGVDgKuoOvEDAKwuq2xDAKlydD8AgK0+Zr9BgKuhpa7DQKhoePpCgK2s6mbBAKyu8OJAgLi/ImDAwLs/s6GBwKr5JfUCwKRifKVBgKN6PGPAwKw2dOTDw==" />
+    <div class="header">
+		<div class="bar">
+			<div class="quickbutton fl_left">				
+				<a  href="javascript:goHistoryBack();"><img src="../../Common/Images/common/btn_back.png" /></a>
+			</div>
+			<div class="button fl_right">
+				<a href="/"><img src="../../Common/Images/main/cgv-home.png" /></a>							
+			</div>
+			<div class="title al_center">빠른예매-좌석</div>
+			<div class="clr"></div>
+		</div>
+	</div>
+
+    <div class="banner_cgv"><script language='javascript' src='http://cgvad.cjsystems.co.kr/NetInsight/js/CGV/mobile/mobile@ticket'></script></div>
+
+	<div class="reservation">
+		<div class="theater_box">
+			<div class="theater_title">
+				<h4 class="al_center" id="seat_title" >좌석선택</h4>
+			</div>
+
+    		<div class="number_select_background">
+	    		<div class="bar_width">
+					<table class="number_select_table">
+					    <colgroup>
+						    <col width="50%" />
+						    <col width="50%" />
+					    </colgroup>
+    					<tr>
+	        				<td>
+                                <img src="../../Common/Images/reservation/text_general_2.png" 
+                                
+                                />
+
+            					<span>
+			            		<select name="dr_general_count" id="dr_general_count" class="setimage" onchange="javascript:setGeneralPersonCount();"
+					            
+                                >
+                                
+					                <option value="0" selected>0명</option>
+					            
+					                <option value="1" >1명</option>
+					            
+					                <option value="2" >2명</option>
+					            
+					                <option value="3" >3명</option>
+					            
+					                <option value="4" >4명</option>
+					            
+					                <option value="5" >5명</option>
+					            
+					                <option value="6" >6명</option>
+					            
+					                <option value="7" >7명</option>
+					            
+					                <option value="8" >8명</option>
+					            
+					            </select>
+					            </span>
+					        </td>
+        					<td>
+                                
+                                    <img src="../../Common/Images/reservation/text_student_2.png" alt="" />
+                                
+            					
+            					<span>
+			            		<select name="dr_student_count" id="dr_student_count" class="setimage" onchange="javascript:setStudentPersonCount();"
+                                
+                                >
+            					
+					                <option value="0" selected>0명</option>
+					            
+					                <option value="1" >1명</option>
+					            
+					                <option value="2" >2명</option>
+					            
+					                <option value="3" >3명</option>
+					            
+					                <option value="4" >4명</option>
+					            
+					                <option value="5" >5명</option>
+					            
+					                <option value="6" >6명</option>
+					            
+					                <option value="7" >7명</option>
+					            
+					                <option value="8" >8명</option>
+					            
+					            </select>
+					            </span>
+        					</td>
+    					</tr>
+					</table>
+                </div>
+		    </div>
+
+            <div class="seat_example" style="height:40px;">
+			    <div class="bar_width">
+				    <table class="seat_exam_table">
+				        <colgroup>
+					        <col width="25%" />
+					        <col width="25%" />
+					        <col width="25%" />
+					        <col width="25%" />
+				        </colgroup>
+				        <tr>
+					        <td align="left"><div style="float:left;width:11px;height:11px;background:#7d7d7d;margin:0 2px 0 2px;"></div><span>일반석</span></td>
+					        <td align="left"><div style="float:left;width:11px;height:11px;background:#e66a86;margin:0 0px 0 2px;"></div><span>SWEETBOX</span></td>
+					        <td align="left"><div style="float:left;width:11px;height:11px;background:#b34225;margin:0 2px 0 2px;"></div><span>4DX</span></td>
+					        <td align="left"><div style="float:left;width:11px;height:11px;background:#ffbf00;margin:0 1px 0 1px;"></div><span>VEATBOX</span></td>
+				        </tr>
+                        <tr>
+					        <td align="left"><div style="float:left;width:11px;height:11px;background:#92cf51;margin:0 2px 0 2px;"></div><span>장애인석</span></td>
+                            <td align="left"><div style="float:left;width:11px;height:11px;background:#00C08A;margin:0 2px 0 2px;"></div><span>WIDEBOX</span></td>
+                            <td align="left"><div style="float:left;width:11px;height:11px;background:#ae609e;margin:0 2px 0 2px;"></div><span>커플석</span></td>
+                            <td align="left"><div style="float:left;width:11px;height:11px;background:#000000;margin:0 2px 0 2px;"></div><span>예매완료</span></td>
+                            <td align="left"></td>
+                        </tr>
+				    </table>
+			    </div>
+		    </div>
+		    
+            <div>
+            <div style="margin-top:10px; margin-bottom:10px; font-weight:bold;">SCREEN</div>
+	        <table class="seat_table" id="seat_table">
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="4" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="5" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Yes' class='pointer disabled' x="6" y="0" SeatCd="00100701" seatName="A06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="02" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Yes' class='pointer disabled' x="7" y="0" SeatCd="00100801" seatName="A07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="02" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="0" SeatCd="00100901" seatName="A08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="0" SeatCd="00101001" seatName="A09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="0" SeatCd="00101101" seatName="A10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="0" SeatCd="00101201" seatName="A11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="0" SeatCd="00101301" seatName="A12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="0" SeatCd="00101401" seatName="A13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="0" SeatCd="00101501" seatName="A14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="0" SeatCd="00101601" seatName="A15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="0" SeatCd="00101701" seatName="A16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="0" SeatCd="00101901" seatName="A17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="0" SeatCd="00102001" seatName="A18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="0" SeatCd="00102101" seatName="A19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="0" SeatCd="00102201" seatName="A20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="0" SeatCd="00102301" seatName="A21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="0" SeatCd="00102401" seatName="A22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="0" SeatCd="00102501" seatName="A23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="0" SeatCd="00102601" seatName="A24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="0" SeatCd="00102701" seatName="A25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Yes' class='pointer disabled' x="27" y="0" SeatCd="00102801" seatName="A26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="02" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Yes' class='pointer disabled' x="28" y="0" SeatCd="00102901" seatName="A27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="02" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="29" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="30" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="0" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="1" SeatCd="00200501" seatName="B04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="1" SeatCd="00200601" seatName="B05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="1" SeatCd="00200701" seatName="B06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="1" SeatCd="00200801" seatName="B07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="1" SeatCd="00200901" seatName="B08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="1" SeatCd="00201001" seatName="B09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="1" SeatCd="00201101" seatName="B10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="1" SeatCd="00201201" seatName="B11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="1" SeatCd="00201301" seatName="B12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="1" SeatCd="00201401" seatName="B13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="1" SeatCd="00201501" seatName="B14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="1" SeatCd="00201601" seatName="B15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="1" SeatCd="00201701" seatName="B16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="1" SeatCd="00201901" seatName="B17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="1" SeatCd="00202001" seatName="B18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="1" SeatCd="00202101" seatName="B19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="1" SeatCd="00202201" seatName="B20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="1" SeatCd="00202301" seatName="B21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="1" SeatCd="00202401" seatName="B22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="1" SeatCd="00202501" seatName="B23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="1" SeatCd="00202601" seatName="B24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="1" SeatCd="00202701" seatName="B25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="1" SeatCd="00202801" seatName="B26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="1" SeatCd="00202901" seatName="B27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="1" SeatCd="00203001" seatName="B28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="1" SeatCd="00203101" seatName="B29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="1" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="2" SeatCd="00300501" seatName="C04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="2" SeatCd="00300601" seatName="C05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="2" SeatCd="00300701" seatName="C06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="2" SeatCd="00300801" seatName="C07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="2" SeatCd="00300901" seatName="C08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="2" SeatCd="00301001" seatName="C09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="2" SeatCd="00301101" seatName="C10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="2" SeatCd="00301201" seatName="C11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="2" SeatCd="00301301" seatName="C12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="2" SeatCd="00301401" seatName="C13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="2" SeatCd="00301501" seatName="C14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="2" SeatCd="00301601" seatName="C15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="2" SeatCd="00301701" seatName="C16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="2" SeatCd="00301901" seatName="C17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="2" SeatCd="00302001" seatName="C18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="2" SeatCd="00302101" seatName="C19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="2" SeatCd="00302201" seatName="C20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="2" SeatCd="00302301" seatName="C21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="2" SeatCd="00302401" seatName="C22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="2" SeatCd="00302501" seatName="C23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="2" SeatCd="00302601" seatName="C24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="2" SeatCd="00302701" seatName="C25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="2" SeatCd="00302801" seatName="C26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="2" SeatCd="00302901" seatName="C27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="2" SeatCd="00303001" seatName="C28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="2" SeatCd="00303101" seatName="C29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="2" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="3" SeatCd="00400501" seatName="D04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="3" SeatCd="00400601" seatName="D05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="3" SeatCd="00400701" seatName="D06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="3" SeatCd="00400801" seatName="D07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="3" SeatCd="00400901" seatName="D08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="3" SeatCd="00401001" seatName="D09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="3" SeatCd="00401101" seatName="D10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="3" SeatCd="00401201" seatName="D11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="3" SeatCd="00401301" seatName="D12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="3" SeatCd="00401401" seatName="D13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="3" SeatCd="00401501" seatName="D14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="3" SeatCd="00401601" seatName="D15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="3" SeatCd="00401701" seatName="D16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="3" SeatCd="00401901" seatName="D17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="3" SeatCd="00402001" seatName="D18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="3" SeatCd="00402101" seatName="D19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="3" SeatCd="00402201" seatName="D20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="3" SeatCd="00402301" seatName="D21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="3" SeatCd="00402401" seatName="D22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="3" SeatCd="00402501" seatName="D23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="3" SeatCd="00402601" seatName="D24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="3" SeatCd="00402701" seatName="D25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="3" SeatCd="00402801" seatName="D26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="3" SeatCd="00402901" seatName="D27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="3" SeatCd="00403001" seatName="D28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="3" SeatCd="00403101" seatName="D29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="3" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="4" SeatCd="00500501" seatName="E04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="4" SeatCd="00500601" seatName="E05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="4" SeatCd="00500701" seatName="E06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="4" SeatCd="00500801" seatName="E07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="4" SeatCd="00500901" seatName="E08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="4" SeatCd="00501001" seatName="E09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="4" SeatCd="00501101" seatName="E10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="4" SeatCd="00501201" seatName="E11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="4" SeatCd="00501301" seatName="E12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="4" SeatCd="00501401" seatName="E13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="4" SeatCd="00501501" seatName="E14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="4" SeatCd="00501601" seatName="E15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="4" SeatCd="00501701" seatName="E16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="4" SeatCd="00501901" seatName="E17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="4" SeatCd="00502001" seatName="E18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="4" SeatCd="00502101" seatName="E19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="4" SeatCd="00502201" seatName="E20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="4" SeatCd="00502301" seatName="E21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="4" SeatCd="00502401" seatName="E22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="4" SeatCd="00502501" seatName="E23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="4" SeatCd="00502601" seatName="E24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="4" SeatCd="00502701" seatName="E25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="4" SeatCd="00502801" seatName="E26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="4" SeatCd="00502901" seatName="E27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="4" SeatCd="00503001" seatName="E28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="4" SeatCd="00503101" seatName="E29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="4" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="5" SeatCd="00600501" seatName="F04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="5" SeatCd="00600601" seatName="F05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="5" SeatCd="00600701" seatName="F06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="5" SeatCd="00600801" seatName="F07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="5" SeatCd="00600901" seatName="F08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="5" SeatCd="00601001" seatName="F09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="5" SeatCd="00601101" seatName="F10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="5" SeatCd="00601201" seatName="F11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="5" SeatCd="00601301" seatName="F12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="5" SeatCd="00601401" seatName="F13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="5" SeatCd="00601501" seatName="F14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="5" SeatCd="00601601" seatName="F15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="5" SeatCd="00601701" seatName="F16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="5" SeatCd="00601901" seatName="F17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="5" SeatCd="00602001" seatName="F18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="5" SeatCd="00602101" seatName="F19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="5" SeatCd="00602201" seatName="F20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="5" SeatCd="00602301" seatName="F21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="5" SeatCd="00602401" seatName="F22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="5" SeatCd="00602501" seatName="F23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="5" SeatCd="00602601" seatName="F24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="5" SeatCd="00602701" seatName="F25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="5" SeatCd="00602801" seatName="F26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="5" SeatCd="00602901" seatName="F27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="5" SeatCd="00603001" seatName="F28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="5" SeatCd="00603101" seatName="F29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="5" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="6" SeatCd="00700501" seatName="G04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="6" SeatCd="00700601" seatName="G05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="6" SeatCd="00700701" seatName="G06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="6" SeatCd="00700801" seatName="G07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="6" SeatCd="00700901" seatName="G08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="6" SeatCd="00701001" seatName="G09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="6" SeatCd="00701101" seatName="G10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="6" SeatCd="00701201" seatName="G11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="6" SeatCd="00701301" seatName="G12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="6" SeatCd="00701401" seatName="G13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="6" SeatCd="00701501" seatName="G14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="6" SeatCd="00701601" seatName="G15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="6" SeatCd="00701701" seatName="G16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="6" SeatCd="00701901" seatName="G17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="6" SeatCd="00702001" seatName="G18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="6" SeatCd="00702101" seatName="G19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="6" SeatCd="00702201" seatName="G20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="6" SeatCd="00702301" seatName="G21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="6" SeatCd="00702401" seatName="G22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="6" SeatCd="00702501" seatName="G23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="6" SeatCd="00702601" seatName="G24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="6" SeatCd="00702701" seatName="G25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="6" SeatCd="00702801" seatName="G26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="6" SeatCd="00702901" seatName="G27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="6" SeatCd="00703001" seatName="G28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="6" SeatCd="00703101" seatName="G29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="6" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='No' class='yesok' x="0" y="7" SeatCd="00800101" seatName="H01" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="1" y="7" SeatCd="00800201" seatName="H02" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="2" y="7" SeatCd="00800301" seatName="H03" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="7" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="7" SeatCd="00800501" seatName="H04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="7" SeatCd="00800601" seatName="H05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="7" SeatCd="00800701" seatName="H06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="7" SeatCd="00800801" seatName="H07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="7" SeatCd="00800901" seatName="H08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="7" SeatCd="00801001" seatName="H09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="7" SeatCd="00801101" seatName="H10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="7" SeatCd="00801201" seatName="H11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="7" SeatCd="00801301" seatName="H12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="7" SeatCd="00801401" seatName="H13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="7" SeatCd="00801501" seatName="H14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="7" SeatCd="00801601" seatName="H15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="7" SeatCd="00801701" seatName="H16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="7" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="7" SeatCd="00801901" seatName="H17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="7" SeatCd="00802001" seatName="H18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="7" SeatCd="00802101" seatName="H19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="7" SeatCd="00802201" seatName="H20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="7" SeatCd="00802301" seatName="H21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="7" SeatCd="00802401" seatName="H22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="7" SeatCd="00802501" seatName="H23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="7" SeatCd="00802601" seatName="H24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="7" SeatCd="00802701" seatName="H25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="7" SeatCd="00802801" seatName="H26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="7" SeatCd="00802901" seatName="H27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="7" SeatCd="00803001" seatName="H28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="7" SeatCd="00803101" seatName="H29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="7" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="32" y="7" SeatCd="00803301" seatName="H30" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="33" y="7" SeatCd="00803401" seatName="H31" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Yes' class='pointer available' x="34" y="7" SeatCd="00803501" seatName="H32" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="4" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="5" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="6" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="7" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="8" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="9" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="10" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="11" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="12" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="13" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="14" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="15" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="16" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="18" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="19" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="20" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="21" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="22" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="23" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="24" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="25" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="26" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="27" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="28" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="29" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="30" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="32" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="33" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="34" y="8" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Yes' class='pointer available' x="0" y="9" SeatCd="01000101" seatName="J01" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="1" y="9" SeatCd="01000201" seatName="J02" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="2" y="9" SeatCd="01000301" seatName="J03" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="9" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="9" SeatCd="01000501" seatName="J04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="9" SeatCd="01000601" seatName="J05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="9" SeatCd="01000701" seatName="J06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="9" SeatCd="01000801" seatName="J07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="9" SeatCd="01000901" seatName="J08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="9" SeatCd="01001001" seatName="J09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="9" SeatCd="01001101" seatName="J10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="9" SeatCd="01001201" seatName="J11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="9" SeatCd="01001301" seatName="J12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="9" SeatCd="01001401" seatName="J13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="9" SeatCd="01001501" seatName="J14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="9" SeatCd="01001601" seatName="J15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="9" SeatCd="01001701" seatName="J16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="9" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="9" SeatCd="01001901" seatName="J17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="9" SeatCd="01002001" seatName="J18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="9" SeatCd="01002101" seatName="J19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="9" SeatCd="01002201" seatName="J20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="9" SeatCd="01002301" seatName="J21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="9" SeatCd="01002401" seatName="J22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="9" SeatCd="01002501" seatName="J23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="9" SeatCd="01002601" seatName="J24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="9" SeatCd="01002701" seatName="J25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="9" SeatCd="01002801" seatName="J26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="9" SeatCd="01002901" seatName="J27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="9" SeatCd="01003001" seatName="J28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="9" SeatCd="01003101" seatName="J29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="9" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="32" y="9" SeatCd="01003301" seatName="J30" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="33" y="9" SeatCd="01003401" seatName="J31" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="34" y="9" SeatCd="01003501" seatName="J32" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Yes' class='pointer available' x="0" y="10" SeatCd="01100101" seatName="K01" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="1" y="10" SeatCd="01100201" seatName="K02" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="2" y="10" SeatCd="01100301" seatName="K03" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="10" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="10" SeatCd="01100501" seatName="K04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="10" SeatCd="01100601" seatName="K05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="10" SeatCd="01100701" seatName="K06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="10" SeatCd="01100801" seatName="K07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="10" SeatCd="01100901" seatName="K08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="10" SeatCd="01101001" seatName="K09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="10" SeatCd="01101101" seatName="K10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="10" SeatCd="01101201" seatName="K11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="10" SeatCd="01101301" seatName="K12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="10" SeatCd="01101401" seatName="K13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="10" SeatCd="01101501" seatName="K14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="10" SeatCd="01101601" seatName="K15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="10" SeatCd="01101701" seatName="K16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="10" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="10" SeatCd="01101901" seatName="K17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="10" SeatCd="01102001" seatName="K18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="10" SeatCd="01102101" seatName="K19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="10" SeatCd="01102201" seatName="K20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="10" SeatCd="01102301" seatName="K21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="10" SeatCd="01102401" seatName="K22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="10" SeatCd="01102501" seatName="K23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="10" SeatCd="01102601" seatName="K24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="10" SeatCd="01102701" seatName="K25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="10" SeatCd="01102801" seatName="K26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="10" SeatCd="01102901" seatName="K27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="10" SeatCd="01103001" seatName="K28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="10" SeatCd="01103101" seatName="K29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="10" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="32" y="10" SeatCd="01103301" seatName="K30" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="33" y="10" SeatCd="01103401" seatName="K31" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="34" y="10" SeatCd="01103501" seatName="K32" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				</tr>
+			
+			    <tr>
+				
+				    <td reservation='Pass' class='' x="0" y="11" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="1" y="11" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="2" y="11" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="3" y="11" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="4" y="11" SeatCd="01200501" seatName="L04" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="5" y="11" SeatCd="01200601" seatName="L05" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="6" y="11" SeatCd="01200701" seatName="L06" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="7" y="11" SeatCd="01200801" seatName="L07" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="8" y="11" SeatCd="01200901" seatName="L08" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="9" y="11" SeatCd="01201001" seatName="L09" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="10" y="11" SeatCd="01201101" seatName="L10" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="11" y="11" SeatCd="01201201" seatName="L11" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="12" y="11" SeatCd="01201301" seatName="L12" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="13" y="11" SeatCd="01201401" seatName="L13" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="14" y="11" SeatCd="01201501" seatName="L14" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="15" y="11" SeatCd="01201601" seatName="L15" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="16" y="11" SeatCd="01201701" seatName="L16" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="17" y="11" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="18" y="11" SeatCd="01201901" seatName="L17" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="19" y="11" SeatCd="01202001" seatName="L18" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="20" y="11" SeatCd="01202101" seatName="L19" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="21" y="11" SeatCd="01202201" seatName="L20" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="22" y="11" SeatCd="01202301" seatName="L21" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="23" y="11" SeatCd="01202401" seatName="L22" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="24" y="11" SeatCd="01202501" seatName="L23" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="25" y="11" SeatCd="01202601" seatName="L24" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="26" y="11" SeatCd="01202701" seatName="L25" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="27" y="11" SeatCd="01202801" seatName="L26" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="28" y="11" SeatCd="01202901" seatName="L27" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="29" y="11" SeatCd="01203001" seatName="L28" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="30" y="11" SeatCd="01203101" seatName="L29" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='Pass' class='' x="31" y="11" SeatCd="" seatName="00" RATING_NM="" Seat_Relation_Code="" KIND_CD="" RATING_CD="">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="32" y="11" SeatCd="01203301" seatName="L30" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="33" y="11" SeatCd="01203401" seatName="L31" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				    <td reservation='No' class='yesok' x="34" y="11" SeatCd="01203501" seatName="L32" RATING_NM="일반석" Seat_Relation_Code="000" KIND_CD="01" RATING_CD="01">
+                    </td>
+				
+				</tr>
+			
+			</table>	
+            </div>		
+			<div class="h_10"></div>
+		</div>
+
+        <!-- 좌석 선택 정보 및 초기화 -->
+        <div class="seat_select">
+			<div class="select_person" id ="select_person" >
+			    <ul id="add_person">
+	 	  	    </ul>
+			</div>
+			<div class="btn_re">
+			    <a id="seat_clear" href="#">좌석선택다시하기</a>
+			</div>
+    	</div>
+        <!-- 좌석 선택 정보 및 초기화 -->
+
+        <!-- 결제금액 정보 -->
+        <div class="select_reset">
+			<ul>
+			    <li><div style="color:#ffffff;">일반 :  <span id="general_price" style="color:#ffffff;">8,000</span>원 x <span id="general_count" style="color:#ffffff;" >0</span>명 : <span id="general_sum" style="color:#ffffff;">0</span>원</div></li>   <!-- 일반인 가격 합계 -->
+			    <li><div style="color:#ffffff;">학생 :  <span id="student_price" style="color:#ffffff;">7,000</span>원 x <span id="student_count" style="color:#ffffff;" >0</span>명 : <span id="student_sum" style="color:#ffffff;">0</span>원</div></li>   <!-- 학생 가격 합계 -->
+			</ul>
+		    <div id="total_sum" class="sum one">0<div class="line"></div></div> 
+		    
+		</div>
+        <!-- 결제금액 정보 -->
+
+        <div class="h_10"></div>
+        <div class="h_10"></div>
+
+        <!-- 사용안함 -->
+        <div id="selected_seat_data"></div>
+
+        <div class="al_center">
+            <input type="hidden" name="hfGeneral_count" id="hfGeneral_count" />
+		    <input type="hidden" name="hfStudent_count" id="hfStudent_count" />
+		
+		    <input type="hidden" name="hfGeneral_Cost" id="hfGeneral_Cost" />
+		    <input type="hidden" name="hfStudent_Cost" id="hfStudent_Cost" />
+		
+		    <input type="hidden" name="hfReserveCnt" id="hfReserveCnt" />    
+		    <input type="hidden" name="hfSeats" id="hfSeats" />         
+		    <input type="hidden" name="hfSeatnms" id="hfSeatnms" />       
+		    <input type="hidden" name="hfSeatRatings" id="hfSeatRatings" />   
+		    <input type="hidden" name="hfSeatPrices" id="hfSeatPrices" />    
+		    <input type="hidden" name="hfSeatTickets" id="hfSeatTickets" />   
+	    
+	        <input type="image" name="ibSelectTicket" id="ibSelectTicket" src="../../Common/Images/reservation/btn_selectseat.gif" border="0" />
+        </div>
+
+        <input type="hidden" name="hfSeatSelectBool" id="hfSeatSelectBool" />   
+        <!-- 사용안함 -->
+		<input type="hidden" name="hfSeatSelectCount" id="hfSeatSelectCount" />
+    </div>
+
+    <input type="submit" name="allcancel" value="" id="allcancel" />
+
+</form>
+
+
+<div class="selectedRsrvBorder" >
+	<div class="selectedRsrv">
+		<div class="title"><img src="/Common/Images/reservation/smart/title.png" /></div>
+		
+		
+		<div class="img"><img src="/Common/Images/common/noimage.gif" /></div>
+		<ul>
+			<li class="moviename"><img src="" /></li>
+			<li>
+			    <span class="tlt">극장 | 왕십리</span>
+			</li>			
+			<li>
+				<span class="tlt">관람일 | 2013.11.09 (토)</span>
+			</li>
+			<li> 
+			    <span class="tlt">상영관 |  6회
+			</li>			
+		</ul>
+		<div class="clr"></div>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+    var refuseMail = function() {
+        var msg = "본 웹사이트에 게시된 이메일주소가\n전자우편수집프로그램이나\n그밖의 기술적 장치를 이용하여\n무단으로 수집되는 것을 거부하며,\n이를 위반시 정보통신망법에 의해\n 형사처벌됨을 유념하시기 바랍니다.";
+        alert(msg);
+    }
+</script>
+    
+
+
+    <br />
+    <div class="footer" style="background-color:Gray;">
+        <font size="2">
+        
+        <a href="/Member/Logout.aspx"><B>로그아웃</B></a>
+        
+        | <a href="/Notice/SiteMap.aspx"><B>사이트맵</B></a>
+        | <a href="http://www.cgv.co.kr"><B>PC버전</B></a>
+        </font>
+        <br />
+        <br />
+        <a href="http://www.cgv.co.kr/company/Default.aspx">CJ CGV</a> | <a href="http://www.cgv.co.kr/popup/agree01.aspx">이용약관</a> | <a href="http://www.cgv.co.kr/popup/privacy01.aspx"><b><font color="red">개인정보취급방침</font></b></a>
+        <br />
+        <a href="http://www.cgv.co.kr/popup/law01.aspx">법적고지</a> | <a href="javascript:refuseMail();">이메일 무단수집 거부</a>
+        <br /><br />
+        (주) 씨제이 씨지브이 대표이사 서정
+        <br />
+        121-835 서울특별시 마포구 월드컵북로 434 (상암동)
+        <br />
+        CGV고객센터1544-1122 | 대표이메일 cjcgvmaster@cj.net
+        <br />
+        사업자등록번호104-81-45690
+        <br />
+        개인정보관리책임자 마케팅본부장 윤익준
+        <br />
+        통신판매업신고 강남 02813 [<a href="http://www.ftc.go.kr/info/bizinfo/communicationList.jsp">확인하기</a>]
+        <br /><br />
+        COPYRIGHT 2013 CJ CGV.ALL RIGHTS RESERVED
+    </div>
+
+
+    <script language="javascript" type="text/javascript">
+        _TRK_CP ="빠른예매/영화먼저/좌석선택";
+        _TRK_PI ="RST";
+        _TRK_AMT ="";
+        _TRK_PNG ="";
+        _TRK_PNC ="";
+        
+        _TRK_MBR ="Y";
+        _TRK_SX = "U";
+        _TRK_AG = "";
+        _TRK_UVP1 = "A";
+        _TRK_ISLOGIN = "Y";
+    </script>
+
+    <script language="javascript" type="text/javascript" src="/Common/js/INSIGHT_TRACKING_SCRIPT_FOR_CGV_M.CO.KR_V.5.1.9.js"></script>
+	
+	
+	
+</div> <!-- wrapper // -->
+</body>
+</html>
