@@ -1,0 +1,76 @@
+Metadata-Version: 1.1
+Name: zeronimo
+Version: 0.1.dev
+Summary: RPC between distributed workers
+Home-page: http://github.com/sublee/zeronimo/
+Author: Heungsub Lee
+Author-email: sub@subl.ee
+License: BSD
+Description: 
+        Zeronimo
+        ~~~~~~~~
+        
+        A distributed RPC solution based on ØMQ_ and gevent_. Follow the features:
+        
+        - A worker can return, yield, raise any picklable object to the remote
+          customer.
+        - A customer can invoke to any remote worker in the worker cluster.
+        - A customer can invoke to all remote workers in the worker cluster.
+        
+        .. _ØMQ: http://www.zeromq.org/
+        .. _gevent: http://gevent.org/
+        
+        Example
+        =======
+        
+        Server-side
+        -----------
+        
+        ::
+        
+           import zmq.green as zmq
+           import zeronimo
+        
+           class Application(object):
+        
+               def rycbar123(self):
+                   for word in 'run, you clever boy; and remember.'.split():
+                       yield word
+        
+           ctx = zmq.Context()
+           worker_sock = ctx.socket(zmq.PULL)
+           worker_sock.bind('ipc://worker')
+        
+           worker = zeronimo.Worker(Application(), [worker_sock])
+           worker.run()
+        
+        Client-side
+        -----------
+        
+        ::
+        
+           import zmq.green as zmq
+           import zeronimo
+        
+           ctx = zmq.Context()
+           customer_sock = ctx.socket(zmq.PULL)
+           customer_sock.bind('ipc://customer')
+           tunnel_sock = ctx.socket(zmq.PUSH)
+           tunnel_sock.connect('ipc://worker')
+        
+           customer = zeronimo.Customer(customer_sock, 'ipc://customer')
+           with customer.link([tunnel_sock]) as tunnel:
+               for line in tunnel.rycbar123():
+                   print line
+        
+        
+Platform: any
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Software Development
