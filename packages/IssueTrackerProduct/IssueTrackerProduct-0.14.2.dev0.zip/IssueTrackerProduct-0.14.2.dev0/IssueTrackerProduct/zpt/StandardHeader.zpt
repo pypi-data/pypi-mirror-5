@@ -1,0 +1,128 @@
+<metal:block define-macro="standard"><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+      tal:define="dummy here/StopCache">
+
+<head tal:define="root_relative_url here/getRootRelativeURL">
+
+<title tal:content="structure here/titleTag"></title>
+<meta name="generator" content="IssueTrackerProduct - http://www.issuetrackerproduct.com"/>
+<meta http-equiv="Content-Type" tal:attributes="content here/getAndSetContentType"/>
+<link rel="alternate" type="application/rss+xml" title="RSS" tal:attributes="href string:${root_relative_url}/rss.xml" />
+<link rel="alternate" type="application/rss+xml" title="RSS (with followups)" tal:attributes="href string:${root_relative_url}/rss.xml?show=all" />
+<link rel="start" tal:attributes="href string:${root_relative_url}/" title="Home"/>
+<tal:block define="forced_css here/getForcedStylesheet">
+<link tal:condition="not:forced_css" rel="stylesheet" type="text/css" href="/misc_/IssueTrackerProduct/screen.css" media="screen" />
+<link tal:condition="not:forced_css" rel="stylesheet" type="text/css" href="/misc_/IssueTrackerProduct/print.css" media="print" />
+<link tal:condition="forced_css" rel="stylesheet" type="text/css" tal:attributes="href forced_css" />
+</tal:block>
+<style type="text/css">
+ul#tabnav li {
+  padding:2px 3px 0 3px;
+}
+ul#tabnav a {
+   background-image: url(/misc_/IssueTrackerProduct/csg-4a8135ab36765.gif);
+   background-repeat:no-repeat;
+   padding-left:20px;
+   padding-top:0;
+   padding-bottom:0;
+}
+#menuitem-AddIssue { background-position: 0 0; }
+#menuitem-CompleteList { background-position: 0 -66px; }
+#menuitem-Home { background-position: 0 -132px; }
+#menuitem-ListIssues { background-position: 0 -198px; }
+#menuitem-Login { background-position: 0 -264px; }
+#menuitem-Logout { background-position: 0 -330px; }
+#menuitem-User { background-position: 0 -396px; }
+#menuitem-Pages { background-position: 0 -452px; }
+</style>
+<style metal:define-slot="extracss" tal:omit-tag=""></style>
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" tal:attributes="href string:${root_relative_url}/favicon.ico" />
+
+<meta tal:replace="here/testAutoLogin" />
+
+</head>
+
+<body>
+<div id="head">
+  <h1 class="head" tal:content="structure python:here.getRoot().title_or_id()">The Title</h1>
+
+<div id="topright">
+<form metal:use-macro="here/search_widget/macros/search_form"></form>
+</div><!--/topright-->
+
+
+<div class="clearer">&nbsp;</div>
+
+<div id="tabs">
+<div id="tab1">
+<ul id="tabnav" tal:define="use_accesskeys here/useAccessKeys">
+	<li tal:repeat="menu here/getMenuItems"
+        tal:attributes="class python:test(menu[2],'tab1','tab0')"
+        ><a tal:attributes="href python:menu[1];
+                            id python:'menuitem-%s' % menu[3]"
+	    tal:content="structure python:here.displayMenuItem(menu, no_images_in_menu=True)"></a></li>
+</ul>
+</div>
+</div>
+
+</div>
+
+<div class="clearer">&nbsp;</div>
+
+<!-- BODY -->
+
+<div id="main">
+<div metal:define-slot="body">
+
+<!--METALbody-->
+
+</div><!--/metal:body-->
+</div>
+
+<div class="clearerR">&nbsp;</div>
+
+<div metal:use-macro="here/recent_history_widget/macros/recent_history"></div><!--/recent-->
+<div class="clearer">&nbsp;</div>
+
+<div id="foot" align="center">
+  <tal:block condition="python:request.HTTP_USER_AGENT and here.isMobileUserAgent(request.HTTP_USER_AGENT, ignore_disabling=True)">
+  <a tal:attributes="href string:${here/getRootURL}/EnableMobileVersion">Go to mobile optimized web version</a>
+  </tal:block>
+    <br />
+
+  <tal:block tal:repeat="menu here/getMenuItems"><a tal:attributes="href python:menu[1]; style python:test(menu[2], 'text-decoration:none')" tal:content="python:menu[0]">Home</a> <br tal:condition="not:repeat/menu/end" tal:replace="structure string:&#183;" /></tal:block>
+    <br />
+    <a tal:attributes="href string:${here/getRootRelativeURL}/rss.xml">RSS</a> &#183;
+    <a tal:attributes="href string:http://www.issuetrackerproduct.com?version=${here/getIssueTrackerVersion}">IssueTrackerProduct.com</a>  &#183;
+    <a tal:attributes="href string:${here/getRootRelativeURL}/About.html" class="foot" >About</a>
+    <br />&nbsp;
+</div><!--/foot-->
+
+
+
+
+<script type="text/javascript" src="/misc_/IssueTrackerProduct/jquery-1.4.4.min.js"></script>
+<script type="text/javascript" src="/misc_/IssueTrackerProduct/core.js"></script>
+
+<tal:script condition="here/useAccessKeys">
+<script type="text/javascript"
+  tal:content="structure string:var ROOT_RELATIVE_URL='${here/getRootRelativeURL}';var WHICH_LIST='${here/whichList}';var ISSUE_PREFIX='${here/issueprefix}';var RANDOM_ID_LENGTH=${here/randomid_length};"></script>
+<script type="text/javascript"
+ src="/misc_/IssueTrackerProduct/keyboardshortcuts.js"></script>
+</tal:script>
+
+<tal:block condition="here/useIssueNotes">
+<script type="text/javascript" src="/misc_/IssueTrackerProduct/jquery.qtip-1.0.0-rc3.min.js"></script>
+<script type="text/javascript"
+        tal:content="structure string:var ROOT_URL='${here/getRootURL}';"></script>
+<script type="text/javascript" src="/misc_/IssueTrackerProduct/issuenotes-core.js"></script>
+</tal:block>
+
+<script metal:define-slot="extrajs" tal:omit-tag=""></script>
+
+</body>
+</html>
+
+
+</metal:block>

@@ -1,0 +1,156 @@
+<div class="issue" align="left"
+     tal:define="show_many python:here.thisInURL('CompleteList') or request.get('compareTo');
+                 use_issue_notes here/useIssueNotes;
+                 dummy python:request.RESPONSE.setHeader('Content-Type','text/html;; charset=%s'%here.UNICODE_ENCODING);
+                 root here/getRoot"
+ tal:attributes="ondblclick python:test(show_many, 'G(\'%s\')'%here.absolute_url_path());
+                 id string:${root/getId}__${here/getId}">
+  <div class="istatus" tal:define="status here/status"
+			        tal:content="python:status.capitalize()">Status</div>
+  <div class="ihead">
+  
+    <a tal:condition="use_issue_notes"
+       onclick="return new_note(this, null)"
+       class="new-note" href="#" title="Click to add a new note">
+      <img border="0" src="/misc_/IssueTrackerProduct/new-issuenote.png" alt="New note"/>
+    </a>
+  
+    <a tal:condition="use_issue_notes"
+       tal:repeat="note python:here.getYourNotes(threadID='')"
+       href="#" class="old-note"
+       tal:attributes="title python:here.showDate(note.notedate)+'|'+note.showComment()"
+       ><img border="0" src="/misc_/IssueTrackerProduct/issuenote.png" alt="Note"/></a>
+       
+    <h3 tal:condition="not:show_many"><span 
+      tal:condition="here/ShowIdWithTitle" tal:content="string:#${here/getIssueId} " class="id"></span><br tal:replace="structure here/showTitle" />
+    &nbsp;<a tal:condition="here/hasEmailOriginal" href="ShowOriginalEmail" rel="nofollow"><img tal:condition="python:here.getSubmissionType()=='email'"
+     alt="Issue submitted via email" title="Issue submitted via email" width="16" height="16" border="0"
+     src="/misc_/IssueTrackerProduct/emailicon.gif" /></a>
+     <img tal:condition="python:here.getSubmissionType()=='email' and not here.hasEmailOriginal()"
+     alt="Issue submitted via email" title="Issue submitted via email" width="16" height="16"
+     src="/misc_/IssueTrackerProduct/emailicon.gif" />
+
+     <img tal:condition="python:here.getSubmissionType()=='spreadsheet'"
+     alt="Issue submitted via spreadsheet"  width="16" height="16"
+     src="/misc_/IssueTrackerProduct/spreadsheeticon.png" />
+     
+    </h3>
+    <h3 tal:condition="show_many"><span tal:condition="here/ShowIdWithTitle" tal:content="string:#${here/getIssueId} " class="id">
+    </span><a tal:attributes="href here/absolute_url_path" tal:content="structure here/showTitle" class="ilink">The Title</a>
+    &nbsp;<img tal:condition="python:here.getSubmissionType()=='email'"
+     alt="Issue submitted via email" title="Issue submitted via email" width="16" height="16"
+     src="/misc_/IssueTrackerProduct/emailicon.gif" />
+     <tal:test tal:condition="python:here.isFromBrother(here)">
+       (<a tal:define="brother python:here.getBrotherFromIssue(here)"
+           tal:attributes="href brother/absolute_url_path" class="brother"
+           tal:content="brother/getTitle"></a>)
+     </tal:test>
+     </h3>
+  </div>
+
+  <div>
+    <div class="ibody" tal:content="structure python:here.showDescription(signature_hidden=1)">This is the text</div>
+
+    <div class="idetails2">
+      <b>Submitted by:</b> 
+      <span tal:define="emptystring python:''; hide_me here/hide_me; 
+	                  fromname here/getFromname| emptystring; 
+                      email here/getEmail | emptystring"
+	      tal:replace="structure python:here.ShowNameEmail(fromname, email, hide_me, encode=not request.get('no_email_encoding', False))">Author</span>
+
+    <div tal:define="issuedate here/getIssueDate;
+                     difference python:here.timeSince(issuedate, here.ZopeTime(), afterword='old');
+                     datestr python:here.showDate(issuedate)"
+        ><span tal:condition="difference" tal:omit-tag="">
+         <span class="issuedate" tal:content="structure datestr"></span>
+	 <br />
+	 <br tal:replace="difference" /></span>
+         <br tal:condition="not:difference"
+         tal:replace="structure datestr" />
+         </div>
+  
+    <div tal:content="structure here/showFileattachments"></div>
+
+  
+  </div> 
+
+  <form metal:use-macro="here/showissue_macros/macros/detailsform"></form>
+  
+  </div>
+
+
+  <tal:block tal:define="assignments here/getAssignments;use_extoptions here/UseExtendedOptions">
+  <div class="assignment" tal:condition="python:assignments or here.UseIssueAssignment()">
+    <div tal:repeat="assignment assignments"
+     tal:attributes="style python:test(not repeat['assignment'].end,'text-decoration:line-through')">
+    <br tal:replace="python:assignment.showState(complete=1)" />:
+    <span tal:define="has_assigneeuser assignment/hasACLAssigneeUser">
+     
+     <em tal:condition="not:has_assigneeuser">User no longer available</em>
+
+     <span tal:condition="has_assigneeuser" 
+      tal:replace="structure python:here.ShowNameEmail(assignment.getAssigneeFullname(), assignment.getAssigneeEmail(), highlight=0)"></span>
+    </span>
+    <tal:block define="is_end repeat/assignment/end"
+     tal:condition="python:is_end and here.hasManagerRole()">
+     
+     <form action="changeAssignment" tal:define="all_users python:here.getAllIssueUsers(exclude_assignee=assignment.getACLAssignee())" method="post" name="changeassignment"
+                                     tal:condition="python:all_users and not show_many"
+                                     >
+	<select name="assignee" style="color:#666" id="assignee"
+         tal:define="issueuser here/getIssueUser;selected python:request.get('assignee','');
+                     youare python:here.getWhoYouAre(issueuser)" tabindex="30" 
+                     onfocus="showAssignmentForm()" 
+                     onblur="if(!this.options[this.selectedIndex].value){hideAssignmentForm()}"
+                     onchange="if(!this.options[this.selectedIndex].value){hideAssignmentForm()}else{showAssignmentForm()}">
+             <option value="" style="color:#666">Change assignment...</option>
+             <option tal:repeat="user all_users" style="color:#000"
+                 tal:attributes="value python:user['identifier']; selected python:user['identifier']==selected"
+                 tal:content="python:user['user'].getFullname()">
+				Statuses</option>
+	</select>
+	<div id="assignment-form-rest" style="display:none">
+        <input type="checkbox" name="send_email" id="send_email" checked="checked" value="1" /><label for="send_email">Send notification to new assignee</label>
+	<input type="submit" value="Change" />
+	<input type="button" class="smallbutton" value="Cancel" onclick="hideAssignmentForm();$('#assignee')[0].selectedIndex=0" />
+	</div>
+      </form>
+    </tal:block>
+    </div>
+    
+    <tal:block condition="python:not assignments and not show_many">
+    
+     <form action="setAssignment" 
+           tal:define="all_users python:here.getAllIssueUsers()" method="post" name="setassignment"
+           tal:condition="python:all_users and not show_many"
+           >
+	<select name="assignee" style="color:#666" id="assignee"
+         tal:define="issueuser here/getIssueUser;
+                     selected python:request.get('assignee','');
+                     youare python:here.getWhoYouAre(issueuser)" tabindex="30"
+                onfocus="showAssignmentForm()" 
+                onblur="if(!this.options[this.selectedIndex].value){hideAssignmentForm()}"
+                onchange="if(!this.options[this.selectedIndex].value){hideAssignmentForm()}else{showAssignmentForm()}">
+             <option value="" style="color:#666">Assign to...</option>
+				<option tal:repeat="user all_users" style="color:#000"
+                 tal:attributes="value python:user['identifier']; selected python:user['identifier']==selected"
+                 tal:content="python:user['user'].getFullname()">
+				Statuses</option>
+	</select>
+        <div id="assignment-form-rest" style="display:none">
+        <input type="checkbox" name="send_email" id="send_email" checked="checked" value="1" /><label for="send_email">Send notification to new assignee</label>
+	<input type="submit" value="Change" />
+	<input type="button" class="smallbutton" value="Cancel" onclick="hideAssignmentForm();$('#assignee')[0].selectedIndex=0" />
+        </div>
+
+      </form>
+      
+    </tal:block>
+    
+  </div>
+  
+  
+  </tal:block>
+  
+</div>
+

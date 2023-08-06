@@ -1,0 +1,231 @@
+
+
+<div class="followup-errormessage-outer"
+     tal:condition="python:options.get('SubmitError')"
+     tal:content="structure here/show_submissionerror_message">
+</div>
+
+<div id="recent-draftthread-author-outer">&nbsp;
+<input type="hidden" name="page_generated_timestamp"
+       tal:attributes="value python:int(DateTime())" />
+<span id="recent-draftthread-author" style="color:#666;font-size:80%"></span>
+</div>
+
+
+
+<form method="post" name="form_followup" enctype="multipart/form-data"
+ tal:define="minimalformfollowup python:1 or request.has_key('minimalformfollowup');
+             issueuser here/getIssueUser;
+             cmfuser here/getCMFUser;
+             zopeuser here/getZopeUser;
+             loggedin python:issueuser or (zopeuser and here.getSavedUser('fromname') and here.getSavedUser('email'));
+	     errors python:options.get('SubmitError',{})"
+ tal:attributes="style python:test(minimalformfollowup, 'width:610px', 'width:690px;;margin-bottom:30px');
+                 action string:${here/relative_url}#followup">
+
+<input type="hidden" name="showpreview" value="1"/>
+
+<input type="hidden" name="action" value="Add followup"
+       tal:attributes="value request/otherAction | default" />
+<input type="hidden" tal:condition="python:request.has_key('Tempfolder_fileattachments')"
+	   tal:attributes="value request/Tempfolder_fileattachments" name="Tempfolder_fileattachments" />
+
+
+<h3 tal:condition="not:minimalformfollowup"><br tal:replace="structure python:request.get('otherActionTitle','Add Followup')" />
+<em tal:condition="python:options.get('draft_saved')"
+ >(draft saved)</em></h3>
+
+		<div align="left" tal:condition="python:request.has_key('otherComment')">
+		<b tal:content="request/otherComment | default">Other title</b>
+		</div>
+
+                <span class="submiterror"
+	         tal:condition="errors/comment|nothing"
+      	         tal:content="structure python:here.ShowSubmitError(options, 'comment', linebreak=1)"></span>
+		<textarea tabindex="1" name="comment" id="textarea" rows="10" cols="70" class="autoexpanding"
+		tal:attributes="name string:comment:${here/UNICODE_ENCODING}:utext;
+                                rows python:test(minimalformfollowup, 5, 10);
+                                cols python:test(minimalformfollowup, 70, 70);
+				style python:test(minimalformfollowup, 'width:610px', 'width:690px');
+                                onfocus python:test(here.SaveDrafts() and here.UseAutoSave(), 'startautosave();;clearAutoRefreshTitle()','clearAutoRefreshTitle()');
+                                onblur python:test(here.SaveDrafts() and here.UseAutoSave(), 'stopautosave()')
+                                "
+		tal:content="python:request.get('comment','')"></textarea>
+
+	<div style="float:right" tal:condition="python:not minimalformfollowup and not loggedin">
+		<b>Display format:</b>
+		<span tal:define="display_format request/display_format | here/getSavedTextFormat">
+			<input type="radio" tabindex="2" name="display_format:string"
+          value="plaintext"
+          tal:attributes="checked python:display_format=='plaintext'" />Plain as it's written
+			<input type="radio" tabindex="3" name="display_format:string"
+          value="structuredtext"
+          tal:attributes="checked python:display_format=='structuredtext'" />
+          <a tal:attributes="href string:${here/getRootURL}/What-is-StructuredText">Structured Text</a>
+	  </span>
+	</div>
+
+	<br style="clear:right"/>
+
+	<div id="followup-buttons" style="float:right">
+            <input type="submit" name="savefollowup" value="  Save  " class="submitbutton"
+             onclick="javascript:this.value='Saving...'" />
+	    <input type="submit" name="previewfollowup" value="  Preview  " class="submitbutton" />
+            <input type="submit" value="Cancel" name="cancelfollowup"
+             tal:condition="request/showpreview|nothing" />
+            <input type="submit" name="savedraftfollowup" value=" Save draft "
+             tal:condition="python:request.get('showpreview') and here.SaveDrafts()"
+             onclick="javascript:this.value='Saving draft...'" />
+
+	</div>
+
+	<div align="left"
+	     tal:define="fromname request/form/fromname | python:here.getSavedUser('fromname');
+	                 email request/form/email | python:here.getSavedUser('email');
+                         number_of_files here/getNoFileattachments;
+                         allowed2change here/isAllowedToChangeIssues">
+
+			<input type="hidden" name="fromname::"
+			tal:condition="not:python:minimalformfollowup and fromname=='' or not minimalformfollowup"
+			tal:attributes="value fromname;
+                                        name string:fromname:${here/UNICODE_ENCODING}:ustring" />
+			<input type="hidden" name="email"
+			tal:condition="not:python:minimalformfollowup and email=='' or not minimalformfollowup"
+			tal:attributes="value email" />
+
+                 <div class="fileattachment-on"
+                      tal:condition="number_of_files">
+                  <a href="#" class="tip"
+                       onclick="showFileAttachments();return false"
+                       ><img src="/misc_/IssueTrackerProduct/paperclip.gif" border="0" alt="Attach files" /> Attach
+                   <tal:block condition="python:number_of_files==1">a file</tal:block>
+                   <tal:block condition="not:python:number_of_files==1">files</tal:block>
+                    </a>
+                </div>
+
+                <div class="fileattachment-off" style="display:none"
+                     tal:condition="number_of_files">
+                     <a href="#" class="tip" onclick="hideFileAttachments();return false">
+                     <img src="/misc_/IssueTrackerProduct/paperclip.gif" border="0" alt="Hide again" />
+                     Hide file attachments</a>
+                </div>
+
+                <tal:block condition="python:here.UseFollowupActualTime() and allowed2change">
+                <div class="actualtime-on"
+                  tal:attributes="style python:test(request.get('actual_time_hours'), 'display:none')">
+                  <a href="#" class="tip"
+                     ><img src="/misc_/IssueTrackerProduct/clock.png" border="0" alt="Clock" />
+                    Enter actual time for follow up</a>
+                </div>
+                <div class="actualtime-off"
+                tal:attributes="style python:test(not request.get('actual_time_hours'), 'display:none')">
+                  <a href="#" class="tip"
+                     ><img src="/misc_/IssueTrackerProduct/clock.png" border="0" alt="Clock" />
+                    Hide actual time for follow up</a>
+                </div>
+                </tal:block>
+
+	        <table>
+                <tr tal:condition="python:loggedin and not minimalformfollowup">
+                   <td><b>User:</b></td>
+                   <td tal:condition="issueuser"
+                       tal:content="structure python:here.ShowNameEmail(issueuser.getFullname(), issueuser.getEmail(), highlight=0)"></td>
+                   <td tal:condition="cmfuser"
+                       tal:content="structure python:here.ShowNameEmail(cmfuser.getProperty('fullname'), cmfuser.getProperty('email'), highlight=0)"></td>
+                   <td tal:condition="python:not issueuser and not cmfuser"
+                       tal:content="structure python:here.ShowNameEmail(here.getSavedUser('fromname'), here.getSavedUser('email'), highlight=0)"></td>
+                </tr>
+		<tr tal:condition="python:not loggedin and (minimalformfollowup and fromname=='' or not minimalformfollowup)">
+		    <td><b>Name:</b></td>
+                    <td><input tabindex="4" name="fromname" size="25"
+                         tal:attributes="value fromname;
+                                         name string:fromname:${here/UNICODE_ENCODING}:ustring"
+			  />
+                        <span class="submiterror"
+                              tal:condition="errors/fromname|nothing"
+      	                      tal:content="structure python:here.ShowSubmitError(options, 'fromname')"></span>
+                    </td>
+		</tr>
+		<tr tal:condition="python:not loggedin and (minimalformfollowup and email=='' or not minimalformfollowup)">
+		    <td><b>Email:</b></td>
+		    <td><input tabindex="5" name="email" tal:attributes="value email" size="25" />
+                        <span class="submiterror"
+                              tal:condition="errors/fromname|nothing"
+      	                      tal:content="structure python:here.ShowSubmitError(options, 'fromname')"></span>
+                    </td>
+                </tr>
+		<tr tal:condition="here/useSpambotPrevention">
+		    <td><b>Spambot prevention:</b></td>
+		    <td>
+		      <br tal:replace="structure python:here.getCaptchaNumbersHTML(request.get('captchas'), howmany=4)" />
+		      <input name="captcha_numbers" size="4" tabindex="6"
+ 		       tal:attributes="value python:request.get('captcha_numbers','')"
+		       onkeydown="this.value=checkCaptchaValue(this.value, 'Only numbers', 4)"
+		       autocomplete="off" />
+
+		      <tal:block condition="not:errors/captcha_numbers|nothing">enter these numbers</tal:block>
+		      <span class="submiterror"
+	               tal:condition="errors"
+       	               tal:content="structure python:here.ShowSubmitError(options, 'captcha_numbers')"></span>
+
+		    </td>
+                </tr>
+                <tr tal:condition="python:options.get('SubmitError') and options.get('SubmitError').get('fileattachment')">
+                    <td colspan="2"><span class="submiterror" tal:content="python:here.ShowSubmitError(options, 'fileattachment')"></span></td>
+                </tr>
+
+
+              <tr tal:repeat="each python:range(number_of_files)" class="fileattachment" style="display:none">
+		    <td><b>File attachment:</b></td>
+		    <td tal:define="index repeat/each/index" tal:content="structure python:here.getFileattachmentInput(index, initsize=25)"></td>
+	      </tr>
+              <tr tal:condition="python:here.UseFollowupActualTime() and allowed2change" id="followup_actual_time"
+
+                  tal:attributes="style python:test(not request.get('actual_time_hours'), 'display:none')">
+                 <td><strong>Actual time:</strong></td>
+                 <td><input name="actual_time_hours" size="7" tal:attributes="value request/actual_time_hours|nothing"/> (hours)</td>
+              </tr>
+	    </table>
+
+	  </div>
+
+	<tal:block define="Others2Notify python:here.Others2Notify(format='merged', requireemail=1)"
+	           condition="Others2Notify">
+
+	<div align="left" style="clear:right" id="notify-others"
+             tal:attributes="style python:test(request.get('notify-more-options'), 'display:none')">
+	<input type="checkbox" id="notify" name="notify:boolean" value="1"
+		tal:attributes="checked python:request.has_key('notify') or not request.has_key('asked_notify')" />
+			<input type="hidden" name="asked_notify:boolean" value="1" />
+			<label for="notify">Notify the others</label>
+			<span tal:condition="python:Others2Notify">(<span
+             tal:replace="structure python:', '.join(Others2Notify)">Peter Bengtsson &lt;mail@peterbe.com&gt;</span>)</span>
+               <a tal:condition="python:len(Others2Notify)>1"
+	          class="notify-tip" href="?notify-more-options=1#followup">more options</a>
+        </div>
+	<div align="left" style="display:none" id="notify-more-options"
+             tal:attributes="style python:test(not request.get('notify-more-options'), 'display:none')"
+	     tal:define="email_and_names python:here.Others2Notify(format='tuple', requireemail=True)">
+	  <p>
+          <input type="hidden" name="notify-more-options"
+                tal:attributes="value python:test(request.get('notify-more-options'), 1)"/>
+          <input type="hidden" name="notify_email" value=""/>
+	  <tal:block repeat="email_and_name email_and_names">
+	    <input type="checkbox" name="notify_email"
+                   tal:attributes="value python:email_and_name[0];
+                                   checked python:test(not request.has_key('notify_email') or email_and_name[0] in request.get('notify_email',[]))" />
+	    <tal:item replace="structure python:email_and_name[1]"/><br/>
+	  </tal:block>
+	  </p>
+	</div>
+
+	</tal:block>
+
+<input type="hidden" name="draft_followup_id"
+ tal:define="draft_followup_id python:options.get('draft_followup_id', request.get('draft_followup_id', ''))"
+ tal:attributes="value draft_followup_id" />
+
+
+</form>
+
+<br tal:define="dummy python:here.nullifyTempfolderREQUEST()" tal:replace="nothing" />
