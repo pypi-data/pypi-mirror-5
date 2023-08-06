@@ -1,0 +1,30 @@
+<div id="portal-colophon"
+     metal:define-macro="colophon"
+     i18n:domain="eduCommons">
+  <metal:slot define-slot="colophon" />
+  <div class="colophonWrapper"
+       tal:define="anon view/isUserAnonymous;
+                   cactions view/getActions;
+                   version view/getVersion;">
+    <ul id="portal-colophon-items">
+      <li tal:condition="not: anon"
+          tal:define="username view/getUserName;
+                      roles view/getUserRoles;" 
+	  i18n:domain="eduCommons" 
+	  i18n:translate="">Welcome 
+	<a href=""
+	   tal:attributes="href string:${context/@@plone_portal_state/navigation_root_url}/personalize_form;"
+	   tal:content="username"
+           i18n:name="username">Bob</a> <span tal:condition="roles"
+	                                      tal:replace="roles"
+					      i18n:name="roles" /></li>
+      <li tal:repeat="action cactions">
+	<a href=""
+	   tal:attributes="href action/url;"
+	   tal:content="action/title">action title</a>
+      </li>
+    </ul>
+    <tal:block
+       tal:replace="structure string:<!-- eduCommons version: ${version} -->" />
+  </div>
+</div>
