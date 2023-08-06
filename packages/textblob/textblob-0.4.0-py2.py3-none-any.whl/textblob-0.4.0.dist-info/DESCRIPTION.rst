@@ -1,0 +1,151 @@
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+Description: 
+        TextBlob: Simplified Text Processing
+        ====================================
+        
+        .. image:: https://travis-ci.org/sloria/TextBlob.png?branch=master
+            :target: https://travis-ci.org/sloria/TextBlob
+            :alt: Travis-CI
+        
+        .. image:: https://pypip.in/d/textblob/badge.png
+            :target: https://crate.io/packages/textblob/
+            :alt: Number of PyPI downloads
+        
+        
+        Homepage: `https://textblob.readthedocs.org/ <https://textblob.readthedocs.org/>`_
+        
+        `TextBlob` is a Python (2 and 3) library for processing textual data. It provides a consistent API for diving into common natural language processing (NLP) tasks such as part-of-speech tagging, noun phrase extraction, sentiment analysis, and more.
+        
+        
+        .. code-block:: python
+        
+            from text.blob import TextBlob
+        
+            text = '''
+            The titular threat of The Blob has always struck me as the ultimate movie
+            monster: an insatiably hungry, amoeba-like mass able to penetrate
+            virtually any safeguard, capable of--as a doomed doctor chillingly
+            describes it--"assimilating flesh on contact.
+            Snide comparisons to gelatin be damned, it's a concept with the most
+            devastating of potential consequences, not unlike the grey goo scenario
+            proposed by technological theorists fearful of
+            artificial intelligence run rampant.
+            '''
+        
+            blob = TextBlob(text)
+            blob.pos_tags       # [(Word('The'), u'DT'), (Word('titular'), u'JJ'),
+                                #  (Word('threat'), u'NN'), ...])
+            blob.noun_phrases   # WordList(['titular threat', 'blob',
+                                #            'ultimate movie monster',
+                                #            'amoeba-like mass', ...])
+        
+            for sentence in blob.sentences:
+                print(blob.sentiment)
+            # (0.060, 0.605)
+            # (-0.34, 0.77)
+        
+        Get it now
+        ----------
+        ::
+        
+            $ pip install -U textblob
+            $ curl https://raw.github.com/sloria/TextBlob/master/download_corpora.py | python
+        
+        
+        Documentation
+        -------------
+        
+        Hosted `here <https://textblob.readthedocs.org/>`_ at ReadTheDocs.
+        
+        Requirements
+        ------------
+        
+        - Python >= 2.6 or >= 3.3
+        
+        
+        Testing
+        -------
+        Run ::
+        
+            python run_tests.py
+        
+        to run all tests.
+        
+        License
+        -------
+        
+        TextBlob is licenced under the MIT license. See the bundled `LICENSE <https://github.com/sloria/TextBlob/blob/master/LICENSE>`_ file for more details.
+        
+        .. _pattern: http://www.clips.ua.ac.be/pattern
+        .. _NLTK: http://nltk.org/
+        
+        Changelog
+        =========
+        
+        0.4.0 (2013-08-05)
+        ------------------
+        - New ``text.tokenizers`` module with ``WordTokenizer`` and ``SentenceTokenizer``. Tokenizer instances (from either textblob itself or NLTK) can be passed to TextBlob's constructor. Tokens are accessed through the new ``tokens`` property.
+        - New ``Blobber`` class for creating TextBlobs that share the same tagger, tokenizer, and np_extractor.
+        - Add ``ngrams`` method.
+        - `Backwards-incompatible`: ``TextBlob.json()`` is now a method, not a property. This allows you to pass arguments (the same that you would pass to ``json.dumps()``).
+        - New home for documentation: https://textblob.readthedocs.org/
+        - Add parameter for cleaning HTML markup from text.
+        - Minor improvement to word tokenization.
+        - Updated NLTK.
+        - Fix bug with adding blobs to bytestrings.
+        
+        0.3.10 (2013-08-02)
+        -------------------
+        - Bundled NLTK no longer overrides local installation.
+        - Fix sentiment analysis of text with non-ascii characters.
+        
+        0.3.9 (2013-07-31)
+        ------------------
+        - Updated nltk.
+        - ConllExtractor is now Python 3-compatible.
+        - Improved sentiment analysis.
+        - Blobs are equal (with `==`) to their string counterparts.
+        - Added instructions to install textblob without nltk bundled.
+        - Dropping official 3.1 and 3.2 support.
+        
+        0.3.8 (2013-07-30)
+        ------------------
+        - Importing TextBlob is now **much faster**. This is because the noun phrase parsers are trained only on the first call to ``noun_phrases`` (instead of training them every time you import TextBlob).
+        - Add text.taggers module which allows user to change which POS tagger implementation to use. Currently supports PatternTagger and NLTKTagger (NLTKTagger only works with Python 2).
+        - NPExtractor and Tagger objects can be passed to TextBlob's constructor.
+        - Fix bug with POS-tagger not tagging one-letter words.
+        - Rename text/np_extractor.py -> text/np_extractors.py
+        - Add run_tests.py script.
+        
+        0.3.7 (2013-07-28)
+        ------------------
+        
+        - Every word in a ``Blob`` or ``Sentence`` is a ``Word`` instance which has methods for inflection, e.g ``word.pluralize()`` and ``word.singularize()``.
+        
+        - Updated the ``np_extractor`` module. Now has an new implementation, ``ConllExtractor`` that uses the Conll2000 chunking corpus. Only works on Py2.
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Topic :: Text Processing :: Linguistic
