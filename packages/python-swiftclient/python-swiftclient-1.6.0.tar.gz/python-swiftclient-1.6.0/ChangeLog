@@ -1,0 +1,1829 @@
+commit 0278998398cbe0caeb5237b30e316c0a59669c87
+Merge: a47d3d6 d352d83
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Aug 29 22:23:27 2013 +0000
+
+    Merge "Added support for running the tests under PyPy with tox"
+
+commit d352d831a5cf3fd7fe15515259b029957c3ae371
+Author: Alex Gaynor <alex.gaynor@gmail.com>
+Date:   Wed Aug 28 09:44:37 2013 -0700
+
+    Added support for running the tests under PyPy with tox
+    
+    This is a precursor to having them run under check and gate.
+    
+    Change-Id: Ia512b68b5b47a88d5f7c1015cdf7151c322d293d
+
+commit a47d3d64685d5f584711707854fd0f522616bc3e
+Author: Stanislaw Pitucha <stanislaw.pitucha@hp.com>
+Date:   Wed Aug 28 16:24:40 2013 +0100
+
+    Remove redundant unit suffix
+    
+    Transfer speed already has a "MB/s" unit. The "s" suffix was probably a
+    copy/paste mistake.
+    
+    Change-Id: Iccd7894d5ca11aac8a9f98365834c5d3deef0720
+
+commit 6c041058da3c7263d79a6904560bf39cfadbaec1
+Merge: ec14619 b0eb857
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Aug 26 23:42:48 2013 +0000
+
+    Merge "Reformat help outputs"
+
+commit b0eb857b69f792911b10b9140bbff6127ad628cd
+Author: Jakub Krajcovic <jakub.krajcovic@gmail.com>
+Date:   Sat Aug 17 22:43:09 2013 +1000
+
+    Reformat help outputs
+    
+    Reformatted the help outputs in the swift client to bring them more
+    in line with the rest of the openstack clients. Changes were added to
+    all of the st_command_help variables and a new variable
+    st_command_options was added to help with correct formatting of
+    help outputs.
+    
+    Change-Id: I0c549cf96292384ddb36b43ecec41a883d8b2e13
+    Implements: changes to help outputs
+
+commit ec14619ef05a2f2571805466956a1f0f567a1eea
+Author: Clay Gerrard <clay.gerrard@gmail.com>
+Date:   Thu Aug 15 18:46:33 2013 -0700
+
+    Add a NullHandler when setting up library logging
+    
+    I was gunna write a test, but mocking ImportErrors is a PITA, so I decided to
+    just get my tox py26 working instead.  Tests seem to fail/pass as expected
+    without/with the inline NullHanlder.
+    
+    Closes-Bug: 1212861
+    
+    Change-Id: I20207374a77ee9969ab201c3a57e4caf40c02a61
+
+commit c626c2a87ead1c9cf8ee4b5b454afaa1aea7a68e
+Merge: 256978a d34f126
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Aug 2 19:23:23 2013 +0000
+
+    Merge "Added headers argument support to get_object()"
+
+commit 256978a0eea5238bb1f1896a1108616d3b3ed292
+Author: Wu Wenxiang <wu.wenxiang@99cloud.net>
+Date:   Fri Aug 2 20:51:58 2013 +0800
+
+    Assignment to reserved built-in symbol "file"
+    
+    In file: tests/test_swiftclient.py, test_unicode_ok() &
+    test_chunk_warning()
+    
+    Fixes bug #1207736
+    
+    Change-Id: I0a822802ec8910e9aec36ae5af775f8abb384d34
+
+commit d34f12614820416aebe5e91eab9726b556d1f973
+Author: Stanislav Vitkovskiy <stas.vitkovsky@gmail.com>
+Date:   Sat Jul 27 17:06:28 2013 +1000
+
+    Added headers argument support to get_object()
+    
+    With this change conditional and range GETs are possible, as
+    documented in official API guide:
+    http://docs.openstack.org/api/openstack-object-storage/1.0/content/retrieve-object.html
+    
+    Change-Id: Ib2ed1c21e8d3f1ed79c0b7e542ee022ee535835c
+
+commit 9198e95468b3005730c931da1701f34b1a9ce2d9
+Author: Darrell Bishop <darrell@swiftstack.com>
+Date:   Wed Jun 26 22:47:49 2013 -0700
+
+    Move multi-threading code to a library.
+    
+    This patch extracts the multi-threading code from bin/swift into
+    swiftclient/multithreading and adds tests.  In particular, this new way
+    of doing it (with context managers) will prevent non-daemonic threads
+    from wedging the process when unexpected exceptions happen.
+    
+    I enabled reporting of which lines, specifically, are not covered by
+    unit tests (added -m option to "coverage report" in .unittests).
+    
+    This patch includes a drive-by fix for uploading a segmented file with
+    --use-slo when that object already exists.  A key of "name" was used
+    instead of "path", raising KeyError.
+    
+    There's also another drive-by fix for uploading segmented objects with
+    --use-slo.  Commit 874e0e4427b80e1b15b74a1557b73ba9d61443ca regressed
+    this by removing the capturing of thread-worker results in
+    QueueFunctionThread.run().  This patch restores that functionality and
+    the feature (uploading SLO objects).
+    
+    Change-Id: I0b4f677e4a734e83d1a25088d9a74f7d46384e53
+
+commit 5d9c6f845cc98da720fea7e2343fdbb0db9a42a5
+Author: TheSriram <sriram@klusterkloud.com>
+Date:   Wed Jul 24 16:31:13 2013 -0400
+
+    fix(gitignore) : Ignore *.egg files
+    
+    Change-Id: If52f9570a17230af9636f5337973e506c142b0bc
+
+commit 43a838eabfd7ace47f9052a090c65aa1f6fb786e
+Merge: 8ffaa0a 69281a5
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Jul 23 17:41:16 2013 +0000
+
+    Merge "python3: Start of adding basic python3 support."
+
+commit 8ffaa0a4ce5676a90980ab879661659767f24d8e
+Merge: 2f84a4e 7d88d14
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Jul 23 00:09:47 2013 +0000
+
+    Merge "Refuse carriage return in header value"
+
+commit 69281a580f360a6d8c6a9631a55155e47cde2e40
+Author: Chuck Short <chuck.short@canonical.com>
+Date:   Thu Jul 18 13:55:50 2013 -0400
+
+    python3: Start of adding basic python3 support.
+    
+    Fix imports so its python3 compliant.
+    
+    Change-Id: Ie08fe63b87e75bb099105ca1de860f9ab6c3340b
+    Signed-off-by: Chuck Short <chuck.short@canonical.com>
+
+commit 2f84a4e76b03863fe2e62515f150580b09dc20d1
+Author: Hemanth Makkapati <hemanth.makkapati@mailtrust.com>
+Date:   Tue Jul 16 21:22:32 2013 +0000
+
+    Added log statements in swift client
+    
+    Added log statements in swiftclient/client.py:_retry where exceptions
+    are being raised.
+    
+    Fixes bug# 1202229
+    
+    Change-Id: I727537177849d08bb9603aa884152bdebc62fb85
+
+commit 07d13b5262f014bbfceacef0c0622bf156025aac
+Author: Samuel Merritt <spam@andcheese.org>
+Date:   Fri Jul 12 17:26:45 2013 -0700
+
+    Update docstring for swiftclient.Connection.__init__
+    
+    There were two undocumented parameters in there, one introduced
+    recently in 6411fd3, and the other some time before.
+    
+    Change-Id: I3a7d59e1c272b382b035b88ba5495bc1c57a3154
+
+commit cc2fbf0c7435729c89d4b4f27cb7411a7a1cfe61
+Merge: 65e5ef7 6411fd3
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jul 12 22:57:24 2013 +0000
+
+    Merge "Adds max-backoff for retries in Connection."
+
+commit 7d88d14def2541227fb4d3f96016a51b0bafa36b
+Author: Kun Huang <gareth@unitedstack.com>
+Date:   Sun Jul 7 16:45:56 2013 +0800
+
+    Refuse carriage return in header value
+    
+    See bug #1188896.
+    Comparing with Curl and Django, they both refuse carriage returns in
+    header values, so the request() method on the HTTP(S)Connection instance
+    returned by swiftclient.client.http_connection() will raise an
+    InvalidHeadersException if any of the headers to be sent contain a
+    newline.
+    
+    Drive-by fix for a couple of header values which were integers instead
+    of strings (Content-Length getting set to zero).
+    
+    Fixes bug #1188896
+    
+    Change-Id: Ic6afdb92882284f843aacb06d20f682ddcb47151
+
+commit 6411fd38462a9e6ea9f5e0b44d9afe6fa54c0791
+Author: Mike Widman <mwidman@endurancewindpower.com>
+Date:   Wed Jul 10 10:52:02 2013 -0700
+
+    Adds max-backoff for retries in Connection.
+    
+    The max-backoff concept prevents the backoff used in _retry to double infinitely (which in turn causes wait times of an hour or more between retries).
+    
+    As per review, changed code to use min instead.
+    
+    Fixes: bug #1183542
+    
+    Change-Id: Ic084f54069b7fa7a33604741487045c5e697ff06
+
+commit 65e5ef7b8137062a9a82b3fc99f33074f1e7c2e7
+Merge: c460ebf 188e835
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jul 12 15:17:03 2013 +0000
+
+    Merge "Allow setting # of retries in the binary"
+
+commit c460ebff0a6ab284d47e215f7f9156e73e7a40a9
+Merge: 94d7c23 1d4d51b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jul 10 07:06:08 2013 +0000
+
+    Merge "Allow storage url override for both auth vers."
+
+commit 188e835eadeb24ebdb822af3971e792d99d5b622
+Author: Ben McCann <ben@benmccann.com>
+Date:   Mon Jul 8 15:32:28 2013 -0700
+
+    Allow setting # of retries in the binary
+    
+    Change-Id: I7ef4f1f86cc6ea4937043ea7bf7d9526e23bd2c7
+
+commit 94d7c2318100bfdcaf42ecb2fb7ecd82ebfbef69
+Author: Kun Huang <gareth@unitedstack.com>
+Date:   Sun Jul 7 16:17:28 2013 +0800
+
+    Note '-V 2' is necessary for auth 2.0
+    
+    Here are some questions in Launchpad, just because they miss '-V 2' for
+    auth 2.0.
+    https://answers.launchpad.net/swift/+question/231938
+    https://answers.launchpad.net/swift/+question/231279
+    So I add somethins for noteing people add the '-V 2'
+    
+    Change-Id: I2e0fef969be4eca316975de03fdbc516a1069acf
+
+commit 1d4d51b218ed14b85d1e46d3e7142fb52ea179d5
+Author: Darrell Bishop <darrell@swiftstack.com>
+Date:   Fri Jun 28 21:26:54 2013 -0700
+
+    Allow storage url override for both auth vers.
+    
+    When --os-storage-url is specified on the command-line to bin/swift, it
+    will override the used storage URL regardless of authentication for both
+    authentication version 1 and version 2.  This can be used to bypass a
+    load-balancer to hit a specific proxy server for testing/debugging
+    purposes.
+    
+    Within the client library, this feature is accessed by passing the
+    desired storage URL into swiftclient.client.Conection.__init__() via the
+    os_options keyword argument.  For example:
+    
+      conn = Connection(auth_url, user, key, os_options={
+        'object_storage_url': 'http://overridden.storage.url/AUTH_foo'})
+    
+    This patch also adds a dependency on mock>=0.8.0, which is the same as
+    openstack/swift.
+    
+    Change-Id: Id2a36ed6abffd65e7762b6beea5bbfc6c036e848
+
+commit 6f7458a2903f6be2bf3271825e837d30b4e9f737
+Merge: b03843f f022aac
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jul 5 17:16:34 2013 +0000
+
+    Merge "Add -p option to download command."
+
+commit b03843f3ac8bef30c9b7e0d436d8984d6d4146c2
+Merge: 9f5b334 100f952
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 28 18:42:23 2013 +0000
+
+    Merge "Add *.swp into .gitignore"
+
+commit 100f95281a731366d6171cfc6b1d6e33052a354f
+Author: Kun Huang <gareth@unitedstack.com>
+Date:   Thu Jun 27 22:25:46 2013 +0800
+
+    Add *.swp into .gitignore
+    
+    Change-Id: I76c92d82647ac9d042f6c117918feb5820a47678
+
+commit f022aac0cf460ca4d3208ba1c22fae5f32ae34af
+Author: Darrell Bishop <darrell@swiftstack.com>
+Date:   Wed Jun 26 11:41:29 2013 -0700
+
+    Add -p option to download command.
+    
+    Allow the ability to download a subset of containers (--all with -p) or
+    a subset of objects within a container (container name with -p).
+    
+    This patch also includes a drive-by fix for "download --all" which would
+    not actually download any objects (for me, at least) because the object
+    queue got filled with "stop" messages before the container workers had
+    run long enough to put work in the object queue.  Doh!
+    
+    I also closed up a few holes where an (unexpected, obviously) Exception
+    could cause the process to hang because non-daemon threads still
+    existed.
+    
+    Change-Id: I71c6935c60282b5353badc2dfce8a935d47e3bb7
+
+commit 9f5b334f7a9161843ff30b990eacd06411760d68
+Author: Mark Seger <Mark.Seger@hp.com>
+Date:   Fri Jun 21 19:48:36 2013 +0000
+
+    add -t for totals to list command and --lh to stat
+    
+    Change-Id: Ieaba5e7762032bf9a2652ead39870d55e85b4672
+
+commit 1c86d62fdebf41bb55ad878020f8c3a24ca5674a
+Merge: 3f66a8a e885f87
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 26 14:58:11 2013 +0000
+
+    Merge "Remove explicit distribute depend."
+
+commit 3f66a8ae6b8d9741809773a9665d4768d2f161a6
+Author: Mark Seger <Mark.Seger@hp.com>
+Date:   Wed Jun 12 12:02:02 2013 +0000
+
+    add optional 'response_dict' parameters to many calls into which they'll
+    return a dictionary of the response status, reason and headers
+    
+    Change-Id: I35f8824537f0484362dd6646c91789fac02fa075
+
+commit 5d84ff8d9b74997d4494b7bed986f99cfceda9ad
+Merge: 08e1f09 7b9f304
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 19 18:31:15 2013 +0000
+
+    Merge "Fixes re-auth flow with expired tokens."
+
+commit 7b9f304485b990e0b4e3d4373e28b0ac54ea8a0e
+Author: EdLeafe <ed@leafe.com>
+Date:   Wed Jun 12 17:43:01 2013 -0500
+
+    Fixes re-auth flow with expired tokens.
+    
+    The re-authentication of expired tokens assumed that the 401 would
+    always occur on the first HTTP at tempt. This fix changes that so that
+    re-auth is still only attempted once, but no longer has to be on the
+    first attempt.
+    
+    Change-Id: I93a1187da3637287a803a59c146256d4f543c9d5
+    Fixes: bug #1131142
+
+commit 08e1f09e58eef1f1cb876c6992a9250931988c27
+Merge: 473167f e35b4fe
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Jun 13 08:00:32 2013 +0000
+
+    Merge "python3: Introduce py33 to tox.ini"
+
+commit 473167ff31a529db02ff6f3483e30263b56e20a6
+Merge: 02742e6 17bb3fa
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Jun 11 22:03:34 2013 +0000
+
+    Merge "Add -l and --lh switches to swift 'list' command"
+
+commit 02742e602daa30c4fe347386035880359c3448ad
+Merge: 790f087 f045f5b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Jun 11 21:25:26 2013 +0000
+
+    Merge "Changed the call to set_tunnel to work in python 2.6 or python 2.7 since its name changed between versions"
+
+commit e885f87a3e4cdf18de5f8b4c28e8e28980ab7938
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Tue Jun 11 11:28:01 2013 -0700
+
+    Remove explicit distribute depend.
+    
+    Causes issues with the recent re-merge with setuptools. Advice from
+    upstream is to stop doing explicit depends.
+    
+    Change-Id: If1a97a574dbc0370a0a2de5d99a92610b048907d
+
+commit 17bb3fa7794b7b00798a5debe79d497e5ee725a6
+Author: Mark Seger <mark.seger@hp.com>
+Date:   Wed May 22 18:45:42 2013 +0000
+
+    Add -l and --lh switches to swift 'list' command
+    
+    Also updated man page and added an example in 'list'
+    command help message
+    
+    Change-Id: Icf38de9bab6d387a9a1deed444a91f68b4389cfe
+
+commit f045f5bec2b4fa5c3483d27169b351a66b614f91
+Author: Greg Lange <greglange@gmail.com>
+Date:   Fri Jun 7 19:44:42 2013 +0000
+
+    Changed the call to set_tunnel to work in python 2.6 or python 2.7 since its name changed between versions
+    
+    Change-Id: I5550049435002b42c4fea06d41549a1e7254ac02
+
+commit 790f087a67fcc0cc7730cedd1a225d58a82ddf5d
+Author: Stuart McLaren <stuart.mclaren@hp.com>
+Date:   Fri Jan 18 14:17:21 2013 +0000
+
+    Add option to disable SSL compression
+    
+    Allows optionally disabling SSL compression. This can significantly
+    improve HTTPS upload/download performance in some cases -- in particular
+    when the object is not compressible and you have very high network
+    bandwidth.
+    
+    Implements blueprint ssl-compression.
+    
+    Change-Id: I1260055f9c2e83cdabfeb51aed11b3899bed4d55
+
+commit e35b4fe34ab22396fe5ec68f92c4e68bcaeb4cd9
+Author: Chuck Short <chuck.short@canonical.com>
+Date:   Sat Jun 1 19:27:18 2013 -0500
+
+    python3: Introduce py33 to tox.ini
+    
+    Introduce py33 to tox.ini to make testing with
+    python3 easier.
+    
+    Change-Id: Ibffa28107fdf1d1ae88223d84de4a7282c7882e0
+    Signed-off-by: Chuck Short <chuck.short@canonical.com>
+
+commit 2d12f09c66e0221ba7f43cc64677c05486a42ea6
+Author: niu-zglinux <Niu.ZGlinux@gmail.com>
+Date:   Wed May 29 22:13:02 2013 +0800
+
+    Rename requires files to standard names.
+    
+    Rename tools/pip-requires to requirements.txt and tools/test-requires
+    to test-requirements.txt. These are standard files, and tools in the
+    general world are growing intelligence about them.
+    
+    Change-Id: I9c1356f22f6527be44b4b3f6a77012156ff1637b
+    Fixes: bug #1179008
+
+commit 874e0e4427b80e1b15b74a1557b73ba9d61443ca
+Author: Tong Li <litong01@us.ibm.com>
+Date:   Thu May 23 16:39:31 2013 -0400
+
+    remove busy-wait so that swift client won't use up all CPU cycles
+    
+    The current implementation uses busy-wait and checking flags to
+    communicate between threads. It wastes a lot of CPU powers. With
+    python 2.6 is required for Swift, the communication between
+    threads should now be using queue and signal mechanisms. This
+    patch removed the busy-wait loops and use queue and queue join
+    for threads coordination which will not consume CPU cycles if
+    a thread is blocked.
+    
+    Change-Id: I648cd637a92a159d5c13baa83f357cee2dfe7937
+
+commit 7e84b69291efbc07be6ced17b24ffa42efdc67c0
+Author: Leah Klearman <lklrmn@gmail.com>
+Date:   Wed May 22 18:17:59 2013 -0700
+
+    log get_auth request url instead of x-storage-url
+    
+    because if the request gets a 4xx error, then the url will be None, and that's just confusing.
+    
+    Change-Id: I62729364b9bd279498909dc5cd0d2a1ec5fcd70d
+
+commit 07311a0639ba06d2b2ed190dc49095df95ae669b
+Author: Pete Zaitcev <zaitcev@kotori.zaitcev.us>
+Date:   Tue May 21 15:34:21 2013 -0600
+
+    Update the man page
+    
+    - Add -V option
+    - Use uniform and correct capitalization for OpenStack Swift
+    - Make the example of output of stat command up-to-date
+    - Generally prettify the document
+    - Remove all trailing whitespace
+    
+    Change-Id: Id3da2035851847c4bff8cec8f927d3654824bf5b
+
+commit d5b6d29a30ec806e5aa8af17ad5b8e6cc2b9fbf1
+Merge: feec0c8 073cd56
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue May 21 04:29:55 2013 +0000
+
+    Merge "Add end_marker and path query parameters"
+
+commit feec0c83acbb052dff54b214c737e693007eae1b
+Merge: 7391fcc adebab7
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue May 21 04:17:52 2013 +0000
+
+    Merge "do not warn about etag for slo"
+
+commit 7391fcc45e6852dd430748dd26c81eb495c11d32
+Merge: af4109d 541d805
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 16 15:30:29 2013 +0000
+
+    Merge "Add .coveragerc file to show correct code coverage"
+
+commit 541d805b66c53713b48f1d2704b2b7e3fcda1910
+Author: Vasyl Khomenko <vasiliyk@yahoo-inc.com>
+Date:   Thu May 16 01:24:19 2013 -0700
+
+    Add .coveragerc file to show correct code coverage
+    
+    Change-Id: I428d0c2587cc480a27796c5fa246b171606809e1
+
+commit af4109dd56b71302127de72ddaf7fcf0a35e6276
+Merge: 3196daf 50f32bc
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed May 15 08:15:39 2013 +0000
+
+    Merge "Switch to pbr for setup."
+
+commit adebab739d0101d32d3e8f984a544742ab4bc456
+Author: David Goetz <dpgoetz@gmail.com>
+Date:   Mon May 13 07:37:15 2013 -0700
+
+    do not warn about etag for slo
+    
+    Change-Id: I17fa1643f28aa1cd160c2d770243875a3c4a80ee
+
+commit 3196daf9929eef25d69d47592beef4cd31573b80
+Author: Pete Zaitcev <zaitcev@kotori.zaitcev.us>
+Date:   Fri May 10 21:33:17 2013 -0600
+
+    Eradicate eventlet and fix bug lp:959221
+    
+    The bug is simple: whenever swift uploads to a Swift with SSL,
+    it uses 100% CPU. It happens because we use HTTPSConnection from
+    eventlet that loops like that, while holding the interpreter lock.
+    
+    Now, it could be fixed in eventlet, but let's try something more
+    natural: drop the eventlet's HTTP client. We do not use green
+    threads in the client anymore, so it's not like we need it for that.
+    
+    Note that in most cases clients do not use the BufferedHTTPConnection
+    either, because it's only installed on Swift server nodes, not on
+    workstations. Get rid of that too.
+    
+    bug: 959221
+    Change-Id: I1eb932779d4171598b3efaa043f817b9c6c995c4
+
+commit 073cd56218e7ad68f965c00888d053632d7c1986
+Author: YUZAWA Takahiko <yuzawataka@intellilink.co.jp>
+Date:   Thu May 2 00:15:11 2013 +0900
+
+    Add end_marker and path query parameters
+    
+    Fix Bug 1175057
+    
+    Change-Id: I1bf65fa7c4d99ddb03dd183fe3862df93455f501
+
+commit fcb3100b7d6870b1ae594a7e3e34fad5db0d1180
+Merge: 1eb2c29 9aa52ee
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu May 2 18:36:24 2013 +0000
+
+    Merge "Confirm we have auth creds before clearing preauth"
+
+commit 50f32bc803b42a33533af1ce379da930ddd8f494
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Apr 28 19:46:03 2013 -0700
+
+    Switch to pbr for setup.
+    
+    Change-Id: Ifc2efa2bd7c2f030b51494ccb471f0c3e097c5ce
+
+commit 1eb2c29856fda85abbf7c06802b4fb09cc66bb41
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Sun Apr 28 19:16:38 2013 -0700
+
+    Switch to flake8.
+    
+    Change-Id: Ib9ba1e7eed09c5a90c558a8365d0a87c3f4b5ee5
+
+commit 000e33d0218b1e71d8798f3bd208f92cb89eaa7f
+Author: Dirk Mueller <dirk@dmllr.de>
+Date:   Thu Apr 25 23:19:52 2013 +0200
+
+    Improve Python 3.x compatibility
+    
+    Some mechancical replacement of the deprecated except x,y:
+    construct with except x as y, which works with any Python
+    version >= 2.6
+    
+    Change-Id: Ic245049dc7b408a5c89b9e27dfd2bd7c08acc5b5
+
+commit 9aa52eecb5193e145ec9b396f105b085fb87a456
+Author: David Shrewsbury <shrewsbury.dave@gmail.com>
+Date:   Thu Apr 18 16:25:14 2013 -0400
+
+    Confirm we have auth creds before clearing preauth
+    
+    If you use the API and supply only preauth values (preauthurl and
+    preauthtoken), and if either of these are incorrect, a non-descriptive
+    AttributeError will be thrown and uncaught:
+    
+     'NoneType' object has no attribute 'find'
+    
+    The _retry() will fail on the first pass (getting 401), then try
+    to reauthenticate with non-preauth values. If those are not given,
+    particularly the auth url, then the urlparse() call will be supplied
+    None for the url in http_connection() causing the exception above.
+    
+    This change makes sure that we have an auth url, user and key before
+    retrying authentication. Given the situation above, a '401 Unauthorized'
+    ClientException will now be thrown instead of the AttributeError.
+    
+    Change-Id: Ie1b5bde1e8ff321aa18c0f23dbd2960d6e482236
+
+commit 2d97609a52bef2f437c15ff72dced29663c570ff
+Merge: fab61c8 2b3d171
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Apr 4 23:08:25 2013 +0000
+
+    Merge "Static large object support."
+
+commit fab61c8275893c7ab7279336b9d64d1154264059
+Author: Dean Troyer <dtroyer@gmail.com>
+Date:   Thu Apr 4 15:03:57 2013 -0500
+
+    Improve auth option help
+    
+    Add to the help strings to clarify the need for --os-auth-token to
+    also have --os-storage-url supplied.
+    
+    Change-Id: I6a7259c38ce01813ae96f307efaf46e7863bd223
+
+commit 2b3d1719073fa58b651ca82f64a366e3f737d71a
+Author: David Goetz <dpgoetz@gmail.com>
+Date:   Tue Mar 5 15:12:04 2013 -0800
+
+    Static large object support.
+    
+    Also fixed bug with current large objects with segment listing prefixes.
+    
+    Allow retry for object PUTs when possible.
+    
+    Change-Id: I0edff127fd5d5c53da33aa7cb76a4f4dc85bf6e6
+
+commit 8ea9c4aae8837842a54f513866521d0d473d781f
+Author: jola-mirecka <jola.mirecka@hp.com>
+Date:   Fri Mar 22 14:59:57 2013 +0000
+
+    Fixed pep8 errors in test directory.
+    
+    Files test_swiftclient.py and utils.py had all pep8 errors
+    fixed.
+    
+    Also added tests directory to tox.ini file, so that
+    pep8 would monitor tests directory by default.
+    
+    Change-Id: Id60a2cd88bd814d1dcbeca951764c9d236500837
+    Fixes: bug #1158819
+
+commit 4f57f815b3847c9f4a2edc20784a770b806f4045
+Merge: 42fa456 d90b768
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Mar 22 10:00:47 2013 +0000
+
+    Merge "Enhance put_object to inform when chunk is ignored"
+
+commit 42fa4568f1f973bc8992b705f749cf0bdc6e56ed
+Merge: f319160 48f446a
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Mar 21 11:11:50 2013 +0000
+
+    Merge "Allow user to specify headers at the command line."
+
+commit f31916051d35380bccab0de818f677077a6e797c
+Merge: 999e1c0 45af829
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Mar 19 18:36:04 2013 +0000
+
+    Merge "Allow v2 to use storage_url/storage_token directly"
+
+commit 48f446a93883fc615d23ac1148fd4b082aed9c86
+Author: tong li <litong01@us.ibm.com>
+Date:   Mon Mar 18 09:47:59 2013 -0400
+
+    Allow user to specify headers at the command line.
+    
+    Currently swift client does not allow content type to be specified
+    when upload an object. It does not allow a user to change content
+    type neither. This patch will allow a user to specify content
+    type by using upload command or modify the content type by using
+    post command.
+    
+    For example:
+    1. To upload an object with specific content type:
+    swift upload -H content-type:applicaiton/xml con1 file1
+    
+    2. To modify an object to a specific content type:
+    swift post -H content-type:application/josn con1 file1
+    
+    This patch also allow a client to specify other request headers.
+    
+    Change-Id: I12db83a1d465285e0906889cc67dfaa44e059568
+    Fixes: bug #1154621
+
+commit d90b768e509e41a2ab4f8d26b1093fd329167102
+Author: jola-mirecka <jola.mirecka@hp.com>
+Date:   Tue Mar 5 16:56:02 2013 +0000
+
+    Enhance put_object to inform when chunk is ignored
+    
+    Changed documentation for chunk_size parameter to indicate
+    that it can be used only with file like objects.
+    
+    Also added a UserWarning when using a string contents to inform
+    that chunk_size will be ignored.
+    
+    Added a unit test to check whether the warning is working
+    correctly.
+    
+    Fixes: bug #1147232
+    Change-Id: I618ec45520ba81905ce2ead4d61f192d21ae3489
+
+commit 999e1c0f02ab4f697a0bf66c95f1744c86dc4523
+Merge: 974f530 ec38637
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Feb 28 02:58:28 2013 +0000
+
+    Merge "Added "/" check when list containers."
+
+commit 974f530bdbcb2d94e4e9cce54c7c88915f342cb6
+Merge: d79c435 9ac2c99
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Feb 27 22:08:34 2013 +0000
+
+    Merge "Allow to specify segment container"
+
+commit 45af829aa5ef81b8eaf6f4f75f8d2b602b6d499a
+Author: Chmouel Boudjnah <chmouel@enovance.com>
+Date:   Wed Feb 27 13:52:24 2013 +0100
+
+    Allow v2 to use storage_url/storage_token directly
+    
+    - Fixes bug 1134306.
+    
+    Change-Id: Ie1737c57f57bcdad50b3096c921d46a1fe5293b8
+
+commit d79c435bfef4fa92e8af6b9ceccc90846a6e4842
+Author: Pete Zaitcev <zaitcev@kotori.zaitcev.us>
+Date:   Tue Feb 26 12:47:34 2013 -0700
+
+    Add client man page swift.1
+    
+    This is the byte-by-byte copy of swift.1 that was left behind
+    in the main Swift package when python-swiftclient was split away.
+    Apparently there is absolutely nothing to be changed in setup.py
+    and the distribution packagers are supposed to pick the page as-is
+    using their packaging systems.
+    
+    Change-Id: I24f238501589db940574eac61b89a1422fe2fd77
+
+commit 9ac2c99fc69b893076c2e9984c255d07f3b1e428
+Author: yuan-zhou <yuan.zhou@intel.com>
+Date:   Wed Feb 20 11:19:04 2013 +0800
+
+    Allow to specify segment container
+    
+    Fix bug 1110924
+    
+    Add segment container option as part of 'swift upload -S'. If this
+    option is omitted, the segments will go to <container>_segments.
+    
+    Example:
+    $ swift upload c1 obj1 -S 1 -C user_segments
+    
+    Please check swift upload --help for more details
+    
+    Change-Id: Ib71aae322485d8d3ac89916d37ebcac053f49e3b
+
+commit ec38637a35dccdfda16efeab7866dc147dc380b9
+Author: Jian Zhang <jian.zhang@intel.com>
+Date:   Sun Feb 24 19:04:39 2013 -0800
+
+    Added "/" check when list containers.
+    
+    If there is a "/" in container name, print usage.
+    
+    Fixs bug 1121897.
+    
+    Change-Id: I633b5b7ff3a8dbc249ddd3c65439dd46c7d93b4a
+
+commit 4ac431a9a2b6379f9ab663f8a330e2d898e9b077
+Author: Flaper Fesp <flaper87@gmail.com>
+Date:   Mon Jan 21 10:20:06 2013 +0100
+
+    Print useful message when keystoneclient is not installed
+    
+    client.py now prints a useful message when trying to use Auth version
+    2.0 and keystoneclient is not installed.
+    
+    Fixes bug 1102322
+    
+    Change-Id: I6ed83610fd6e8c79c2dc5cf05db377a843cab1d5
+
+commit b5f222b5d6794e78806e9909d33172d464240df9
+Merge: 8298803 bfeffb6
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jan 30 21:56:29 2013 +0000
+
+    Merge "Use testr instead of nose."
+
+commit 82988030914603f731f10d440602cead9d901620
+Merge: bf09dd9 9a484df
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jan 30 20:53:33 2013 +0000
+
+    Merge "Fix reporting version."
+
+commit 9a484dfd63f363522430fb81cc816cbb385c9c81
+Author: Chmouel Boudjnah <chmouel@enovance.com>
+Date:   Tue Jan 22 16:32:50 2013 +0100
+
+    Fix reporting version.
+    
+    - Fixes bug 1102691.
+    
+    Change-Id: I72749a1c87a1f337b45d193e923b437d12270b05
+
+commit bf09dd9573f396d703a0df60a5d5e0bc1d280d1f
+Merge: c194266 8b80285
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jan 21 21:50:21 2013 +0000
+
+    Merge "Update to latest oslo version/setup."
+
+commit c19426609696ba1817e50b3caed5f524cdcd0688
+Merge: 3d04363 1aa712e
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jan 21 21:19:12 2013 +0000
+
+    Merge "Add generated files to .gitignore."
+
+commit bfeffb63667b796999997acf43be395d31b6a184
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Dec 27 15:26:50 2012 -0800
+
+    Use testr instead of nose.
+    
+    nose is invasive and can sometimes alter the outcome of a test run. testr,
+    on the other hand, keeps a distinction between running tests and displaying
+    results of the test runs. Additionally, it supports the stock python unittest
+    protocol.
+    
+    Even better, testr supports parallel test running, which makes things faster,
+    and a command "testr run --failing" which will just re-run the latest failing
+    tests (often something one wants to do in iterative dev)
+    
+    Part of blueprint grizzly-testtools
+    
+    Change-Id: I0b3f1bcb5d4ff59c65eb3219b30a9e64f54d70bd
+
+commit 8b80285da695e35133719669fc632aa83a512b6d
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Jan 10 08:24:47 2013 +0000
+
+    Update to latest oslo version/setup.
+    
+    Change-Id: I7bd38b950ef9fea8b6eaa1df599085a1c64d8b61
+
+commit 3d04363ba4b5955236c7067f14d9844cbabc248b
+Merge: ab4282e 5edb40b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Jan 10 20:10:30 2013 +0000
+
+    Merge "Add env[SWIFTCLIENT_INSECURE]"
+
+commit 1aa712eaf224efcb575dd76c546adce810b1b2f4
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Thu Jan 10 08:27:41 2013 +0000
+
+    Add generated files to .gitignore.
+    
+    Change-Id: I609b98d3ffe576313d3206925a03b1657d3fbce9
+
+commit 5edb40b44227a8a615a95bd565dd92ffbb3165c0
+Author: You Yamagata <bi.yamagata@gmail.com>
+Date:   Thu Jan 10 12:59:57 2013 +0900
+
+    Add env[SWIFTCLIENT_INSECURE]
+    
+    Add env[SWIFTCLIENT_INSECURE] as default of --insecure option.
+    If set to 'true', allow to access insecure keystone server.
+    The name follows 'NOVACLIENT_INSECURE' in novaclient.
+    
+    Change-Id: I322674eba9c07e6def97bce339815fa15191a92d
+
+commit ab4282ebb4affe637187245fb9d01a64359f1233
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Fri Nov 16 15:23:25 2012 +1000
+
+    Fix debug feature and add --debug to swift.
+    
+    - Remove PYTHON_SWIFTCLIENT and use --debug making it more consistents
+      with other openstack clients libraries.
+    - Fix printing the curl command.
+    - Don't show the body of the GET objects it could get bad on large
+      objects and it's an iterator anyway.
+    - Use -I for showing HEADs (and not -X HEAD).
+    
+    Change-Id: I954e7d3d795401fc3679725440dec36cdc80af87
+
+commit e93d47a930f6079547c668070665a85f731d332f
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Wed Dec 26 09:36:07 2012 -0600
+
+    Use testtools as base class for test cases.
+    
+    Part of blueprint grizzly-testtools
+    
+    Change-Id: Iff9aac184a115df9b396e218209962e6897a32d9
+
+commit f65f96bc59599a855f9f2b2cdfa503a8cdb1f758
+Author: Dean Troyer <dtroyer@gmail.com>
+Date:   Wed Dec 19 09:52:54 2012 -0600
+
+    Add --os-cacert
+    
+    Add support to specify a ca certificate bundle to verify
+    keystone TLS (https) certificates.  This only verifies
+    certificates on the keystone connection, swift https
+    connections are unchanged.
+    
+    Change-Id: I14351b405af4fd3d1970ba6656c1282a5d0a1082
+
+commit 7df9cadbf006624192c48b81d1c9f1b4ed679a37
+Merge: 1662cbd 6a4dc03
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Dec 9 09:19:33 2012 +0000
+
+    Merge "Add --insecure option to fix bug #1077869"
+
+commit 1662cbd0a34ac9b42627c2007a2a874250d3de2c
+Merge: d702d00 994c691
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Dec 6 01:45:16 2012 +0000
+
+    Merge "Don't add trailing slash to auth URL."
+
+commit 6a4dc039ffece61ee8148f5263b22f65d1a6e729
+Author: You Yamagata <bi.yamagata@gmail.com>
+Date:   Wed Dec 5 13:18:27 2012 +0900
+
+    Add --insecure option to fix bug #1077869
+    
+    If enable this option , swift CLI is allowed to access a keystone
+    server with self signed certificate.
+    
+    Change-Id: I5e219fe875b246b68ac51a077e7ff15e95463adf
+
+commit d702d00ab439159e3f125cfa5e9fa94b048b3397
+Author: yuan-zhou <yuan.zhou@intel.com>
+Date:   Mon Nov 26 15:20:39 2012 +0800
+
+    Don't segment objects smaller than --segment-size
+    
+    Fix bug 1075184
+    
+    Change-Id: I369e742ca802744ac20e3575828cfa881018de6d
+
+commit 4efe3bfa7e7fc1af4ab5d64c934076bf2fa4a80c
+Merge: 402d87c 94511a0
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Dec 3 19:41:46 2012 +0000
+
+    Merge "Adding segment size as another x-object-manifest component"
+
+commit 994c691d6694919c545870f83ace947da63e563c
+Author: Juan J. Martinez <juan@memset.com>
+Date:   Mon Dec 3 10:14:26 2012 +0000
+
+    Don't add trailing slash to auth URL.
+    
+    Adding a trailing slash to the authentication URL may interfere with
+    auth service implementations not using /FOO/ but /FOO as authentication
+    URL.
+    
+    OpenStack Object Storage API 1.0 doesn't specify that the auth URL must
+    end in a slash and swiftclient.client doesn't force it either.
+    
+    Change-Id: I4e6b6d758d5ccc884e253880513e3d8763ffc2ff
+    Fixes: bug #1085827
+
+commit 94511a06242d336277a00232c0997436225082c7
+Author: yuan-zhou <yuan.zhou@intel.com>
+Date:   Tue Nov 27 15:33:50 2012 +0800
+
+    Adding segment size as another x-object-manifest component
+    
+    Fix bug 1082930
+    
+    Change-Id: I2cee91a8f74a3f58379b1b4aefae9401ba5b02c1
+
+commit 402d87c75781bc56fb915e3bb0ed40f71c0364f2
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Nov 18 11:42:18 2012 +0000
+
+    Stop loss of precision when writing 'x-object-meta-mtime'
+    
+    str(float) isn't a good way of converting a float to a string with all the precision
+    
+    Eg
+    
+        >>> f = os.path.getmtime("z")
+        >>> f
+        1347717491.343554
+        >>> str(f)
+        '1347717491.34'
+        >>> "%f" % f
+        '1347717491.343554'
+    
+    Change-Id: I6eb02f7f6730eff814c348d1039eae4606642b52
+
+commit 0053b4cf0ee8a57d9a1db51aa2c08c50ccb104e9
+Merge: 4cd4093 8e63b53
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Nov 16 23:19:59 2012 +0000
+
+    Merge "Remove unused json_request."
+
+commit 4cd4093bd6ef0953306d662c4034ccd7a6725b84
+Merge: 015dc50 8b42f8a
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Nov 16 23:13:09 2012 +0000
+
+    Merge "Force utf-8 encode of HTTPConnection params"
+
+commit 8e63b53a9bcb0ff199373fec5785e07a26902721
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Fri Nov 16 14:47:27 2012 +1000
+
+    Remove unused json_request.
+    
+    - This has been long delegated to python-keystoneclient for auth 2.0.
+    
+    Change-Id: I92b1fc2db68192cfeefd623c59882f65a4e4405c
+
+commit 015dc502a99c21b97025f8e2688ed52a1b062910
+Merge: 5427f7f b427271
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Nov 16 01:41:30 2012 +0000
+
+    Merge "tell nose to explicity test the 'tests' directory"
+
+commit 5427f7f5017b844e39d85ce434cbe92cea990c71
+Merge: 1bbee81 7253133
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Nov 15 22:01:46 2012 +0000
+
+    Merge "Fixes setup compatibility issue on Windows"
+
+commit 1bbee8189cf929cc9d5bcc0910cb640e42693c23
+Author: Christian Berendt <berendt@b1-systems.de>
+Date:   Tue Nov 13 08:41:42 2012 +0100
+
+    fixed inconsistencies in parameter descriptions
+    
+    Change-Id: I208c7fe97c8ec543b5e1cd230527d3eceb52570f
+
+commit b4272711ed3591ffff1c7c301201e7b5dbbd815a
+Author: John Dickinson <me@not.mn>
+Date:   Wed Nov 7 08:40:49 2012 -0800
+
+    tell nose to explicity test the 'tests' directory
+    
+    Change-Id: Ib6afa775defc521794da627952edbf69721b0874
+
+commit 72531338377e296f30dee626bd6df171ba713b8a
+Author: Alessandro Pilotti <ap@pilotti.it>
+Date:   Tue Nov 6 20:08:11 2012 +0200
+
+    Fixes setup compatibility issue on Windows
+    
+    Fixes Bug #1052161
+    
+    "python setup.py build" fails on Windows due to a hardcoded shell path:
+    /bin/sh
+    
+    setup.py updated using openstack-common/update.py
+    
+    Change-Id: I763dd5613d91a2523087173b196500648c477fa6
+
+commit 8b42f8a40c9a48f85b8d4d859afb4e28a510c036
+Author: Tihomir Trifonov <t.trifonov@gmail.com>
+Date:   Thu Oct 11 15:04:00 2012 +0300
+
+    Force utf-8 encode of HTTPConnection params
+    
+    This patch forces swiftclient to encode to utf-8
+    all url and headers arguments, to avoid the
+    UnicodeDecodeError which is raised by '\r\n'.join([])
+    invoked in htplib.py.
+    
+    Currently the affected projects are Horizon(upload file
+    with unicode name) and swiftclient CLI('swift post' with
+    unicode filename as header)
+    
+    This is also a follow-up of this review:
+        https://review.openstack.org/#/c/14216/
+    
+    I'd still want to hear what the Swift core devs
+    think of it. Is it better to create a new
+    AutoEncodingHTTPConnection? Or to handle the connection
+    creation and make sure there are no unicode and utf-8
+    string at the same time. If these unicode checks have to
+    be added in the calling code(Dashboard, CLI), there are
+    so many places to be added, and also in all new commands
+    that might be exposed from the API.
+    
+    Fixes bug 1008940
+    
+    Change-Id: Ice2aa29024429d3e6f569a88d5cf8b4202537827
+
+commit 656b80bef38db8eda148288a4cb5c9fbd3a0da4b
+Author: Steven Hardy <shardy@redhat.com>
+Date:   Tue Oct 23 09:18:29 2012 +0100
+
+    swiftclient Connection : default optional arguments to None
+    
+    Default the authurl/user/key constructor arguments for the
+    Connection class to None, as these are not required in the
+    preauthurl/preauthtoken case
+    
+    Change-Id: I445a5d365212c365ecc691c0a670a226e2b7954a
+
+commit 2be776c2e543dcafbe268b9f18e17f08a5e1466f
+Author: Doug Hellmann <doug.hellmann@dreamhost.com>
+Date:   Mon Oct 22 18:52:46 2012 -0400
+
+    Add OpenStack trove classifier for PyPI
+    
+    Add trove classifier to have the client listed among the
+    other OpenStack-related projets on PyPI.
+    
+    Change-Id: I7b2a9b0e163b79593662bfa799f076f538e3d7ca
+    Signed-off-by: Doug Hellmann <doug.hellmann@dreamhost.com>
+
+commit a99a37f7f6d905f4c305e68f8f5bd58e37683213
+Merge: 57dfd21 8e2e97f
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Oct 2 06:28:09 2012 +0000
+
+    Merge "	Fix swiftclient 400 error when OS_AUTH_URL is set."
+
+commit 57dfd21e1bea1b53709e0836a7e521c2c6e48309
+Merge: 3265ad5 fe7c535
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Sep 21 23:31:07 2012 +0000
+
+    Merge "Resolves issue with empty os_options for swift-bench & swift-dispersion-report"
+
+commit fe7c535db33f3ebdac2523507d8e11843ee73583
+Author: Andy McCrae <andy.mccrae@gmail.com>
+Date:   Wed Sep 19 15:47:36 2012 +0000
+
+    Resolves issue with empty os_options for swift-bench & swift-dispersion-report
+    
+    Fixes Bug 1044204
+    
+    Change-Id: I5f0863776bc4e2953548bc7a3958141378a032a0
+
+commit 3265ad52414a56edb56d278a890e239d2fe03155
+Author: Donagh McCabe <donagh.mccabe@hp.com>
+Date:   Mon Sep 17 16:42:16 2012 +0100
+
+    Catch authorization failures
+    
+    Catch the most common authorization exceptions.
+    
+    Fixes bug 1048560
+    
+    Change-Id: I81c562d6093e94e827e6583dcb31db8408980476
+
+commit 9b3c4f847d482411e076eff4e798ebf4cbeb5239
+Author: Mark Washenberger <mark.washenberger@rackspace.com>
+Date:   Thu Sep 13 05:35:26 2012 +0000
+
+    Do not use dictionaries as default parameters
+    
+    Change-Id: I1e2b7065a7cfad2511fbcee669f666257ef291d0
+
+commit 68d1550f15a6ec6f51973af2e27f3a6943b6305f
+Author: Donagh McCabe <donagh.mccabe@hp.com>
+Date:   Wed Sep 5 15:55:53 2012 +0100
+
+    Add region_name support
+    
+    Add --os-region-name (and OS_REGION_NAME env) to bin/swift
+    Add region_name to the os_options in Connection class.
+    
+    bug 1019832
+    
+    Change-Id: Id8515d97e5351638dce10581c7368f61518e1fa7
+
+commit 4b4fbf0dc0d2e918b88c1e387f462faca7e98ffd
+Author: David Kranz <david.kranz@qrclab.com>
+Date:   Tue Aug 28 10:25:42 2012 -0400
+
+    Allow endpoint type to be specified.
+    
+    Fixes bug 1037690.
+    
+    Change-Id: I36b3807b2f3234c778316f1e743d27304755aed8
+
+commit c97a90c847f8811e5eb766dd26ff8373675514ac
+Merge: cec3a79 93b5997
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Aug 29 17:26:41 2012 +0000
+
+    Merge "PEP8 issues fixed"
+
+commit cec3a79b8b0e2bf910791bd98d7e82ad1f22ac9b
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Wed Aug 29 13:40:32 2012 +0200
+
+    PEP8 cleanup.
+    
+    Some trivial pep8 cleanup.
+    
+    Change-Id: I0f02c0730bf889b2b89063bef6bcc8b71d36505c
+
+commit 93b5997843af55f6cbf22898499dbfe0153d0d41
+Author: Ray Chen <oldsharp@163.com>
+Date:   Wed Aug 29 13:40:09 2012 +0800
+
+    PEP8 issues fixed
+    
+    1. Have a better indent in doc/source/conf.py
+    2. Fix an import issue
+    
+    Change-Id: I5811c195157706d2a85c0fd47666e67f94b2c558
+
+commit c94ca0e298164bec8773b2f93d5d1fa8521ea0ef
+Author: Darrell Bishop <darrell@swiftstack.com>
+Date:   Fri Aug 17 10:51:25 2012 -0700
+
+    Add ability to download without writing to disk.
+    
+    This patch adds a "--no-download" option to the "download" command.
+    When given, all writing to disk is bypassed, while still actually
+    downloading the data and validating etags.
+    
+    This can be handy when you're using the swift command-line client to
+    test out a swift cluster and don't want client-side disk writing to be a
+    bottle-neck (but you still want to know about any etag validation
+    failures).
+    
+    Change-Id: I0a511f473a64820161d1eb529b995900742794f2
+
+commit 3207e36984e845496dc910ad32e4f5e3ba628836
+Author: lrqrun <lrqrun@gmail.com>
+Date:   Tue Aug 28 20:00:49 2012 +0800
+
+    Fix PEP8 issues.
+    
+    Fix some pep8 issues in doc/source/conf.py make the code looks pretty.
+    
+    Change-Id: Icc5ce260aaae8a2c436f5146840ffde4e6ef2839
+
+commit 58baa42075754c1a3d44a4dbe5e4546bb5689d46
+Merge: 55f0886 b0eb070
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Tue Aug 28 06:05:23 2012 +0000
+
+    Merge "Add nosehtmloutput as a test dependency."
+
+commit 55f0886066e9afbd459b1e73b394f8674fd66924
+Author: Dean Troyer <dtroyer@gmail.com>
+Date:   Thu Aug 23 14:09:56 2012 -0500
+
+    Change '_' to '-' in options
+    
+    This changes every command-line option with a '_' in its name
+    and changes them to '-'.  The old option names are maintained
+    for backward compatibility but are no longer in the help text.
+    
+    BP command-options
+    
+    Change-Id: I79b3c03f59ce8e253aa0dcbf0c2ed5a56d71cd0c
+
+commit 8e2e97fd75b9eaf36d72193408d7b8b7b5793a60
+Author: yuxcer <yuxcer@126.com>
+Date:   Wed Aug 22 18:06:39 2012 +0800
+
+    	Fix swiftclient 400 error when OS_AUTH_URL is set.
+    
+    	Description: The swift command tool will set the auth version
+            to 2 if OS_AUTH_URL is set even use -V 1 option to set Version
+            to 1.So when use nova/glance client and swift client in the
+            same shell, and export environment OS_AUTH_URL, it will lead
+            swift client to raise 400 error if swift not use keystone
+            for auth.
+    	Fixes bug 1034158
+    
+    Change-Id: I8003ff2ad4ac25fd710f87c4dab1507f6040ed3d
+
+commit 46aad0e8fb474dae3787c8542e9f1bea00441510
+Merge: 6941260 29c3af8
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Aug 22 00:04:17 2012 +0000
+
+    Merge "Ensure Content-Length header when PUT/POST a container"
+
+commit b0eb070655c9a81d1500cd2efacb30640a47b151
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Tue Aug 21 14:40:00 2012 -0700
+
+    Add nosehtmloutput as a test dependency.
+    
+    Adding nosehtmloutput as a test dependency allows nose to output its
+    results to an html file. This will be used by Jenkins to save logs on
+    a different server.
+    
+    Change-Id: I4292ba27db9371d5a8dae4b901a46165b9ee6721
+
+commit 6941260d071e41d46266141fead533492163688b
+Merge: 9a3aa06 9083beb
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Aug 17 22:41:58 2012 +0000
+
+    Merge "Shuffle download order (of containers and objects)"
+
+commit 9083beb41fbc0ab8bcbc5a57ded5dc25dfd96b46
+Author: Darrell Bishop <darrell@swiftstack.com>
+Date:   Thu Aug 16 21:39:00 2012 -0700
+
+    Shuffle download order (of containers and objects)
+    
+    When downloading the same containers or objects with multiple
+    invocations of the swift command-line client, you'll get better
+    throughput and avoid "hot spots" if each client randomizes its download
+    order.
+    
+    Note that the marker must be picked *before* shuffling the containers or
+    objects.
+    
+    Change-Id: I7240eda57a80e1708c2483827c6329fd57d5fc51
+
+commit 9a3aa066c37f542356c62f8df9631cff9f163194
+Author: Darrell Bishop <darrell@swiftstack.com>
+Date:   Thu Aug 16 21:30:54 2012 -0700
+
+    Add timing stats to verbose download output.
+    
+    When using the swift command-line tool to evaluate a Swift cluster, it
+    can be very handy to get some insight into the download timing.  This
+    patch adds timing data to verbose output for the download command.  For
+    each downloaded file, the printed line will also contain:
+     - The time it took to send the request and receive the header
+     - The total time the request took (including writing the file out
+       locally)
+     - The average throughput of the download
+    
+    Change-Id: Ib4a995623af973bb1eed4fb52c8c0e5da935964d
+
+commit 29c3af811c830d52871d63e592130f442716118c
+Author: Sam Morrison <sorrison@gmail.com>
+Date:   Wed Aug 15 14:31:16 2012 +1000
+
+    Ensure Content-Length header when PUT/POST a container
+    
+    Fixes bug #951155
+    
+    Change-Id: Ib1455ddb142137cc0946d50a66540eae6402f598
+
+commit 99b8253450e3e91ea8615c1dc1457ede4131109f
+Author: gholt <z-launchpad@brim.net>
+Date:   Tue Aug 14 15:07:54 2012 +0000
+
+    Make python-keystoneclient optional
+    
+    A lot of us don't use Keystone.
+    
+    Change-Id: Ifcd5fe609efbe950e935c0e0cfee200687b69eda
+
+commit c87458e229281a050ecca11a0b99fa55c07ad29c
+Author: Darrell Bishop <darrell@swiftstack.com>
+Date:   Fri Aug 3 19:27:07 2012 -0700
+
+    Fix container delete throughput and 409 retries.
+    
+    Fix race condition in _delete_container() where all elements of
+    object_queue have been removed, but the last one (per thread) may not
+    have actually been deleted yet when the container deletion thread calls
+    conn.delete_container(container).  Fixes bug 1032879.
+    
+    Improves container deletion throughput by immediately deleting
+    containers with no objects instead of waiting for all pending object
+    deletes to complete.  Fixes bug 1032878.
+    
+    Change-Id: I404229a4c608995294e0ada77724ac8afe8d6f3c
+
+commit 1f6096e063cc56896039f1b09fc5d49f6b2de9ae
+Merge: b0aaa3a c8163f4
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Aug 2 17:42:40 2012 +0000
+
+    Merge "Use keystoneclient for authentication."
+
+commit b0aaa3a3c97c7f3b941ebf473f51ef5329632717
+Merge: 7618fea 44e62db
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Mon Jul 16 18:34:49 2012 +0000
+
+    Merge "Removes the title "Swift Web" from landing page."
+
+commit 7618feaeb12c4128ebe31ed7af3110d15746d0d7
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Mon Jul 2 14:58:10 2012 -0700
+
+    Consume version info from pkg_resources.
+    
+    Documenation builds specify a version in doc/source/conf.py that is
+    used in appropriate places through out the documentation. Previously
+    this value had not been defined properly and documentation builds
+    failed. Retrieve the version info using pkg_resources and set it
+    properly.
+    
+    Use openstack.common.version to consume the generated version information
+    for documentation. Additional, add a swiftclient.__version__ member which
+    will return the version of swiftclient being used.
+    
+    Change-Id: I14f3abdf00da3f9ea7d0651efe76b08f69ddabae
+
+commit c8163f4112bbf5fb438a7fe04bcd9c6ab244768a
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Wed Jul 4 21:46:02 2012 +0200
+
+    Use keystoneclient for authentication.
+    
+    - This allows us to delegate all 2.0 authentication directly to the
+      library without reimplementing ourselves.
+    - Support reusing a token / storage-url without re-authenticating every
+      time via the switch os_storage_url os_auth_token.
+    - Allow auth via tenant_id instead of just tenant_name via the switch
+      os_tenant_id.
+    - Refactor a bit to make it easier in the future to add new OS features
+      (i.e: region).
+    - Implements blueprint use-keystoneclient-for-swiftclient.
+    - Fixes bug 1016641.
+    
+    Change-Id: I532f38a68af884de25326aaac05a2050f5ffa1c7
+
+commit 44e62db09504137ece46f8aa84d92ca6a832140c
+Author: annegentle <anne@openstack.org>
+Date:   Thu Jul 5 07:50:36 2012 -0400
+
+    Removes the title "Swift Web" from landing page.
+    
+    Also want to test the DocImpact flag for notifications.
+    
+    Change-Id: I4e12d76050720bec5126db3c87391dbbe54773a2
+
+commit c2a3fc56fc32b55f06798012fa5e74891acb533a
+Merge: a325aad 36daad9
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jul 4 09:41:04 2012 +0000
+
+    Merge "Now url encodes/decodes x-object-manifest values"
+
+commit a325aad8a491a497272a7b165cbaa7577ce27654
+Merge: 47f8786 51bceab
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Sun Jul 1 17:57:03 2012 +0000
+
+    Merge "Add post-tag versioning."
+
+commit 36daad953aea9965cbed97b59d9d2884062157d4
+Author: gholt <z-launchpad@brim.net>
+Date:   Thu Jun 28 23:42:50 2012 +0000
+
+    Now url encodes/decodes x-object-manifest values
+    
+    Change-Id: I8ce7fa1cb0aba3aca622c7a793ee5d330fe4e265
+
+commit 47f8786cc97914f8e9e021773ac972c1e9400f8b
+Merge: f6c7fec c6cc7ea
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 27 19:52:24 2012 +0000
+
+    Merge "Make swift exit on ctrl-c."
+
+commit f6c7fec991939e02c78ba8f34069772027eb70b8
+Author: Samuel Merritt <sam@swiftstack.com>
+Date:   Tue Jun 12 17:33:18 2012 -0700
+
+    Configurable concurrency for swift client.
+    
+    The 'delete', 'download', and 'upload' commands use multiple threads
+    for concurrency. However, the number of threads was hardcoded at
+    10. This patch simply makes those configurable.
+    
+    For example, if I'm downloading a lot of files but I don't want to
+    saturate the downstream on my Internet connection, I might choose to
+    use only 1 or 2 threads for object downloads. Conversely, if I'm
+    uploading a lot of small files across a fast network, I would want
+    lots of threads to speed things along.
+    
+    The default number of threads is 10, so the default behavior is
+    unchanged.
+    
+    Change-Id: I64c06741b24ca97fef5ded206d7e898bf5cab3b8
+
+commit 0519e58e2c29ffe5211f732bbf5356e21a7bfbf3
+Merge: 2e05673 2bcfe0b
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 27 19:30:48 2012 +0000
+
+    Merge "Allow specify tenant:user in user."
+
+commit 2e05673e5ca618423ea19dad59c1b43ad0016c04
+Merge: 8396e3a 6119de7
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 27 19:30:15 2012 +0000
+
+    Merge "Make CLI exit nonzero on error."
+
+commit 2bcfe0b4c82ed3a333e3ffcf1d11423d57c2b761
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Thu Jun 14 14:28:09 2012 +0000
+
+    Allow specify tenant:user in user.
+    
+    We allow having the syntax tenant:user in user since this would make
+    things easier when switching from auth 1.0 to auth 2.0 and not having to
+    specify a tenant_name.
+    
+    In the feature we should use the auth functions from keystoneclient and
+    be done with those changes, we could then auth by user/tenant-ID.
+    
+    Change-Id: Ie49748105a678fb9369494e77d41d934d57a39a7
+
+commit c6cc7eaa81923b374333e1252ac4a9c888374321
+Author: Samuel Merritt <sam@swiftstack.com>
+Date:   Mon Jun 18 09:46:54 2012 -0700
+
+    Make swift exit on ctrl-c.
+    
+    The first time the user presses ctrl-c, all QueueFunctionThreads will
+    have abort=True set on them. This will cause them to finish the work
+    they're doing (e.g. finish uploading the current file) but then ignore
+    any further work and let the process exit. Also, a notification of
+    this is written to stderr so the user understands why the process
+    didn't exit immediately.
+    
+    The second time the user presses ctrl-c, the process will exit
+    immediately. Any in-progress operations are abandoned.
+    
+    Change-Id: Ie6927f78726ac1c7998e920cb608682ead10f25b
+
+commit 8396e3a4cb3daa6946844c23af22e01f44671834
+Merge: 3a11e18 6c1813d
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Wed Jun 27 19:02:58 2012 +0000
+
+    Merge "Make swift not hang on error."
+
+commit 51bceabd18b04a5663584a054322c9a04fcc29db
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon Jun 25 11:10:02 2012 -0500
+
+    Add post-tag versioning.
+    
+    Change-Id: Id921105dd2fa818cac7c66dc620b266fd5639d72
+
+commit 3a11e185b38da452cb952c63acc8c5e33a924748
+Author: Dan Prince <dprince@redhat.com>
+Date:   Fri Jun 22 11:12:21 2012 -0400
+
+    Don't suppress openstack auth options.
+    
+    Fixes LP Bug #1016600.
+    
+    Change-Id: I837728aa5445b6ccd07c47bdb4d99f0c84a1d7b2
+
+commit 6c1813dd34c858cf79e4ebab830b7cbe977792f2
+Author: Samuel Merritt <sam@swiftstack.com>
+Date:   Mon Jun 11 11:39:18 2012 -0700
+
+    Make swift not hang on error.
+    
+    Before, if a QueueFunctionThread's function raised an exception, then
+    its thread would log the exception and exit, leaving the rest of the
+    jobs in the queue and ensuring that the swift client would hang.
+    
+    Now, the exception is logged and processing continues, so all the
+    messages get handled eventually and the client exits.
+    
+    Change-Id: I43d4df212847a2a85732b304de319ea2cce82ddd
+
+commit a92a0fa0e43a6f27c66396e0352da8da368067f1
+Merge: c82773d d20dcdd
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Fri Jun 15 22:42:08 2012 +0000
+
+    Merge "Add missing test/tools files to the tarball."
+
+commit c82773d3d155ad3df586f2e87d97ed441b385a89
+Author: Samuel Merritt <spam@andcheese.org>
+Date:   Fri Jun 15 12:18:08 2012 -0700
+
+    Fix pep8 errors w/pep8==1.3.
+    
+    Also lock down the version of pep8 in
+    tools/test-requires. python-swiftclient had a passing test suite
+    yesterday, but today a new and stricter version of pep8 came out, and
+    the test suite started to fail. Specifying a particular version of
+    pep8 will prevent that.
+    
+    Change-Id: I9092d2225c01b99158229918c86b185cdac9d362
+
+commit d20dcdd09728c3e4a6d8da592bfe741490e7c2c1
+Author: Dan Prince <dprince@redhat.com>
+Date:   Thu Jun 14 13:25:28 2012 -0400
+
+    Add missing test/tools files to the tarball.
+    
+    Fixes LP Bug #1013292.
+    
+    Change-Id: I23ccc476d5e1fa2b131d93970fd3f0e65d633fab
+
+commit 12519ce0266875e6644399a25156c1b8691248ef
+Author: Clark Boylan <clark.boylan@gmail.com>
+Date:   Mon Jun 11 14:50:21 2012 -0700
+
+    Add build_sphinx options.
+    
+    To better facilitate the building and publishing of sphinx
+    documentation by Jenkins we are moving all openstack projects with
+    sphinx documentation to a common doc tree structure. Documentation
+    goes in project/doc/source and build results go in project/doc/build.
+    
+    Change-Id: Ibe6745cac73817ea06faca77367b4269d5137a24
+
+commit 6119de7e0b92739549a5ce52142c9bc78dd9e589
+Author: Samuel Merritt <spam@andcheese.org>
+Date:   Thu Jun 7 12:14:06 2012 -0700
+
+    Make CLI exit nonzero on error.
+    
+    This makes it much easier to detect failure in scripts.
+    
+    Fixes bug 973557.
+    
+    Change-Id: Ifd16ffcb7be85e45582095246cc29cfe44e2a173
+
+commit dec11f6ec913e6874668c67e5643b81e0014f723
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Wed May 23 15:14:47 2012 +0200
+
+    Add doc and version in swiftclient.__init__.py
+    
+    - Add parseable version in swiftclient.__init.py
+    - Generate rst doc like done for swift.
+    
+    Change-Id: I408fbc36693772d2ef6f4823757dd1f4c830193f
+
+commit b13823ef1847131399d69789738e0fe2aaac1ac6
+Author: Dan Prince <dprince@redhat.com>
+Date:   Wed Jun 6 18:38:08 2012 +0200
+
+    Raise ClientException for invalid auth version.
+    
+    - Fixes LP Bug #1008667.
+    - Fix a pep8 error along the way to pass jenkins.
+    - Update openstack.swift.common to get jenkins passing for 1.2 pep8
+      error.
+    
+    Change-Id: I4ce86a94e1c799807a2ad8e7e1c502b1eb8a51c7
+
+commit 7bbb5c72cad5148c0b0231f659aa9220e1987ea0
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Tue May 22 08:29:09 2012 -0400
+
+    Version bump after pypi release.
+    
+    Change-Id: Ic8a6d5de110165dbf2be106e35326288a3ecc928
+
+commit c9dfd144d11b6371da95469e8fcff7315d1c0c4e
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon May 21 10:58:35 2012 -0400
+
+    Removed now-unused .cache.bundle references.
+    
+    Change-Id: I236cc26be12c21743197e93ed304655702cb1ff2
+
+commit bee9ae504270c6cd73663ba1a6f63c32fc66850a
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Mon May 21 09:09:13 2012 -0400
+
+    Added setup.cfg for verbose test output.
+
+commit eb775a46ed907cc427303a9ad46e778eeb9c3784
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Mon May 21 12:52:12 2012 +0200
+
+    Add run_tests.sh script here.
+    
+    - Snatched from python-glanceclient repo.
+
+commit deff7eca1c5f2192eaf1b95aa5d03bab42f99576
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Mon May 21 12:49:21 2012 +0200
+
+    Adding fake_http_connect to test.utils.
+    
+    - Copy fake_http_connect function from swift repository.
+
+commit 09c484d1b02f0d02cbe6db8ad2d8aa7ded5aa234
+Merge: a42892c 7df0123
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Wed May 16 15:25:31 2012 -0700
+
+    Merge pull request #1 from emonty/master
+    
+    Add the bits needed by the project testing interface
+
+commit 7df012329f0b22e19f878cee2602407cb23042ef
+Author: Monty Taylor <mordred@inaugust.com>
+Date:   Wed May 16 17:30:46 2012 -0400
+
+    Add openstack project infrastructure.
+
+commit a42892c1f99595f2aafb2c32bb2b4697a7d600de
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Wed May 9 15:50:17 2012 +0100
+
+    Add logging.
+    
+    - If SWIFTCLIENT_DEBUG env is defined then print the full query with curl.
+
+commit 27c8fee760dcc99624365b858aa3af1e68c75e0a
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 16:30:49 2012 +0100
+
+    Defined version to 1.0
+
+commit b053b5d193f651e6e4a4b18df2ecef077a185712
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 16:30:13 2012 +0100
+
+    Add CHANGELOG LICENSE and MANIFEST.in
+
+commit ee965ff4a775634a0566a33f549f13db6559e611
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 16:29:29 2012 +0100
+
+    Delete old test_client and add a gitignore.
+
+commit a5a6a8fddbb05949b77fb2e7170314ab55e7b650
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 15:51:15 2012 +0100
+
+    Rename client to swiftclient.
+
+commit daf3805caef78f3cc11a2d73c638dc9481cf232a
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 15:21:56 2012 +0100
+
+    Fix links.
+
+commit cb07a50900dd69f049802698018ae051b918d518
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 15:18:01 2012 +0100
+
+    Import script from swift to run unittests.
+
+commit 1b6db9eb42cf1f030547221e33ab3bce720e120a
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 15:14:41 2012 +0100
+
+    Add test_client from original swift repository.
+
+commit 7150eb84f56339f25994d93e4b77d4410d68df43
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 15:14:00 2012 +0100
+
+    Add AUTHORS file
+    
+    - Generated from previous authors in Swift git repository for bin/swift
+      swift.common.client and tests.common.test_client.
+
+commit 4c5ee99f5ba8d28ad0c326b91e7aea692ed856d2
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 14:10:14 2012 +0100
+
+    Make sure we get a header StorageURL with 1.0
+    
+    - Since RAX auth always come back with 200 we can't check with status code.
+
+commit 9ee3ee6e6d37328bf5fd5e71b08f7b381e33bc22
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 14:05:21 2012 +0100
+
+    Allow specify the tenant in user.
+    
+    - This is to allow the -U tenant:user syntax like previously supported
+      when not using the os_ arguments.
+
+commit b55acc34f0df54a48665eb3fbc7d9eb024dd7cb2
+Author: Chmouel Boudjnah <chmouel@chmouel.com>
+Date:   Tue May 8 11:17:04 2012 +0100
+
+    First commit.
