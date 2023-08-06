@@ -1,0 +1,287 @@
+Metadata-Version: 1.0
+Name: batou
+Version: 1.0b6
+Summary: A utility for automating multi-host, multi-environment software builds and deployments.
+Home-page: https://projects.gocept.com/projects/batou/
+Author: Christian Theune <ct@gocept.com>
+Author-email: ct@gocept.com
+License: BSD (2-clause)
+Description: batou
+        =====
+        
+        batou is a multi-(component|host|environment|...) deployment utility.
+        
+        Deployments are described in a model using "components" and can be deployed
+        locally and remotely. Models are written as Python code.
+        
+        See the `batou documentation <http://batou.readthedocs.org>`_ for details
+        on how to use it.
+        
+        
+        =========
+        Changelog
+        =========
+        
+        1.0b6 (2013-08-17)
+        ==================
+        
+        - More MANIFEST inclusions: bootstrap-template.
+        
+        
+        1.0b5 (2013-08-17)
+        ==================
+        
+        - Improve MANIFEST so we actually package the init template and other generated
+          files, like version.txt and requirements.txt.
+        
+        1.0b4 (2013-08-17)
+        ==================
+        
+        - Provide a simple project-creation command, both for pip-installed batou's as
+          well as spawning new projects from existing ones. Fixes #12730
+        
+        - Fix #12679: make timeouts configurable.
+        
+        - Removed re-imports from batou main module to support light-weight
+          self-installation and bootstrapping. I.e. 'from batou import Component' no
+          longer works.
+        
+        - Provide a single main command together with a 'bootstrap' wrapper that you
+          can check into your project and that is maintained during updates
+          automatically. It also provides fully automatic bootstrapping, installation,
+          upgrading and other maintenance.
+        
+        - Fix Python package installation version check.
+        
+        - Don't use `bin/buildout bootstrap` command anymore. PIP installs a sufficient
+          `bin/buildout` so buildout can do the rest internally.
+        
+        - Install zc.buildout during bootstrapping phase using PIP to avoid
+          bootstrap.py problems.
+        
+        - Shorten URLs in the Build component to their basename.
+        
+        - Add 'assert_cmd' API to support simpler assertions for verify when needing to
+          check the result of an external command.
+        
+        - Switch to asking pip installing eggs instead of flat installations as
+          namespaces seem to collide otherwise.
+        
+        - Remove non-functional deprecated 'md5sum' attribute.
+        
+        - Components are context managers now. If you provide __enter__ it will be
+          called before verify() and if you provide __exit__ this will be called after
+          update (always - even if update isn't actually called). This allows you to
+          manage temporary state on the target system more gracefully. See the
+          DMGExtractor for an example.
+        
+        - Major refactoring of internal data structures to simplify and improve test
+          coverage. Some breakage to be expected:
+        
+          * Components do not have a 'service' attribute any longer. If you need access
+            to the service base directory use 'environment.base_dir'.
+        
+        - Another attempt at getting convergency for package installation: actually
+          leverage pkg_resources to check what version of a package is installed. PIP
+          does not necessarily list or freeze setuptools, even if forced to reinstall.
+        
+        - Remove superfluous '--update' from pip calls that would temporarily install
+          the incorrect package version.
+        
+        - Improve convenience of the 'secrets-edit' wrapper script to allow
+          re-encrypting without re-entering the editor.
+        
+        - Consistently switch to using setuptools.
+        
+        - Fix #12399: incorrect stat attributes for Owner and Group
+        
+        - Add ``exclude`` parameter to Directory component.
+        
+        - Add ``env`` parameter to ``Component.cmd()`` (and corresponding
+          ``build_environment`` parameter to the Build component) to allow
+          adding/overriding environment variables.
+        
+        
+        1.0b3 (2013-07-09)
+        ==================
+        
+        - Enable logging in the remote core to see what's going on on the remote side.
+        
+        - Try to better format exceptions from the remote side.
+        
+        - Try harder to get virtualenv back into a working state.
+        
+        - Allow remote deployments from root of repository.
+        
+        - Make PIP management more robust.
+        
+        1.0b2 (2013-07-09)
+        ==================
+        
+        - Add component to manage PIP within a virtual env.
+        
+        - Add component to manage packages with PIP within a virtual env.
+        
+        - Restructure buildout component to make it more robust regarding
+          setuptools/distribute preparation. Also remove usage of bootstrap completely
+          as we rely on virtualenv anyway.
+        
+        
+        1.0b1 (2013-07-09)
+        ==================
+        
+        - Apply semantic versioning: initial development is over, so this is 1.0 now.
+        
+        - Major revamp of secrets management:
+        
+          - switch to GPG (instead of aespipe)
+        
+          - turn secrets into a core feature, removing the need for a special component
+        
+        - Add '--single' to suppress parallel bootstrapping.
+        
+        
+        0.2.9 (2013-07-06)
+        ==================
+        
+        - Fix #12527: utils.cmd breaks on spacey arguments and embedded quotes.
+        
+        - Avoid accidentally creating incorrect directories in developer VFS mapping.
+        
+        - Switch testrunner to pytest. Refactor some tests to take advantage of its
+          capabilities.
+        
+        - Clean up PEP8 / pyflakes errors, integrate pytest plugin to ensure continued
+          compliance.
+        
+        - Clean up buildout versions specifications.
+        
+        - Fix .dmg extractor to copy symlinks as symlinks.
+        
+        - Fix remote sudo for Mac OS X target hosts.
+        
+        
+        0.2.8 (2013-06-18)
+        ==================
+        
+        - Added archive extractor for .dmg files.
+        
+        - Added flag for supervisor to control whether global or individual restarts
+          wait until everything is running.
+        
+        0.2.7 (2013-05-22)
+        ==================
+        
+        - Fix template for Nagios check service dependencies.
+        
+        - Update bootstrap call for batou-internal bootstrapping.
+        
+        0.2.6 (2013-05-18)
+        ==================
+        
+        - Add component that clones from a Mercurial repository.
+        
+        - Write supervisord.pid into /run/local instead of ${workdir}/var to ensure
+          correct startup after machine crashes.
+        
+        - Add `ignore_returncode` parameter to Component.cmd() to suppress exceptions
+          on unsuccessful command execution.
+        
+        
+        0.2.5 (2013-04-23)
+        ==================
+        
+        - Fix interaction between supervisor programs and disabled supervisors: don't
+          try to start those programs.
+        
+        
+        0.2.4 (2013-04-22)
+        ==================
+        
+        - Force reread/update on supervisor after config changes.
+        
+        
+        0.2.3 (2013-04-22)
+        ==================
+        
+        - supervisor: wait up to 60 seconds instead of 30 until supervisor responds to
+          a PID after triggering shutdown. Fix bug trying to detect shutdown:
+          RuntimeError would cause residual data in output variables.
+        
+        - supervisor: after reloading, wait as long as the highest startup delay was
+          configured on a program to avoid subsequent accidental restarts.
+        
+        - supervisor: remove 'restart' flag: always restart if we have a relevant
+          change.
+        
+        - supervisor: fix bug in reload logic: path to supervisord.conf was wrong
+        
+        0.2.2 (2013-04-19)
+        ==================
+        
+        - Allow specifying 'configure_args' on cmmi.Build or 'args' on cmmi.Configure.
+        
+        - Fix supervisor's path lookup for event listeners to support the automatically
+          installed superlance plugins better. This may change again in the future
+          depending on other event listener needs.
+        
+        
+        0.2.1 (2013-04-18)
+        ==================
+        
+        - Fix supervisor refactoring: templates contained static paths from my
+          development machine. Event listeners were not formatting the event list
+          correctly.
+        
+        - Let RunningSupervisor wait (infinitely) long when reloading if the
+          supervisorctl command returns 'SHUTDOWN_STATE'. This supports large
+          installations with many services more gracefully but might get stuck.
+        
+        - Fix supervisor's Nagios check: I removed the bin/py custom interpreter and
+          didn't notice it was used by the check. Put it back.
+        
+        0.2 (2013-04-18)
+        ================
+        
+        - Lots of stuff that went on unreleased for way too long. Producing a release
+          to allow people to stop running from trunk.
+        
+        - Buildout component: Allow custom buildout.cfg names and pass the name to
+          bootstrap.
+        
+        - Improve SSH connection error logging: more readable now and hosts are
+          identifiable. (#12093)
+        
+        - Do not automatically add missing SSH host keys any longer. (#11606)
+        
+        - Use python version specific virtualenv, if availble. This helps with ancient
+          Python 2.4 components. For specific virtualenv versions no explicit python
+          executable is passed.
+        
+        - Internalize download hash handling using hashlib. Allow selection of hash
+          function. (Thanks to Christine Koppelt.)
+        
+        - Introduce new component modelling approach.
+        
+        - Start writing documentation.
+        
+        - Improve error message when download fails due to checksum mismatch.
+        
+        
+        ================
+        Developing batou
+        ================
+        
+        :Issue tracker:
+            https://projects.gocept.com/projects/batou/
+        
+        :Source code:
+            https://bitbucket.org/gocept/batou/
+        
+Keywords: deployment
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 2 :: Only
