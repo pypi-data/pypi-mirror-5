@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1.7. Partitioning segmentations &mdash; Orange Textable v1.3a2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.3a2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Orange Textable v1.3a2 documentation" href="index.html" />
+    <link rel="up" title="1. Segmentations" href="segmentations.html" />
+    <link rel="next" title="1.8. Using a segmentation to filter another" href="using_segmentation_filter_another.html" />
+    <link rel="prev" title="1.6. Hierarchical segmentations and performance issues" href="hierarchical_segmentations_performance_issues.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="using_segmentation_filter_another.html" title="1.8. Using a segmentation to filter another"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="hierarchical_segmentations_performance_issues.html" title="1.6. Hierarchical segmentations and performance issues"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Orange Textable v1.3a2 documentation</a> &raquo;</li>
+          <li><a href="getting_started.html" >Getting started</a> &raquo;</li>
+          <li><a href="segmentations.html" accesskey="U">1. Segmentations</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="partitioning-segmentations">
+<h1>1.7. Partitioning segmentations<a class="headerlink" href="#partitioning-segmentations" title="Permalink to this headline">¶</a></h1>
+<p>There are many situations where we might want so selectively in- or exclude
+segments from a segmentation. For instance, a user might be want to exclude
+from a word segmentation all those that are less than 4 letters long. The
+<a class="reference internal" href="select.html"><em>Select</em></a> widget is tailored for such tasks.</p>
+<p>The widget&#8217;s interface (see <a class="reference internal" href="#partitioning-segmentations-fig1"><em>figure 1</em></a>
+below) offers a choice between two modes: <em>Include</em> and <em>Exclude</em>. Depending
+on this parameter, incoming segments that satisfy a given condition will be
+either included in or excluded from the output segmentation. By default (i.e.
+when the <strong>Advanced settings</strong> box is unchecked), the condition is specified
+by means of a regex, which will be applied to each incoming segment
+successively. (For now, the option <strong>Annotation key: (none)</strong> can be ignored.)</p>
+<div class="align-center figure" id="partitioning-segmentations-fig1">
+<img alt="Example usage of widget Select" src="_images/select_example.png" />
+<p class="caption">Figure 1: Excluding short words with widget <a class="reference internal" href="select.html"><em>Select</em></a>.</p>
+</div>
+<p>In the example of <a class="reference internal" href="#partitioning-segmentations-fig1"><em>figure 1</em></a>, the
+widget is configured to exclude all incoming segments containing no more than
+3 letters. Note that without the <em>beginning of segment</em> and <em>end of segment</em>
+anchors (<em>^</em> and <em>$</em>), all words containing <em>at least</em> a sequence of 1 to 3
+letters&#8211;i.e. all the words&#8211;would be excluded.</p>
+<p>Note that <a class="reference internal" href="select.html"><em>Select</em></a> automatically emits a second segmentation
+containing all the segments that have been discarded from the main output
+segmentation (in the case of <a class="reference internal" href="#partitioning-segmentations-fig1"><em>figure 1</em></a>
+above, that would be all words less than 4 letters long). This feature is
+useful when both the selected <em>and</em> the discarded segments are to be further
+processed on distinct branches. By default, when <a class="reference internal" href="select.html"><em>Select</em></a> is connected to another widget, the
+main segmentation is being emitted. In order to send the segmentation of
+discarded segments instead, right-click on the outgoing connexion and select
+<strong>Reset Signals</strong> (see <a class="reference internal" href="#partitioning-segmentations-fig2"><em>figure 2</em></a>
+below).</p>
+<div class="align-center figure" id="partitioning-segmentations-fig2">
+<img alt="Right-clicking on a connexion and requesting to &quot;Reset Signals&quot;" src="_images/select_example_scheme.png" />
+<p class="caption">Figure 2: Right-clicking on a connexion and requesting to <strong>Reset Signals</strong>.</p>
+</div>
+<p>This opens the dialog shown on
+<a class="reference internal" href="#partitioning-segmentations-fig3"><em>figure 3</em></a> below, where the user can
+&#8220;drag-and-drop&#8221; from the gray box next to <strong>Discarded data</strong> up to the box
+next to <strong>Segmentation</strong>, thus replacing the existing green connexion.
+Clicking <strong>OK</strong> validates the modification and sends the discarded data
+through the connexion.</p>
+<div class="align-center figure" id="partitioning-segmentations-fig3">
+<a class="reference internal image-reference" href="_images/select_example_reset_signals_dialog.png"><img alt="Dialog for modifying the connexion between two widgets" src="_images/select_example_reset_signals_dialog.png" style="width: 662.4px; height: 218.4px;" /></a>
+<p class="caption">Figure 3: This dialog allows the user to select a non-default connexion between two widgets.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="hierarchical_segmentations_performance_issues.html"
+                        title="previous chapter">1.6. Hierarchical segmentations and performance issues</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="using_segmentation_filter_another.html"
+                        title="next chapter">1.8. Using a segmentation to filter another</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/partitioning_segmentations.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="using_segmentation_filter_another.html" title="1.8. Using a segmentation to filter another"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="hierarchical_segmentations_performance_issues.html" title="1.6. Hierarchical segmentations and performance issues"
+             >previous</a> |</li>
+        <li><a href="index.html">Orange Textable v1.3a2 documentation</a> &raquo;</li>
+          <li><a href="getting_started.html" >Getting started</a> &raquo;</li>
+          <li><a href="segmentations.html" >1. Segmentations</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012-2013 LangTech Sarl.
+    </div>
+  </body>
+</html>
