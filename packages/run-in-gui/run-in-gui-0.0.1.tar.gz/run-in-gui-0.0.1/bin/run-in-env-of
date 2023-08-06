@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import subprocess
+cmdline = list(sys.argv[1:])
+pid = cmdline.pop(0)
+program = cmdline[0]
+
+environ = file("/proc/%s/environ"%pid).read().split("\0")
+environ = [ e.split("=",1) for e in environ if e.strip() ]
+userid = os.stat("/proc/%s/environ"%pid).st_uid
+groupid = os.stat("/proc/%s/environ"%pid).st_gid
+
+os.setsid()
+os.setgid(groupid)
+os.setuid(userid)
+for k in os.environ.keys():
+    del os.environ[k]
+for k,v in environ:
+    os.environ[k] = v
+
+retval = os.fork()
+if retval == -1:
+    assert 0, "fork() fucked"
+elif retval == 0:
+    os.execvp(program, cmdline)
+else:
+    sys.exit(0)

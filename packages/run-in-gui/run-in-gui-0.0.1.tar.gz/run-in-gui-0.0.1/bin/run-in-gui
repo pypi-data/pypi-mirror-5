@@ -1,0 +1,32 @@
+#!/bin/bash
+
+sessid=`loginctl show-user --no-pager "$USER" | grep ^Sessions= | sed 's|^Sessions=||'`
+if [ -z "$sessid" ] ; then
+    echo "error: could not figure out a loginctl session to run program under" >&2
+    exit 124
+fi
+display=
+for s in $sessid ; do
+    display=`loginctl session-status --no-pager "$s" | grep '^\s*Display: '`
+    if [ -n "$display" ] ; then
+        sessid="$s"
+        sessleader=`loginctl session-status --no-pager "$s" | grep '^\s*Leader: ' | awk ' { print $2 } '`
+        break
+    fi
+done
+if [ -z "$sessleader" ] ; then
+    echo "error: could not figure out a display-bearing session with a session leader to run program under" >&2
+    exit 123
+fi
+
+childofsessleader=`ps -eo ppid,pid | grep -v PPID | awk ' { print $1 " " $2  } ' | grep "^$sessleader " | awk ' { print $2 } ' | head -n 1`
+if [ -z "$childofsessleader" ] ; then
+    echo "error: could not figure out the child of session leader $sessleader to run program under" >&2
+    exit 122
+fi
+
+loginctl activate "$sessid"
+set -e
+unset CDPATH
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+"$DIR"/run-in-env-of "$childofsessleader" "$@"
