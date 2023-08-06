@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% load bootstrap_toolkit %}
+{% load guardian_tags %}
+
+{% block content %}
+    <div class='row'>
+        <div class='span4'>
+            <h1>Grant Admin Privileges</h1>
+
+            {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+            <form action='{% url 'appsetup:admin' %}' class='form' method='post'>
+                {% csrf_token %}
+                {{ form | as_bootstrap }}
+                <div class="form-actions">
+                    <input type="submit" class="btn btn-info" value="Grant"/>
+                    <a class='btn' href='{% url 'appsetup:index' %}'>Cancel</a>
+                </div>
+            </form>
+        </div>
+        <div class='span3'>
+            <h3>currently existing users</h3>
+            {% if users %}
+                <ul>
+                    {% for user in users %}
+                        <li>{{ user }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
