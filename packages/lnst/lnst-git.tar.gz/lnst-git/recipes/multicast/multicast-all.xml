@@ -1,0 +1,61 @@
+<!-- Execute all tests for multicast -->
+<lnstrecipe>
+    <!-- Change these parameters to match your test environment setup -->
+    <define>
+        <alias name="hostname1" value="192.168.122.11"/>
+        <alias name="virtdomain1" value="RHEL6"/>
+
+        <alias name="hostname2" value="192.168.122.10"/>
+        <alias name="virtdomain2" value="Fedora16-clone"/>
+    </define>
+    <machines>
+        <machine id="1">
+            <params>
+                <param name="hostname" value="{$hostname1}"/>
+                <param name="libvirt_domain" value="{$virtdomain1}"/>
+            </params>
+            <interfaces>
+                <eth id="testiface" network="tnet">
+                    <addresses>
+                        <address value="192.168.100.226/24"/>
+                    </addresses>
+                </eth>
+                <eth id="2" network="tnet">
+                    <addresses>
+                        <address value="192.168.100.240/24"/>
+                    </addresses>
+                </eth>
+            </interfaces>
+        </machine>
+        <machine id="2">
+            <params>
+                <param name="hostname" value="{$hostname2}"/>
+                <param name="libvirt_domain" value="{$virtdomain2}"/>
+            </params>
+            <interfaces>
+                <eth id="testiface" network="tnet">
+                    <addresses>
+                        <address value="192.168.100.215/24"/>
+                    </addresses>
+                </eth>
+            </interfaces>
+        </machine>
+    </machines>
+
+    <define>
+        <alias name="multicast_group" value="239.1.2.3"/>
+        <alias name="port" value="1337"/>
+        <alias name="test_duration" value="10"/>
+        <alias name="send_delay" value="0.1"/>
+        <alias name="nonexistent_ip" value="127.0.0.200"/>
+    </define>
+
+    <command_sequence source="cmd_sequences/multicast/max_groups.xml"/>
+    <command_sequence source="cmd_sequences/multicast/block_source.xml"/>
+    <command_sequence source="cmd_sequences/multicast/source_membership.xml"/>
+    <command_sequence source="cmd_sequences/multicast/membership.xml"/>
+    <command_sequence source="cmd_sequences/multicast/if.xml"/>
+    <command_sequence source="cmd_sequences/multicast/ttl.xml"/>
+    <command_sequence source="cmd_sequences/multicast/loop.xml"/>
+    <command_sequence source="cmd_sequences/multicast/simple.xml"/>
+</lnstrecipe>

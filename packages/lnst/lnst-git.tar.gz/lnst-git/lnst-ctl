@@ -1,0 +1,189 @@
+#! /usr/bin/env python
+"""
+Net test controller
+
+Copyright 2011 Red Hat, Inc.
+Licensed under the GNU General Public License, version 2 as
+published by the Free Software Foundation; see COPYING for details.
+"""
+
+__author__ = """
+jpirko@redhat.com (Jiri Pirko)
+"""
+
+import getopt
+import sys
+import logging
+import os
+import re
+import datetime
+from lnst.Common.Logs import LoggingCtl, log_exc_traceback
+from lnst.Common.Config import Config
+from lnst.Common.Colours import load_presets_from_config
+from lnst.Controller.NetTestController import NetTestController, NetTestError
+from lnst.Controller.NetTestResultSerializer import NetTestResultSerializer
+
+def usage():
+    """
+    Print usage of this app
+    """
+    print "Usage: %s [OPTION...] [RECIPE...] ACTION" % sys.argv[0]
+    print ""
+    print "ACTION = [run | dump | config_only | match_setup]"
+    print ""
+    print "OPTIONS"
+    print "  -d, --debug                     emit debugging messages"
+    print "  -p, --packet-capture            capture and log all ongoing\n" \
+          "                                  network communication during\n" \
+          "                                  the test"
+    print "  -h, --help                      print this message"
+    print "  -m, --no-colours                disable coloured terminal output"
+    print "  -o, --disable-pool-checks       don't check the availability of\n"\
+          "                                  machines in the pool"
+    print "  -c, --cleanup                   perform config cleanup\n" \
+          "                                  machines"
+    print "  -x, --result=FILE               file to write xml_result"
+    sys.exit()
+
+def process_recipe(action, file_path, cleanup, res_serializer,
+                   packet_capture, config, log_ctl, pool_checks):
+    nettestctl = NetTestController(file_path, log_ctl, cleanup=cleanup,
+                                   res_serializer=res_serializer,
+                                   config=config, pool_checks=pool_checks)
+    if action == "run":
+        return nettestctl.run_recipe(packet_capture)
+    elif action == "dump":
+        return nettestctl.dump_recipe()
+    elif action == "config_only":
+        return nettestctl.config_only_recipe()
+    elif action == "match_setup":
+        return nettestctl.match_setup()
+    else:
+        logging.error("Unknown action \"%s\"" % action)
+        usage();
+
+def get_recipe_result(args, file_path, cleanup, res_serializer, packet_capture,
+                      config, log_ctl, pool_checks):
+    res_serializer.add_recipe(file_path)
+    log_ctl.set_recipe(file_path)
+
+    res = None
+    try:
+        res = process_recipe(args, file_path, cleanup, res_serializer,
+                             packet_capture, config, log_ctl, pool_checks)
+    except Exception as err:
+        log_exc_traceback()
+        logging.error(err)
+
+    res_serializer.set_recipe_result(res)
+
+    return ((file_path, res))
+
+def main():
+    """
+    Main function
+    """
+    try:
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "dhr:cx:pom",
+            ["debug", "help", "recipe=", "cleanup", "result=",
+             "packet-capture", "disable-pool-checks", "no-colours"]
+        )
+    except getopt.GetoptError as err:
+        print str(err)
+        usage()
+        sys.exit()
+
+    config = Config("controller")
+    dirname = os.path.dirname(sys.argv[0])
+    gitcfg = os.path.join(dirname, "lnst-ctl.conf")
+    if os.path.isfile(gitcfg):
+        config.load_config(gitcfg)
+    else:
+        config.load_config('/etc/lnst-ctl.conf')
+
+    usr_cfg = os.path.expanduser('~/.lnst/lnst-ctl.conf')
+    if os.path.isfile(usr_cfg):
+        config.load_config(usr_cfg)
+    else:
+        if not os.path.isdir(os.path.dirname(usr_cfg)):
+            os.makedirs(os.path.dirname(usr_cfg))
+        with open(usr_cfg, 'w') as f:
+            f.write(config.dump_config())
+
+    debug = 0
+    recipe_path = None
+    cleanup = False
+    result_path = None
+    packet_capture = False
+    pool_checks = True
+    coloured_output = not config.get_option("colours", "disable_colours")
+    for opt, arg in opts:
+        if opt in ("-d", "--debug"):
+            debug += 1
+        elif opt in ("-h", "--help"):
+            usage()
+        elif opt in ("-c", "--cleanup"):
+            cleanup = True
+        elif opt in ("-x", "--result"):
+            result_path = arg
+        elif opt in ("-p", "--packet-capture"):
+            packet_capture = True
+        elif opt in ("-o", "--disable-pool-checks"):
+            pool_checks = False
+        elif opt in ("-m", "--no-colours"):
+            coloured_output = False
+
+    load_presets_from_config(config)
+
+    date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    log_ctl = LoggingCtl(debug,
+                         log_dir=config.get_option('environment', 'log_dir'),
+                         log_subdir=date, colours=coloured_output)
+
+    action = args.pop()
+
+    if not action in ['run', 'dump', 'config_only', 'match_setup']:
+        logging.error("No action command passed")
+        usage();
+
+    summary = []
+
+    res_serializer = NetTestResultSerializer()
+    for recipe_path in args:
+        if os.path.isdir(recipe_path):
+            all_files = []
+            for root, dirs, files in os.walk(recipe_path):
+                dirs[:] = [] # do not walk subdirs
+                all_files += files
+
+            all_files.sort()
+            for f in all_files:
+                recipe_file = os.path.join(recipe_path, f)
+                if re.match(r'^.*\.xml$', recipe_file):
+                    logging.info("Processing recipe file \"%s\"" % recipe_file)
+                    summary.append(get_recipe_result(action, recipe_file,
+                                                     cleanup,
+                                                     res_serializer,
+                                                     packet_capture,
+                                                     config, log_ctl,
+                                                     pool_checks))
+        else:
+            summary.append(get_recipe_result(action, recipe_path,
+                                             cleanup, res_serializer,
+                                             packet_capture,
+                                             config, log_ctl, pool_checks))
+
+    log_ctl.set_recipe("", clean=False)
+
+    res_serializer.print_summary()
+
+    if result_path:
+        result_path = os.path.expanduser(result_path)
+        handle = open(result_path, "w")
+        handle.write(str(res_serializer))
+        handle.close()
+
+if __name__ == "__main__":
+    main()
