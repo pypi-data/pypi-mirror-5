@@ -1,0 +1,52 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:cmf="http://namespaces.zope.org/cmf"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="ims">
+
+    <include file="permissions.zcml" />
+    <include package=".browser"/>
+
+    <!-- Register the installation GenericSetup extension profile -->
+    <genericsetup:registerProfile
+        name="default"
+        title="IMS"
+        directory="profiles/default"
+        description="Provides IMS System"
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"/>
+
+    <!-- File System Directory Views registration -->
+    <cmf:registerDirectory
+        name="ims"/>
+
+    <adapter
+        factory=".adapter.IMSMessage"/>
+
+    <five:implements
+        class="ZPublisher.HTTPRequest.HTTPRequest"
+        interface="zope.publisher.interfaces.browser.IBrowserRequest"/>
+
+    <subscriber
+        for="Products.IMS.interfaces.IMessage
+             zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+        handler=".utils.newMessageNotify"
+        />
+
+    <subscriber
+        for="Products.PluggableAuthService.interfaces.events.IUserLoggedInEvent"
+        handler=".utils.createMessageFolders"
+        />
+
+    <subscriber
+        for="Products.IMS.interfaces.IMessageBeforeDelete"
+        handler=".utils.handleMessageDelete"
+        />
+  
+    <utility zcml:condition="not-have plone-4"
+             component=".imsdomain"
+             name="IMS" />
+
+</configure>
