@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2013 Craig Phillips.  All rights reserved.
+
+import sys, os, logging, re
+from libgsync.options import GsyncOptions
+from libgsync.output import verbose, debug
+from libgsync.crawler import Crawler
+
+if GsyncOptions.verbose:
+    verbose.enable()
+
+if GsyncOptions.debug:
+    debug.enable()
+
+if not GsyncOptions.super and os.getuid() != 0:
+    if GsyncOptions.owner or GsyncOptions.group:
+        print("Warning: Not running as root, file ownership may be ignored")
+
+logging.basicConfig()
+paths = GsyncOptions.list().source_paths
+dest = GsyncOptions.destination_path
+
+debug(GsyncOptions.options)
+
+# If there are multiple source paths, the destination is always a
+# directory if a name is supplied.  Otherwise, the destination is
+# a directory if the source is also a directory, or it is a file if
+# the destination does not exist or is already an existing file.
+if len(paths) > 1:
+    debug("Multiple source files, destination cannot be a file")
+    GsyncOptions.force_dest_file = False
+else:
+    GsyncOptions.force_dest_file = None
+
+try:
+    for p in paths:
+        debug("Creating crawler for: %s" % repr(p))
+        crawler = Crawler(p, dest)
+        crawler.run()
+
+except KeyboardInterrupt, e:
+    sys.exit(1)
+
+except Exception, e:
+    debug.exception(e)
+    sys.stderr.write("Error: %s\n" % str(e))
+    sys.exit(255)
+
+debug("Crawlers finished, exiting")
+
+sys.exit(0)
