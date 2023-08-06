@@ -1,0 +1,151 @@
+{% extends "base/detail.html" %}
+{% load url from future %}
+{% load ci_tags %}
+
+{% block extrastyles %}
+<style>
+    thead {
+        font-size: 14pt;
+    }
+    td span.label {
+        text-align: center;
+        display: block;
+        max-width: 100px;
+        padding: 5px;
+    }
+    td pre {
+        white-space: pre;
+    }
+</style>
+{% endblock extrastyles %}
+
+{% block extrascripts %}
+<script>
+    $("#test-button").click(function() {
+        $(this).addClass("disabled");
+        
+    });
+</script>
+{% endblock extrascripts %}
+
+{% block links %} 
+    <a href="{% url 'ci-projects:detail' object.project.slug %}" class="btn">View Project</a>
+    <a href="{% url 'base:update' object.project.slug object.slug %}" class="btn btn-info">Update</a>
+    <a href="{% url 'base:delete' object.project.slug object.slug %}" class="btn btn-danger">Delete</a> 
+{% endblock %}
+
+{% block detail %}
+
+<div class="well">
+
+    {% with server=object.get_server %}
+    {% if not server %}
+    <form class="pull-right" method="post" action="{% url 'base:start' object.project.slug object.slug %}">
+        <button class="btn btn-info">Start Server</button>{% csrf_token %}
+    </form>
+    {% else %}
+    <form class="pull-right" method="post" action="{% url 'base:stop' object.project.slug object.slug %}">
+        <a target="_blank" href="http://{{ request|host_only }}:{{ server.port }}">View server on port {{ server.port }}</a>
+        <button class="btn btn-info">Stop Server</button>{% csrf_token %}
+    </form>    
+    {% endif %}
+    {% endwith %}
+
+    <form class="pull-right" method="post" action="{% url 'base:pull' object.project.slug object.slug %}">
+        <button class="btn">Pull</button>{% csrf_token %}
+    </form>   
+    <form style="margin: 0;" method="post" action="{% url 'base:test' object.project.slug object.slug %}">
+        <button id="test-button" class="btn btn-danger">Run Tests</button>
+    </form>
+</div>
+
+<table class="table">
+    <tr>
+        <th>Last Test Run</th>
+        <td name="{{ object.name }}" branch="{{ object.branch }}">
+            {% with status=object.testing_status %}
+            {% if status %}
+                {{ object.last_run.created_at }}
+                <span class="muted">                    
+                    [{{ status }} - {{ object.celery_id }}]
+                </span>
+            {% endif %}
+            {% endwith %}
+        </td>
+    </tr>
+    <tr>
+        <th>Summary</th>
+        <td>
+            <table>{% for stat in object.stats %}
+                <tr>
+                    <th>{{ stat.status }}</th>
+                    <td>
+                        <span class="label label-{{stat.status }}">
+                            {{ stat.count }}
+                        </span>
+                    </td>
+                </tr>{% endfor %}
+            </table>
+        </td>
+    </tr>{% with head=object.git_head %}{% if head %}
+    <tr>
+        <th>Last Commit</th>
+        <td>
+            <table>
+                <tr>
+                    <th>Commit Time</th>
+                    <td>{% if head.committed_date %}
+                        {{ head.committed_date|timestamp }}{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Author</th>
+                    <td>
+                        {{ head.author }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Message</th>
+                    <td>
+                        <blockquote>{{ head.message|linebreaksbr }}</blockquote>
+                    </td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>{% endif %}{% endwith %}
+</table>
+
+{% if object.testrun_set.exists %}
+<table class="table table-striped">
+{% for run in object.testrun_set.failures %}
+{% ifchanged run.module %}
+    <thead>
+        <tr>
+            <th colspan="4">{{ run.module }}</th>
+        </tr>
+    </thead>
+{% endifchanged %}
+    <tr>
+        <td><span class="label label-{{ run.label }}">{{ run.status }}</span></td>
+        <td>
+            {{ run.name }}{% if run.description %}<br>
+            <span class="muted">{{ run.description }}</span>{% endif %}
+        </td>        
+    </tr>{% if run.error %}
+    <tr>
+        <td colspan="2">
+            <pre>{{ run.error|linebreaksbr }}</pre>
+        </td>            
+    </tr>{% endif %}
+{% endfor %}
+</table>
+{% else %}
+<em>No tests have been run</em>
+{% endif %}
+
+{% endblock %}

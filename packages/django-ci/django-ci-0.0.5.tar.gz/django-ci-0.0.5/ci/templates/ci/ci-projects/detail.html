@@ -1,0 +1,52 @@
+{% extends "base/detail.html" %}
+{% load url from future %}
+{% load ci_tags %}
+
+{% block extrastyles %}
+<style>
+    thead {
+        font-size: 14pt;
+    }
+    td span.label {
+        text-align: center;
+        display: block;
+        max-width: 100px;
+        padding: 5px;
+    }
+    td pre {
+        white-space: pre;
+    }
+</style>
+{% endblock extrastyles %}
+
+{% block extrascripts %}
+<script>
+    $("#test-button").click(function() {
+        $(this).addClass("disabled");
+        
+    });
+</script>
+{% endblock extrascripts %}
+
+{% block detail %}
+
+<div class="well">
+    <form class="pull-right" method="post" action="{% url 'base:hook' object.slug %}">
+        <button class="btn">Test Hook</button>
+    </form>   
+    <a class="btn" href="{% url 'ci-branches:create' object.slug %}">Register Branch</a>
+</div>
+
+{% if object.branches.exists %}
+<table class="table table-striped">
+{% for branch in object.branches.all %}
+    <tr>
+        <td><a href="{% url 'ci-branches:detail' object.slug branch.slug %}">{{ branch.name }}</a></td>
+    </tr>
+{% endfor %}
+</table>
+{% else %}
+<em>No branches have been created for this project</em>
+{% endif %}
+
+{% endblock %}

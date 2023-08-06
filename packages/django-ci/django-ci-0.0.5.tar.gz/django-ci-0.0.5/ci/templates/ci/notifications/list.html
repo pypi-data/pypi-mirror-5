@@ -1,0 +1,60 @@
+{% extends "base/list.html" %}
+{% load url from future %}
+
+
+{% block extrascripts %}
+<script>
+$(function() {
+	if (window.webkitNotifications) {
+        if (window.webkitNotifications.checkPermission() != 0) {
+		    $("#html-notifications").append("<button class='btn' id='allow-html'>Allow HTML Notifications</button>");
+		} else {
+            $("#html-notifications").append("<button class='btn' id='test-html'>Test HTML Notifications</button>");
+		}
+        
+	    $('#test-html').click(function() {
+	    	var notification = window.webkitNotifications.createNotification("", 'Testing Notificatoins', 'I hope you can see this');
+	        notification.show();
+	    });
+	    
+	    $('#allow-html').click(function() {
+		    if (window.webkitNotifications.checkPermission() == 0) { // 0 is PERMISSION_ALLOWED
+		        // function defined in step 2
+		    } else {
+		        window.webkitNotifications.requestPermission(function() {	        	
+		            var notification = window.webkitNotifications.createNotification("", 'Testing Notificatoins', 'I hope you can see this');
+		            notification.show();
+		            $("#allow-html").remove();
+		        });
+		    }
+		});
+    }
+});
+</script>
+{% endblock %}
+
+{% block list_detail %}
+
+    <div id='html-notifications' class="pull-right">
+        
+    </div>
+
+    {% if object_list %}
+    <table class="table object_list">
+        <thead>
+            <tr>
+                <th>Notification</th>
+                <th>Send Email</th>
+                <th>Send HTML</th>
+            </tr>
+        </thead>{% for object in page_obj.object_list %}
+        <tr class="object">
+            <td><a href="{% url 'base:detail' object.id %}">{{ object.notification }}</a></td>
+            <td>{% if object.email %}<i class='icon-ok'></i>{% endif %}</td>
+            <td>{% if object.html %}<i class='icon-ok'></i>{% endif %}</td>
+        </tr>{% endfor %}
+    </div>
+    {% else %}
+    <div><em>Sorry, there are no {{ opts.verbose_name }} at this time.</em></div>
+    {% endif %}
+{% endblock list_detail %}
