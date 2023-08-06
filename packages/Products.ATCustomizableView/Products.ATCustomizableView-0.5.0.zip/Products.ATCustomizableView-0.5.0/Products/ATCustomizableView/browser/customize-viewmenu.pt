@@ -1,0 +1,131 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="Products.ATCustomizableView">
+
+<body>
+
+<div metal:fill-slot="main">
+    <tal:main-macro metal:define-macro="main">
+	<div id="customizeUI">
+
+		<h1 class="documentFirstHeading"
+		    i18n:translate="title_customize_form">Customization of the &quot;Display&quot; menu</h1>
+
+        <a href=""
+         class="link-parent"
+         tal:attributes="href view/back_url"
+		 i18n:domain="plone"
+         i18n:translate="return_to_view">
+          Return
+        </a>
+
+		<p i18n:translate="help_customize_form">
+			From this form you can change some behaviour of the &quot;Display&quot; menu
+			for your site authors.
+		</p>
+		<p i18n:translate="help_customize_form_warn">
+			Use this form only if you need some non-standard behaviour to Plone contents views.
+		</p>
+
+		<form method="POST"
+		      tal:attributes="action string:${context/absolute_url}/@@customize-viewmenu"
+			  tal:define="values view/values">
+		      
+		<fieldset>
+			<legend i18n:translate="">Customization options</legend>
+			
+			<div class="field">
+				<input type="checkbox" id="fixed_layout" name="fixed_layout:boolean" value="1"
+				       tal:attributes="checked python:values['fixed_layout'] and True or False;"/>
+				<label for="fixed_layout" i18n:translate="">Freeze the content layout?</label>
+				<div class="formHelp" i18n:translate="help_fixed_layout">
+					Check this if you want that this content shows no &quot;Display&quot;
+					menu at all.
+					This will be true for authors that commonly can use the menu.
+					In brief: layout of this content will be freezed.
+				</div>
+			</div>
+
+			<div class="field">
+				<label for="layout"
+				       i18n:translate="">Current content layout</label><br/>
+				<div class="formHelp">
+					<span tal_omit-tag="" i18n:translate="help_layout1">
+					Here you can see the current layout of this content. You can modifiy this
+					id with whatever you think and you know can be used as a view for this content.
+					</span><br/>
+					<strong i18n:translate="help_warning">
+					Please, be sure of what you write below if you plan to change this value
+					or you will be no more able to see the current content.</strong>
+				</div>
+				<input id="layout"
+				       name="layout"
+					   size="50"
+					   tal:attributes="value values/layout"
+					   />
+			</div>
+
+			<div class="field" tal:condition="view/isFolder">
+				<label for="default_page"
+				       i18n:translate="">Current default page</label><br/>
+				<div class="formHelp">
+					<span tal_omit-tag="" i18n:translate="help_default_page"> 
+					Here you can see the current sub-content used as default page for this section.
+					If you provide both &quot;Current content layout&quot; and
+					&quot;Current default page&quot; values, the default page wins.
+					</span><br/>		
+					<strong i18n:translate="help_warning">
+					Please, be sure of what you write below if you plan to change this value
+					or you will be no more able to see the current content.</strong>
+				</div>
+				<input id="default_page"
+				       name="default_page"
+					   size="50"
+					   tal:attributes="value values/default_page"
+					   />
+			</div>
+
+			<div class="field">
+				<label for="fixed_additional_layouts"
+				       i18n:translate="">Additional layouts</label><br/>
+				<div class="formHelp" i18n:translate="help_fixed_additional_layouts">
+					You can add there additional views to be added to the &quot;Display&quot;
+					menu, one per line.
+					You can use this list to show additional valid layout for this content,
+					not commonly registered as view for all contents of this kind.
+				</div>
+				<textarea id="fixed_additional_layouts"
+				       name="fixed_additional_layouts:lines"
+					   tal:content="python:'\n'.join(values['fixed_additional_layouts'])"></textarea>
+			</div>
+
+			<div class="field">
+				<input type="checkbox" id="purge_basic_layouts"
+				       name="purge_basic_layouts:boolean" value="1"
+					   tal:attributes="checked python:values['purge_basic_layouts'] and True or False;"/>
+				<label for="purge_basic_layouts" i18n:translate="">Drop basic layouts?</label>
+				<div class="formHelp" i18n:translate="help_purge_basic_layouts">
+					Commonly the &quot;Additional layouts&quot; options adds to the current
+					set of content's layout new ones.
+					Check this to disable all common layout and display only the new ones you
+					added above.
+				</div>
+			</div>
+
+			<div class="visualClear">&nbsp;</div>
+			<input type="submit" class="context" name="save" value="Save" 
+			       i18n:attributes="value" />
+
+		</fieldset>
+			  
+		</form>
+
+	</div>
+    </tal:main-macro>
+</div>
+
+</body>
+</html>
