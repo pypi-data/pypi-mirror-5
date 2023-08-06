@@ -1,0 +1,47 @@
+<h1>django-attach example</h1>
+
+<p>This is an example django project demonstrating how to use django-attach.
+The project requires markdown and BeautifulSoup to run properly:</p>
+
+<pre><code>pip install markdown
+pip install BeautifulSoup
+</code></pre>
+
+<p>You can run the server in the usual way:</p>
+
+<pre><code>python manage.py runserver
+</code></pre>
+
+<p>The admin interface will be available at
+<a href="http://localhost:8000/admin/">localhost:8000/admin/</a>. Log in with:</p>
+
+<p>Username: <strong>admin</strong> <br />
+Password: <strong>admin</strong></p>
+
+<p>The project contains an application <code>app</code>, which defines model <code>Article</code>.
+The field</p>
+
+<pre><code>attachments = GenericRelation(Attachment)
+</code></pre>
+
+<p>gives you access to the attached files. The ArticleAdmin class lists
+<strong><code>AttachmentInline</code></strong> in <code>inlines</code>, which ensures that a custom django-attach
+inline formset is shown on the change page of the model in the admin interface.</p>
+
+<p>There are three views defined: <code>ArticleList</code>, <code>ArticleDetail</code> and <code>attachment</code>.
+<code>ArticleList</code> produces an overview of articles on the home page, <code>ArticleDetail</code>
+displays a single article under <code>/article/&lt;pk&gt;/</code>, and <code>attachment</code> is
+responsible for serving attachments at <code>/article/&lt;pk&gt;/&lt;name&gt;</code>. Attachments can
+therefore be referenced by their simple name when shown by <code>ArticleDetail</code>.
+However, the overview of articles requires that the links are converted to their
+absolute counterparts. This is done by the <strong><code>baseurl</code></strong> filter
+(<code>app/templatetags/baseurl.py</code>).</p>
+
+<p><code>baseurl</code> uses <a href="https://pypi.python.org/pypi/BeautifulSoup">BeautifulSoup</a>
+to extend references to attachments in links, images and style attributes.
+Feel free to use it in your own project, but note that it is by no means
+complete (there are many more possibilities where references can occur).</p>
+
+<p>The <code>attachment</code> view serves files by issuing a HTTP redirect to the correct
+location under <code>MEDIA_URL</code>. Therefore, requests are handled by the
+HTTP server if you use any (and not by django).</p>
