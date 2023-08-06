@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+# Copyright (c) 2013, Calxeda Inc.
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+# * Neither the name of Calxeda Inc. nor the names of its contributors
+# may be used to endorse or promote products derived from this software
+# without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+# TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+
+import sys
+import os
+
+import argparse
+import copy
+from cxeeprom_tool import write_image
+
+__all__ = []
+__version__ = 3.0
+__date__ = '2013-01-29'
+__updated__ = '2013-08-02'
+
+DEBUG = 1
+
+FruMfgPartitionStart = 256
+FruMfgPartitionSize = 256
+
+V1_Config = [{'type':1,'id':1,'start':256,'end':512,'size':256},
+             {'type':2,'id':2,'start':512,'end':2048,'size':1536}]
+
+class CLIError(Exception):
+    '''Generic exception to raise and log different fatal errors.'''
+    def __init__(self, msg):
+        super(CLIError).__init__(type(self))
+        self.msg = "E: %s" % msg
+    def __str__(self):
+        return self.msg
+    def __unicode__(self):
+        return self.msg
+
+def main(argv=None):
+    '''Command line options.'''
+
+    if argv is None:
+        argv = sys.argv
+    else:
+        sys.argv.extend(argv)
+
+    et_description = ('A tool for compiling Calxeda ECME configuration '
+                      'files into binary images appropiate for programming '
+                      'onto EEPROM devices.')
+    try:
+        # Setup argument parser
+        parser = argparse.ArgumentParser(description=et_description,
+                                         formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser.add_argument('--version', action='version', version=str(__version__))
+        parser.add_argument("-s", "--size",
+                            dest="capacity",
+                            required=True,
+                            type=int,
+                            help="Size of the EEPROM in bytes")
+        parser.add_argument("-o", "--out-file",
+                            required=True,
+                            type=argparse.FileType('wb'),
+                            dest="eeprom_image",
+                            help="File to write the EEPROM image to")
+        parser.add_argument("-x", "--for-x04",
+                            action='store_true',
+                            dest="is_x04",
+                            help="Create an image for an Energycard x04")
+        parser.add_argument("--csv",
+                            type=argparse.FileType('wb'),
+                            help="CSV containing the offsets off all the configuration values in the image")
+        subparsers = parser.add_subparsers(dest='fru_version')
+        v1_parser = subparsers.add_parser('std', help='Use standard EEPROM image format')
+        v1_parser.add_argument("-f", "--fru-image",
+                               default=None,
+                               dest="fru_image",
+                               help="File containing FRU descriptor image")
+        v1_parser.add_argument("-e", "--ecme-config",
+                               required=True,
+                               action='append',
+                               dest="cfg_file",
+                               help="ECME configuration")
+        v2_parser = subparsers.add_parser('ext', help='Use extended EEPROM image format')
+        v2_parser.add_argument('-c', '--config',
+                               type=argparse.FileType('r'),
+                               required=True,
+                               action='append',
+                               dest='extended_config')
+
+        # Process arguments
+        args = parser.parse_args()
+
+        if args.fru_version == 'std':
+            version = 1
+            # check for the right number of kv configs
+            if (args.is_x04):
+                capacity = write_image.FruX04Size
+                if (len(args.cfg_file) != 4):
+                    sys.stderr.write("When writing an x04 image, 4 key-value configurations must be provided\n")
+                    return 1
+            else:
+                capacity = args.capacity
+                if (len(args.cfg_file) != 1):
+                    sys.stderr.write("Please provide only one key-value configuration\n")
+                    return 1
+            cfg = []
+            for file in args.cfg_file:
+                tmp = copy.deepcopy(V1_Config)
+                tmp[0]["image"] = args.fru_image
+                tmp[1]["image"] = file
+                write_image.verify_partition_config(tmp, capacity)
+                cfg.append(tmp)
+
+        if args.fru_version == 'ext':
+            version = 2
+            # check for the right number of configs files
+            if (args.is_x04):
+                capacity = write_image.FruX04Size
+                if (len(args.extended_config) != 4):
+                    sys.stderr.write("When writing an x04 image, 4 configurations must be provided\n")
+                    return 1
+            else:
+                capacity = args.capacity
+                if (len(args.extended_config) != 1):
+                    sys.stderr.write("Please provide only one partition config\n")
+                    return 1
+            # read config file data into var cfg
+            cfg = []
+            for file in args.extended_config:
+                config_str = file.read()
+                exec("tmp = " + config_str)
+                write_image.verify_partition_config(tmp, capacity)
+                cfg.append(tmp)
+
+        write_image.create_fru_image(args.eeprom_image,
+                                     cfg,
+                                     version,
+                                     args.capacity,
+                                     args.is_x04)
+        if args.csv:
+            write_image.dump_offsets_to_file(args.csv)
+            args.csv.close()
+
+        args.eeprom_image.close()
+        return 0
+    except KeyboardInterrupt:
+        ### handle keyboard interrupt ###
+        return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
