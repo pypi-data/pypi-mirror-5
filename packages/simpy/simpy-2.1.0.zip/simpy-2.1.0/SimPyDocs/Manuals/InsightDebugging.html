@@ -1,0 +1,690 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Insight into Models and Debugging SimPy Programs &mdash; SimPy v2.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="SimPy v2.1.0 documentation" href="../index.html" />
+    <link rel="up" title="Using SimPy" href="../Using_SimPy.html" />
+    <link rel="next" title="Simulation with Tracing" href="Tracing.html" />
+    <link rel="prev" title="SimPy’s Advanced Object Oriented API" href="SimPyOO_API.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Tracing.html" title="Simulation with Tracing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="SimPyOO_API.html" title="SimPy’s Advanced Object Oriented API"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SimPy v2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../Using_SimPy.html" accesskey="U">Using SimPy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="insight-into-models-and-debugging-simpy-programs">
+<h1><a class="toc-backref" href="#id1">Insight into Models and Debugging SimPy Programs</a><a class="headerlink" href="#insight-into-models-and-debugging-simpy-programs" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Klaus Muller</td>
+</tr>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">April 2010</td>
+</tr>
+</tbody>
+</table>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#insight-into-models-and-debugging-simpy-programs" id="id1">Insight into Models and Debugging SimPy Programs</a><ul>
+<li><a class="reference internal" href="#introduction" id="id2">Introduction</a></li>
+<li><a class="reference internal" href="#the-tools" id="id3">The tools</a></li>
+<li><a class="reference internal" href="#using-simpy-s-insight-debugging-tools" id="id4">Using SimPy&#8217;s insight/debugging tools</a></li>
+<li><a class="reference internal" href="#strategies" id="id5">Strategies</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Much has been written about debugging programs, and Python provides
+good interactive debugging tools (such as pydb, pdb and ipython). They
+are very useful for a SimPy developer in debugging at a low (Python) level.</p>
+<p>A SimPy simulation developer has additional requirements, though. She needs to understand
+how an implemented model behaves, and she needs to be able to debug the
+process interactions/synchronizations. Program control does not flow linearly
+through the code. Generators (the SimPy Process Execution Methods or PEMs) are entered, re-entered
+and left somewhere in the middle. When multiple instances of a Process class are active, program
+control for each of them can be in a different position in the PEM.</p>
+<p>None of this is basically difficult, but for programmers coming from
+a language with sequential program execution, the quasi-parallelism of SimPy processes
+is a paradigm shift. To develop correct models, it is essential for them to be able
+to visualise and understand how their models are executed.</p>
+<p>Fortunately, SimPy has a good range of tools to help a simulation developer with gaining
+insight into their models&#8217; implementation in SimPy and with debugging:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">allEventNotices</span></tt>, a method/function to display all scheduled events, with
+event times and and the names of the Process instances involved.</li>
+<li><tt class="docutils literal"><span class="pre">allEventTimes</span></tt>,  a method/function to display all scheduled events&#8217; event
+times.</li>
+<li><tt class="docutils literal"><span class="pre">peek</span></tt>, a method/function returning the next event time (or infinity, if there
+are no more events scheduled. (<strong>New in SimPy 2.1.0.</strong>)</li>
+<li><tt class="docutils literal"><span class="pre">step</span></tt>, a method which executes the next scheduled event and then returns.
+(<strong>New in SimPy 2.1.0.</strong>)</li>
+<li><tt class="docutils literal"><span class="pre">SimPy.SimulationTrace</span></tt>, a library which allows tracing of all or a selected range
+of SimPy events.</li>
+</ul>
+</div>
+<div class="section" id="the-tools">
+<h2><a class="toc-backref" href="#id3">The tools</a><a class="headerlink" href="#the-tools" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="peek-time-of-next-event">
+<h3><tt class="docutils literal"><span class="pre">peek</span></tt> &#8211; time of next event<a class="headerlink" href="#peek-time-of-next-event" title="Permalink to this headline">¶</a></h3>
+<p><strong>New in SimPy 2.1</strong></p>
+<p>This function returns the simulation time of the next event on the event list. At that
+time, the Process Execution Method of the associated process will be re-entered
+when the simulation is continued. If there are no more events, a SimPy-defined
+constant <tt class="docutils literal"><span class="pre">infinity</span></tt> will be returned.</p>
+<dl class="docutils">
+<dt>Call:</dt>
+<dd><strong>peek()</strong>, or
+<strong>&lt;simulation&gt;.peek()</strong> (advanced OO mode)</dd>
+<dt>Returns:</dt>
+<dd>next event time (float or integer number), or <tt class="docutils literal"><span class="pre">infinity</span></tt> if no more events
+are scheduled.</dd>
+</dl>
+</div>
+<div class="section" id="step-execute-next-event">
+<h3><tt class="docutils literal"><span class="pre">step</span></tt> &#8211; execute next event<a class="headerlink" href="#step-execute-next-event" title="Permalink to this headline">¶</a></h3>
+<p><strong>New in SimPy 2.1</strong></p>
+<p>This function executes the next scheduled event.</p>
+<dl class="docutils">
+<dt>Call:</dt>
+<dd><strong>step()</strong>, or
+<strong>&lt;simulation&gt;.step()</strong> (advanced OO mode)</dd>
+<dt>Returns:</dt>
+<dd>next event time (float or integer number), or <tt class="xref docutils literal"><span class="pre">None</span></tt> if no more events
+are scheduled.</dd>
+</dl>
+</div>
+<div class="section" id="alleventnotices-show-event-times-and-processes">
+<h3><tt class="docutils literal"><span class="pre">allEventNotices</span></tt> &#8211; show event times and processes<a class="headerlink" href="#alleventnotices-show-event-times-and-processes" title="Permalink to this headline">¶</a></h3>
+<p>A function returning the times and process names of all scheduled events as a multi-line
+string.</p>
+<dl class="docutils">
+<dt>Call:</dt>
+<dd><strong>allEventNotices()</strong>, or
+<strong>&lt;simulation&gt;.allEventNotices()</strong> (advanced OO mode)</dd>
+<dt>Returns:</dt>
+<dd><p class="first">a string of the format:</p>
+<div class="highlight-python"><pre>*t1: proc1-name, proc2-name, . . .*
+*t2: procn-name*, procm-name, . . .*
+. . . .</pre>
+</div>
+<p class="last">i.e., one line per event time</p>
+</dd>
+</dl>
+<p>Example of output of <tt class="docutils literal"><span class="pre">print</span> <span class="pre">allEventNotices()</span></tt>:</p>
+<div class="highlight-python"><pre>25: Caddy, Vette
+45: Beemer, Beatle</pre>
+</div>
+</div>
+<div class="section" id="alleventtimes-show-event-times">
+<h3><tt class="docutils literal"><span class="pre">allEventTimes</span></tt> &#8211; show event times<a class="headerlink" href="#alleventtimes-show-event-times" title="Permalink to this headline">¶</a></h3>
+<p>A function returning the times of all scheduled events as a list.</p>
+<dl class="docutils">
+<dt>Call:</dt>
+<dd><blockquote class="first">
+<strong>allEventTimes(), or
+**&lt;simulation&gt;.allEventTimes()</strong> (advanced OO mode)</blockquote>
+<dl class="last docutils">
+<dt>Returns:</dt>
+<dd>a list of times of all scheduled vents without duplicates (each time is
+given only once)</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section" id="simpy-simulationtrace-trace-all-events">
+<h3><tt class="docutils literal"><span class="pre">SimPy.SimulationTrace</span></tt> &#8211; trace all events<a class="headerlink" href="#simpy-simulationtrace-trace-all-events" title="Permalink to this headline">¶</a></h3>
+<p>This module prints a detailed trace of all events executed during a simulation run.
+It has a rich set of commands and options which are documented in the manual
+<em>Simulation with Tracing</em>. Because of the large amount of output which can be
+produced by a simulation run with many events, it can be advantageous to re-direct
+the output to a file. <tt class="docutils literal"><span class="pre">SimulationTrace</span></tt> has a command for this, but it can also
+be done at the command line by executing <tt class="docutils literal"><span class="pre">python</span> <span class="pre">mysim.py</span> <span class="pre">&gt;</span> <span class="pre">mysimtrace.txt</span></tt>.</p>
+<dl class="docutils">
+<dt>Invocation:</dt>
+<dd>Use <tt class="docutils literal"><span class="pre">from</span> <span class="pre">SimPy.SimulationTrace</span> <span class="pre">import</span> <span class="pre">*</span></tt>,
+instead of <tt class="docutils literal"><span class="pre">from</span> <span class="pre">SimPy.Simulation</span> <span class="pre">import</span> <span class="pre">*</span></tt></dd>
+</dl>
+<p>Example of output:</p>
+<div class="highlight-python"><pre>0 activate &lt;Beemer &gt; at time: 0 prior: False
+0 activate &lt;Caddy &gt; at time: 25 prior: False
+0 request  &lt; Beemer &gt;  &lt;Parking&gt;  priority: default
+. . . .</pre>
+</div>
+</div>
+</div>
+<div class="section" id="using-simpy-s-insight-debugging-tools">
+<h2><a class="toc-backref" href="#id4">Using SimPy&#8217;s insight/debugging tools</a><a class="headerlink" href="#using-simpy-s-insight-debugging-tools" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s put the tools to use on an example model. The scenario is that two cars
+(<tt class="docutils literal"><span class="pre">Beemer</span></tt> and <tt class="docutils literal"><span class="pre">Caddy</span></tt>) want to park in the same parking space.
+<tt class="docutils literal"><span class="pre">Beemer</span></tt> arrives at time 0, and <tt class="docutils literal"><span class="pre">Caddy</span></tt> at time 25.</p>
+<p>The model in SimPy to be debugged looks like this:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15</pre></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">SimPy.Simulation</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">Car</span><span class="p">(</span><span class="n">Process</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">drive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parking</span><span class="p">,</span> <span class="n">howlong</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">request</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">parking</span>
+        <span class="k">yield</span> <span class="n">hold</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">howlong</span>
+        <span class="k">print</span> <span class="s">&quot;At time </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s"> leaves parking&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">now</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+<span class="n">initialize</span><span class="p">()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Parking&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Beemer&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">45</span><span class="p">))</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Caddy&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">120</span><span class="p">),</span> <span class="n">at</span> <span class="o">=</span> <span class="mf">25</span><span class="p">)</span>
+<span class="n">simulate</span><span class="p">(</span><span class="n">until</span> <span class="o">=</span> <span class="mf">200</span><span class="p">)</span>       
+</pre></div>
+</td></tr></table></div>
+<p>When run, the output is:</p>
+<div class="highlight-python"><pre>At time 45, Beemer leaves parking
+</pre>
+</div>
+<p>There is a problem &#8211; the <tt class="docutils literal"><span class="pre">Caddy</span></tt> car never comes out of the parking space.
+Did it ever get into the parking space? What is wrong here? There is a bug!</p>
+<p>Obviously, the example is a trivially small program. Use your imagination and think
+of this as a large simulation program with thousands of lines of code. Your boss
+is breathing down your neck, wanting results. Can you feel the problem now?</p>
+<div class="section" id="using-peek-step-and-alleventnotices">
+<h3>Using <tt class="docutils literal"><span class="pre">peek</span></tt>, <tt class="docutils literal"><span class="pre">step</span></tt> and <tt class="docutils literal"><span class="pre">allEventNotices</span></tt><a class="headerlink" href="#using-peek-step-and-alleventnotices" title="Permalink to this headline">¶</a></h3>
+<p>As a first attempt to see what is going in, let&#8217;s use <tt class="docutils literal"><span class="pre">peek</span></tt>, <tt class="docutils literal"><span class="pre">step</span></tt> and
+<tt class="docutils literal"><span class="pre">allEventNotices</span></tt> to see which events get scheduled during the simulation run.
+We comment out the <tt class="docutils literal"><span class="pre">simulate(until</span> <span class="pre">=</span> <span class="pre">200)</span></tt> and replace it by a loop which
+steps through the simulation event by event:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24</pre></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">SimPy.Simulation</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">Car</span><span class="p">(</span><span class="n">Process</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">drive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parking</span><span class="p">,</span> <span class="n">howlong</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">request</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">parking</span>
+        <span class="k">yield</span> <span class="n">hold</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">howlong</span>
+        <span class="k">print</span> <span class="s">&quot;At time </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s"> leaves parking&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">now</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+<span class="n">initialize</span><span class="p">()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Parking&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Beemer&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">45</span><span class="p">))</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Caddy&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">120</span><span class="p">),</span> <span class="n">at</span> <span class="o">=</span> <span class="mf">25</span><span class="p">)</span>
+<span class="c"># simulate(until = 200) </span>
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">tEvt</span> <span class="o">=</span> <span class="n">peek</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">tEvt</span> <span class="o">&lt;</span> <span class="n">infinity</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Event-notices at t=</span><span class="si">%s</span><span class="s">:&quot;</span><span class="o">%</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">print</span> <span class="n">allEventNotices</span><span class="p">()</span>
+        <span class="n">step</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">break</span>
+           
+</pre></div>
+</td></tr></table></div>
+<p>The stepping/tracing loop has the following logic:</p>
+<div class="highlight-python"><pre>do forever:
+    get time of next event (line 17)
+    is there another event scheduled? (line 18)
+        yes:
+            print the simulation time and event notices (lines 19 - 20)
+            execute the next event on the event list (line 21)
+        no:
+            get out of the loop (line 23)</pre>
+</div>
+<p>When run, we get the following output:</p>
+<div class="highlight-python"><pre>Event-notices at t=0:
+0: Beemer
+25: Caddy
+
+Event-notices at t=0:
+0: Beemer
+25: Caddy
+
+Event-notices at t=0:
+25: Caddy
+45: Beemer
+
+Event-notices at t=25:
+45: Beemer
+
+At time 45, Beemer leaves parking
+</pre>
+</div>
+<p>We can see that there are four events, and each line <tt class="docutils literal"><span class="pre">Event-notices</span> <span class="pre">at</span> <span class="pre">.</span> <span class="pre">.</span> <span class="pre">.</span></tt> is
+output just before their execution:</p>
+<dl class="docutils">
+<dt><em>Before event 1 (t = 0):</em></dt>
+<dd><p class="first">Event 1 is the entry into <tt class="docutils literal"><span class="pre">Beemer</span></tt> `s <tt class="docutils literal"><span class="pre">drive</span></tt> PEM, including the
+<tt class="docutils literal"><span class="pre">yield</span> <span class="pre">request</span></tt> for process <tt class="docutils literal"><span class="pre">Beemer</span></tt> (the attempt to acquire the <tt class="docutils literal"><span class="pre">parking</span></tt>
+resource)</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">Beemer</span></tt> `s <tt class="docutils literal"><span class="pre">drive</span></tt> PEM is scheduled at t = 0 (scheduled by <tt class="docutils literal"><span class="pre">activate</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">Caddy</span></tt> `s <tt class="docutils literal"><span class="pre">drive</span></tt> PEM is scheduled at t = 25 (scheduled by <tt class="docutils literal"><span class="pre">activate</span></tt>)</li>
+</ul>
+</dd>
+<dt><em>Before event 2 (t = 0):</em></dt>
+<dd><p class="first">Event 2 is the <tt class="docutils literal"><span class="pre">yield</span> <span class="pre">hold</span></tt> for process <tt class="docutils literal"><span class="pre">Beemer</span></tt>, the scheduling of the
+holding period of the <tt class="docutils literal"><span class="pre">parking</span></tt> resource.</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">Beemer</span></tt> `s <tt class="docutils literal"><span class="pre">drive</span></tt> PEM is scheduled to resume at t = 0 after the
+successful <tt class="docutils literal"><span class="pre">yield</span> <span class="pre">request</span></tt> completion</li>
+<li><tt class="docutils literal"><span class="pre">Caddy</span></tt> `s <tt class="docutils literal"><span class="pre">drive</span></tt> PEM is still scheduled at t = 25</li>
+</ul>
+</dd>
+<dt><em>Before event 3 (t = 0):</em></dt>
+<dd><p class="first">Event 3 is the entry into <tt class="docutils literal"><span class="pre">Caddy</span></tt> `s <tt class="docutils literal"><span class="pre">drive</span></tt> PEM, including the
+<tt class="docutils literal"><span class="pre">yield</span> <span class="pre">request</span></tt> for process <tt class="docutils literal"><span class="pre">Caddy</span></tt> (the attempt to acquire the <tt class="docutils literal"><span class="pre">parking</span></tt>
+resource)</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">Caddy</span></tt> `s PEM is scheduled to resume at t = 25</li>
+<li><tt class="docutils literal"><span class="pre">Beemer</span></tt> `s PEM is scheduled to resume at t = 45, at
+the end of the <tt class="docutils literal"><span class="pre">hold</span></tt> period</li>
+</ul>
+</dd>
+<dt><em>Before event 4 (t = 25):</em></dt>
+<dd><p class="first">Event 4 is the completion of <tt class="docutils literal"><span class="pre">Beemer</span></tt> `s <tt class="docutils literal"><span class="pre">hold</span></tt> period, the end of its
+parking time.</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">Beemer</span></tt> `s PEM is scheduled to resume at t = 45, at
+the end of the <tt class="docutils literal"><span class="pre">hold</span></tt> period</li>
+<li>There is no event scheduled for <tt class="docutils literal"><span class="pre">Caddy</span></tt>. It clearly did not
+acquire the <tt class="docutils literal"><span class="pre">parking</span></tt> resource. It is blocked, waiting for it to
+become available.</li>
+</ul>
+</dd>
+</dl>
+<p>As there is no further event after <tt class="docutils literal"><span class="pre">Beemer</span></tt> `s exit from the parking
+(completion of its PEM), <tt class="docutils literal"><span class="pre">Caddy</span></tt> never acquired the <tt class="docutils literal"><span class="pre">parking</span></tt> resource!
+<strong>Aha, here is the bug!</strong> <tt class="docutils literal"><span class="pre">Beemer</span></tt> never released the <tt class="docutils literal"><span class="pre">parking</span></tt> resource.
+(You noticed this a long while ago, of course. But keep up the illusion
+of being puzzled by a large, misbehaving SimPy program.)</p>
+</div>
+<div class="section" id="using-simpy-simulationtrace">
+<h3>Using <tt class="docutils literal"><span class="pre">SimPy.SimulationTrace</span></tt><a class="headerlink" href="#using-simpy-simulationtrace" title="Permalink to this headline">¶</a></h3>
+<p>This approach of stepping through a simulation by <tt class="docutils literal"><span class="pre">peek</span></tt> and <tt class="docutils literal"><span class="pre">step</span></tt>,
+printing out the event list before every event, is nice, but it is still
+a bit nebulous to understand. What is missing is the context, the trace
+of the actual event execution.</p>
+<p>That is easy to add &#8211; just import <tt class="docutils literal"><span class="pre">SimPy.SimulationTrace</span></tt> instead of
+<tt class="docutils literal"><span class="pre">SimPy.Simulation</span></tt> in line 1:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24</pre></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">SimPy.SimulationTrace</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">Car</span><span class="p">(</span><span class="n">Process</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">drive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parking</span><span class="p">,</span> <span class="n">howlong</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">request</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">parking</span>
+        <span class="k">yield</span> <span class="n">hold</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">howlong</span>
+        <span class="k">print</span> <span class="s">&quot;At time </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s"> leaves parking&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">now</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+<span class="n">initialize</span><span class="p">()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Parking&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Beemer&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">45</span><span class="p">))</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Caddy&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">120</span><span class="p">),</span> <span class="n">at</span> <span class="o">=</span> <span class="mf">25</span><span class="p">)</span>
+<span class="c"># simulate(until = 200) </span>
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">tEvt</span> <span class="o">=</span> <span class="n">peek</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">tEvt</span> <span class="o">&lt;</span> <span class="n">infinity</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Event-notices at t=</span><span class="si">%s</span><span class="s">:&quot;</span><span class="o">%</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">print</span> <span class="n">allEventNotices</span><span class="p">()</span>
+        <span class="n">step</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">break</span>
+           
+</pre></div>
+</td></tr></table></div>
+<p>When run, this is the output:</p>
+<div class="highlight-python"><pre>0 activate &lt;Beemer &gt; at time: 0 prior: False
+0 activate &lt;Caddy &gt; at time: 25 prior: False
+Event-notices at t=0:
+0: Beemer
+25: Caddy
+
+0 request  &lt; Beemer &gt;  &lt;Parking&gt;  priority: default 
+. . .waitQ: [] 
+. . .activeQ: ['Beemer']
+Event-notices at t=0:
+0: Beemer
+25: Caddy
+
+0 hold  &lt; Beemer &gt;  delay: 45
+Event-notices at t=0:
+25: Caddy
+45: Beemer
+
+25 request  &lt; Caddy &gt;  &lt;Parking&gt;  priority: default 
+. . .waitQ: ['Caddy'] 
+. . .activeQ: ['Beemer']
+Event-notices at t=25:
+45: Beemer
+
+At time 45, Beemer leaves parking
+45 &lt;Beemer &gt; terminated
+</pre>
+</div>
+<p>The detailed trace clearly shows what the events are and how they change
+the event list.</p>
+</div>
+<div class="section" id="using-the-interactive-simpy-debugger">
+<h3>Using the interactive SimPy debugger<a class="headerlink" href="#using-the-interactive-simpy-debugger" title="Permalink to this headline">¶</a></h3>
+<p><strong>New in SimPy 2.1</strong></p>
+<p>SimPy now includes a simple interactive debugger/insight tool <tt class="docutils literal"><span class="pre">stepping.py</span></tt> as part of its
+library. It is based on <tt class="docutils literal"><span class="pre">peek</span></tt>, <tt class="docutils literal"><span class="pre">step</span></tt> and <tt class="docutils literal"><span class="pre">allEventNotices</span></tt>, but also uses
+knowledge about internals, such as the even list and event implementation structures.
+This tool allows stepping through a simulation interactively, with options such as inspecting
+the event list, skipping to an event time, skipping to the next event for a given
+process, ending a run, or running the simulation to the end without interaction..</p>
+<p><tt class="docutils literal"><span class="pre">stepping</span></tt> is easy to use. Let&#8217;s use it in our buggy model. Two changes are enough:
+import of <tt class="docutils literal"><span class="pre">stepping</span></tt> (line 2) and replacement of the <tt class="docutils literal"><span class="pre">while</span> <span class="pre">True</span></tt>-loop with a call
+<tt class="docutils literal"><span class="pre">stepping(Globals)</span></tt> (line 16).</p>
+<p>This gives us the following program:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17</pre></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">SimPy.SimulationTrace</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">SimPy.stepping</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">Car</span><span class="p">(</span><span class="n">Process</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">drive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parking</span><span class="p">,</span> <span class="n">howlong</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">request</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">parking</span>
+        <span class="k">yield</span> <span class="n">hold</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">howlong</span>
+        <span class="k">print</span> <span class="s">&quot;At time </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s"> leaves parking&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">now</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+<span class="n">initialize</span><span class="p">()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Parking&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Beemer&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">45</span><span class="p">))</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Caddy&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">120</span><span class="p">),</span> <span class="n">at</span> <span class="o">=</span> <span class="mf">25</span><span class="p">)</span>
+<span class="n">stepping</span><span class="p">(</span><span class="n">Globals</span><span class="p">)</span>
+<span class="c"># simulate(until = 200)       </span>
+</pre></div>
+</td></tr></table></div>
+<p>Here is a possible interactive session:</p>
+<div class="highlight-python"><pre>0 activate &lt;Beemer &gt; at time: 0 prior: False
+0 activate &lt;Caddy &gt; at time: 25 prior: False
+
+Time now: 0, next event at: t=0 for process: Beemer
+Command ('h' for help): h
+e : end run
+p&lt;name&gt; : skip to event for &lt;name&gt;
+h : help
+&lt;time&gt; : skip to event at &lt;time&gt;
+l : show eventlist
+s : next event
+r : run to end
+Command ('h' for help): s
+0 request  &lt; Beemer &gt;  &lt;Parking&gt;  priority: default
+. . .waitQ: [] 
+. . .activeQ: ['Beemer']
+
+Time now: 0, next event at: t=0 for process: Beemer 
+Command ('h' for help): s
+0 hold  &lt; Beemer &gt;  delay: 45
+
+Time now: 0, next event at: t=25 for process: Caddy 
+Command ('h' for help): r
+25 request  &lt; Caddy &gt;  &lt;Parking&gt;  priority: default
+. . .waitQ: ['Caddy'] 
+. . .activeQ: ['Beemer']
+At time 45, Beemer leaves parking
+45 &lt;Beemer &gt; terminated
+Run ended at t=45
+</pre>
+</div>
+</div>
+<div class="section" id="finally-the-corrected-model">
+<h3>Finally, the corrected model<a class="headerlink" href="#finally-the-corrected-model" title="Permalink to this headline">¶</a></h3>
+<p>Just so that we don&#8217;t forget, ALL the model implementations shown so far had a bug (remember?).
+They were missing the <tt class="docutils literal"><span class="pre">yield</span> <span class="pre">release</span></tt> statement for the <tt class="docutils literal"><span class="pre">parking</span></tt> resource. Add it after
+the <tt class="docutils literal"><span class="pre">yield</span> <span class="pre">hold</span></tt>, and the bug is exterminated.</p>
+<p>For completeness sake, here is the corrected model:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16</pre></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">SimPy.Simulation</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">Car</span><span class="p">(</span><span class="n">Process</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">drive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parking</span><span class="p">,</span> <span class="n">howlong</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">request</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">parking</span>
+        <span class="k">yield</span> <span class="n">hold</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">howlong</span>
+        <span class="k">yield</span> <span class="n">release</span><span class="p">,</span><span class="bp">self</span><span class="p">,</span><span class="n">parking</span>
+        <span class="k">print</span> <span class="s">&quot;At time </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s"> leaves parking&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">now</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+<span class="n">initialize</span><span class="p">()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Parking&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Beemer&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">45</span><span class="p">))</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">Car</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Caddy&quot;</span><span class="p">)</span>
+<span class="n">activate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span><span class="n">parking</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">howlong</span> <span class="o">=</span> <span class="mf">120</span><span class="p">),</span> <span class="n">at</span> <span class="o">=</span> <span class="mf">25</span><span class="p">)</span>
+<span class="n">simulate</span><span class="p">(</span><span class="n">until</span> <span class="o">=</span> <span class="mf">200</span><span class="p">)</span> 
+</pre></div>
+</td></tr></table></div>
+<p>This simulation model produces the correct output:</p>
+<blockquote>
+<div class="highlight-python"><pre>At time 45, Beemer leaves parking
+At time 165, Caddy leaves parking
+</pre>
+</div>
+</blockquote>
+<p>Debugging done (and hopefully, some insight gained)!</p>
+</div>
+</div>
+<div class="section" id="strategies">
+<h2><a class="toc-backref" href="#id5">Strategies</a><a class="headerlink" href="#strategies" title="Permalink to this headline">¶</a></h2>
+<p>When should you use which tools? For <em>debugging</em>, I would use <tt class="docutils literal"><span class="pre">SimPy.SimulationTrace</span></tt>.
+When I start a new SimPy simulation script, I use <tt class="docutils literal"><span class="pre">from</span> <span class="pre">SimPy.SimulationTrace</span> <span class="pre">import</span> <span class="pre">*</span></tt>
+right away until the model is correct. Only then do I replace it by
+<tt class="docutils literal"><span class="pre">from</span> <span class="pre">SimPy.Simulation</span> <span class="pre">import</span> <span class="pre">*</span></tt>. I strongly recommend reading the <em>Simulation with Tracing</em>
+manual and to experiment with the tracing options. This investment of time will pay great dividends
+when you start developing large, complex simulation models in SimPy.</p>
+<p>For gaining (or teaching) <em>insight</em> into the event handling of SimPy,
+I would use code with <tt class="docutils literal"><span class="pre">peek</span></tt>, <tt class="docutils literal"><span class="pre">get</span></tt>, and <tt class="docutils literal"><span class="pre">allEventNotices</span></tt>. The easiest is
+to use <tt class="docutils literal"><span class="pre">stepping</span></tt> out-of-the-box, but there may be reasons to &#8220;roll my own&#8221;, e.g.
+when the interaction would be too much work or I want to keep the output in a file.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sm_SimPy_Logo.png" alt="Logo"/>
+            </a></p>
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Insight into Models and Debugging SimPy Programs</a><ul>
+<li><a class="reference external" href="#introduction">Introduction</a></li>
+<li><a class="reference external" href="#the-tools">The tools</a><ul>
+<li><a class="reference external" href="#peek-time-of-next-event"><tt class="docutils literal"><span class="pre">peek</span></tt> &#8211; time of next event</a></li>
+<li><a class="reference external" href="#step-execute-next-event"><tt class="docutils literal"><span class="pre">step</span></tt> &#8211; execute next event</a></li>
+<li><a class="reference external" href="#alleventnotices-show-event-times-and-processes"><tt class="docutils literal"><span class="pre">allEventNotices</span></tt> &#8211; show event times and processes</a></li>
+<li><a class="reference external" href="#alleventtimes-show-event-times"><tt class="docutils literal"><span class="pre">allEventTimes</span></tt> &#8211; show event times</a></li>
+<li><a class="reference external" href="#simpy-simulationtrace-trace-all-events"><tt class="docutils literal"><span class="pre">SimPy.SimulationTrace</span></tt> &#8211; trace all events</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#using-simpy-s-insight-debugging-tools">Using SimPy&#8217;s insight/debugging tools</a><ul>
+<li><a class="reference external" href="#using-peek-step-and-alleventnotices">Using <tt class="docutils literal"><span class="pre">peek</span></tt>, <tt class="docutils literal"><span class="pre">step</span></tt> and <tt class="docutils literal"><span class="pre">allEventNotices</span></tt></a></li>
+<li><a class="reference external" href="#using-simpy-simulationtrace">Using <tt class="docutils literal"><span class="pre">SimPy.SimulationTrace</span></tt></a></li>
+<li><a class="reference external" href="#using-the-interactive-simpy-debugger">Using the interactive SimPy debugger</a></li>
+<li><a class="reference external" href="#finally-the-corrected-model">Finally, the corrected model</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#strategies">Strategies</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="SimPyOO_API.html"
+                                  title="previous chapter">SimPy&#8217;s Advanced Object Oriented API</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="Tracing.html"
+                                  title="next chapter">Simulation with Tracing</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/Manuals/InsightDebugging.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Tracing.html" title="Simulation with Tracing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="SimPyOO_API.html" title="SimPy’s Advanced Object Oriented API"
+             >previous</a> |</li>
+        <li><a href="../index.html">SimPy v2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../Using_SimPy.html" >Using SimPy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2008, 2009, Klaus Muller, Tony Vignaux.
+      Last updated on May 11, 2010.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

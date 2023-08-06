@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Changes from Version 2.0.1 &mdash; SimPy v2.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="SimPy v2.1.0 documentation" href="../index.html" />
+    <link rel="up" title="Getting Started" href="../Getting_Started.html" />
+    <link rel="next" title="COMPATIBILITY: SimPy" href="COMPATIBILITY.html" />
+    <link rel="prev" title="Contents of This SimPy Distribution" href="DISTRIBUTION_CONTENTS.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="COMPATIBILITY.html" title="COMPATIBILITY: SimPy"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="DISTRIBUTION_CONTENTS.html" title="Contents of This SimPy Distribution"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SimPy v2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../Getting_Started.html" accesskey="U">Getting Started</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="changes-from-version-2-0-1">
+<h1>Changes from Version 2.0.1<a class="headerlink" href="#changes-from-version-2-0-1" title="Permalink to this headline">¶</a></h1>
+<p>This section addresses the difference between SimPy versions
+2.1.0 and version 2.0.1 in terms of changes, additions and repairs.</p>
+<div class="section" id="additions">
+<h2>Additions<a class="headerlink" href="#additions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>A function <cite>step</cite> has been added to the API. When called, it executes
+the next scheduled event. (<cite>step</cite> is actually a method of Simulation.)</li>
+<li>Another new function is <cite>peek</cite>. It returns the time of the next event.
+By using <cite>peek</cite> and <cite>step</cite> together, one can easily write e.g. an
+interactive program to step through a simulation event by event.</li>
+<li>A simple interactive debugger <tt class="docutils literal"><span class="pre">stepping.py</span></tt> has been added. It allows
+stepping through a simulation, with options to skip to a certain time,
+skip to the next event of a given process, or viewing the event list.</li>
+<li>Versions of the Bank tutorials using the advanced object-oriented
+API have been added.</li>
+<li>A new document describes tools for gaining insight into and debugging SimPy
+models.</li>
+</ul>
+</div>
+<div class="section" id="changes">
+<h2>Changes<a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Major re-structuring of SimPy code, resulting in much less
+SimPy code &#8211; great for the maintainers.</p>
+</li>
+<li><p class="first">Checks have been added which test whether entities belong to the
+same <cite>Simulation</cite> instance.
+These can prevent obscure errors in using the advanced object oriented
+API which are caused by the omission of a <tt class="docutils literal"><span class="pre">sim</span></tt> parameter..
+Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">s</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">AProcess</span><span class="p">()</span> <span class="c">## missing &#39;sim = s&#39;</span>
+<span class="n">s</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">run</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Here, <tt class="docutils literal"><span class="pre">Aprocess</span></tt> does not belong to the Simulation instance <tt class="docutils literal"><span class="pre">s</span></tt>.
+In SimPy 2.1.0, this now leads to an informative error message and program termination.
+To reduce run time, the tests can be switched off after debugging programs
+by executing Python with the <tt class="docutils literal"><span class="pre">-O</span></tt> parameter. Example: <tt class="docutils literal"><span class="pre">python</span> <span class="pre">-O</span> <span class="pre">mySimulation.py</span></tt></p>
+</li>
+<li><p class="first">The <cite>Monitor</cite> and <cite>Tally</cite> methods <cite>timeAverage</cite> and <cite>timeVariance</cite>
+now calculate only with the observed time-series. No value is
+assumed for the period prior to the first observation.</p>
+</li>
+<li><p class="first">Changed class <cite>Lister</cite> so that circular references between
+objects no longer lead to stack overflow and crash.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="repairs">
+<h2>Repairs<a class="headerlink" href="#repairs" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Functions <tt class="docutils literal"><span class="pre">allEventNotices</span></tt> and <tt class="docutils literal"><span class="pre">allEventTimes</span></tt> are working again.</li>
+<li>Error messages for methods in SimPy.Lib work again.</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Revision:</th><td class="field-body">$Revision: 493 $</td>
+</tr>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">$Date: 2010-05-11 07:02:41 +0200 (Di, 11 Mai 2010) $</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/sm_SimPy_Logo.png" alt="Logo"/>
+            </a></p>
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Changes from Version 2.0.1</a><ul>
+<li><a class="reference external" href="#additions">Additions</a></li>
+<li><a class="reference external" href="#changes">Changes</a></li>
+<li><a class="reference external" href="#repairs">Repairs</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="DISTRIBUTION_CONTENTS.html"
+                                  title="previous chapter">Contents of This SimPy Distribution</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="COMPATIBILITY.html"
+                                  title="next chapter">COMPATIBILITY: SimPy</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/Manuals/CHANGES_FROM_PREVIOUS_VERSION.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="COMPATIBILITY.html" title="COMPATIBILITY: SimPy"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="DISTRIBUTION_CONTENTS.html" title="Contents of This SimPy Distribution"
+             >previous</a> |</li>
+        <li><a href="../index.html">SimPy v2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../Getting_Started.html" >Getting Started</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2008, 2009, Klaus Muller, Tony Vignaux.
+      Last updated on May 11, 2010.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>
