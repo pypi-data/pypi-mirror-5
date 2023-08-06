@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if results %}
+        Trend for project {{ project }} - {{ full_name }} - Wight v0.1.0
+    {% else %}
+        Test Result for team {{ team }}, project {{ project }} and test {{ full_name }} not found - Wight v0.1.0
+    {% end %}
+{% end %}
+
+{% block contents %}
+<div class="trend container">
+{% if results %}
+    <div class="hero-unit">
+        <h1>{{ project }}</h1>
+        <p>Trend results for {{ full_name }}</p>
+        <p><small>This report details the trend results for the last {{ len(results) }} bench runs for the <span class="text-info">{{ project }}</span> project, running the <span class="text-info">{{ full_name }}</span> test.</small></p>
+        <div class="toolbar">
+            <div><a href="/trend/{{ team }}/{{ project }}/{{ module }}/{{ class_name }}/{{ test }}"><i class="icon-file"></i>Permalink for this test</a></div>
+            <div><a href="/report/{{ results[-1]["uuid"] }}"><i class="icon-circle-arrow-left"></i>Last test report for this trend</a></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="page-header">
+          <h1>Trends <small>trends for apdex, pages per second and average response time</small></h1>
+        </div>
+
+        <h3>Apdex</h3>
+        <div class="chart apdex"><svg></svg></div>
+        <p class="legend"><small><i>apdex ranges from 0.0 to 1.0, with 1.0 being a perfect score</i></small></p>
+
+        <h3>Pages per second</h3>
+        <div class="chart pps"><svg></svg></div>
+
+        <h3>Average response time</h3>
+        <div class="chart response-time"><svg></svg></div>
+    </div>
+
+    <div class="row">
+        <div class="page-header">
+          <h1>List of Reports <small>all the reports considered for this trend report</small></h1>
+        </div>
+
+        <div class="report-list">
+            {% for index, result in enumerate(results) %}
+            <a href="/report/{{ result["uuid"] }}">{{ "%02d" % (index + 1) }} - Report for {{ format_date(result["created"]) }}</a>
+            {% end %}
+        </div>
+
+    </div>
+
+
+    <p class="text-center"><small>Report generated at {{ report_date }}.</small></p>
+{% else %}
+    <div class="hero-unit">
+        <h1>No load test found</h1>
+        <p>We are unable to find a test result for team {{ team }}, project {{ project }} and test {{ full_name }}.</p>
+    </div>
+{% end %}
+</div>
+{% end %}
+
+{% block scripts %}
+<script>
+
+    var testsQuantity = {{ len(results) }};
+
+    var apdexConcurrentUsers = {{ apdex_concurrent_users }};
+    var apdexValues = {{ apdex_values }};
+
+    var pageConcurrentUsers = {{ page_concurrent_users }};
+
+    var ppsValues = {{ pps_values }};
+    var averageResponseTimeValues = {{ average_response_time_values }};
+
+</script>
+<script src="{{ static_url('js/trend.js') }}"></script>
+{% end %}
