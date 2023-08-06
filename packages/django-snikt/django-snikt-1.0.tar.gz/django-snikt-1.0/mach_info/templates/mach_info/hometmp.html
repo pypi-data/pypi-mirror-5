@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<head>
+<link rel="stylesheet" type="text/css" href="/static/css/home.css"/>
+
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+    window.inputs = ['hostname','vlan','os','app_prof'];
+    window.checkstarted = "false";
+    $(document).ready(function(){
+        var checkboxes = document.getElementsByClassName("check");
+
+        for(var i=0; i<checkboxes.length; i++){
+            if(checkboxes[i].checked == true && checkboxes[i].disabled == false){
+                $(checkboxes[i]).change();
+            }
+        } 
+        //deactivate in progress jobs
+        // from start/refresh do not want to get rid of all the work on the page that has already
+        //  been done also want to show jobs that have been started to be able to check status as
+        //  well as be aware of what has been done
+        {% for inprogress in current_jobs %}
+            var checkboxes = document.getElementsByClassName("check");
+            for(var i=0; i<checkboxes.length;i++){
+                if(checkboxes[i].value == '{{ inprogress.svctag }}'){
+                    // populate form
+                    var num = checkboxes[i].name.replace(/^.*(\d+)$/i,'$1');
+                    $(checkboxes[i]).prop('checked',true).change();
+                    $("#hostname"+num).val('{{  inprogress.hostname }}');
+                    $("#os"+num).val('{{ inprogress.os }}');
+                    $("#app_prof"+num).val('{{ inprogress.prof }}');
+                    $("#vlan"+num).val('{{ inprogress.vlan }}');
+                    deactivateForm(num);
+                    break;
+                }
+            }
+        {% endfor %}
+        {% if current_jobs %}
+            startCheck();
+        {% endif %}
+    });
+</script>
+<script type="text/javascript" src="/static/js/home.js"></script>
+</head>
+
+<body>
+<table id='main' border="1">
+    <tr>
+        <th>Select All</br><input type="checkbox" id="checkall" onchange="checkAll();"></th>
+        <th>Service Tag</th>
+        <!--{% for header in headers %}
+            <th>{{ header }}</th>
+        {% endfor %}
+        -->
+        <th>Hostname</br><a href="https://wiki.ebayadvertising.com/display/shopping/Host+Naming+Policy" target="_blank">Click for Naming Conventions</a></th>
+        <th>OS
+            </br>
+            <select id="glob_os" onchange="globalOS(this);">
+                <option value=""></option>
+                {% for os in avail_os %}
+                    <option value="{{os}}">{{os}}</option>
+                {% endfor %}
+            </select>
+        </th>
+        <th>Application Profile
+            </br>
+            <select id="glob_prof" onchange="globalProf(this);">
+                {% for prof in avail_profiles %}
+                    {% if prof == "none" %}
+                        <option value="{{prof}}" selected="selected">{{prof}}</option>
+                    {% else %}
+                        <option value="{{prof}}">{{prof}}</option>
+                    {% endif %}
+                {% endfor %} 
+            </select>
+        </th>
+        <th>Network:</br>Switch</br>Port</br>VLAN</th>
+    </tr>
+    {% for instance in data %}
+        {% with loop=forloop.counter %}
+        <tr>
+            <form name="form{{loop}}" id="form{{loop}}">
+                {% csrf_token %}
+                <td class="center">
+                    <input type="checkbox" class="check" id="svctag{{loop}}" name="svctag{{loop}}" onchange='showHide(this,{{loop}});' value="{{instance.svctag}}">
+                    <img id="delete{{loop}}" name="delete{{loop}}" class="delete" src='{{STATIC_URL}}/image/Delete-icon.png' onClick="deleteJob(this);" width="25" height="25" style="display: none">
+                </td>
+                <td>
+                    <div id="status{{loop}}" style="display: none;"></div>
+                    </br>
+                    <label for="svctag{{loop}}"><b>{{ instance.svctag }}</b></label>
+                    <div id="data{{loop}}" style="display: none;">
+                        <table class="data" border="1">
+                        {% for title, value in instance.other %}
+                            <!--</br>-->
+                            <tr><td>{{title}}</td><td class="center">{{value}}</td></tr>
+                        {% endfor %}
+                        </table>
+                    </div>
+                </td>
+                <!--{% for value in instance.values %}
+                <td>{{ value }}</td>
+                {% endfor %}
+                -->
+                <td class="center">
+                    <div id="hostname{{loop}}req" style="display: none;"><font color='red'>*Host name is required*</font></br></div>
+                    <input class="center" type="text" id="hostname{{loop}}" name="hostname{{loop}}">
+                </td>
+                <td class="center">
+                    <div id="os{{loop}}req" style="display: none;"><font color='red'>*OS is required*</font></br></div>
+                    <select class="center" class="os" id="os{{loop}}" name="os{{loop}}">
+                    <option value=""></option>
+                    {% for os in avail_os %}
+                        <option value="{{os}}">{{os}}</option>
+                    {% endfor %}
+                    </select>
+                </td>
+                <td class="center">
+                    <div id="app_prof{{loop}}req" style="display: none;"><font color='red'>*Please choose 'none'</br>if you do not want to install</br> an Application Profile*</font></br></div> 
+                    <select class="center" class="app_prof" id="app_prof{{loop}}" name="app_prof{{loop}}">
+                    {% for prof in avail_profiles %}
+                        {% if prof == "none" %}
+                            <option value="{{prof}}" selected='selected'>{{prof}}</option>
+                        {% else %}
+                            <option value="{{prof}}">{{prof}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <div id="sw_name{{loop}}" style="display: inline;" name="sw_name{{loop}}">{{instance.sw_name}}</div>
+                    </br><div id="sw_port{{loop}}" style="display: inline;" name="sw_port{{loop}}">{{instance.sw_port}}</div>
+                    </br><div id="vlan{{loop}}req" style="display: none;"><font color='red'>*VLAN is required*</font></div>
+                    </br><select id="vlan{{loop}}" name="vlan{{loop}}">
+                    {% for vlan in instance.vlans %}
+                        <option value="{{vlan}}">{{vlan}}</option>
+                    {% endfor %}
+                    </select>
+                </td>
+            </form>
+        </tr>
+        {% endwith %}
+    {% endfor %}
+</table>
+<div id="submit_button" class="center" style="display: none;">
+    <button type="button" value="Submit" onclick="submitForms();" >Submit</button>
+</div>
+</body>
+</html>
