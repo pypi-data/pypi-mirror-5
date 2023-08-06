@@ -1,0 +1,236 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using Validation Schemas &mdash; pycerberus 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycerberus 0.5 documentation" href="index.html" />
+    <link rel="next" title="Schema inheritance - build multi-page forms without duplication" href="schema_inheritance.html" />
+    <link rel="prev" title="Internationalization" href="i18n.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="schema_inheritance.html" title="Schema inheritance - build multi-page forms without duplication"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="i18n.html" title="Internationalization"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-validation-schemas">
+<h1>Using Validation Schemas<a class="headerlink" href="#using-validation-schemas" title="Permalink to this headline">¶</a></h1>
+<p>Especially in web development you often get multiple values from a form and you
+want to validate all these values easily. This is where &#8220;compound validators&#8221;
+aka &#8220;schemas&#8221; come into play. A schema contains multiple validators, one validator
+for every field. There&#8217;s nothing special about these validators - they are just
+validators like the ones I explained in the previous section. Every field
+validator only cares about a single value and does not see the rest of the
+values. Also a schema is technically just a special validator.</p>
+<p>You can define a schema like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pycerberus.schema</span> <span class="kn">import</span> <span class="n">SchemaValidator</span>
+<span class="kn">from</span> <span class="nn">pycerberus.validators</span> <span class="kn">import</span> <span class="n">IntegerValidator</span><span class="p">,</span> <span class="n">StringValidator</span>
+
+<span class="n">schema</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">())</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="n">StringValidator</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Afterwards the schema behaves most like all basic validators - instead of a
+single input value they just get a dictionary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">validated_values</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">process</span><span class="p">({</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="s">&#39;42&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;Foo Bar&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>If you declared a validator for a key which is not present in the input dict,
+the validator will get its &#8216;empty&#8217; value instead:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">id_required</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">id_required</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">))</span>
+<span class="n">id_required</span><span class="o">.</span><span class="n">process</span><span class="p">({})</span> <span class="c"># -&gt; {&#39;id&#39;: None}</span>
+
+<span class="n">id_optional</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">id_optional</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="n">id_optional</span><span class="o">.</span><span class="n">process</span><span class="p">({})</span> <span class="c"># raises an Exception because id None is not acceptable</span>
+</pre></div>
+</div>
+<p>Do not mix up the &#8216;default&#8217; value with the &#8216;empty&#8217; value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">IntegerValidator</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The &#8216;default&#8217; value in this case is 42 but the &#8216;empty&#8217; value is still None.</p>
+<p>Please note that Schemas are &#8216;secure by default&#8217; which means that the returned
+dictionary contains only values that were validated. If you did not add a
+validator for a specific key, this key won&#8217;t be included in the result.</p>
+<p>If you need to ensure that no values with unknown keys are passed to the schema
+(even if those would be just dropped), you can specify this when instantiating
+the schema: <tt class="docutils literal"><span class="pre">Schema(allow_additional_parameters=False)</span></tt>. The schema will
+raise an exception if it finds any unknown keys.</p>
+<p>The equivalent &#8220;declarative schema&#8221; (see next section) is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MySchema</span><span class="p">(</span><span class="n">SchemaValidator</span><span class="p">):</span>
+    <span class="n">allow_additional_parameters</span><span class="o">=</span><span class="bp">False</span>
+    <span class="c"># ...</span>
+</pre></div>
+</div>
+<div class="section" id="declarative-schemas">
+<h2>Declarative Schemas<a class="headerlink" href="#declarative-schemas" title="Permalink to this headline">¶</a></h2>
+<p>Schemas can be an important part in your application security. Also they define
+some kind of interface (which parameters does your application expect). Besides
+the algorithmic way to build a schema there is a &#8216;declarative&#8217; way so that you
+can review and audit your schemas easily:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MySchema</span><span class="p">(</span><span class="n">SchemaValidator</span><span class="p">):</span>
+    <span class="nb">id</span>   <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringValidator</span><span class="p">()</span>
+
+<span class="c"># using it...</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="n">MySchema</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>It&#8217;s absolutely the same schema but the definition is way easier to read.</p>
+</div>
+<div class="section" id="schema-error-handling">
+<h2>Schema Error Handling<a class="headerlink" href="#schema-error-handling" title="Permalink to this headline">¶</a></h2>
+<p>All schema validators are executed even if one of the previous validators failed.
+Because of that you can display the user all errors at once:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">())</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="n">StringValidator</span><span class="p">())</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">schema</span><span class="o">.</span><span class="n">process</span><span class="p">({</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="s">&#39;invalid&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">InvalidDataError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">e</span><span class="o">.</span><span class="n">error_dict</span><span class="p">()</span>    <span class="c"># {&#39;id&#39;: &lt;id validation error&gt;, &#39;name&#39;: &lt;id validation error&gt;}</span>
+    <span class="n">e</span><span class="o">.</span><span class="n">error_for</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span> <span class="c"># id validation error</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="validating-multiple-fields-in-a-schema">
+<h2>Validating multiple fields in a Schema<a class="headerlink" href="#validating-multiple-fields-in-a-schema" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes you need to validate multiple fields in a schema - e.g. you need to
+check in a &#8216;change password&#8217; action that the password is entered the same twice.
+Or you need to check that a certain value is higher than another value in the
+form. That&#8217;s where <em>formvalidators</em> come into play.</p>
+<p>formvalidators are validators like all other field validators but they get the
+complete field dict as input, not a single item. Also formvalidators are run
+<em>after</em> all field validators successfully validated the input - therefore you
+have access to reasonably sane values, already converted to a handy Python data
+type. Opposite to simple field validators, the validation process fails
+immediately if one formvalidator fails.</p>
+<p>You can add formvalidators to a form like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">NumbersMatch</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">fields</span><span class="p">[</span><span class="s">&#39;b&#39;</span> <span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="s">&#39;no_match&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add_formvalidator</span><span class="p">(</span><span class="n">NumbersMatch</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Of course there is also a declarative way to use form validators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MySchema</span><span class="p">(</span><span class="n">SchemaValidator</span><span class="p">):</span>
+    <span class="c"># ...</span>
+    <span class="n">formvalidators</span> <span class="o">=</span> <span class="p">(</span><span class="n">NumbersMatch</span><span class="p">,</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using Validation Schemas</a><ul>
+<li><a class="reference internal" href="#declarative-schemas">Declarative Schemas</a></li>
+<li><a class="reference internal" href="#schema-error-handling">Schema Error Handling</a></li>
+<li><a class="reference internal" href="#validating-multiple-fields-in-a-schema">Validating multiple fields in a Schema</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="i18n.html"
+                        title="previous chapter">Internationalization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="schema_inheritance.html"
+                        title="next chapter">Schema inheritance - build multi-page forms without duplication</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/schemas.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="schema_inheritance.html" title="Schema inheritance - build multi-page forms without duplication"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="i18n.html" title="Internationalization"
+             >previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011 Felix Schwarz.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

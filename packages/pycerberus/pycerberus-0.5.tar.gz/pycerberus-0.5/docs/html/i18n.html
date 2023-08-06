@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Internationalization &mdash; pycerberus 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycerberus 0.5 documentation" href="index.html" />
+    <link rel="next" title="Using Validation Schemas" href="schemas.html" />
+    <link rel="prev" title="Writing your own validators" href="writing_your_own.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="schemas.html" title="Using Validation Schemas"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="writing_your_own.html" title="Writing your own validators"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="internationalization">
+<h1>Internationalization<a class="headerlink" href="#internationalization" title="Permalink to this headline">¶</a></h1>
+<p>Modern applications must be able to handle different languages.
+Internationalization (i18n) in pycerberus refers to validating
+locale-dependent input data (e.g. different decimal separator characters) as
+well as validation errors in different languages. The former aspect is not yet
+covered by default but you should be able to write custom validators easily.</p>
+<p>All messages from validators included in pycerberus can be translated in
+different languages using the standard gettext library. The language of
+validation error messages will be chosen depending on the locale which is given
+in the state dictionary,</p>
+<p>i18n support in pycerberus is a bit broader than just translating
+existing error messages. i18n becomes interesting when you write your own
+validators (based on the ones that come with pycerberus) and your translations
+need to play along with the built-in ones:</p>
+<ul class="simple">
+<li>Translate only the messages you defined, keep the existing pycerberus translations.</li>
+<li>If you don&#8217;t like the existing pycerberus translations, you can define your
+own without even changing a single line or file in pycerberus.</li>
+<li>Specify additional translation options per validator class (e.g. a different
+gettext domain or a different directory where your translations are stored).</li>
+<li>Even though pycerberus uses the well-known gettext mechanism to retrieve
+translations, you can use any other source as well (e.g. a database or a XML
+file).</li>
+</ul>
+<p>All i18n support in pycerberus aims to provide custom validators with a
+nice, simple-to-use API while maintaining the flexibility that serious
+applications need.</p>
+<div class="section" id="get-translated-error-messages">
+<h2>Get translated error messages<a class="headerlink" href="#get-translated-error-messages" title="Permalink to this headline">¶</a></h2>
+<p>If you want to get translated error messages from a validator, you set the
+correct &#8216;&#8217;context&#8217;&#8216;. formencode looks for a key named &#8216;locale&#8217; in the context
+dictionary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">validator</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+<span class="n">validator</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;locale&#39;</span><span class="p">:</span> <span class="s">&#39;en&#39;</span><span class="p">})</span> <span class="c"># u&#39;Please enter a number.&#39;</span>
+<span class="n">validator</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;locale&#39;</span><span class="p">:</span> <span class="s">&#39;de&#39;</span><span class="p">})</span> <span class="c"># u&#39;Bitte geben Sie eine Zahl ein.&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="internal-gettext-details">
+<h2>Internal gettext details<a class="headerlink" href="#internal-gettext-details" title="Permalink to this headline">¶</a></h2>
+<p>Usually you don&#8217;t have to know much about how pycerberus uses gettext internally.
+Just for completeness: The default domain is &#8216;pycerberus&#8217;. By default
+translations (.mo files) are loaded from <tt class="docutils literal"><span class="pre">pycerberus.locales</span></tt>, with a fall back
+to the system-wide locale dir &#8216;&#8217;/usr/share/locale&#8217;&#8216;.</p>
+</div>
+<div class="section" id="translate-your-custom-messages">
+<h2>Translate your custom messages<a class="headerlink" href="#translate-your-custom-messages" title="Permalink to this headline">¶</a></h2>
+<p>To translate messages from a custom validator, you need to declare them in
+the messages() method and mark the message strings as translatable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pycerberus.api</span> <span class="kn">import</span> <span class="n">Validator</span>
+<span class="kn">from</span> <span class="nn">pycerberus.i18n</span> <span class="kn">import</span> <span class="n">_</span>
+
+<span class="k">class</span> <span class="nc">MyValidator</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+                <span class="s">&#39;foo&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A message.&#39;</span><span class="p">),</span>
+                <span class="s">&#39;bar&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;Another message.&#39;</span><span class="p">),</span>
+               <span class="p">}</span>
+
+    <span class="c"># your validation logic ...</span>
+</pre></div>
+</div>
+<p>Afterwards you just have to start the usual gettext process. I always use <a class="reference external" href="http://babel.edgewall.org">Babel</a> because it provides the very convenient <tt class="docutils literal"><span class="pre">pybabel</span></tt> tool which simplifies the workflow a lot:</p>
+<ul class="simple">
+<li>Collect the translatable strings in a po template (.pot) file, e.g. <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">extract</span> <span class="pre">.</span> <span class="pre">--output=mymessages.pot</span></tt></li>
+<li>Create the initial po file for your new locale (only needed once): <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">init</span> <span class="pre">--domain=pycerberus</span> <span class="pre">--input-file=mymessages.pot</span> <span class="pre">--locale=&lt;locale</span> <span class="pre">ID&gt;</span> <span class="pre">--output-dir=locales/</span></tt></li>
+<li>After every change to a translatable string in your source code, you need to recreate the pot file (see first step) and update the po file for your locale: <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">update</span> <span class="pre">--domain=pycerberus</span> <span class="pre">--input-file=mymessages.pot</span> <span class="pre">--output-dir=locales/</span></tt></li>
+<li>Translate the messages for every locale.</li>
+<li>Compile the final po file into a mo file, e.g. <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">compile</span> <span class="pre">--domain=pycerberus</span> <span class="pre">--directory=locales/</span></tt></li>
+</ul>
+</div>
+<div class="section" id="override-existing-messages-and-translations">
+<h2>Override existing messages and translations<a class="headerlink" href="#override-existing-messages-and-translations" title="Permalink to this headline">¶</a></h2>
+<p>Assume your custom validator is a subclass of a built-in validator but you
+don&#8217;t like the built-in translation. Of course you can replace pycerberus&#8217; mo
+files directly. However there is also another way where you don&#8217;t have to change
+pycerberus itself:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">CustomValidatorThatOverridesTranslations</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;empty&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;My custom message if the value is empty&#39;</span><span class="p">),</span>
+                <span class="s">&#39;custom&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A custom message&#39;</span><span class="p">)}</span>
+
+    <span class="c"># ...</span>
+</pre></div>
+</div>
+<p>This validator will use a different message for the &#8216;empty&#8217; error and you can
+define custom translations for this key in your own .po files.</p>
+</div>
+<div class="section" id="modify-gettext-options-locale-dir-domain">
+<h2>Modify gettext options (locale dir, domain)<a class="headerlink" href="#modify-gettext-options-locale-dir-domain" title="Permalink to this headline">¶</a></h2>
+<p>The gettext library is configurable, e.g. in which directory your .mo files
+are located and which domain (.mo filename) should be used. In pycerberus this
+is configurable by validator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ValidatorWithCustomGettextOptions</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;custom&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A custom message&#39;</span><span class="p">)}</span>
+
+    <span class="k">def</span> <span class="nf">translation_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;domain&#39;</span><span class="p">:</span> <span class="s">&#39;myapp&#39;</span><span class="p">,</span> <span class="s">&#39;localedir&#39;</span><span class="p">:</span> <span class="s">&#39;/home/foo/locale&#39;</span><span class="p">}</span>
+
+    <span class="c"># ...</span>
+</pre></div>
+</div>
+<p>These translation parameters are passed directly to the &#8216;&#8217;gettext&#8217;&#8217; call so you
+can read about the available options in the <a class="reference external" href="http://docs.python.org/library/gettext.html">gettext documentation</a>.
+Your parameter will be applied for all messages which were declared in your
+validator class (but not in others). So you can modify the parameters for your
+own validator but keep all the existing parameters (and translations) for
+built-in validators.</p>
+</div>
+<div class="section" id="retrieve-translations-from-a-different-source-e-g-database">
+<h2>Retrieve translations from a different source (e.g. database)<a class="headerlink" href="#retrieve-translations-from-a-different-source-e-g-database" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes you don&#8217;t want to use gettext. For instance you could store translations
+in a relational database so that your users can update the messages themselves
+without fiddling with gettext tools:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ValidatorWithNonGettextTranslation</span><span class="p">(</span><span class="n">FrameworkValidator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;custom&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A custom message&#39;</span><span class="p">)}</span>
+
+    <span class="k">def</span> <span class="nf">translate_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">native_message</span><span class="p">,</span> <span class="n">translation_parameters</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="c"># fetch the translation for &#39;native_message&#39; from somewhere</span>
+        <span class="n">translated_message</span> <span class="o">=</span> <span class="n">get_translation_from_db</span><span class="p">(</span><span class="n">native_message</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">translated_message</span>
+</pre></div>
+</div>
+<p>You can use this mechanism to plug in arbitrary translation systems into
+gettext. Your translation mechanism is (again) only applied to keys which were
+defined by your specific validator class. If you want to use your translation
+system also for keys which were defined by built-in validators, you need to
+re-define these keys in your class as shown in the previous section.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Internationalization</a><ul>
+<li><a class="reference internal" href="#get-translated-error-messages">Get translated error messages</a></li>
+<li><a class="reference internal" href="#internal-gettext-details">Internal gettext details</a></li>
+<li><a class="reference internal" href="#translate-your-custom-messages">Translate your custom messages</a></li>
+<li><a class="reference internal" href="#override-existing-messages-and-translations">Override existing messages and translations</a></li>
+<li><a class="reference internal" href="#modify-gettext-options-locale-dir-domain">Modify gettext options (locale dir, domain)</a></li>
+<li><a class="reference internal" href="#retrieve-translations-from-a-different-source-e-g-database">Retrieve translations from a different source (e.g. database)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="writing_your_own.html"
+                        title="previous chapter">Writing your own validators</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="schemas.html"
+                        title="next chapter">Using Validation Schemas</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/i18n.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="schemas.html" title="Using Validation Schemas"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="writing_your_own.html" title="Writing your own validators"
+             >previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011 Felix Schwarz.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

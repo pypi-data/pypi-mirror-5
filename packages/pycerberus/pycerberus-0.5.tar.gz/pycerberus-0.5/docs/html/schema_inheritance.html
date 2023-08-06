@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Schema inheritance - build multi-page forms without duplication &mdash; pycerberus 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycerberus 0.5 documentation" href="index.html" />
+    <link rel="next" title="Parse Input with Schemas" href="schema_parsing.html" />
+    <link rel="prev" title="Using Validation Schemas" href="schemas.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="schema_parsing.html" title="Parse Input with Schemas"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="schemas.html" title="Using Validation Schemas"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="schema-inheritance-build-multi-page-forms-without-duplication">
+<h1>Schema inheritance - build multi-page forms without duplication<a class="headerlink" href="#schema-inheritance-build-multi-page-forms-without-duplication" title="Permalink to this headline">¶</a></h1>
+<p>Validation schemas are an important piece of information: On the one hand they
+can serve as a kind of API specification (which parameters are accepted by your
+application) and on the other hand they are important for security audits (which
+constraints are put on your input values). Obviously this is something that you
+want to get right - duplicating this information only increases the likelyhood
+of bugs.</p>
+<p>The issue becomes especially annoying when you have a web application with a
+complex form (e.g. a new user registration process) that you want to split in
+multiple steps on different pages so that your users won&#8217;t drop out immediately
+when they see the huge form. It is good HTTP/ReST design practice to keep state
+on the client side. Therefore you pass fields from previous pages in hidden
+input fields to the next and for the final page it looks like there was one big
+form. This also has the advantage that you can shuffle the fields on the
+different pages without changing real logic.</p>
+<p>With that approach your pretty much settled - however you need a separate
+validation schema for every single page which is a huge duplication. With
+pycerberus you can avoid that by using &#8216;&#8217;schema inheritance&#8217;&#8216;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">FirstPage</span><span class="p">(</span><span class="n">SchemaValidator</span><span class="p">):</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+
+    <span class="n">formvalidators</span> <span class="o">=</span> <span class="p">(</span><span class="n">SomeValidator</span><span class="p">(),</span> <span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">SecondPage</span><span class="p">(</span><span class="n">FirstPage</span><span class="p">):</span>
+    <span class="c"># this schema contains also &#39;id&#39; validator</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringValidator</span><span class="p">()</span>
+
+    <span class="c"># formvalidators are implicitely appended so actually this schema has</span>
+    <span class="c"># these formvalidators: (SomeValidator(), AnotherValidator(), )</span>
+    <span class="n">formvalidators</span> <span class="o">=</span> <span class="p">(</span><span class="n">AnotherValidator</span><span class="p">(),</span> <span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">FinalPage</span><span class="p">(</span><span class="n">SecondPage</span><span class="p">):</span>
+    <span class="c"># this schema contains also &#39;id&#39; and &#39;name&#39; validators</span>
+    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+
+    <span class="c"># This page contains again both formvalidators</span>
+</pre></div>
+</div>
+<p>As you can see, every page adds some validators while keeping the old ones. This
+eliminates the duplication problem described above,</p>
+<p>What happens if SecondPage declares a different validator for &#8216;id&#8217;? In this case
+it will just replace the &#8216;&#8217;IntegerValidator()&#8217;&#8217; declared by &#8216;&#8217;FirstPage&#8217;&#8216;!</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="schemas.html"
+                        title="previous chapter">Using Validation Schemas</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="schema_parsing.html"
+                        title="next chapter">Parse Input with Schemas</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/schema_inheritance.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="schema_parsing.html" title="Parse Input with Schemas"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="schemas.html" title="Using Validation Schemas"
+             >previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011 Felix Schwarz.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

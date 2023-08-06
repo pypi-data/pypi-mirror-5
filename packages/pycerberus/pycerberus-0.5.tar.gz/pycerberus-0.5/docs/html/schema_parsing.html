@@ -1,0 +1,172 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Parse Input with Schemas &mdash; pycerberus 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycerberus 0.5 documentation" href="index.html" />
+    <link rel="next" title="Support for Python 3" href="python3.html" />
+    <link rel="prev" title="Schema inheritance - build multi-page forms without duplication" href="schema_inheritance.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="python3.html" title="Support for Python 3"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="schema_inheritance.html" title="Schema inheritance - build multi-page forms without duplication"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="parse-input-with-schemas">
+<h1>Parse Input with Schemas<a class="headerlink" href="#parse-input-with-schemas" title="Permalink to this headline">¶</a></h1>
+<p>In the common &#8220;web form&#8221; use case you already get parameters mapped to keys.
+That&#8217;s usually the job of your web framework. However sometimes it&#8217;s not that
+easy: Before you can do input validation, you need to parse the user input from
+a string and convert that into a dict.</p>
+<p>This is where &#8216;&#8217;PositionalArgumentsParsingSchema()&#8217;&#8217; might help you: This schema
+takes a string and extracts several parameters from it. So you can use it to
+transform <tt class="docutils literal"><span class="pre">&quot;foo,</span> <span class="pre">42&quot;</span></tt> into <tt class="docutils literal"><span class="pre">dict(name=&quot;foo&quot;,</span> <span class="pre">value=42)</span></tt>.</p>
+<dl class="class">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema">
+<em class="property">class </em><tt class="descclassname">pycerberus.schemas.</tt><tt class="descname">PositionalArgumentsParsingSchema</tt><big>(</big><em>self</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema" title="Permalink to this definition">¶</a></dt>
+<dd><p>This schema parses a string containing arguments within a specified order
+and returns a dict where each of these parameters is mapped to a specific 
+key for easy retrieval.</p>
+<p>You specify the order of parameters (and the keys) in the class-level 
+attribute <tt class="docutils literal"><span class="pre">parameter_order</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ConfigListSchema</span><span class="p">(</span><span class="n">PositionalArgumentsParsingSchema</span><span class="p">):</span>
+    <span class="n">first_key</span> <span class="o">=</span> <span class="n">StringValidator</span><span class="p">()</span>
+    <span class="n">second_key</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+    <span class="n">parameter_order</span> <span class="o">=</span> <span class="p">(</span><span class="n">first_key</span><span class="p">,</span> <span class="n">second_key</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>By default the items are separated by comma though you can override in the
+method <tt class="docutils literal"><span class="pre">separator_pattern()</span></tt>. If there are more items than keys specified,
+this schema will behave like any other schema (depending if you set the
+class-level attribute <tt class="docutils literal"><span class="pre">allow_additional_parameters</span></tt>).</p>
+<dl class="method">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema.aggregate_values">
+<tt class="descname">aggregate_values</tt><big>(</big><em>parameter_names</em>, <em>arguments</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema.aggregate_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method can manipulate or aggregate parsed arguments. In this 
+class, it&#8217;s just a noop but sub classes can override this method to do
+more interesting stuff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all keys defined by this specific validator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema.message_for_key">
+<tt class="descname">message_for_key</tt><big>(</big><em>key</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema.message_for_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a message for a specific key. Implement this method if you 
+want to avoid calls to messages() which might be costly (otherwise 
+implementing this method is optional).</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>This schema is used for example in <a class="reference external" href="http://www.schwarz.eu/opensource/projects/pymta">pymta</a>.
+to parse the SMTP command strings. Also I used it in my
+<a class="reference external" href="http://www.schwarz.eu/opensource/projects/ohloh_widgets_macro">OhlohWidgetsMacro</a>:
+Trac macros can get parameters but these are passed as a single string so the
+schema takes care of separating these arguments.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="schema_inheritance.html"
+                        title="previous chapter">Schema inheritance - build multi-page forms without duplication</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="python3.html"
+                        title="next chapter">Support for Python 3</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/schema_parsing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="python3.html" title="Support for Python 3"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="schema_inheritance.html" title="Schema inheritance - build multi-page forms without duplication"
+             >previous</a> |</li>
+        <li><a href="index.html">pycerberus 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011 Felix Schwarz.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
