@@ -1,0 +1,33 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:tal="http://xml.zope.org/namespaces/tal"
+	xmlns:metal="http://xml.zope.org/namespaces/metal" xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+	lang="en" metal:use-macro="context/main_template/macros/master"
+	i18n:domain="plone">
+	<body>
+
+		<metal:content-core fill-slot="main">
+			<header>
+				<h1 tal:content="context/title"></h1>
+			</header>
+
+			<section>
+				<ul id="bloglist" tal:define="items python:[i for i,j in context.contentItems()]; sort_on python:(('EffectiveDate', 'nocase', 'desc')); sorted_posts python:sequence.sort(items, sort_on)">
+					<li tal:repeat="post sorted_posts">
+						<div tal:define="navigation_root_url context/@@plone_portal_state/navigation_root_url;">
+							<h2 class="blogitem_title">
+								<a tal:content="python: post.title" tal:attributes="href post/absolute_url">Some blog post title</a>
+							</h2>
+							<span>veröffentlicht von </span>
+							<a tal:content="python: view.authorname(post.Creator())"
+								tal:attributes="href string:$navigation_root_url/author/${post/Creator}">Max Mustermann</a>
+							<span> am </span>
+							<time tal:attributes="datetime python:post.EffectiveDate()"
+								tal:content="python:view.toLocalizedTime(post.EffectiveDate(),long_format=1)">26.06.2013</time>
+							<div tal:replace="structure python: post.getText()">The body</div>
+						</div>
+					</li>
+				</ul>
+			</section>
+		</metal:content-core>
+
+	</body>
+</html>
