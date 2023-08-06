@@ -1,0 +1,50 @@
+Metadata-Version: 1.0
+Name: bottle_pika
+Version: 0.1.0
+Summary: Pika plugin module for Bottle microframework
+Home-page: https://github.com/dbroudy/bottle-pika
+Author: David Broudy
+Author-email: dave@broudy.net
+License: MIT
+Description: 
+        Bottle-Pika is a plugin that integrates Pika (AMQP) with your Bottle
+        application. It automatically connects to AMQP at the beginning of a
+        request, passes the channel to the route callback and closes the
+        connection and channel afterwards.
+        
+        To automatically detect routes that need a channel, the plugin
+        searches for route callbacks that require a `mq` keyword argument
+        (configurable) and skips routes that do not. This removes any overhead for
+        routes that don't need a message queue.
+        
+        This plugin was originally based on the bottle-mysql plugin found at:
+          https://pypi.python.org/pypi/bottle-mysql
+        
+        Usage Example::
+        
+            import bottle
+            import bottle_pika
+            import pika
+        
+            app = bottle.Bottle()
+            pika_plugin = bottle_pika.Plugin(pika.URLParameters('amqp://localhost/'))
+            app.install(pika_plugin)
+        
+            @app.route('/hello')
+            def hello(mq):
+                mq.basic_publish(...)
+                return HTTPResponse(status=200)
+        
+        See pika documentation on channels for more information:
+          http://pika.readthedocs.org/en/latest/modules/channel.html#pika.channel.Channel
+        
+        
+Keywords: bottle rabbitmq amqp pika messaging message queue
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Bottle
+Classifier: Operating System :: OS Independent
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
