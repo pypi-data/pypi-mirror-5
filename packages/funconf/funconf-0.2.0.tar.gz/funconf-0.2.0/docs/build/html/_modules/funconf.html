@@ -1,0 +1,673 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>funconf &mdash; funconf 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/theme_extras.js"></script>
+    <link rel="top" title="funconf 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" />
+    <a href="https://github.com/mjdorma/funconf">
+        <img style="position: absolute; top: 0; right: 0; border: 0;"
+             src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+             alt="Fork me on GitHub">
+    </a>
+     
+
+  </head>
+  <body>
+      <div class="header"><h1 class="heading"><a href="../index.html">
+          <span>funconf 0.2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>funconf</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for funconf</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Overview.</span>
+<span class="sd">=============</span>
+
+<span class="sd">This module simplifies the management of function default keyword argument </span>
+<span class="sd">values.</span>
+
+<span class="sd">:py:mod:`funconf` introduces two decorators. The first function</span>
+<span class="sd">:py:func:`wraps_kwargs` makes it trivial to dynamically define the default</span>
+<span class="sd">kwargs for a function.  The second function :py:func:`lazy_string_cast` casts</span>
+<span class="sd">input parameters passed in based on the default values of the kwargs and the</span>
+<span class="sd">default values of arguments found in the function it is wrapping. </span>
+
+<span class="sd">For configuration, :py:mod:`funconf` borrows from concepts discussed in</span>
+<span class="sd">Python&#39;s core library *ConfigParser*.  A configuration consists of sections</span>
+<span class="sd">made up of *option:value* entries, or two levels of mappings that take on the</span>
+<span class="sd">form *section:option:value*.</span>
+
+<span class="sd">The file format YAML has been chosen to allow for option values to exist as</span>
+<span class="sd">different types instead of being restricted to string type values.</span>
+
+
+<span class="sd">The configuration file</span>
+<span class="sd">----------------------</span>
+
+<span class="sd">Example of a simple YAML configuration file:: </span>
+
+<span class="sd">    $ cat my.conf</span>
+<span class="sd">    #</span>
+<span class="sd">    # Foo</span>
+<span class="sd">    #</span>
+<span class="sd">    foo:</span>
+<span class="sd">      bar: 4</span>
+<span class="sd">      moo:</span>
+<span class="sd">      - how</span>
+<span class="sd">      - are</span>
+<span class="sd">      - you</span>
+
+<span class="sd">    #</span>
+<span class="sd">    # Bread</span>
+<span class="sd">    #</span>
+<span class="sd">    bread:</span>
+<span class="sd">      butter: win</span>
+<span class="sd">      milk: fail</span>
+
+<span class="sd">This file contains two sections foo and bread.  foo has two options bar and</span>
+<span class="sd">moo.  bar is an integer value of 4 and moo is a list of strings containing</span>
+<span class="sd">``[&#39;how&#39;, &#39;are&#39;, &#39;you&#39;]``.  </span>
+
+<span class="sd">The above configuration could be generated through a process of adding each</span>
+<span class="sd">option: value into a :py:class:`Config` object then casting it to a string. For</span>
+<span class="sd">example::</span>
+
+<span class="sd">    config = funconf.Config()</span>
+<span class="sd">    config.set(&#39;foo&#39;, &#39;bar&#39;, 4)</span>
+<span class="sd">    config.set(&#39;foo&#39;, &#39;bar&#39;, [&#39;how&#39;, &#39;are&#39;, &#39;you&#39;])</span>
+<span class="sd">    config.set(&#39;bread&#39;, &#39;butter&#39;, &#39;milk&#39;)</span>
+<span class="sd">    config.set(&#39;bread&#39;, &#39;milk&#39;, &#39;fail&#39;)</span>
+<span class="sd">    print(config)</span>
+
+
+<span class="sd">A configuration object</span>
+<span class="sd">----------------------</span>
+
+<span class="sd">The :py:class:`Config` class is the root class container for all of the</span>
+<span class="sd">configuration sections.  It implements the *MutableMapping* type which allows</span>
+<span class="sd">it to seamlessly integrate into the :py:func:`wraps_kwargs` function. </span>
+
+<span class="sd">As a dictionary ``dict(config)`` the :py:class:`Config` object looks like::</span>
+
+<span class="sd">    {&#39;bread_butter&#39;: &#39;win&#39;,</span>
+<span class="sd">     &#39;bread_milk&#39;: &#39;fail&#39;,</span>
+<span class="sd">     &#39;foo_bar&#39;: 4,</span>
+<span class="sd">     &#39;foo_moo&#39;: [&#39;how&#39;, &#39;are&#39;, &#39;you&#39;]}</span>
+<span class="sd">    </span>
+<span class="sd">Notice how the configuration *section:options* have been concatenated. This</span>
+<span class="sd">facilitates the simple wrapping of an entire configuration file into the kwargs</span>
+<span class="sd">of a function.  The following example will print out an equivalent dictionary</span>
+<span class="sd">to the printout in the previous example. ::  </span>
+
+<span class="sd">    @config</span>
+<span class="sd">    def myfunc(**kwargs):</span>
+<span class="sd">        print(kwargs)</span>
+
+
+<span class="sd">A configuration section</span>
+<span class="sd">-------------------------</span>
+
+<span class="sd">To access sections and option values the following pattern holds true::</span>
+
+<span class="sd">    assert config.bread.milk == &#39;fail&#39;</span>
+<span class="sd">    assert config.bread[&#39;milk&#39;] == &#39;fail&#39;</span>
+<span class="sd">    assert config[&#39;bread_milk&#39;] == &#39;fail&#39;</span>
+
+<span class="sd">A section is represented by the :py:class:`ConfigSection` object. This object</span>
+<span class="sd">implements the *MutableMapping* type in the same way the :py:class:`Config`</span>
+<span class="sd">object is implemented and is compatible with the :py:func:`wraps_kwargs`</span>
+<span class="sd">function.  The :py:class:`ConfigSection` represented ``str(config.bread)``</span>
+<span class="sd">looks like::</span>
+
+<span class="sd">    bread:</span>
+<span class="sd">      butter: win</span>
+<span class="sd">      milk: fail</span>
+
+<span class="sd">Just like the :py:class:`Config` class, the :py:class:`ConfigSection` can be</span>
+<span class="sd">used as a decorator to a function too. Here is an example::</span>
+
+<span class="sd">    @config.bread</span>
+<span class="sd">    def myfunc(**kwargs):</span>
+<span class="sd">        print(kwargs)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">MutableMapping</span>
+<span class="kn">import</span> <span class="nn">shlex</span>
+<span class="kn">from</span> <span class="nn">distutils.util</span> <span class="kn">import</span> <span class="n">strtobool</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span><span class="p">,</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">Parameter</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">funcsigs</span> <span class="kn">import</span> <span class="n">signature</span><span class="p">,</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">Parameter</span> 
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="nb">unicode</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+
+<div class="viewcode-block" id="wraps_kwargs"><a class="viewcode-back" href="../funconf.html#funconf.wraps_kwargs">[docs]</a><span class="k">def</span> <span class="nf">wraps_kwargs</span><span class="p">(</span><span class="n">kwarg_defaults</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;Decorate a function to define and extend its default keyword argument</span>
+<span class="sd">    values.</span>
+<span class="sd">        </span>
+<span class="sd">    The following example will redefine myfunc to have default kwargs of a=4</span>
+<span class="sd">    and b=2:: </span>
+
+<span class="sd">        mydict = {a=4, b=2}</span>
+<span class="sd">        @wraps_kwargs(mydict)</span>
+<span class="sd">        def myfunc(**k):</span>
+<span class="sd">            pass</span>
+
+<span class="sd">    The *kwarg_defaults* object needs to satisfy the *MutableMapping* interface</span>
+<span class="sd">    definition. When the wrapped function is called the kwargs passed in are</span>
+<span class="sd">    used to update the *kwarg_defaults* object. The *kwarg_defaults* object is</span>
+<span class="sd">    then passed into the wrapped function i.e. ``wrapped(**kwarg_defaults)``. </span>
+<span class="sd">    </span>
+<span class="sd">    :param kwarg_defaults: kwargs to be fix into the wrapped function.</span>
+<span class="sd">    :type kwarg_defaults: mutable mapping</span>
+<span class="sd">    :rtype: decorated function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="n">kwarg_defaults_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwarg_defaults</span><span class="p">)</span>
+        <span class="n">func_defaults_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">has_var_keyword</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">kwargs_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">kwarg_defaults_set</span><span class="p">):</span>
+                <span class="n">kwarg_defaults</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">has_var_keyword</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwarg_defaults_set</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">kwargs_set</span><span class="p">):</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwarg_defaults</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs_set</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">func_defaults_set</span><span class="p">):</span>
+                    <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">funcsig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">funcsig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">kwarg_defaults</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="n">param</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="n">func_defaults_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+                <span class="n">param</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span><span class="p">,</span>
+                                       <span class="n">default</span><span class="o">=</span><span class="n">param</span><span class="o">.</span><span class="n">default</span><span class="p">)</span>
+                <span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">param</span><span class="o">.</span><span class="n">VAR_KEYWORD</span><span class="p">:</span>
+                <span class="n">has_var_keyword</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> parameters are not supported&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="o">.</span><span class="n">kind</span> 
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">update_wrapper</span><span class="p">(</span><span class="n">wrapper</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwarg_defaults</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="n">Signature</span><span class="p">(</span><span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="n">wrapper</span><span class="o">.</span><span class="n">__signature__</span> <span class="o">=</span> <span class="n">sig</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+    <span class="k">return</span> <span class="n">decorator</span>
+
+</div>
+<div class="viewcode-block" id="lazy_string_cast"><a class="viewcode-back" href="../funconf.html#funconf.lazy_string_cast">[docs]</a><span class="k">def</span> <span class="nf">lazy_string_cast</span><span class="p">(</span><span class="n">model_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;Type cast string input values if they differ from the type of the</span>
+<span class="sd">    default value found in *model_kwargs*.</span>
+<span class="sd">    </span>
+<span class="sd">    The following list details how each type is handled:</span>
+
+<span class="sd">        int, bool, float:</span>
+<span class="sd">            If the input value string can not be cast into an int, bool, or</span>
+<span class="sd">            float, the exception generated during the attempted conversion</span>
+<span class="sd">            will be raised.</span>
+
+<span class="sd">        list:</span>
+<span class="sd">            The input value string will be split into a list shlex.split.  If</span>
+<span class="sd">            the default list value in model contains items, the first item is</span>
+<span class="sd">            sampled an attempt to cast the entire list is made for that type.</span>
+<span class="sd">            </span>
+<span class="sd">        other:</span>
+<span class="sd">            An attempt to convert other types will be made.  If this fails, the</span>
+<span class="sd">            input value will be passed through in its original string form.</span>
+<span class="sd">    </span>
+<span class="sd">    This example demonstrates how :py:func:`lazy_string_cast` can be applied::</span>
+<span class="sd">        </span>
+<span class="sd">        @lazy_string_cast()</span>
+<span class="sd">        def main(a=4, b=[4, 2, 55]):</span>
+<span class="sd">            pass</span>
+
+
+<span class="sd">    Or using :py:func:`lazy_string_cast` with :py:func:`wraps_kwargs` to</span>
+<span class="sd">    define new keyword defaults::</span>
+
+<span class="sd">        config = dict(a=6, b=[4])</span>
+
+<span class="sd">        @lazy_string_cast(config)</span>
+<span class="sd">        @wraps_kwargs()</span>
+<span class="sd">        def main(a=4, b=[4, 2, 55]):</span>
+<span class="sd">            pass</span>
+
+<span class="sd">    :param model_kwargs: kwargs to model default type values and keys from.</span>
+<span class="sd">    :type model_kwargs: mutable mapping</span>
+<span class="sd">    :rtype: decorated function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">cast_type_raise</span><span class="p">(</span><span class="n">vtype</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">vtype</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Can not convert </span><span class="si">%s</span><span class="s">=&#39;</span><span class="si">%s</span><span class="s">&#39; to </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span>
+                    <span class="n">vtype</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">cast_type</span><span class="p">(</span><span class="n">vtype</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">vtype</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">cast_list</span><span class="p">(</span><span class="n">inner_cast_func</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inner_cast_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">inner_cast_func</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">cast_factory</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">make_cast_func</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cast_type</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="n">func</span><span class="p">(</span><span class="n">cast_type</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">vtype</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vtype</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">inner_cast_func</span> <span class="o">=</span> <span class="bp">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="k">else</span> <span class="n">cast_factory</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">make_cast_func</span><span class="p">(</span><span class="n">cast_list</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">inner_cast_func</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vtype</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">make_cast_func</span><span class="p">(</span><span class="n">cast_type_raise</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> 
+                                  <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">strtobool</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="n">vtype</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">make_cast_func</span><span class="p">(</span><span class="n">cast_type_raise</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">vtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">make_cast_func</span><span class="p">(</span><span class="n">cast_type</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">vtype</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="n">cast_ctrl</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">cast_ctrl</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">cast_factory</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+        <span class="n">funcsig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">funcsig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="n">param</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="n">cast_ctrl</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">cast_factory</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span><span class="p">))</span>
+        <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cast_ctrl</span><span class="p">:</span>
+                    <span class="n">vtype</span><span class="p">,</span> <span class="n">cast_func</span> <span class="o">=</span> <span class="n">cast_ctrl</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">vtype</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span> 
+                        <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast_func</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="k">return</span> <span class="n">decorator</span>
+
+</div>
+<span class="k">class</span> <span class="nc">ConfigAttributeError</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">):</span> <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="ConfigSection"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection">[docs]</a><span class="k">class</span> <span class="nc">ConfigSection</span><span class="p">(</span><span class="n">MutableMapping</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The :py:class:`ConfigSection` class is a mutable mapping object that</span>
+<span class="sd">    represents the *option:value* items for a configuration section. </span>
+<span class="sd">    </span>
+<span class="sd">    The following lists the main features of this class:</span>
+
+<span class="sd">    * exposes a configuration *option:value* through a standard implementation</span>
+<span class="sd">      of the *MutableMapping* abstract type.</span>
+<span class="sd">    * when cast to a string it outputs its state in YAML.</span>
+<span class="sd">    * as a decorator it utilises the :py:func:`wraps_kwargs` to change</span>
+<span class="sd">      the defaults of a variable kwargs function.  </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+ 
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_dirty&#39;</span><span class="p">,</span> <span class="s">&#39;_options&#39;</span><span class="p">,</span> <span class="s">&#39;_section&#39;</span><span class="p">,</span> <span class="s">&#39;_reserved&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ConfigSection.__init__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct a new :py:class:`ConfigSection` object.  </span>
+<span class="sd">        </span>
+<span class="sd">        This object represents a section which contains the mappings between</span>
+<span class="sd">        the section&#39;s options and their respective values. </span>
+<span class="sd">       </span>
+<span class="sd">        :param section: defines the name for this section.</span>
+<span class="sd">        :type section: str</span>
+<span class="sd">        :param options: is the mapping containing an initialised set of</span>
+<span class="sd">                        *option:values* </span>
+<span class="sd">        :type options: mutable mapping</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_section</span> <span class="o">=</span> <span class="n">section</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_options</span> <span class="o">=</span> <span class="n">options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirty</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__str__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Return a YAML formated string object that represents this object.&quot;</span>
+        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">_section</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)},</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__dir__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__dir__">[docs]</a>    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Return a list of option names and the Base class attributes.&quot;</span>
+        <span class="k">return</span> <span class="nb">dir</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">ConfigSection</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__getattribute__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__getattribute__">[docs]</a>    <span class="k">def</span> <span class="nf">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a option value where y is the *option* name.  Else, return</span>
+<span class="sd">        the value of a reserved word.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ConfigSection</span><span class="o">.</span><span class="n">_reserved</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ConfigSection</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> not defined in </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_section</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ConfigAttributeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__setattr__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__setattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="s">&quot;Only attributes that are a reserved words can be set in this object.&quot;</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ConfigSection</span><span class="o">.</span><span class="n">_reserved</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">ConfigSection</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Can not set new attributes in ConfigSection&quot;</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Configuration can only be updated or added&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ConfigSection.__iter__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Iterate all of the &#39;option&#39; keys.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="o">.</span><span class="n">__iter__</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__len__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__len__">[docs]</a>    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of options defined in this</span>
+<span class="sd">        :py:class:`ConfigSection` object&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__setitem__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="s">&quot;Set the option value of y for x where x is *option*.&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirty</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__getitem__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="s">&quot;Return the option value for y where y is *option*.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="ConfigSection.dirty"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.dirty">[docs]</a>    <span class="k">def</span> <span class="nf">dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The dirty property is a convenience property which is set when a</span>
+<span class="sd">        change has occurred to one of the options under this *section*.  Once</span>
+<span class="sd">        this property is read, it is reset to False.  </span>
+
+<span class="sd">        This property is particularly useful if you&#39;re software system has the</span>
+<span class="sd">        ability to change the configuration state during runtime.  It means</span>
+<span class="sd">        that you no longer need to remember the state of the options, you just</span>
+<span class="sd">        need to know that when the dirty property is set, there has been a</span>
+<span class="sd">        change in the configuration for this section. </span>
+
+<span class="sd">        :rtype: boolean value of dirty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirty</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dirty</span>
+        <span class="k">return</span> <span class="n">d</span>
+</div>
+<div class="viewcode-block" id="ConfigSection.__call__"><a class="viewcode-back" href="../funconf.html#funconf.ConfigSection.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :py:class:`ConfigSection` object can be used as a function</span>
+<span class="sd">        decorator.  </span>
+
+<span class="sd">        Applying this decorator to a function which takes variable kwargs will</span>
+<span class="sd">        change its signature to a set of kwargs with default values defined</span>
+<span class="sd">        using the values in this :py:class:`ConfigSection` object. The input</span>
+<span class="sd">        kwargs go through the :py:func:`lazy_string_cast` function and are</span>
+<span class="sd">        passed into this objects update routine.  The wrapped function is</span>
+<span class="sd">        finally called with the updated values of this object. </span>
+
+<span class="sd">        For example::</span>
+<span class="sd">            </span>
+<span class="sd">            myconfig = Config(&#39;my.conf&#39;)</span>
+
+<span class="sd">            @myconfig.mysection</span>
+<span class="sd">            def func(**k):</span>
+<span class="sd">                pass</span>
+
+<span class="sd">        :param func: function to be wrapped.</span>
+<span class="sd">        :type func: variable kwargs function </span>
+<span class="sd">        :rtype: wrapped function with defined kwargs defaults bound to this </span>
+<span class="sd">                :py:class:`ConfigSection` object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">lazy_string_cast</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">wraps_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">func</span><span class="p">))</span> 
+
+</div></div>
+<span class="n">ConfigSection</span><span class="o">.</span><span class="n">_reserved</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">ConfigSection</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="Config"><a class="viewcode-back" href="../funconf.html#funconf.Config">[docs]</a><span class="k">class</span> <span class="nc">Config</span><span class="p">(</span><span class="n">MutableMapping</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Config class is the root container that represents configuration</span>
+<span class="sd">    state set programmatically or read in from YAML config files. </span>
+<span class="sd">    </span>
+<span class="sd">    The following lists the main features of this class:</span>
+
+<span class="sd">    * aggregates :py:class:`ConfigSection` objects that are accessible through</span>
+<span class="sd">      attributes.</span>
+<span class="sd">    * exposes a translation of the configuration into section_option:value</span>
+<span class="sd">      through a standard implementation of the *MutableMapping* abstract type.</span>
+<span class="sd">    * when cast to a string it outputs its state in YAML.</span>
+<span class="sd">    * as a decorator it utilises the :py:func:`wraps_kwargs` to change</span>
+<span class="sd">      the defaults of a variable kwargs function.  </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_sections&#39;</span><span class="p">,</span> <span class="s">&#39;_reserved&#39;</span><span class="p">,</span> <span class="s">&#39;_lookup&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Config.__init__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filenames</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;Construct a new Config object.  </span>
+<span class="sd">        </span>
+<span class="sd">        This is the root object for a function configuration set.  It is the</span>
+<span class="sd">        container for the configuration sections.</span>
+
+<span class="sd">        :param filenames: YAML configuration files.</span>
+<span class="sd">        :type filenames: list of filepaths</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filenames</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Config.read"><a class="viewcode-back" href="../funconf.html#funconf.Config.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filenames</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read and parse a filename or a list of filenames.</span>
+
+<span class="sd">        Files that cannot be opened are silently ignored; this is designed so</span>
+<span class="sd">        that you can specify a list of potential configuration file locations</span>
+<span class="sd">        (e.g. current directory, user&#39;s home directory, system wide directory),</span>
+<span class="sd">        and all existing configuration files in the list will be read.  A</span>
+<span class="sd">        single filename may also be given.</span>
+
+<span class="sd">        :param filenames: YAML configuration files.</span>
+<span class="sd">        :type filenames: list of filepaths</span>
+<span class="sd">        :rtype: list of successfully read files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">filenames</span><span class="p">]</span>
+        <span class="n">read_ok</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="n">read_ok</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">read_ok</span>
+</div>
+<div class="viewcode-block" id="Config.load"><a class="viewcode-back" href="../funconf.html#funconf.Config.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the first YAML document from stream then load the</span>
+<span class="sd">        *section:option:value* elements into this :py:class:`Config` object.</span>
+
+<span class="sd">        :param stream: the configuration to be loaded using ``yaml.load``.</span>
+<span class="sd">        :type stream: stream object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="n">stream</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">u</span><span class="p">(</span><span class="n">stream</span><span class="p">))</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">section</span><span class="p">,</span> <span class="n">options</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">options</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Config.set"><a class="viewcode-back" href="../funconf.html#funconf.Config.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set an option.</span>
+<span class="sd">        </span>
+<span class="sd">        In the event of setting an option name or section name to a reserved</span>
+<span class="sd">        word a ValueError will be raised. A complete set of reserved words for</span>
+<span class="sd">        both section and option can be seen by::</span>
+
+<span class="sd">            print(dir(funconf.Config))</span>
+<span class="sd">            print(dir(funconf.ConfigOption))</span>
+
+<span class="sd">        :param section: Name of the section to add the option into.</span>
+<span class="sd">        :type section: str</span>
+<span class="sd">        :param option:  Name of the option.</span>
+<span class="sd">        :type option: str</span>
+<span class="sd">        :param value:   Value assigned to this option.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">Config</span><span class="o">.</span><span class="n">_reserved</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> is a reserved Config word&quot;</span> <span class="o">%</span> <span class="n">option</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">ConfigSection</span><span class="o">.</span><span class="n">_reserved</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> is a reserved ConfigSection word&quot;</span> <span class="o">%</span> <span class="n">option</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">_</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+<div class="viewcode-block" id="Config.__str__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Return a YAML formated string object that represents this object.&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">section_name</span><span class="p">,</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">conf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">#</span><span class="se">\n</span><span class="s"># </span><span class="si">%s</span><span class="se">\n</span><span class="s">#&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()))</span>
+            <span class="n">conf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">section</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Config.__dir__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__dir__">[docs]</a>    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Return a list of section names and the Base class attributes.&quot;</span>
+        <span class="k">return</span> <span class="nb">dir</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">Config</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Config.__getattribute__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__getattribute__">[docs]</a>    <span class="k">def</span> <span class="nf">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a section where y is the *section* name.  Else, return the</span>
+<span class="sd">        value of a reserved word.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">Config</span><span class="o">.</span><span class="n">_reserved</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Config</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Config object has no section &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ConfigAttributeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Config.__setattr__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__setattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="s">&quot;Only attributes that are a reserved words can be set in this object.&quot;</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">Config</span><span class="o">.</span><span class="n">_reserved</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">Config</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Options can not be set through this interface&quot;</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Configuration can only be updated or added&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Config.__iter__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Iterate all of the *section_option* keys.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="o">.</span><span class="n">__iter__</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Config.__len__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__len__">[docs]</a>    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of options defined in this :py:class:`Config`</span>
+<span class="sd">        object&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Config.__setitem__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="s">&quot;Set the option value of y for x where x is *section_option*.&quot;</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;There is no section for &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">option</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">[</span><span class="n">x</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">ConfigSection</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> 
+        <span class="n">section</span><span class="p">[</span><span class="n">option</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+</div>
+<div class="viewcode-block" id="Config.__getitem__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="s">&quot;Return the option value for y where y is *section_option*.&quot;</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s">&quot;There is no section for &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">option</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">section</span><span class="p">[</span><span class="n">option</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Config.__call__"><a class="viewcode-back" href="../funconf.html#funconf.Config.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :py:class:`Config` object can be used as a function decorator.  </span>
+<span class="sd">        </span>
+<span class="sd">        Applying this decorator to a function which takes variable kwargs will</span>
+<span class="sd">        change its signature to a set of kwargs with default values defined</span>
+<span class="sd">        using the values in this :py:class:`Config` object. The input kwargs</span>
+<span class="sd">        go through the :py:func:`lazy_string_cast` function and are passed</span>
+<span class="sd">        into this objects update routine.  The wrapped function is finally</span>
+<span class="sd">        called with the updated values of this object. </span>
+
+<span class="sd">        For example::</span>
+<span class="sd">            </span>
+<span class="sd">            myconfig = Config(&#39;my.conf&#39;)</span>
+
+<span class="sd">            @myconfig</span>
+<span class="sd">            def func(**k):</span>
+<span class="sd">                pass</span>
+
+<span class="sd">        :param func: function to be wrapped.</span>
+<span class="sd">        :type func: variable kwargs function </span>
+<span class="sd">        :rtype: wrapped function with defined kwargs bound to this</span>
+<span class="sd">                :py:class:`Config` object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">lazy_string_cast</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">wraps_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">func</span><span class="p">))</span> 
+
+</div></div>
+<span class="n">Config</span><span class="o">.</span><span class="n">_reserved</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">Config</span><span class="p">))</span>
+     
+</pre></div>
+
+      </div>
+      <div class="bottomnav">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2013, Michael Dorman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

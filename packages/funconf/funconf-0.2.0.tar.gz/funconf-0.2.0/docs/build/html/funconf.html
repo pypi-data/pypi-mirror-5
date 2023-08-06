@@ -1,0 +1,608 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Function Configuration module - funconf &mdash; funconf 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="funconf 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="funconf with begins" href="begins.html" />
+    <link rel="prev" title="funconf - Function Configuration" href="index.html" />
+    <a href="https://github.com/mjdorma/funconf">
+        <img style="position: absolute; top: 0; right: 0; border: 0;"
+             src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+             alt="Fork me on GitHub">
+    </a>
+     
+
+  </head>
+  <body>
+      <div class="header"><h1 class="heading"><a href="index.html">
+          <span>funconf 0.2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Function Configuration module - funconf</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">funconf - Function Configuration</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="begins.html"><tt class="docutils literal"><span class="pre">funconf</span></tt> with begins</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-funconf">
+<span id="function-configuration-module-funconf"></span><h1>Function Configuration module - <a class="reference internal" href="#module-funconf" title="funconf"><tt class="xref py py-mod docutils literal"><span class="pre">funconf</span></tt></a><a class="headerlink" href="#module-funconf" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-funconf"></span><div class="section" id="overview">
+<h2>Overview.<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>To simplify the management of function default keyword argument values
+<a class="reference internal" href="#module-funconf" title="funconf"><tt class="xref py py-mod docutils literal"><span class="pre">funconf</span></tt></a> introduces two new decorators. The first decorator 
+<a class="reference internal" href="#funconf.wraps_kwargs" title="funconf.wraps_kwargs"><tt class="xref py py-func docutils literal"><span class="pre">wraps_kwargs()</span></tt></a> makes it trivial to dynamically define the default
+kwargs for a function.  The second decorator <a class="reference internal" href="#funconf.lazy_string_cast" title="funconf.lazy_string_cast"><tt class="xref py py-func docutils literal"><span class="pre">lazy_string_cast()</span></tt></a>
+automatically casts <em>basestring</em> values to the type of the keyword default
+values found in the function it is wrapping and the type of the values found in
+the <em>key:value</em> object passed into its constructor.</p>
+<p>For configuration, <a class="reference internal" href="#module-funconf" title="funconf"><tt class="xref py py-mod docutils literal"><span class="pre">funconf</span></tt></a> borrows from concepts discussed in
+Python&#8217;s core library <em>ConfigParser</em>.  A configuration consists of sections
+made up of <em>option:value</em> entries, or two levels of mappings that take on the
+form <em>section:option:value</em>.</p>
+<p>The file format YAML has been chosen to allow for option values to exist as
+different types instead of being restricted to string type values.</p>
+<div class="section" id="the-configuration-file">
+<h3>The configuration file<a class="headerlink" href="#the-configuration-file" title="Permalink to this headline">¶</a></h3>
+<p>Example of a simple YAML configuration file:</p>
+<div class="highlight-python"><pre>$ cat my.conf
+#
+# Foo
+#
+foo:
+  bar: 4
+  moo:
+  - how
+  - are
+  - you
+
+#
+# Bread
+#
+bread:
+  butter: win
+  milk: fail</pre>
+</div>
+<p>This file contains two sections foo and bread.  foo has two options bar and
+moo.  bar is an integer value of 4 and moo is a list of strings containing
+<tt class="docutils literal"><span class="pre">['how',</span> <span class="pre">'are',</span> <span class="pre">'you']</span></tt>.</p>
+<p>The above configuration could be generated through a process of adding each
+option: value into a <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a> object then casting it to a string. For
+example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">config</span> <span class="o">=</span> <span class="n">funconf</span><span class="o">.</span><span class="n">Config</span><span class="p">()</span>
+<span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;how&#39;</span><span class="p">,</span> <span class="s">&#39;are&#39;</span><span class="p">,</span> <span class="s">&#39;you&#39;</span><span class="p">])</span>
+<span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;bread&#39;</span><span class="p">,</span> <span class="s">&#39;butter&#39;</span><span class="p">,</span> <span class="s">&#39;milk&#39;</span><span class="p">)</span>
+<span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;bread&#39;</span><span class="p">,</span> <span class="s">&#39;milk&#39;</span><span class="p">,</span> <span class="s">&#39;fail&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="a-configuration-object">
+<h3>A configuration object<a class="headerlink" href="#a-configuration-object" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a> class is the root class container for all of the
+configuration sections.  It implements the <em>MutableMapping</em> type which allows
+it to seamlessly integrate into the <a class="reference internal" href="#funconf.wraps_kwargs" title="funconf.wraps_kwargs"><tt class="xref py py-func docutils literal"><span class="pre">wraps_kwargs()</span></tt></a> function.</p>
+<p>As a dictionary <tt class="docutils literal"><span class="pre">dict(config)</span></tt> the <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a> object looks like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&#39;bread_butter&#39;</span><span class="p">:</span> <span class="s">&#39;win&#39;</span><span class="p">,</span>
+ <span class="s">&#39;bread_milk&#39;</span><span class="p">:</span> <span class="s">&#39;fail&#39;</span><span class="p">,</span>
+ <span class="s">&#39;foo_bar&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+ <span class="s">&#39;foo_moo&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;how&#39;</span><span class="p">,</span> <span class="s">&#39;are&#39;</span><span class="p">,</span> <span class="s">&#39;you&#39;</span><span class="p">]}</span>
+</pre></div>
+</div>
+<p>Notice how the configuration <em>section:options</em> have been concatenated. This
+facilitates the simple wrapping of an entire configuration file into the kwargs
+of a function.  The following example will print an equivalent dictionary to
+the printout in the previous example.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@config</span>
+<span class="k">def</span> <span class="nf">myfunc</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="a-configuration-section">
+<h3>A configuration section<a class="headerlink" href="#a-configuration-section" title="Permalink to this headline">¶</a></h3>
+<p>To access sections and option values the following pattern holds true:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">bread</span><span class="o">.</span><span class="n">milk</span> <span class="o">==</span> <span class="s">&#39;fail&#39;</span>
+<span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">bread</span><span class="p">[</span><span class="s">&#39;milk&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;fail&#39;</span>
+<span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;bread_milk&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;fail&#39;</span>
+</pre></div>
+</div>
+<p>A section is represented by the <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> object. This object
+implements the <em>MutableMapping</em> type in the same way the <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a>
+object is implemented and is compatible with the <a class="reference internal" href="#funconf.wraps_kwargs" title="funconf.wraps_kwargs"><tt class="xref py py-func docutils literal"><span class="pre">wraps_kwargs()</span></tt></a>
+function.  The <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> represented <tt class="docutils literal"><span class="pre">str(config.bread)</span></tt>
+looks like:</p>
+<div class="highlight-python"><pre>bread:
+  butter: win
+  milk: fail</pre>
+</div>
+<p>Just like the <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a> class, the <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> can be
+used as a decorator to a function too. Here is an example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@config.bread</span>
+<span class="k">def</span> <span class="nf">myfunc</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="code-reference-guide">
+<h2>Code reference guide<a class="headerlink" href="#code-reference-guide" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="funconf.wraps_kwargs">
+<tt class="descclassname">funconf.</tt><tt class="descname">wraps_kwargs</tt><big>(</big><em>default_kwargs</em><big>)</big><a class="reference internal" href="_modules/funconf.html#wraps_kwargs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.wraps_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorate a function to define and extend its default keyword argument
+values.</p>
+<p>The following example will redefine myfunc to have default kwargs of a=4
+and b=2:</p>
+<div class="highlight-python"><pre>mydict = {a=4, b=2}
+@wraps_kwargs(mydict)
+def myfunc(a=2, **k):
+    pass</pre>
+</div>
+<p>The <em>default_kwargs</em> object needs to satisfy the <em>MutableMapping</em> interface
+definition. When a wrapped function is called the following transforms
+occur over <em>kwargs</em> before it is passed into the wrapped function:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><em>default_kwargs</em> is updated with keywords found in the <em>kwargs</em>.</li>
+<li>The functions default keyword arguments that were not in <em>kwargs</em>
+and are defined by <em>default_kwargs</em> will be copied into <em>kwargs</em>
+from the <em>default_kwargs</em> object.</li>
+<li>If the wrapped function has a variable keyword argument defined 
+(i.e <tt class="docutils literal"><span class="pre">**k</span></tt>) then the keywords defined by <em>default_kwargs</em> that are
+not defined in <em>kwargs</em> will be copied into <em>kwargs</em>.</li>
+<li>If the wrapped function had no variable keyword argument defined,
+then the values found in <em>kwargs</em> that are no in the wrapped
+function&#8217;s keyword argument list  will be popped from <em>kwargs</em>.</li>
+</ol>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>default_kwargs</strong> (<em>mutable mapping</em>) &#8211; kwargs to be fix into the wrapped function.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">decorated function.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="funconf.lazy_string_cast">
+<tt class="descclassname">funconf.</tt><tt class="descname">lazy_string_cast</tt><big>(</big><em>model_kwargs={}</em><big>)</big><a class="reference internal" href="_modules/funconf.html#lazy_string_cast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.lazy_string_cast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type cast string input values if they differ from the type of the
+default value found in <em>model_kwargs</em>.</p>
+<p>The following list details how each type is handled:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>int, bool, float:</dt>
+<dd>If the input value string can not be cast into an int, bool, or
+float, the exception generated during the attempted conversion
+will be raised.</dd>
+<dt>list:</dt>
+<dd>The input value string will be split into a list shlex.split.  If
+the default list value in model contains items, the first item is
+sampled an attempt to cast the entire list is made for that type.</dd>
+<dt>other:</dt>
+<dd>An attempt to convert other types will be made.  If this fails, the
+input value will be passed through in its original string form.</dd>
+</dl>
+</div></blockquote>
+<p>This example demonstrates how <a class="reference internal" href="#funconf.lazy_string_cast" title="funconf.lazy_string_cast"><tt class="xref py py-func docutils literal"><span class="pre">lazy_string_cast()</span></tt></a> can be applied:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@lazy_string_cast</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">55</span><span class="p">]):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Or using <a class="reference internal" href="#funconf.lazy_string_cast" title="funconf.lazy_string_cast"><tt class="xref py py-func docutils literal"><span class="pre">lazy_string_cast()</span></tt></a> with <a class="reference internal" href="#funconf.wraps_kwargs" title="funconf.wraps_kwargs"><tt class="xref py py-func docutils literal"><span class="pre">wraps_kwargs()</span></tt></a> to
+define new keyword defaults:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+
+<span class="nd">@lazy_string_cast</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="nd">@wraps_kwargs</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">55</span><span class="p">]):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model_kwargs</strong> (<em>mutable mapping</em>) &#8211; kwargs to model default type values and keys from.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">decorated function.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="funconf.Config">
+<em class="property">class </em><tt class="descclassname">funconf.</tt><tt class="descname">Config</tt><big>(</big><em>filenames=</em><span class="optional">[</span><span class="optional">]</span>, <em>strict=False</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Config class is the root container that represents configuration
+state set programmatically or read in from YAML config files.</p>
+<p>The following lists the main features of this class:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Aggregates <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> objects that are accessible
+through attributes.</li>
+<li>Exposes a translation of the configuration into section_option:value
+through a standard implementation of the <em>MutableMapping</em> abstract
+type.</li>
+<li>When cast to a string it outputs YAML.</li>
+<li>As a decorator it utilises the <a class="reference internal" href="#funconf.wraps_kwargs" title="funconf.wraps_kwargs"><tt class="xref py py-func docutils literal"><span class="pre">wraps_kwargs()</span></tt></a> to change the
+defaults of a variable kwargs function.</li>
+</ol>
+</div></blockquote>
+<dl class="method">
+<dt id="funconf.Config.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>func=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a> object can be used as a function decorator.</p>
+<p>Applying this decorator to a function which takes variable kwargs will
+change its signature to a set of kwargs with default values defined
+using the values in this <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a> object. The input kwargs
+go through the <a class="reference internal" href="#funconf.lazy_string_cast" title="funconf.lazy_string_cast"><tt class="xref py py-func docutils literal"><span class="pre">lazy_string_cast()</span></tt></a> function and are passed
+into this objects update routine.  The wrapped function is finally
+called with the updated values of this object.</p>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">myconfig</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="s">&#39;my.conf&#39;</span><span class="p">)</span>
+
+<span class="nd">@myconfig</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>func</strong> (<em>function or method</em>) &#8211; Decorator parameter. The function or method to be wrapped.</li>
+<li><strong>lazy</strong> (<em>Boolean value default True</em>) &#8211; Factory parameter. Turns lazy_string_cast on or off.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">As a factory returns decorator function. As a decorator
+function returns a decorated function.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__dir__">
+<tt class="descname">__dir__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__dir__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__dir__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of section names and the Base class attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__getattribute__">
+<tt class="descname">__getattribute__</tt><big>(</big><em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__getattribute__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__getattribute__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a section where y is the <em>section</em> name.  Else, return the
+value of a reserved word.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__getitem__">
+<tt class="descname">__getitem__</tt><big>(</big><em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the option value for y where y is <em>section_option</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>filenames=</em><span class="optional">[</span><span class="optional">]</span>, <em>strict=False</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new Config object.</p>
+<p>This is the root object for a function configuration set.  It is the
+container for the configuration sections.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filenames</strong> (<em>list of filepaths</em>) &#8211; YAML configuration files.</li>
+<li><strong>strict</strong> (<em>False</em>) &#8211; If True, raise <tt class="xref py py-class docutils literal"><span class="pre">ConfigAttributeError</span></tt> if a
+<a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> doesn&#8217;t exist.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__iter__">
+<tt class="descname">__iter__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate all of the <em>section_option</em> keys.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__len__">
+<tt class="descname">__len__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__len__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__len__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of options defined in this <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a>
+object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__setattr__">
+<tt class="descname">__setattr__</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__setattr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__setattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only attributes that are a reserved words can be set in this object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__setitem__">
+<tt class="descname">__setitem__</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__setitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__setitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the option value of y for x where x is <em>section_option</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.__str__">
+<tt class="descname">__str__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a YAML formated string object that represents this object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.load">
+<tt class="descname">load</tt><big>(</big><em>stream</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the first YAML document from stream then load the
+<em>section:option:value</em> elements into this <a class="reference internal" href="#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">Config</span></tt></a> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stream</strong> (<em>stream object</em>) &#8211; the configuration to be loaded using <tt class="docutils literal"><span class="pre">yaml.load</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.read">
+<tt class="descname">read</tt><big>(</big><em>filenames</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and parse a filename or a list of filenames.</p>
+<p>Files that cannot be opened are silently ignored; this is designed so
+that you can specify a list of potential configuration file locations
+(e.g. current directory, user&#8217;s home directory, system wide directory),
+and all existing configuration files in the list will be read.  A
+single filename may also be given.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filenames</strong> (<em>list of filepaths</em>) &#8211; YAML configuration files.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of successfully read files.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.Config.set">
+<tt class="descname">set</tt><big>(</big><em>section</em>, <em>option</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/funconf.html#Config.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.Config.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set an option.</p>
+<p>In the event of setting an option name or section name to a reserved
+word a ValueError will be raised. A complete set of reserved words for
+both section and option can be seen by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">funconf</span><span class="o">.</span><span class="n">Config</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">funconf</span><span class="o">.</span><span class="n">ConfigOption</span><span class="p">))</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>section</strong> (<em>str</em>) &#8211; Name of the section to add the option into.</li>
+<li><strong>option</strong> (<em>str</em>) &#8211; Name of the option.</li>
+<li><strong>value</strong> &#8211; Value assigned to this option.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="funconf.ConfigSection">
+<em class="property">class </em><tt class="descclassname">funconf.</tt><tt class="descname">ConfigSection</tt><big>(</big><em>section</em>, <em>options</em><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> class is a mutable mapping object that
+represents the <em>option:value</em> items for a configuration section.</p>
+<p>The following lists the main features of this class:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Exposes a configuration <em>option:value</em> through a standard
+implementation of the <em>MutableMapping</em> abstract type.</li>
+<li>When cast to a string it outputs YAML.</li>
+<li>As a decorator it utilises the <a class="reference internal" href="#funconf.wraps_kwargs" title="funconf.wraps_kwargs"><tt class="xref py py-func docutils literal"><span class="pre">wraps_kwargs()</span></tt></a> to change
+the defaults of a variable kwargs function.</li>
+</ol>
+</div></blockquote>
+<dl class="method">
+<dt id="funconf.ConfigSection.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>func=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> object can be used as a function
+decorator.</p>
+<p>Applying this decorator to a function which takes variable kwargs will
+change its signature to a set of kwargs with default values defined
+using the values in this <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> object. The input
+kwargs go through the <a class="reference internal" href="#funconf.lazy_string_cast" title="funconf.lazy_string_cast"><tt class="xref py py-func docutils literal"><span class="pre">lazy_string_cast()</span></tt></a> function and are
+passed into this objects update routine.  The wrapped function is
+finally called with the updated values of this object.</p>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">myconfig</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="s">&#39;my.conf&#39;</span><span class="p">)</span>
+
+<span class="nd">@myconfig.mysection</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>func</strong> (<em>function or method</em>) &#8211; Decorator parameter. The function or method to be wrapped.</li>
+<li><strong>lazy</strong> (<em>Boolean value default True</em>) &#8211; Factory parameter. Turns lazy_string_cast on or off.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">As a factory returns decorator function. As a decorator
+function returns a decorated function.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__dir__">
+<tt class="descname">__dir__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__dir__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__dir__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of option names and the Base class attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__getattribute__">
+<tt class="descname">__getattribute__</tt><big>(</big><em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__getattribute__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__getattribute__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a option value where y is the <em>option</em> name.  Else, return
+the value of a reserved word.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__getitem__">
+<tt class="descname">__getitem__</tt><big>(</big><em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the option value for y where y is <em>option</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>section</em>, <em>options</em><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> object.</p>
+<p>This object represents a section which contains the mappings between
+the section&#8217;s options and their respective values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>section</strong> (<em>str</em>) &#8211; defines the name for this section.</li>
+<li><strong>options</strong> (<em>mutable mapping</em>) &#8211; kwargs to initialise this <a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a>&#8216;s
+<em>option:value</em></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__iter__">
+<tt class="descname">__iter__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate all of the &#8216;option&#8217; keys.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__len__">
+<tt class="descname">__len__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__len__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__len__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of options defined in this
+<a class="reference internal" href="#funconf.ConfigSection" title="funconf.ConfigSection"><tt class="xref py py-class docutils literal"><span class="pre">ConfigSection</span></tt></a> object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__setattr__">
+<tt class="descname">__setattr__</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__setattr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__setattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only attributes that are a reserved words can be set in this object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__setitem__">
+<tt class="descname">__setitem__</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__setitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__setitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the option value of y for x where x is <em>option</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="funconf.ConfigSection.__str__">
+<tt class="descname">__str__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/funconf.html#ConfigSection.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a YAML formated string object that represents this object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="funconf.ConfigSection.dirty">
+<tt class="descname">dirty</tt><a class="reference internal" href="_modules/funconf.html#ConfigSection.dirty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#funconf.ConfigSection.dirty" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dirty property is a convenience property which is set when a
+change has occurred to one of the options under this <em>section</em>.  Once
+this property is read, it is reset to False.</p>
+<p>This property is particularly useful if you&#8217;re software system has the
+ability to change the configuration state during runtime.  It means
+that you no longer need to remember the state of the options, you just
+need to know that when the dirty property is set, there has been a
+change in the configuration for this section.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">boolean value of dirty.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">funconf - Function Configuration</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="begins.html"><tt class="docutils literal"><span class="pre">funconf</span></tt> with begins</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2013, Michael Dorman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

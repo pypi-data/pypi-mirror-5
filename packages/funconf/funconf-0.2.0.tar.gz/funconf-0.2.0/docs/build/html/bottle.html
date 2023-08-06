@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Example webapp &mdash; funconf 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="funconf 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="Roadmap" href="roadmap.html" />
+    <link rel="prev" title="funconf with begins" href="begins.html" />
+    <a href="https://github.com/mjdorma/funconf">
+        <img style="position: absolute; top: 0; right: 0; border: 0;"
+             src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+             alt="Fork me on GitHub">
+    </a>
+     
+
+  </head>
+  <body>
+      <div class="header"><h1 class="heading"><a href="index.html">
+          <span>funconf 0.2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Example webapp</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="begins.html"><tt class="docutils literal"><span class="pre">funconf</span></tt> with begins</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="roadmap.html">Roadmap</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="example-webapp">
+<h1>Example webapp<a class="headerlink" href="#example-webapp" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://bottlepy.org">bottle</a> makes writing a webapp super simple.  <a class="reference external" href="https://github.com/aliles/begins">begins</a> makes writing a CLI
+to a program super simple. Through this example you will see how
+<a class="reference internal" href="funconf.html#module-funconf" title="funconf"><tt class="xref py py-mod docutils literal"><span class="pre">funconf</span></tt></a> can make managing configuration files super simple.</p>
+<p>Taking this example YAML configuration file <a class="reference external" href="https://github.com/mjdorma/funconf/blob/master/docs/source/examples/webapp.conf">webapp.conf</a>:</p>
+<div class="highlight-python"><pre>web:
+  host: 0.0.0.0 
+  port: 8080
+</pre>
+</div>
+<p>Applying it to this simple program <a class="reference external" href="https://github.com/mjdorma/funconf/blob/master/docs/source/examples/webapp.py">webapp.py</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">bottle</span>
+<span class="kn">import</span> <span class="nn">begin</span>
+<span class="kn">import</span> <span class="nn">funconf</span>
+
+<span class="nd">@bottle.route</span><span class="p">(</span><span class="s">&#39;/hello&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&quot;Hello World!&quot;</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">funconf</span><span class="o">.</span><span class="n">Config</span><span class="p">([</span><span class="s">&#39;webapp.conf&#39;</span><span class="p">,</span>
+                         <span class="s">&#39;~/.webapp.conf&#39;</span><span class="p">])</span>
+
+<span class="nd">@begin.start</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s">&quot;WEBAPP_&quot;</span><span class="p">)</span>
+<span class="nd">@config.web</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">bottle</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The above configuration overrides the default host address to <em>0.0.0.0</em>.  In
+this program, configuration is applied and overridden in the following order:</p>
+<ol class="arabic simple">
+<li>Decorated function&#8217;s default keyword value.</li>
+<li>Defined configuration options.</li>
+<li>Environment variables.</li>
+<li>Input command line interface parameters.</li>
+</ol>
+<p>The port option has been included into the config file to ensure that the
+<a class="reference internal" href="funconf.html#funconf.Config" title="funconf.Config"><tt class="xref py py-class docutils literal"><span class="pre">funconf.Config</span></tt></a> object contains the <em>port</em> value that has been
+provided by <a class="reference external" href="https://github.com/aliles/begins">begins</a>. Now we have a neat way of storing and accessing the
+application&#8217;s global configuration state for both <em>host</em> and <em>port</em> under the
+<tt class="docutils literal"><span class="pre">config.web</span></tt> object.</p>
+<p>Here is what the help printout should look like for this application:</p>
+<div class="highlight-python"><pre>$ python webapp.py --help
+usage: webapp.py [--help] [--debug WEBAPP_DEBUG] [--host WEBAPP_HOST]
+                 [--port WEBAPP_PORT]
+
+optional arguments:
+  --help                show this help message and exit
+  --debug WEBAPP_DEBUG, -d WEBAPP_DEBUG
+                        (default: False)
+  --host WEBAPP_HOST, -h WEBAPP_HOST
+                        (default: 0.0.0.0)
+  --port WEBAPP_PORT, -p WEBAPP_PORT
+                        (default: 8080)</pre>
+</div>
+<p>The following is the output that you&#8217;d expect:</p>
+<div class="highlight-python"><pre>$ python webapp.py
+
+#
+# Web
+#
+web:
+  host: 0.0.0.0
+  port: 8080
+
+Bottle v0.11.6 server starting up (using WSGIRefServer())...
+Listening on http://0.0.0.0:8080/
+Hit Ctrl-C to quit.</pre>
+</div>
+<p>Notice how the configuration object has been updated when we specify a new
+value for the port:</p>
+<div class="highlight-python"><pre>$ python webapp.py --port 8585
+#
+# Web
+#
+web:
+  host: 0.0.0.0
+  port: 8585
+
+Bottle v0.11.6 server starting up (using WSGIRefServer())...
+Listening on http://0.0.0.0:8585/
+Hit Ctrl-C to quit.</pre>
+</div>
+<p>The above example demonstrates how the configuration object has implicitly
+casted the input value <em>8585</em> CLI string into an integer.</p>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      
+        <p>
+        «&#160;&#160;<a href="begins.html"><tt class="docutils literal"><span class="pre">funconf</span></tt> with begins</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="roadmap.html">Roadmap</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2013, Michael Dorman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
