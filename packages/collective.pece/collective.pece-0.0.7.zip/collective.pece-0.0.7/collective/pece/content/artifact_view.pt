@@ -1,0 +1,162 @@
+<div metal:use-macro="here/main_template/macros/master">
+    <div metal:fill-slot="main">
+        <div style="text-align: center">
+
+            <h1 tal:content="view/context/Title"></h1>
+            <h2 tal:content="view/context/Description"></h2>
+            <br />
+
+
+            <div tal:condition="python: view.context.portal_type == 'audio_artifact'">
+                <audio controls>
+                    <!-- Why @@edit ? -->
+                    <source tal:attributes="src python: view.context.absolute_url() + '/@@edit/++widget++form.widgets.file_/@@download'" />
+                    Your browser does not support the audio element.
+                </audio> 
+                <div tal:content="view/context/getId"></div>
+            </div>
+
+            <div tal:condition="python: view.context.portal_type == 'document_artifact'">Document Artifact</div>
+
+            <div tal:condition="python: view.context.portal_type == 'image_artifact'">
+                <a href="@@images/image"><img tal:condition="view/context/@@images/image" tal:define="scales context/@@images" tal:replace="structure python: scales.tag('image', css_class='img-polaroid', scale='thumb')" /></a>
+                <div tal:content="view/context/getId"></div>
+            </div>
+
+            <div class="img-polaroid" tal:condition="python: view.context.portal_type == 'video_artifact'">
+                <video width="320" height="240" controls>
+                    <!-- Why @@edit ? -->
+                    <source tal:attributes="src python: view.context.absolute_url() + '/@@edit/++widget++form.widgets.file_/@@download'" />
+                    Your browser does not support the video tag.
+                </video> 
+                <div tal:content="view/context/getId"></div>
+            </div>
+
+            <br />
+            <br />
+
+            <!-- Button to trigger modal -->
+            <a href="#addAnnotation" role="button" class="btn btn-large" data-toggle="modal">Add Annotation</a>
+            <a href="#editMetadata" role="button" class="btn btn-large" data-toggle="modal">Edit Metadata</a>
+            <a href="#editTags" role="button" class="btn btn-large" data-toggle="modal">Edit Tags</a>
+            <!-- Modal -->
+            <div id="addAnnotation" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addAnnotationLabel" aria-hidden="true">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h3 id="addAnnotationLabel">Add Annotation</h3>
+                </div>
+                <form tal:attributes="action view/context/absolute_url" method="POST">
+                    <div class="modal-body">
+                        <p class="lead">Respond to questions:</p>
+                        <div tal:repeat="question view/get_questions">
+                            <span tal:content="question/Title"></span>
+                            <textarea tal:attributes="name question/UID" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <input class="btn" type="submit" name="new-question" value="Add another question?">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                        <button class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+            <div id="editMetadata" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="editMetadataLabel" aria-hidden="true">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h3 id="editMetadataLabel">Edit Metadata</h3>
+                </div>
+                <form tal:attributes="action python: view.context.absolute_url() + '/@@artifact-edit-metadata'" method="POST">
+
+                    <div class="modal-body">
+                        <label>Contributor</label>
+                        <textarea rows="5" name="contributor" tal:content="view/get_contributor"></textarea>
+
+                        <label>Coverage</label>
+                        <textarea rows="5" name="coverage" tal:content="view/context/coverage"></textarea>
+
+                        <label>Creator</label>
+                        <textarea rows="5" name="creator" tal:content="view/get_creator"></textarea>
+
+                        <label>Date</label>
+                        Creation
+                        <span class="input-xlarge uneditable-input" tal:content="view/context/creation_date"></span>
+                        <br />
+                        Publication
+                        <span class="input-xlarge uneditable-input" tal:content="view/context/effective_date"></span>
+                        <a tal:attributes="href python:view.context.absolute_url() + '/edit'">edit</a>
+                        <br />
+                        Expiration
+                        <span class="input-xlarge uneditable-input" tal:content="view/context/expiration_date"></span>
+                        <a tal:attributes="href python:view.context.absolute_url() + '/edit'">edit</a>
+
+                        <label>Description</label>
+                        <textarea rows="5" name="description" tal:content="view/context/description"></textarea>
+
+                        <label>Format</label>
+                        <span class="input-xlarge uneditable-input" tal:content="view/context/format"></span>
+
+                        <label>Identifier</label>
+                        <input class="input-xlarge" type="text" name="identifier" tal:attributes="value view/context/identifier">
+
+                        <label>Language</label>
+                        <span class="input-xlarge uneditable-input" name="identifier" tal:content="view/context/language"></span>
+
+                        <label>Publisher</label>
+                        <input class="input-xlarge" type="text" name="publisher" tal:attributes="value view/context/publisher">
+
+                        <label>Relation</label>
+                        <input class="input-xlarge" type="text" name="relation" tal:attributes="value view/context/relation">
+
+                        <label>Rights</label>
+                        <textarea rows="5" name="rights" tal:content="view/context/rights"></textarea>
+
+                        <label>Source</label>
+                        <input class="input-xlarge" type="text" name="source" tal:attributes="value view/context/source">
+
+                        <label>Subject</label>
+                        <span class="input-xlarge uneditable-input" tal:content="view/get_tags"></span>
+
+                        <label>Title</label>
+                        <span class="input-xlarge uneditable-input" tal:content="view/context/title"></span>
+                        <a tal:attributes="href python:view.context.absolute_url() + '/edit'">edit</a>
+
+                        <label>Type</label>
+                        <input class="input-xlarge" type="text" name="type_" tal:attributes="value view/context/type_">
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                        <button class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+            <div id="editTags" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="editTagsLabel" aria-hidden="true">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h3 id="editTagsLabel">Edit Tags</h3>
+                </div>
+                <form tal:attributes="action python: view.context.absolute_url() + '/@@artifact-edit-tags'" method="POST">
+                    <div class="modal-body">
+
+                        <textarea rows="5" name="tags" tal:content="view/get_tags"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                        <button class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+            <div tal:condition="view/context/objectValues">
+                <hr />
+                <h4>Annotations:</h4>
+                <!-- http://stackoverflow.com/questions/7562095/redirect-on-select-option-in-select-box -->
+                <select onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);">
+                    <option value="">Select…</option>
+                    <tal:repeat tal:repeat="annotation view/context/objectValues">
+                        <option><a tal:attributes="value annotation/absolute_url" tal:content="annotation/getId"></a></option>
+                    </tal:repeat>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
