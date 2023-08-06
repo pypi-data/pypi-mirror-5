@@ -1,0 +1,52 @@
+{% extends "sanza/_section.html" %}
+{% load i18n sanza_utils pagination_tags %}{% load url from future %}
+
+{% block section_title %}
+  {% if all_actions and entity %}
+    {{title}} - <a href="{% url "crm_view_entity" entity.id %}">{{entity.name}}</a>
+  {% else %}
+    {% if all_actions and contact %}
+      {{title}} - <a href="{% url "crm_view_contact" contact.id %}">{{contact.fullname}}</a>
+    {% else %}
+      {% trans "Actions" %}
+      <span class="day-selector">
+        {% for d in days_choice %}
+        <a href="{% url "crm_board_panel" %}?days={{d}}" class="{% if days == d %}selected{% endif %}">{% blocktrans %}Next {{d}} days{% endblocktrans %}</a>
+        {% endfor %}
+      </span>
+  {% endif %}{% endif %}
+{% endblock %}
+  
+  
+{% block section_data %}
+{% include "Crm/_actions_table_script.html" %}
+  
+{% if actions %}
+  {% if all_actions %}{% autopaginate actions 25 %}{% endif %}
+  {% include "Crm/_actions_table.html" %}
+  {% if all_actions %}{% paginate %}{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block section_action %}
+  {% if contact %}
+    <a href="{% url "crm_add_action_for_contact" contact.id %}">{% trans "Add" %}</a>
+    {% if not all_actions %}
+      <a href="{% url "crm_all_actions" %}">{% trans "All actions" %}</a>
+    {% endif %}
+  {% else %}
+    {% if entity %}
+      <a class="colorbox-form" href="{% url "crm_add_action_for_entity" entity.id %}">{% trans "Add" %}</a>
+      {% if not all_actions %}
+      <a href="{% url "crm_entity_actions" entity.id %}">{% trans "All actions" %}</a>
+      {% endif %}
+    {% else %} 
+      <a class="colorbox-form" href="{% url "crm_add_action" %}?x=0{% if opportunity %}&opp_id={{opportunity.id}}{% endif %}">{% trans "Add" %}</a>
+      {% if not all_actions %}
+        <a href="{% url "crm_all_actions" %}">{% trans "All actions" %}</a>
+      {% endif %}
+  {% endif %}{% endif %}
+  {% if SANZA_MULTI_USER %}
+    <a href="" id="toggle_my_actions" class="all">{% trans "See my actions" %}</a>
+  {% endif %}
+{% endblock %}
