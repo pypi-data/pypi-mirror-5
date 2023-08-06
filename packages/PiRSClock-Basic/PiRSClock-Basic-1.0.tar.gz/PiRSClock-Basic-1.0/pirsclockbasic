@@ -1,0 +1,85 @@
+#! /usr/bin/env python
+import pygame , sys , math, time, os
+from pygame.locals import *
+os.environ['SDL_VIDEODRIVER']="fbcon"
+
+pygame.init()
+bg = pygame.display.set_mode()
+pygame.mouse.set_visible(False)
+
+# Change colour to preference (R,G,B) 255 max value
+bgcolour       = (0,   0,   0  )
+txtdotcolour   = (255, 255, 255)
+
+# Make the clock the right size for the display
+digiclocksize  = int(bg.get_height()/3)
+digiclockspace = int(bg.get_height()/9)
+dotsize        = int(bg.get_height()/90)
+hradius        = bg.get_height()/2.25
+secradius      = hradius - (bg.get_height()/26)
+
+#Center coords of display
+xcenter        = int(bg.get_width()/2)
+ycenter        = int(bg.get_height()/2)
+while True :
+    pygame.display.update()
+
+    bg.fill(bgcolour)
+
+    # Retrieve seconds and turn them into integers
+    sectime = int(time.strftime("%S",time.localtime(time.time())))
+
+    # To get the dots in sync with the seconds
+    secdeg  = (sectime+1)*6
+    
+    # Parametric Equations of a Circle to get seconds markers
+    # 90 Degree ofset to start at 0 seconds marker
+    def paraeqsmx(smx):
+        return xcenter-(int(secradius*(math.cos(math.radians((smx)+90)))))
+
+    def paraeqsmy(smy):
+        return ycenter-(int(secradius*(math.sin(math.radians((smy)+90)))))
+
+    smx=smy=0
+    while smx < secdeg:
+        pygame.draw.circle(bg, txtdotcolour, (paraeqsmx(smx),paraeqsmy(smy)),dotsize)
+        smy += 6  # 6 Degrees per second
+        smx += 6
+
+    # Hour markers
+    def paraeqshx(shx):
+        return xcenter-(int(hradius*(math.cos(math.radians((shx)+90)))))
+
+    def paraeqshy(shy):
+        return ycenter-(int(hradius*(math.sin(math.radians((shy)+90)))))
+
+    shx=shy=0
+    while shx < 360:
+        pygame.draw.circle(bg, txtdotcolour, (paraeqshx(shx),paraeqshy(shy)),dotsize)
+        shy += 30  # 30 Degrees per hour
+        shx += 30
+
+    retrievehm   = time.strftime("%H:%M",time.localtime(time.time()))
+    retrievesec  = time.strftime("%S",time.localtime(time.time()))
+    
+    clockfont    = pygame.font.Font(None,digiclocksize)
+
+    digiclockhm  = clockfont.render(retrievehm,True,txtdotcolour)
+    digiclocksec = clockfont.render(retrievesec,True,txtdotcolour)
+    
+    textposhm    = digiclockhm.get_rect(centerx=xcenter,centery=ycenter-digiclockspace)
+    textpossec   = digiclocksec.get_rect(centerx=xcenter,centery=ycenter+digiclockspace)
+
+    bg.blit(digiclockhm, textposhm)
+    bg.blit(digiclocksec, textpossec)
+    
+    time.sleep(0.04)
+    pygame.time.Clock().tick(25)
+    for event in pygame.event.get() :
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        elif event.type == KEYDOWN:
+            if event.key == K_q and K_t:
+                pygame.quit()
+                sys.exit()
