@@ -1,0 +1,20 @@
+.. :changelog:
+
+History
+-------
+
+0.9.0 (2013-11-08)
+++++++++++++++++++
+
+* First implementation
+
+0.9.0.post1 (2013-11-08)
+++++++++++++++++++
+
+* Fixed PyPI classifiers
+
+0.9.1 (2013-11-14)
+++++++++++++++++++
+
+* Added a direct import of DictRegister in __init__.py (thanks to https://github.com/Jeff17Robbins)
+
