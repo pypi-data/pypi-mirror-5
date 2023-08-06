@@ -1,0 +1,60 @@
+Metadata-Version: 1.1
+Name: lets
+Version: 0.0.8
+Summary: Several greenlet subclasses
+Home-page: https://github.com/sublee/lets
+Author: Heungsub Lee
+Author-email: sub@subl.ee
+License: BSD
+Description: 
+        Lets
+        ~~~~
+        
+        Several ``gevent.Greenlet`` subclasses.
+        
+        * ``Processlet``
+        * ``Transparentlet``
+        
+        .. sourcecode:: python
+        
+           import bcrypt
+           import gevent
+           from lets import Processlet
+        
+           # bcrypt.hashpw is very heavy cpu-bound task. it can spend a few seconds.
+           def hash_password(password, salt=bcrypt.gensalt()):
+               return bcrypt.hashpw(str(password), salt)
+        
+           def tictoc(delay=0.1):
+               while True:
+                   print '.'
+                   gevent.sleep(delay)
+        
+           gevent.spawn(tictoc)
+        
+           # Greenlet, tictoc pauses for a few seconds
+           glet = gevent.spawn(hash_password, 'my_password')
+           hash = glet.get()
+        
+           # Processlet, tictoc never pauses
+           proc = Processlet.spawn(hash_password, 'my_password')
+           hash = proc.get()
+        
+        Links
+        `````
+        
+        * `GitHub repository <http://github.com/sublee/lets>`_
+        * `development version
+          <http://github.com/sublee/lets/zipball/master#egg=lets-dev>`_
+        
+        
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Software Development
