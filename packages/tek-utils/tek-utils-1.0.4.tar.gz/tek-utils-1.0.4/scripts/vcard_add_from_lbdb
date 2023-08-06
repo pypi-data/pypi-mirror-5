@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+""" Copyright (c) 2010-2011 Torsten Schmits
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this
+program; if not, see <http://www.gnu.org/licenses/>.
+
+"""
+
+import os, sys
+
+from tek import debug
+from tek.run import moo_run
+from tek.tools import decode
+
+from tek_utils.vcard import VCard
+
+def main():
+    vcf_in = sys.argv[1] if len(sys.argv) > 1 else None
+    vcf_out = sys.argv[2] if len(sys.argv) > 2 else vcf_in
+    lbdb = os.path.expanduser(os.path.join('~', '.lbdb', 'm_inmail.list'))
+    with open(lbdb) as db:
+        lines = map(decode, db.readlines())
+        entries = [l.split('\t')[:2] for l in lines]
+    debug(lines)
+    debug(entries)
+    c = VCard(vcf_in)
+    for email, name in entries:
+        c.add(name, email)
+    c.write(vcf_out or 'out.vcf')
+    os.remove(lbdb)
+
+if __name__ == '__main__':
+    moo_run(main)
