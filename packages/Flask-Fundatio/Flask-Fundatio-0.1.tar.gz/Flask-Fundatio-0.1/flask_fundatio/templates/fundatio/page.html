@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--[if IE 8]> <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>{% block title %}{{ title }}{% endblock title %}</title>
+  <link rel="stylesheet" href="{{ url_for('fundatio.static', filename='css/normalize.css') }}">
+  <link rel="stylesheet" href="{{ url_for('fundatio.static', filename='css/foundation.css') }}">
+  {% if config.FUNDATIO_ICON_SETS %}
+    {% for name in config.FUNDATIO_ICON_SETS %}
+      <link rel="stylesheet" href="{{ url_for('fundatio.static', filename=('css/%s_foundicons.css' % name)) }}">
+    {% endfor %}
+    <link rel="stylesheet" href="{{ url_for('fundatio.static', filename='css/foundicons.css') }}">
+  {% endif %}
+  {% block stylesheets %}{% endblock stylesheets %}
+  <script src="{{ url_for('fundatio.static', filename='js/vendor/custom.modernizr.js') }}"></script>
+</head>
+<body>
+  {% block body %}
+
+    {% block content %}{{ content }}{% endblock content %}
+
+    {% block javascript_library %}
+      {% set js_jquery = url_for('fundatio.static', filename='js/vendor/jquery-1.10.2.min.js') %}
+      {% set js_zepto = url_for('fundatio.static', filename='js/vendor/zepto-1.0.js') %}
+      {% if config.FUNDATIO_JAVASCRIPT_LIBRARY == 'auto' %}
+      <script>document.write('<script src="' + ('__proto__' in {} ? '{{ js_zepto }}' : '{{ js_jquery }}') + '"><\/script>')</script>
+      {% elif config.FUNDATIO_JAVASCRIPT_LIBRARY == 'jquery' %}
+      <script src="{{ js_jquery }}"></script>
+      {% elif config.FUNDATIO_JAVASCRIPT_LIBRARY == 'zepto' %}
+      <script src="{{ js_zepto }}"></script>
+      {% endif %}
+    {% endblock javascript_library %}
+
+    {% block javascript_foundation %}
+      <script src="{{ url_for('fundatio.static', filename='js/foundation.min.js') }}"></script>
+    {% endblock javascript_foundation %}
+
+    {% block javascript %}{% endblock javascript %}
+
+    {% block javascript_foundation_init %}
+      <script>$(document).foundation();</script>
+    {% endblock javascript_foundation_init %}
+
+  {% endblock body %}
+</body>
+</html>
