@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+
+import re
+import os
+import glob
+import argparse
+
+
+class Glenn:
+    """ Initializes Glenn
+
+    Takes destionation and source parameter
+    """
+    def __init__(self, dest, source):
+        self.dest = dest
+        self.source = source
+
+        self.ensure_build_dir()
+        self.run()
+
+    """ Ensure build dir
+
+    Make sure that build dir exists
+    and create it if it doesn't
+    """
+    def ensure_build_dir(self):
+        if not os.path.isdir(self.dest):
+            os.mkdir(self.dest)
+
+    """ Runner
+
+    Running Glenn, looping through the files
+    and calling the parser on them
+    """
+    def run(self):
+        files = glob.glob(self.source)
+
+        if (len(files) > 0):
+            print 'Found these files: \n%s' % files
+        else:
+            print 'No files found matching "%s".' % self.source
+
+        for htmlfile in files:
+            with open(htmlfile, 'r') as f:
+                self.current_build_file = open(os.path.join(self.dest, f.name.strip('_')), 'w')
+                self.parse_file(f)
+
+    """ Fileparser
+
+    Parsing the file and captures the included files.
+    Takes file object as parameter
+    """
+    def parse_file(self, f):
+        print '\nParsing %s.' % f.name
+
+        for line in f:
+            regex = re.match(r'.*?\{{.*?\include:.*?(?P<include_file>[\w\W]+).*?\}}.*?', line)
+
+            if regex:
+                filepath = regex.group('include_file').strip('\' ')
+
+                if not os.path.exists(filepath):
+                    raise Exception('%s does not exist.' % filepath)
+
+                with open(filepath, 'r') as inc_f:
+                    new_line = re.sub(r'(.*?)\{{.*?\}}(.*?)', r'\1%s\2' % inc_f.read(), line)
+                    self.current_build_file.write(new_line)
+
+                    print '-> Included "%s".' % filepath
+            else:
+                self.current_build_file.write(line)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Glenn includes files specified within double mustaches {{ include: \'my_file.html\'}}.')
+    parser.add_argument('-d',
+                        '--destination',
+                        default='build/',
+                        help='Where the compiled files should be placed.')
+    parser.add_argument('-f',
+                        '--files',
+                        default='_*.html',
+                        help='Which files to parse. (For instance: "_*.html")')
+
+    args = parser.parse_args()
+
+    c = Glenn(args.destination, args.files)
