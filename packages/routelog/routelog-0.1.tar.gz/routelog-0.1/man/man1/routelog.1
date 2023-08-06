@@ -1,0 +1,200 @@
+.TH routelog 1 "2012-12-07" "routelog" "routelog System Commands Manual"
+.SH NAME
+routelog \- match lines from log files against regular expressions and execute
+matching programs per\-line via a
+.BR routelog (5)
+rules file.
+.SH SYNOPSIS
+.BR routelog " [ " flags " ]"
+.IR rules_file " [ " log_files " ] "
+.br
+.BR routelog " [ " \-h "|" \-\-help " ] [ " \-n "|" \-\-no\-output " ]"
+.br
+.BR "" "         [ " \-c "|" \-\-comments " ]"
+.IR rules_file " [ " log_file " [...]]"
+.SH DESCRIPTION
+.BR routelog (1)
+parses and loads the
+.BR routelog (5)
+.I rules_file
+provided, and then dispatches each line of each
+.I log_file
+to the matched programs from
+.IR rules_file .
+If no
+.I log_file
+arguments are provided,
+.BR routelog (1)
+will read from
+.IR stdin .
+.sp
+If
+.I \-
+is provided as the
+.I rules_file
+argument,
+.BR routelog (1)
+will take
+.I stdin
+as
+.IR rules_file :
+.sp
+	$ echo '.* echo "$*" >&2' | routelog - /var/log/syslog
+.sp
+As a consequence of this ability, anytime
+.I \-
+is provided as
+.IR rules_file ,
+one-or-more
+.IR log_file
+arguments must be provided.
+.sp
+	$ echo '.* echo "$*" >&2' | routelog -
+.br
+	routelog: must send at least 1 file if rules read from stdin
+.sp
+.I \-
+may also be used to read
+.I log_file
+from
+.I stdin
+positionally:
+.sp
+	$ sed 's/^.*://' < /var/log/other.log | routelog /etc/routelog
+/var/log/err.log - /var/log/syslog
+.sp
+By
+.IR default ,
+.BR routelog (1)
+will act as a filter, printing all log-data sent to it to
+.IR stdout :
+.sp
+	$ routelog /etc/routelog /var/log/err.log
+.br
+	2012-12-07T12:06:11-05:00 host prog: an error occurred (errno: 13)
+.sp
+To suppress the printing behavior, send the
+.BR \-n " or " \-\-no\-output " flag."
+.sp
+.BR routelog (1)
+inspects the exit codes of all executed matching programs.  Should a program
+exit with status
+.BR 99 ,
+.BR routelog (1)
+will immediately stop processing the current
+.I log_file
+line, and move to the next line without processing any outstanding
+.I rules_file
+directives:
+.sp
+	$ echo '.* echo foo
+.br
+	        .* exit 99
+.br
+.br
+	        # UNREACHED
+.br
+	        .* echo bar' |
+.B routelog
+\-n - /var/log/err.log
+.br
+	foo
+.sp
+Should a program exit with any other non-0 exit code,
+.BR routelog (1)
+will log the failure to
+.B stderr
+and continue processing directives from the
+.IR rules_file .
+.sp
+	$ echo '.*		echo "$1"
+.br
+		   .*		exit 111
+.br
+		   .*		echo foo' |
+.B routelog
+\-n \- /var/log/err.log
+.br
+	2012-12-07T12:06:11-05:00
+.br
+	routelog: line 3: exit 111:
+.B "failed with status 111"
+while processing entry
+1: (2012-12-07T12:06:11-05:00 host prog: an error occurred (errno: 13))
+.br
+	foo
+.sp
+These entries may be re\-run against the failed pattern by parsing
+.B stderr
+and re\-playing failed entries in a future iteration.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+.br
+Print an extended usage to
+.B stdout
+and exit with exit status
+.IR 0 .
+Should
+.BR routelog (1)
+fail due to a bad usage a terse usage will be printed to stderr and
+.BR routelog (1)
+will exit with exit status
+.IR "100" .
+.TP
+.BR \-c ", " \-\-comments
+.br
+By default
+.BR routelog (1)
+recognizes anything following a
+.I " #"
+(space followed by hash) as a comment, and strips it from the log entry
+rather than sending it as arguments to matching programs:
+.sp
+	$ echo '.*		echo "see, no comments: $*"' | routelog \-
+/var/log/err.log
+.br
+	2012-12-07T12:06:11-05:00 host prog: an error occurred (errno: 13) #
+comment
+.br
+	see, no comments: 2012-12-07T12:06:11-05:00 host prog: an error occurred
+(errno: 13)
+.sp
+The
+.B \-c
+flag changes this behavior, causing comments to be sent as arguments to
+matching programs:
+.sp
+	$ echo '.*		echo "see, comments: $*"' | routelog \- /var/log/err.log
+.br
+	2012-12-07T12:06:11-05:00 host prog: an error occurred (errno: 13) #
+comment
+.br
+	see, comments: 2012-12-07T12:06:11-05:00 host prog: an error occurred
+(errno: 13) # comment
+.sp
+.TP
+.BR \-n ", " \-\-no\-output
+.br
+By default
+.BR routelog (1)
+will print each log entry to
+.BR stdout :
+.sp
+	$ echo '' | routelog \- /var/log/err.log
+.br
+	2012-12-07T12:06:11-05:00 host prog: an error occurred (errno: 13)
+.sp
+The
+.B \-n
+flag changes this behavior to suppress output of each log entry to
+.BR stdout :
+.sp
+	$ echo '' | routelog \- /var/log/err.log
+.sp
+.SH DEPENDENCIES
+.BR routelog (1)
+depends on
+.BR python " >= 2.7."
+.SH "SEE ALSO"
+.BR routelog (5)

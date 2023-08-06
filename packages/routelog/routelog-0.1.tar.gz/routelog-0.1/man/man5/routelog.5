@@ -1,0 +1,114 @@
+.TH routelog 5 "2012-12-07" "routelog" "Routelog Manual"
+.SH NAME
+routelog \- patterns for routing parsed log entries to commands
+.SH DESCRIPTION
+A
+.I routelog
+file contains instructions for the
+.BR routelog (1)
+program of the general form:
+.sp
+	pattern			command
+.sp
+Where
+.I pattern is a
+.BR pcre (3)
+regular expression followed by one or more tabs or spaces, followed by
+.IR command ,
+which is a
+.BR sh (1)
+.I command
+sent via the
+.B -c
+flag:
+.sp
+	sh -c command routelog-dispatch
+.sp
+Blank lines and leading spaces and tabs are ignored. Lines whose first
+non-space character is a hash-sign
+.IR "" "(" "#" ")"
+are comments, and are ignored.  Comments are allowed on the same line as cron
+commands, but will be handled as comments by
+.BR sh (1)
+rather than by the
+.BR routelog (5)
+parser:
+.sp
+	# this line, and the one below it are discarded entirely
+
+.br
+	.*				echo "$*" # this comment is discarded by sh
+.sp
+.I pattern
+may be bounded by slashes
+.IR "" "(" "/" ")"
+or not. The
+.I "/"
+syntax is provided to accomidate patterns with spaces:
+.sp
+	/hi you guys/		echo "pattern is hi you guys; cmd is echo ..."
+.br
+	/hi \\/ you/		echo "pattern is hi / you; cmd is echo ..."
+.br
+	hi you guys		echo "pattern is hi; cmd is you guys	echo ..."
+.sp
+As log entries are read, each entry is searched for
+.IR pattern .
+If a log\-entry matches, the parser attempts to split log\-entry using the
+rules for
+.BR sh (1)
+argument processing and sends the parsed arguments as positional arguments to
+.IR command :
+.sp
+	2012-12-10:20:45:44 'foo bar' baz "bang"
+.br
+	+--------+--------+ +---+---+ +++ +-++-+
+.br
+ 	         |              |      |    ||
+.br
+	        $1             $2     $3    $4
+.sp
+This allows
+.I command
+to make use of the parsed log\-entry:
+.sp
+	# given the above log\-entry
+.br
+	/.*/				echo "$2"       # foo bar
+.br
+	/baz/			echo "$*"       # 2012-12-10:20:45:44 foo bar baz bang
+.br
+	/bang/			echo "${1%%-*}" # 2012
+.sp
+Should the parser not be able to split the log\-entry using the rules for
+.BR sh (1)
+it will fall back to split on on or more tabs or spaces:
+.sp
+	2012-12-10:20:45:44 the corps' very own log line
+.br
+	+--------+--------+ +++ +----+ +--+ +-+ +-+ +--+
+.br
+	         |           |    ||    ||   |   |   ||
+.br
+	        $1          $2    $3    $4  $5  $6   $7
+.sp
+.SH "EXAMPLE ROUTELOG FILE"
+# send all errors to an error email address
+.br
+/[ \\t]ERROR[ \\t]/				echo "$*" | mail -s "Error on `hostname`"
+error@example.com
+
+.br
+# send speed measures off to the speed collector
+.br
+/[a-bA-B][.]speed[ \\t]/			echo "${6%.speed}$7" | logger -f
+/var/axm/log/speed.log
+
+.br
+# send all other measures to HTTP collector
+.br
+/.*/							key="$6"; shift 6; curl
+"http://stats.axm/?$key=$*"
+.sp
+.SH "SEE ALSO"
+.BR routelog "(1), " sh (1)

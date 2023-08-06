@@ -1,0 +1,296 @@
+#!/usr/bin/env python
+'''usage: routelog [-h|--help] [-c|--comments] [-n|--no-output] rules_file [ log_file [...]]
+
+routelog is a flexible execution-based log processing program and Domain
+Specific Language. routelog takes a rules file in the following format:
+
+    /pattern/    command $1 $2
+
+And operates on one or more log files, executing `command $1 $2` for all lines
+matching the regular expression `/pattern/` substituting the first and second
+items in the log line for `$1` and `$2` respectively. A rules file with the
+following directive:
+
+    /ERROR/      echo "$*" | mail -s "Error executing ${3%:} on $2 at $1" error@example.com
+
+Would process a log entry like:
+
+    2012-12-07T12:06:11-05:00 server1 program_name: ERROR foo
+
+and send an email to error@example.com with the subject:
+
+    Error executing program_name on server1 at 2012-12-07T12:06:11-05:00'
+
+and the body
+
+    2012-12-07T12:06:11-05:00 server1 program_name: ERROR foo
+
+For more on rules files, see `man 5 routelog`, for more on routelog see
+`man 1 routelog`.
+
+optional arguments:
+    -h, --help
+        Print an extended usage to stdout
+    -c, --comments
+        Treat comments in log lines (anything following a ' #') as arguments,
+        rather than ignoring them.
+    -n, --no-output
+        Suppress the (default) behavior of printing each log line to stdout.
+'''
+import re
+import os
+import sys
+import getopt
+import shlex
+import signal
+
+############# CLI BOILERPLATE
+_PROG = 'routelog'
+def shout(msg, f=sys.stderr):
+    '''Log to file (usually stderr), with progname: <log>'''
+    print >> f, '{0}: {1}'.format(_PROG, msg)
+
+def clean_signal(signum, frame):
+    raise Fatal('exited with signal {0}'.format(signum), exit=1)
+
+class Fatal(Exception):
+    def __init__(self, msg, exit=111):
+        shout(msg)
+        self.message = msg
+        self.exit = exit
+
+class Usage(Exception):
+    def __init__(self, asked_for=0):
+        if asked_for:
+            print __doc__
+            self.exit = 0
+        else:
+            shout(__doc__.split('\n')[0])
+            self.exit = 100
+
+############# PARSER
+_BOUNDING_TOK = '/'
+_COMMENT_TOK = '#'
+_ESCAPE_TOK = '\\'
+_DELIMIT_TOKS = ' \t'
+
+class ParseError(Fatal):
+    pass
+
+def _parse(rulesf):
+    rules, line_no = [], 0
+    while True:
+        line = rulesf.readline()
+        line_no += 1
+        if not line:
+            break
+
+        line = line.rstrip('\n').lstrip(_DELIMIT_TOKS)
+        # comment or empty
+        if line.startswith(_COMMENT_TOK) or 0 == len(line):
+            continue
+
+        # normal case
+        # regex              cmd
+        cmd = re.sub(r'^[^ \t]*[ \t]+', "", line)
+        pattern = re.sub(r'[ \t]+.*$', "", line)
+
+        # special case
+        # /regex/            cmd
+        if pattern.startswith(_BOUNDING_TOK):
+            # Parsing State-Machine vars
+            # started: we've seen 1 _BOUNDING_TOK already
+            # stopped: we've seen 2 _BOUNDING_TOK
+            #     esc: the last char was _ESCAPE_TOK
+            started = stopped = esc = 0
+
+            pattern = ""
+            # ye-old char-wise walk
+            for i in range(len(line)):
+                cur = line[i]
+                # handle boundary states
+                if cur == _BOUNDING_TOK:
+                    if started and not esc:
+                        i += 1
+                        stopped = 1
+                        break
+                    elif esc:
+                        pattern = pattern[:-1]
+                    elif not esc and not started:
+                        started = 1
+                        continue
+
+                # handle escape state
+                if cur == _ESCAPE_TOK and not esc:
+                    esc = 1
+                else:
+                    esc = 0
+
+                if started:
+                    pattern = ''.join([ pattern, cur ])
+
+            # construct the cmd
+            cmd = line[i:]
+            if not stopped:
+                raise ParseError('line {0}:  unclosed pattern:'\
+                                 ' {1}'.format(line_no, line))
+            elif cmd and not cmd.startswith(tuple(list(_DELIMIT_TOKS))):
+                raise ParseError('line {0}: extra value after'\
+                                 ' pattern'.format(line_no))
+
+        cmd = cmd.strip(_DELIMIT_TOKS)
+        if not len(cmd):
+            raise ParseError('line {0}: no command found:'\
+                             ' {1}'.format(line_no, line))
+
+        rules.append(( pattern, cmd, line_no, ))
+
+    return rules
+
+############# INTERPRETER
+_EARLY_SUCCESS = 99
+
+class EarlySuccess(Exception):
+    pass
+
+def _handle_rc(rc, cmd, logfname, line, line_no):
+    '''Handle the response code of an executed command'''
+    if os.WIFEXITED(rc):
+        rc = os.WEXITSTATUS(rc)
+        if _EARLY_SUCCESS == rc:
+            raise EarlySuccess
+        elif 0 != rc:
+            shout('line {0}: {1}: failed with status {2}'\
+                  ' while processing entry {3}:'\
+                  ' ({4})'.format(line_no, cmd, rc,
+                                  logfname, line))
+    else:
+        if os.WIFSTOPPED(rc):
+            rc = os.WSTOPSIG(rc)
+        else:
+            rc = os.WTERMSIG(rc)
+
+        shout('line {0}: {1}: terminated with signal {2}'\
+              ' while processing entry {3}:'\
+              ' ({4})'.format(line_no, cmd, rc,
+                              logfname, line))
+
+
+def _dispatch(cmd, args):
+    '''Dispatch parsed log lines as arguments to a command'''
+    # fork old-skool, so we don't mess with stdout/err
+    pid = os.fork()
+    # baby-fork
+    if 0 == pid:
+        try:
+            # don't allow baby-fork to read from stdin
+            os.close(0)
+        except Exception:
+            os._exit(100)
+        progname = '-'.join([ _PROG, 'dispatch', ])
+        os.execvp('sh', [ progname, '-c', cmd, progname, ] + args)
+        # UNREACHED
+        os._exit(1)
+
+    # papa-fork -- blocking wait on baby-fork
+    pid, rc = os.waitpid(pid, 0)
+
+    return rc
+
+def _process(logf, rules, comments, output):
+    '''Process a single log-file'''
+    while True:
+        parts = None
+        line = logf.readline()
+        if not line:
+            break
+        line = line.rstrip('\n')
+
+        # output log line in tact if asked for
+        if output:
+            print >> sys.stdout, line
+
+        # iterate through ruleset
+        for pattern, cmd, line_no in rules:
+            if not re.search(pattern, line):
+                continue
+            try:
+                # only parse the line on the first matching rule
+                if parts is None:
+                    # parse using shlex, if possible
+                    try:
+                        parts = shlex.split(line, comments)
+                    # if not split on whitespace
+                    except ValueError:
+                        parts = re.split(r'[ \t]', line)
+
+                _handle_rc(_dispatch(cmd, parts), cmd, logf.name, line,
+                           line_no)
+            except EarlySuccess:
+                break
+
+
+def main(args):
+    '''Arguments and options handling for program execution'''
+    rulesf = logf = None
+    comments = output = True
+    try:
+        opts, args = getopt.getopt(args, 'hcn', ( 'help', 'comments', 'no-output'))
+        for flag, opt in opts:
+            if '-c' == flag or '--comments' == flag:
+                comments = False
+            if '-n' == flag or '--no-output' == flag:
+                output = False
+            if '-h' == flag or '--help' == flag:
+                raise Usage(1)
+
+        if 1 > len(args):
+            raise Usage()
+
+        rulesf_name = args.pop(0)
+        if "-" == rulesf_name:
+            rulesf = sys.stdin
+            if 1 > len(args):
+                raise Fatal('must send at least 1 file if rules read from'\
+                            ' stdin')
+        else:
+            rulesf = open(rulesf_name, 'rU')
+
+        # load ruleset
+        rules = _parse(rulesf)
+
+        # iterate and process log-files
+        for log in args or [ "-", ]:
+            try:
+                if "-" == log:
+                    logf = sys.stdin
+                else:
+                    logf = open(log, 'rU')
+                _process(logf, rules, comments, output)
+            finally:
+                if logf and logf != sys.stdin:
+                    logf.close()
+
+    except (OSError, IOError), e:
+        shout('{0}{1}{2}'.format(e.strerror,
+                                 ': ' if e.filename is not None else '',
+                                 e.filename or ''))
+        return 111
+    except getopt.GetoptError, e:
+        shout('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
+              e.opt))
+        return 100
+    except (Fatal, Usage), e:
+        return e.exit
+    finally:
+        if rulesf and rulesf != sys.stdin:
+            rulesf.close()
+
+    # SUCCESS
+    return 0
+
+if __name__ == '__main__':
+    _PROG = sys.argv[0]
+    for sig in ( signal.SIGINT, signal.SIGTERM, signal.SIGABRT, ):
+        signal.signal(sig, clean_signal)
+    sys.exit(main(sys.argv[1:]))
