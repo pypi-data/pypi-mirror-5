@@ -1,0 +1,35 @@
+parameters:
+    foo.bar: argument 1
+    foo.foo: "the %foo.bar%"
+    foo.class: "tests.ioc.service.Foo"
+
+services:
+    fake:
+        class: tests.ioc.service.Fake
+        arguments: 
+            - "%foo.bar%"
+        kargs:
+            param: here a parameter
+        calls:
+             - [ set_ok, [ false ]]
+             - [ set_ok, [ true ], {arg2: "arg"} ]
+
+    foo:
+        class: '%foo.class%'
+        arguments: ["@fake", "#@weak_reference"]
+        kargs: {}
+        tags:
+            jinja.filter:
+                - []
+
+    weak_reference:
+        class: tests.ioc.service.WeakReference
+
+    method_reference:
+        class: tests.ioc.service.Fake
+        arguments:
+            - "@fake#set_ok"
+
+    abstract_service:
+        class: tests.ioc.service.Fake
+        abstract: true
