@@ -1,0 +1,492 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Core Models &mdash; Ximpia 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="Ximpia 0.2 documentation" href="../index.html" />
+    <link rel="next" title="Workflow" href="workflow.html" />
+    <link rel="prev" title="Core Summary" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="workflow.html" title="Workflow"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Core Summary"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Ximpia 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="core-models">
+<h1>Core Models<a class="headerlink" href="#core-models" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="basemodel">
+<h2>BaseModel<a class="headerlink" href="#basemodel" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Abstract Base Model with fields for all other models. Ximpia models have this model as parent. This model provides audit
+information like date creating and updating, as well as user involved in the update or creation.</p>
+<p>When you delete rows in Ximpia, <tt class="docutils literal"><span class="pre">isDeleted``field</span> <span class="pre">is</span> <span class="pre">set</span> <span class="pre">to</span> <span class="pre">True.</span> <span class="pre">You</span> <span class="pre">can</span> <span class="pre">force</span> <span class="pre">to</span> <span class="pre">physical</span> <span class="pre">delete</span> <span class="pre">by</span> <span class="pre">passing</span> <span class="pre">``real=True</span></tt> to
+data delete methods (db.delete, db.deleteById and db.deleteIfExists).</p>
+<p>When deleting rows with the django admin interface, you cannot delete database records physically, therefore those rows will have
+isDeleted=True and will not show in the admin pages. You can delete for ever with your application code or directly connecting to
+your database.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt> : Primary key</li>
+<li><tt class="docutils literal"><span class="pre">dateCreate</span></tt>:DateTimeField</li>
+<li><tt class="docutils literal"><span class="pre">dateModify</span></tt>:DateTimeField</li>
+<li><tt class="docutils literal"><span class="pre">userCreateId</span></tt>:IntegerField</li>
+<li><tt class="docutils literal"><span class="pre">userModifyId</span></tt>:IntegerField</li>
+<li><tt class="docutils literal"><span class="pre">isDeleted</span></tt>:BooleanField</li>
+</ul>
+<p><strong>Relatinships</strong></p>
+</div></blockquote>
+</div>
+<div class="section" id="params">
+<h2>Params<a class="headerlink" href="#params" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Parameters for WF and Views</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(15)</li>
+<li><tt class="docutils literal"><span class="pre">title</span></tt>:CharField(30)</li>
+<li><tt class="docutils literal"><span class="pre">paramType</span></tt>:CharField(10) : As Choices.BASIC_TYPES</li>
+<li><tt class="docutils literal"><span class="pre">isView</span></tt>:BooleanField</li>
+<li><tt class="docutils literal"><span class="pre">isWorkflow</span></tt>:BooleanField</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">application</span></tt> -&gt; Application</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="condition">
+<h2>Condition<a class="headerlink" href="#condition" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Conditions</p>
+<p>** Attributes **</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(30) : Condition name</li>
+<li><tt class="docutils literal"><span class="pre">condition</span></tt>:CharField(255)</li>
+</ul>
+<p>** Relationships **</p>
+</div></blockquote>
+</div>
+<div class="section" id="coreparam">
+<h2>CoreParam<a class="headerlink" href="#coreparam" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Parameters</p>
+<p>You would place tables (key-&gt;value) in choices module inside your application for tables that will not change often. When you
+have data that will change frequently, you can user this model to record parameters, lookup tables (like choices) and any other
+parametric information you may require.</p>
+<p>You can do:</p>
+<p>MY_FIRST_PARAM = 67 by inserting name=&#8217;MY_FIRST_PARAM&#8217;, value=&#8216;67&#8217;, paramType=&#8217;integer&#8217;</p>
+<p>Country
+||name||value||
+||es||spain||
+||us||United States||</p>
+<p>by...
+mode=&#8217;COUNTRY&#8217;, name=&#8217;es&#8217;, value=&#8217;Spain&#8217;, paramType=&#8217;string&#8217;
+mode=&#8217;COUNTRY&#8217;, name=&#8217;us&#8217;, value=&#8217;United States&#8217;, paramType=&#8217;string&#8217;</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt> : Primary key</li>
+<li><tt class="docutils literal"><span class="pre">mode</span></tt>:CharField(20) : Parameter mode. This field allows you to group parameter to build lookup tables like the ones found</li>
+</ul>
+<p>in combo boxes (select boxes) with name-&gt;value pairs.
+* <tt class="docutils literal"><span class="pre">name</span></tt>:CharField(20) : Parameter name
+* <tt class="docutils literal"><span class="pre">value</span></tt>:CharField(100) : Parameter value
+* <tt class="docutils literal"><span class="pre">paramType</span></tt>:CharField(10) : Parameter type, as Choices.PARAM_TYPE . Choices are string, integer, date.</p>
+<p><strong>Relationships</strong></p>
+</div></blockquote>
+</div>
+<div class="section" id="metakey">
+<h2>MetaKey<a class="headerlink" href="#metakey" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Model to store the keys allowed for meta values</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(20) : Key META name</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">keyType</span></tt> -&gt; CoreParam : Foreign key to CoreParam having mode=&#8217;META_TYPE&#8217;</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="application">
+<h2>Application<a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Applications. For most sites, they will have single application for N services which relate to use cases for views and actions.
+In case your application is big or have admin backdoors, your site with have more than one application.</p>
+<p>This table holds applications at your site. slug corresponds to the host name that related to the application, like &#8216;slug.domain.com&#8217;.
+You can also access applications by /apps/slug in case application hosts is disabled.</p>
+<p>Applications can be grouped together using the <tt class="docutils literal"><span class="pre">parent</span></tt> field.</p>
+<p>Applications can have subscription business model or be free. In case subscription required, <tt class="docutils literal"><span class="pre">isSubscription</span></tt> would be <tt class="docutils literal"><span class="pre">True</span></tt></p>
+<p>Applications can be private and accessible only to a group of users. <tt class="docutils literal"><span class="pre">isPrivate</span></tt> would be <tt class="docutils literal"><span class="pre">True</span></tt> in this case. Applications can
+start private (like a private beta) and then make them public. When making public applications, you can publish at Ximpia
+directory.</p>
+<p>Applications have meta information through model ApplicationMeta. You can attach meta values for application in this model.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt> : Primary key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(15) : Application path, like ximpia.xpsite. Must contain package name and application name. Has format similar</li>
+</ul>
+<p>to installed apps django setting.
+* <tt class="docutils literal"><span class="pre">slug</span></tt>:SlugField(30)
+* <tt class="docutils literal"><span class="pre">title</span></tt>:CharField(30)
+* <tt class="docutils literal"><span class="pre">isSubscription</span></tt>:BooleanField
+* <tt class="docutils literal"><span class="pre">isPrivate</span></tt>:BooleanField
+* <tt class="docutils literal"><span class="pre">isAdmin</span></tt>:BooleanField</p>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">developer</span></tt> -&gt; User</li>
+<li><tt class="docutils literal"><span class="pre">developerOrg</span></tt> -&gt; &#8216;xpsite.Group&#8217;</li>
+<li><tt class="docutils literal"><span class="pre">parent</span></tt> -&gt; self</li>
+<li><tt class="docutils literal"><span class="pre">accessGroup</span></tt> -&gt; &#8216;xpsite.Group&#8217;</li>
+<li><tt class="docutils literal"><span class="pre">users</span></tt> &lt;-&gt; UserChannel through ApplicationAccess and related name &#8216;app_access&#8217;</li>
+<li><tt class="docutils literal"><span class="pre">meta</span></tt> &lt;-&gt; Meta through ApplicationMeta and related name &#8216;app_meta&#8217;</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="service">
+<h2>Service<a class="headerlink" href="#service" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">implementation</span></tt></li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">application</span></tt></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="view">
+<h2>View<a class="headerlink" href="#view" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>View. Pages in ximpia are called views. Views render content obtaine from database or other APIs. They hit the slave databases. In
+case writing content is needed, could be accomplished by calling queues. Views can show lists, record detalils in forms, reports,
+static content, etc...</p>
+<p>In case no logic is needed by view, simply include <tt class="docutils literal"><span class="pre">pass</span></tt> in the service operation.</p>
+<p>Views have name to be used internally in component registering and code and slug which is the name used in urls.</p>
+<p>View implementation is the path to the service operation that will produce view JSON data to server the frontend. Implementation
+is built by registering a view component.</p>
+<p>Window types can be &#8216;window&#8217;, &#8216;popup&#8217; and &#8216;panel&#8217; (this one coming soon). Windows render full width, popups are modal windows, and
+panels are tooltip areas inside your content. Popups can be triggered using icons, buttons or any other action. Panels will be
+triggered by mouse over components, clicking on visual action components.</p>
+<p>In case view needs authentication to render, would have hasAuth = True.</p>
+<p>Views can be grouped together using the <tt class="docutils literal"><span class="pre">parent</span></tt> field.</p>
+<p>Params are entry parameters (dynamic or static) that view will accept. Parameters are inyected to service operations with <a href="#id1"><span class="problematic" id="id2">**</span></a>args
+variable. The parameter name you include will be called by args[&#8216;MY_PARAM&#8217;] in case your parameter name is &#8216;MY_PARAM&#8217;.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(30)</li>
+<li><tt class="docutils literal"><span class="pre">implementation</span></tt>:CharField(100)</li>
+<li><tt class="docutils literal"><span class="pre">winType</span></tt>:CharField(20) : Window type, as Choices.WIN_TYPE_WINDOW</li>
+<li><tt class="docutils literal"><span class="pre">slug</span></tt>:SlugField(50) : View slug to form url to call view</li>
+<li><tt class="docutils literal"><span class="pre">hasAuth</span></tt>:BooleanField : Needs view authentication?</li>
+<li><tt class="docutils literal"><span class="pre">image</span></tt>:FileBrowserField : View image</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">parent</span></tt> -&gt; self</li>
+<li><tt class="docutils literal"><span class="pre">application</span></tt> -&gt; Application</li>
+<li><tt class="docutils literal"><span class="pre">service</span></tt> -&gt; Service</li>
+<li><tt class="docutils literal"><span class="pre">category</span></tt> -&gt; xpsite.Category</li>
+<li><tt class="docutils literal"><span class="pre">templates</span></tt> &lt;-&gt; XpTemplate through ViewTmpl with related name <cite>view_templates</cite></li>
+<li><tt class="docutils literal"><span class="pre">params</span></tt> &lt;-&gt; Param through ViewParamValue with related nam &#8216;view_params&#8217;</li>
+<li><tt class="docutils literal"><span class="pre">menus</span></tt> &lt;-&gt; Menu through ViewMenu with related name &#8216;view_menus&#8217;</li>
+<li><tt class="docutils literal"><span class="pre">tags</span></tt> &lt;-&gt; xpsite.Tag through ViewTag</li>
+<li><tt class="docutils literal"><span class="pre">accessGroups</span></tt> &lt;-&gt; xpsite.Group through ViewAccessGroup</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="menu">
+<h2>Menu<a class="headerlink" href="#menu" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(20) : Menu item name</li>
+<li><tt class="docutils literal"><span class="pre">titleShort</span></tt>:CharField(15) : Title short. Text shown in icon. Default menu shows this text right to the icon image.</li>
+<li><tt class="docutils literal"><span class="pre">title</span></tt>:CharField(30) : Title shown in tooptip when mouse goes over.</li>
+<li><tt class="docutils literal"><span class="pre">url</span></tt>:URLField : Url to launch . Used for external urls mapped to menu items.</li>
+<li><tt class="docutils literal"><span class="pre">urlTarget</span></tt>:CharField(10) : target to launch url</li>
+<li><tt class="docutils literal"><span class="pre">language</span></tt>:CharField(2) : Language code, like <tt class="docutils literal"><span class="pre">es</span></tt>, <tt class="docutils literal"><span class="pre">en</span></tt>, etc...</li>
+<li><tt class="docutils literal"><span class="pre">country</span></tt>:CharField(2) : Country as Choices.COUNTRY</li>
+<li><tt class="docutils literal"><span class="pre">device</span></tt>:CharField(10) : Device. Smartphones, tablets can have their own menu, customized to screen width</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">application</span></tt> -&gt; Application</li>
+<li><tt class="docutils literal"><span class="pre">icon</span></tt> -&gt; CoreParam</li>
+<li><tt class="docutils literal"><span class="pre">view</span></tt> -&gt; View</li>
+<li><tt class="docutils literal"><span class="pre">action</span></tt> -&gt; Action</li>
+<li><tt class="docutils literal"><span class="pre">params</span></tt> &lt;-&gt; Param through MenuParam with related name &#8216;menu_params&#8217;</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="xptemplate">
+<h2>XpTemplate<a class="headerlink" href="#xptemplate" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Ximpia Template.</p>
+<p>Views can have N templates with language, country and device target features. You can target templates with device and localization.
+In case you want to provide different templates for user groups, profiles, etc... you would need to create different views and then
+map those views to access groups. Each of those views would have default templates and templates targetted at pads, smartphones,
+desktop and localization if required.</p>
+<p>Templates can window types:</p>
+<ul class="simple">
+<li>Window - Views which render whole available screen area.</li>
+<li>Popup - Modal views that popup when user clicks on actions or menu items.</li>
+<li>Panel (Coming soon) - This window types is embedded within content, as a tooltip when user clicks on action or mouse goes</li>
+</ul>
+<p>over</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(50)</li>
+<li><tt class="docutils literal"><span class="pre">alias</span></tt>:CharField(20)</li>
+<li><tt class="docutils literal"><span class="pre">language</span></tt>:CharField(2) : As Choices.LANG</li>
+<li><tt class="docutils literal"><span class="pre">country</span></tt>:CharField(2) : As Choices.COUNTRY</li>
+<li><tt class="docutils literal"><span class="pre">winType</span></tt>:CharField(20) : As Choices.WIN_TYPES</li>
+<li><tt class="docutils literal"><span class="pre">device</span></tt>:CharField(10) : As Choices.DEVICES : Desktop computer, smartphones and tablets</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">application</span></tt> -&gt; Application</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Ximpia comes with a basic application workflow to provide navigation for your views.</p>
+<p>Navigation is provided in window and popup window types.</p>
+<p>You &#8220;mark&#8221; as workflow view any service method with flow code (decorator). Actions are also &#8220;marked&#8221; as worflow actions with
+decorators.</p>
+<p>When actions are triggered by clicking on a button or similar, action logic is executed, and user displays view based on flow
+information and data inserted in the flow by actions. You do not have to map navigation inside your service operations.</p>
+<p>Plugging in a new view is pretty simple. You code the service view operation, include it in your flow, and view (window or popup)
+will be displayed when requirements are met</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">code</span></tt>:CharField(15) : Flow code</li>
+<li><tt class="docutils literal"><span class="pre">resetStart</span></tt>:BooleanField : The flow data will be deleted when user displays first view of flow. The flow will be reset when</li>
+</ul>
+<p>user visits again any page in the flow.
+* <tt class="docutils literal"><span class="pre">deleteOnEnd</span></tt>:BooleanField : Flow data is deleted when user gets to final view in the flow.
+* <tt class="docutils literal"><span class="pre">jumpToView</span></tt>:BooleanField : When user visits first view in the flow, will get redirected to last visited view in the flow. User
+jumps to last view in the flow.</p>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">application</span></tt> -&gt; Application</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="workflowview">
+<h2>WorkflowView<a class="headerlink" href="#workflowview" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>WorkFlow View. Relationship between flows and your views.</p>
+<p>Source view triggers action, logic is executed and target view is displayed to user.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">order</span></tt>:IntegerField : View orderi flow. You can place order like 10, 20, 30 for views in our flow. And then later inyect views</li>
+</ul>
+<p>between those values, like 15, for example.</p>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">flow</span></tt> -&gt; WorkFlow</li>
+<li><tt class="docutils literal"><span class="pre">viewSource</span></tt> -&gt; View : Source view for flow</li>
+<li><tt class="docutils literal"><span class="pre">viewTarget</span></tt> -&gt; View : Target view for flow</li>
+<li><tt class="docutils literal"><span class="pre">action</span></tt> -&gt; Action : Action mapped to flow. Source view triggers action, logic is executed and target view is rendered and</li>
+</ul>
+<p>displayed.
+* <tt class="docutils literal"><span class="pre">params</span></tt> &lt;-&gt; Param through WFParamValue with related name &#8216;flowView_params&#8217;</p>
+</div></blockquote>
+</div>
+<div class="section" id="workflowdata">
+<h2>WorkflowData<a class="headerlink" href="#workflowdata" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>User Workflow Data</p>
+<p>userId is the workflow user id. Flows support authenticated users and anonymous users. When flows start, in case not authenticated,
+workflow user id is generated. This feature allows having a flow starting at non-authenticated views and ending in authenticated
+views, as well as non-auth flows.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">userId</span></tt>:CharField(40) : Workflow user id</li>
+<li><tt class="docutils literal"><span class="pre">data</span></tt>:TextField : Workflow data encoded in json and base64</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">flow</span></tt> -&gt; Workflow</li>
+<li><tt class="docutils literal"><span class="pre">view</span></tt> -&gt; View</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="setting">
+<h2>Setting<a class="headerlink" href="#setting" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Settings model</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">value</span></tt>:TextField : Settings value.</li>
+<li><tt class="docutils literal"><span class="pre">description</span></tt>:CharField(255) : Setting description.</li>
+<li><tt class="docutils literal"><span class="pre">mustAutoload</span></tt>:BooleanField : Has to load settings on cache?</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt> -&gt; MetaKey : Foreign key to MetaKey model.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="action">
+<h2>Action<a class="headerlink" href="#action" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Actions are mapped to service operations. Actions can be triggered by clicking on a button, a link, a menu icon or any other
+visual component that triggers actions.</p>
+<p>Here we map action names, implementations, slugs and action properties. Implementations are built by component registering.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary key</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt>:CharField(30)</li>
+<li><tt class="docutils literal"><span class="pre">implementation</span></tt>:CharField(100)</li>
+<li><tt class="docutils literal"><span class="pre">slug</span></tt>:SlugField(50)</li>
+<li><tt class="docutils literal"><span class="pre">hasAuth</span></tt>:BooleanField</li>
+<li><tt class="docutils literal"><span class="pre">image</span></tt>:FileBrowserField</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">application</span></tt> -&gt; Application</li>
+<li><tt class="docutils literal"><span class="pre">service</span></tt> -&gt; Service</li>
+<li><tt class="docutils literal"><span class="pre">accessGroups</span></tt> &lt;-&gt; xpsite.Group through ActionAccessGroup</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Core Models</a><ul>
+<li><a class="reference internal" href="#basemodel">BaseModel</a></li>
+<li><a class="reference internal" href="#params">Params</a></li>
+<li><a class="reference internal" href="#condition">Condition</a></li>
+<li><a class="reference internal" href="#coreparam">CoreParam</a></li>
+<li><a class="reference internal" href="#metakey">MetaKey</a></li>
+<li><a class="reference internal" href="#application">Application</a></li>
+<li><a class="reference internal" href="#service">Service</a></li>
+<li><a class="reference internal" href="#view">View</a></li>
+<li><a class="reference internal" href="#menu">Menu</a></li>
+<li><a class="reference internal" href="#xptemplate">XpTemplate</a></li>
+<li><a class="reference internal" href="#workflow">Workflow</a></li>
+<li><a class="reference internal" href="#workflowview">WorkflowView</a></li>
+<li><a class="reference internal" href="#workflowdata">WorkflowData</a></li>
+<li><a class="reference internal" href="#setting">Setting</a></li>
+<li><a class="reference internal" href="#action">Action</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Core Summary</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="workflow.html"
+                        title="next chapter">Workflow</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/xpcore/models.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="workflow.html" title="Workflow"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Core Summary"
+             >previous</a> |</li>
+        <li><a href="../index.html">Ximpia 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Ximpia Inc.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

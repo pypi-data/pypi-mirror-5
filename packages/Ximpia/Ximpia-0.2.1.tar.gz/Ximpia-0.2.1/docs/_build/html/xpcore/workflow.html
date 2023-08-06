@@ -1,0 +1,427 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Workflow &mdash; Ximpia 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="Ximpia 0.2 documentation" href="../index.html" />
+    <link rel="next" title="Service Layer" href="service.html" />
+    <link rel="prev" title="Core Models" href="models.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="service.html" title="Service Layer"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Core Models"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Ximpia 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="workflow">
+<h1>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h1>
+<p>Defines navigation for your application, which views trigger other views and which actions are called that trigger views.</p>
+<p>You would need:</p>
+<ol class="arabic">
+<li><p class="first"><tt class="docutils literal"><span class="pre">Actions</span></tt>: Flow navigation is triggered by action components. You need to define actions that will navigate to other views.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">Flow</span> <span class="pre">Variables</span></tt>: In order to define conditions for your flow, you would need to define variables. You register flow variables</dt>
+<dd><p class="first last">with register methods and define flows with variable values.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">Label</span> <span class="pre">methods</span></tt>: Include decorator into your views and actions to let ximpia know they must follow flows.</p>
+</li>
+</ol>
+<p>Ximpia would query which view to show when actions are executed. You don&#8217;t need to code navigation for your application. When
+your flow changes, you update variables and flow parameters and your flow is changes (For example, to plug in a new view).</p>
+<p>We define flow and simple navigation without conditions. You would register flow in <tt class="docutils literal"><span class="pre">components.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerFlow</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">flowCode</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="o">.</span><span class="n">registerFlowView</span><span class="p">(</span><span class="n">__name__</span><span class="p">,</span> <span class="n">flowCode</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">viewNameSource</span><span class="o">=</span><span class="n">Views</span><span class="o">.</span><span class="n">LOGIN</span><span class="p">,</span>
+    <span class="n">viewNameTarget</span><span class="o">=</span><span class="n">Views</span><span class="o">.</span><span class="n">HOME_LOGIN</span><span class="p">,</span> <span class="n">actionName</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And then write flow variables in your service layer in action methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">_put_flow_params</span><span class="p">(</span><span class="n">my_var</span><span class="o">=</span><span class="s">&#39;Customer&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Workflow would have enough info on which views to navigate to.</p>
+<div class="section" id="decorators">
+<h2>Decorators<a class="headerlink" href="#decorators" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ximpia.xpcore.service.workflow_view</span></tt> (flow_code, form) : Label view and relate to flow. Set main form to be used.</li>
+<li><tt class="docutils literal"><span class="pre">ximpia.xpcore.service.workflow_action</span></tt> (flow_code, form) : Label action and relate to flow. Set main form to be used for validation.</li>
+</ul>
+</div>
+<div class="section" id="module-ximpia.xpcore.models">
+<span id="models"></span><h2>Models<a class="headerlink" href="#module-ximpia.xpcore.models" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="ximpia.xpcore.models.Workflow">
+<em class="property">class </em><tt class="descclassname">ximpia.xpcore.models.</tt><tt class="descname">Workflow</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/models.html#Workflow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.models.Workflow" title="Permalink to this definition">¶</a></dt>
+<dd><p>WorkFlow.</p>
+<p>Ximpia comes with a basic application workflow to provide navigation for your views.</p>
+<p>Navigation is provided in window and popup window types.</p>
+<p>You &#8220;mark&#8221; as workflow view any service method with flow code (decorator). Actions are also &#8220;marked&#8221; as worflow actions with
+decorators.</p>
+<p>When actions are triggered by clicking on a button or similar, action logic is executed, and user displays view based on flow
+information and data inserted in the flow by actions. You do not have to map navigation inside your service operations.</p>
+<p>Plugging in a new view is pretty simple. You code the service view operation, include it in your flow, and view (window or popup)
+will be displayed when requirements are met</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">code</span></tt>:CharField(15) : Flow code</li>
+<li><tt class="docutils literal"><span class="pre">resetStart</span></tt>:BooleanField : The flow data will be deleted when user displays first view of flow. The flow will be reset when</li>
+</ul>
+<p>user visits again any page in the flow.
+* <tt class="docutils literal"><span class="pre">deleteOnEnd</span></tt>:BooleanField : Flow data is deleted when user gets to final view in the flow.
+* <tt class="docutils literal"><span class="pre">jumpToView</span></tt>:BooleanField : When user visits first view in the flow, will get redirected to last visited view in the flow. User
+jumps to last view in the flow.</p>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">application</span></tt> -&gt; Application</li>
+</ul>
+</dd></dl>
+
+<dl class="class">
+<dt id="ximpia.xpcore.models.WorkflowView">
+<em class="property">class </em><tt class="descclassname">ximpia.xpcore.models.</tt><tt class="descname">WorkflowView</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/models.html#WorkflowView"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.models.WorkflowView" title="Permalink to this definition">¶</a></dt>
+<dd><p>WorkFlow View. Relationship between flows and your views.</p>
+<p>Source view triggers action, logic is executed and target view is displayed to user.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">order</span></tt>:IntegerField : View orderi flow. You can place order like 10, 20, 30 for views in our flow. And then later inyect views</li>
+</ul>
+<p>between those values, like 15, for example.</p>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">flow</span></tt> -&gt; WorkFlow</li>
+<li><tt class="docutils literal"><span class="pre">viewSource</span></tt> -&gt; View : Source view for flow</li>
+<li><tt class="docutils literal"><span class="pre">viewTarget</span></tt> -&gt; View : Target view for flow</li>
+<li><tt class="docutils literal"><span class="pre">action</span></tt> -&gt; Action : Action mapped to flow. Source view triggers action, logic is executed and target view is rendered and</li>
+</ul>
+<p>displayed.
+* <tt class="docutils literal"><span class="pre">params</span></tt> &lt;-&gt; Param through WFParamValue with related name &#8216;flowView_params&#8217;</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ximpia.xpcore.models.WorkflowData">
+<em class="property">class </em><tt class="descclassname">ximpia.xpcore.models.</tt><tt class="descname">WorkflowData</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/models.html#WorkflowData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.models.WorkflowData" title="Permalink to this definition">¶</a></dt>
+<dd><p>User Workflow Data</p>
+<p>userId is the workflow user id. Flows support authenticated users and anonymous users. When flows start, in case not authenticated,
+workflow user id is generated. This feature allows having a flow starting at non-authenticated views and ending in authenticated 
+views, as well as non-auth flows.</p>
+<p><strong>Attributes</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">id</span></tt>:AutoField : Primary Key</li>
+<li><tt class="docutils literal"><span class="pre">userId</span></tt>:CharField(40) : Workflow user id</li>
+<li><tt class="docutils literal"><span class="pre">data</span></tt>:TextField : Workflow data encoded in json and base64</li>
+</ul>
+<p><strong>Relationships</strong></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">flow</span></tt> -&gt; Workflow</li>
+<li><tt class="docutils literal"><span class="pre">view</span></tt> -&gt; View</li>
+</ul>
+</dd></dl>
+
+</div>
+<div class="section" id="service">
+<h2>Service<a class="headerlink" href="#service" title="Permalink to this headline">¶</a></h2>
+<p>Service methods that deal with workflow are:</p>
+<dl class="class">
+<dt id="ximpia.xpcore.service.CommonService">
+<em class="property">class </em><tt class="descclassname">ximpia.xpcore.service.</tt><tt class="descname">CommonService</tt><big>(</big><em>ctx</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/service.html#CommonService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.service.CommonService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ximpia.xpcore.service.CommonService._put_flow_params">
+<tt class="descname">_put_flow_params</tt><big>(</big><em>**args</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/service.html#CommonService._put_flow_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.service.CommonService._put_flow_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put parameters into workflow or navigation system.
+&#64;param args: Arguments to insert into persistence</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.service.CommonService._get_target_view">
+<tt class="descname">_get_target_view</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/service.html#CommonService._get_target_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.service.CommonService._get_target_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get target view.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.service.CommonService._get_flow_params">
+<tt class="descname">_get_flow_params</tt><big>(</big><em>*name_list</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/service.html#CommonService._get_flow_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.service.CommonService._get_flow_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get parameter for list given, either from workflow dictionary or parameter dictionary in view.
+&#64;param name_list: List of parameters to fetch</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.service.CommonService._get_wf_user">
+<tt class="descname">_get_wf_user</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/service.html#CommonService._get_wf_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.service.CommonService._get_wf_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Workflow user.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="workflowbusiness">
+<h2>WorkflowBusiness<a class="headerlink" href="#workflowbusiness" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness">
+<em class="property">class </em><tt class="descclassname">ximpia.xpcore.business.</tt><tt class="descname">WorkFlowBusiness</tt><big>(</big><em>ctx</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.build_flow_data_dict">
+<tt class="descname">build_flow_data_dict</tt><big>(</big><em>flow_data</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.build_flow_data_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.build_flow_data_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the flow data dictionary having the flowData instance.
+&#64;param flowData: Flow data
+&#64;return: flow_data_dict</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.gen_user_id">
+<tt class="descname">gen_user_id</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.gen_user_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.gen_user_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate workflow user id.</p>
+<p>** Returns **
+user_id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get">
+<tt class="descname">get</tt><big>(</big><em>flow_code</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get flow.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get_flow_data_dict">
+<tt class="descname">get_flow_data_dict</tt><big>(</big><em>wf_user_id</em>, <em>flow_code</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get_flow_data_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get_flow_data_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get flow data dictionary for user and flow code
+&#64;param wf_user_id: Workflow user id
+&#64;param flow_code: flowCode
+&#64;return: flow_data_dict : Dictionary</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get_flow_view_by_action">
+<tt class="descname">get_flow_view_by_action</tt><big>(</big><em>action_name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get_flow_view_by_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get_flow_view_by_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get flow by action name. It queries the workflow data and returns flow associated with actionName
+&#64;param action_name: Action name
+&#64;return: flow_view: Workflow view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get_param">
+<tt class="descname">get_param</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get_param"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get_param" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get workflow parameter from context
+&#64;param name: Name
+&#64;return: Param Value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get_param_from_ctx">
+<tt class="descname">get_param_from_ctx</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get_param_from_ctx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get_param_from_ctx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get flow parameter from context.
+&#64;param name: Parameter name
+&#64;return: Parameter value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get_view">
+<tt class="descname">get_view</tt><big>(</big><em>wf_user_id</em>, <em>flow_code</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get view from flow
+&#64;param wf_user_id: User
+&#64;param flow_code: Flow code
+&#64;return: view_name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get_view_name">
+<tt class="descname">get_view_name</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get_view_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get_view_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get workflow view name.
+&#64;return: viewName</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.get_view_params">
+<tt class="descname">get_view_params</tt><big>(</big><em>flow_code</em>, <em>view_name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.get_view_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.get_view_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get view entry parameters for view and flow
+&#64;param flow_code: Flow code
+&#64;param view_name: View name
+&#64;return: param_dict</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.is_first_view">
+<tt class="descname">is_first_view</tt><big>(</big><em>flow_code</em>, <em>view_name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.is_first_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.is_first_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if view is first in flow. It uses field &#8216;order&#8217; to determine if is first view.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.is_last_view">
+<tt class="descname">is_last_view</tt><big>(</big><em>view_name_source</em>, <em>view_name_target</em>, <em>action_name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.is_last_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.is_last_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if view is last in flow.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.put_params">
+<tt class="descname">put_params</tt><big>(</big><em>**argsDict</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.put_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.put_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put list of workflow parameters in context
+&#64;param argsDict: Argument dictionary</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.remove_data">
+<tt class="descname">remove_data</tt><big>(</big><em>wf_user_id</em>, <em>flow_code</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.remove_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.remove_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the workflow data for user or session.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.reset_flow">
+<tt class="descname">reset_flow</tt><big>(</big><em>wf_user_id</em>, <em>flow_code</em>, <em>view_name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.reset_flow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.reset_flow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset flow. It deletes all workflow variables and view name
+&#64;param wf_user_id: Workflow User Id
+&#64;param flow_code: Flow code</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.resolve_flow_data_for_user">
+<tt class="descname">resolve_flow_data_for_user</tt><big>(</big><em>wf_user_id</em>, <em>flow_code</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.resolve_flow_data_for_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.resolve_flow_data_for_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resolves flow for user and session key.
+&#64;param wf_user_id: Workflow User Id
+&#64;param flow_code: Flow code
+&#64;return: resolved_flow : Resolved flow for flow code , login user or session</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.resolve_view">
+<tt class="descname">resolve_view</tt><big>(</big><em>wf_user_id</em>, <em>app_name</em>, <em>flow_code</em>, <em>view_name_source</em>, <em>action_name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.resolve_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.resolve_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search destiny views with origin viewSource and operation actionName
+&#64;param view_name_source: Origin view
+&#64;param action_name: Action name
+&#64;return: view_target</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.save">
+<tt class="descname">save</tt><big>(</big><em>wf_user_id</em>, <em>flow_code</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the workflow into database for user
+&#64;param user: User
+&#64;param flowCode: Flow code</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ximpia.xpcore.business.WorkFlowBusiness.set_view_name">
+<tt class="descname">set_view_name</tt><big>(</big><em>view_name</em><big>)</big><a class="reference internal" href="../_modules/ximpia/xpcore/business.html#WorkFlowBusiness.set_view_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ximpia.xpcore.business.WorkFlowBusiness.set_view_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set view name in Workflow
+&#64;param view_name: View name</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Workflow</a><ul>
+<li><a class="reference internal" href="#decorators">Decorators</a></li>
+<li><a class="reference internal" href="#module-ximpia.xpcore.models">Models</a></li>
+<li><a class="reference internal" href="#service">Service</a></li>
+<li><a class="reference internal" href="#workflowbusiness">WorkflowBusiness</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="models.html"
+                        title="previous chapter">Core Models</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="service.html"
+                        title="next chapter">Service Layer</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/xpcore/workflow.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="service.html" title="Service Layer"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Core Models"
+             >previous</a> |</li>
+        <li><a href="../index.html">Ximpia 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Ximpia Inc.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
