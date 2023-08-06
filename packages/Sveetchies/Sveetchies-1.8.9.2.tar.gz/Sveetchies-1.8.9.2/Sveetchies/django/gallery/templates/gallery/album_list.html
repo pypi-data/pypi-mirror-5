@@ -1,0 +1,38 @@
+{% extends "gallery/subbase.html" %}
+{% block head_title %}{{ block.super }} - Galerie{% endblock %}
+{% block head_more_js %}{{ block.super }}
+    <script type="text/javascript">
+    //<![CDATA[
+    $(document).ready(function(){
+        $("div.album_list_container li.album_item a.thumb img").vAlign();
+    });
+    //]]>
+    </script>
+{% endblock %}
+
+{% block content %}
+    <h2>Galerie</h2>
+    <div class="album_list_container">
+        {% pagination_tag %}
+        <ul class="item_list">
+            {% for album in object_list %}
+            <li class="album_item {% cycle "row1" "row2" %}{% if forloop.first %} first{% endif %}{% if forloop.last %} last{% endif %}">
+                <a class="thumb" href="{% url gallery-album-details album.slug %}"><img src="{{ album.thumb.url }}" alt=""/></a>
+                <div class="content">
+                    <h3><a href="{% url gallery-album-details album.slug %}">{{ album.title }}</a></h3>
+                    {% with album.picture_set.all.count as pictures_count %}
+                    <p class="credits">{{ album.create_date|date:"l j F Y"|title }}</p>
+                    <p><a href="{% url gallery-album-details album.slug %}">{{ pictures_count }} élément{{ pictures_count|pluralize }}</a></p>
+                    {% endwith %}
+                </div>
+                {% if album.description %}<div class="description">{% wiki2xhtml album.description 'short' %}</div>{% endif %}
+                <div class="cale"></div>
+            </li>
+            {% empty %}
+            <li class="empty">Aucun album</li>
+            {% endfor %}
+        </ul>
+        <div class="cale"></div>
+        {% pagination_tag %}
+    </div>
+{% endblock %}

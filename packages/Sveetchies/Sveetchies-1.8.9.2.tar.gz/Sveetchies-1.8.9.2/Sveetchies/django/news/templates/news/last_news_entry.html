@@ -1,0 +1,40 @@
+{% if last_news_object_list %}
+    <div class="last_entries_container">
+        {% if not last_news_category_object %}
+        <h3>{{ last_news_limit }} derniers billets</h3>
+        {% else %}
+        <h3>{{ last_news_limit }} derniers billets de la catégorie <a href="{% url news-category-details last_news_category_object.slug %}">{{ last_news_category_object.title }}</a></h3>
+        {% endif %}
+        <ul class="item_list">
+            {% for entry in last_news_object_list %}
+            <li class="entry_item {% cycle "row1" "row2" %}{% if forloop.first %} first{% endif %}{% if forloop.last %} last{% endif %}">
+                <div class="item_layout">
+                    <p class="publish_date">{{ entry.publish_date|date:"l j F Y"|title }}</p>
+                    <h4><a href="{% url news-entry-details entry.category.slug entry.slug %}">{{ entry.title }}</a></h4>
+                    {% if entry.introduction %}
+                        {% with entry.introduction|truncatestring:200 as entry_introduction %}
+                        <div class="intro">
+                            {% wiki2xhtml entry_introduction 'short' %}
+                            <p><a href="{% url news-entry-details entry.category.slug entry.slug %}">Lire la suite</a></p>
+                        </div>
+                        {% endwith %}
+                    {% else %}
+                        {% with entry.content|truncatestring:200 as entry_content %}
+                        <div class="content">
+                            {% wiki2xhtml entry_content %}
+                            <p class="more_link"><a href="{% url news-entry-details entry.category.slug entry.slug %}">Lire la suite</a></p>
+                        </div>
+                        {% endwith %}
+                    {% endif %}
+                    {% if not last_news_category_object %}
+                    <p class="category">Catégorie : <a href="{% url news-category-details entry.category.slug %}">{{ entry.category.title }}</a></p>
+                    {% endif %}
+                </div>
+            </li>
+            {% empty %}
+            <li class="empty">Aucun billet</li>
+            {% endfor %}
+        </ul>
+        <div class="cale"></div>
+    </div>
+{% endif %}
