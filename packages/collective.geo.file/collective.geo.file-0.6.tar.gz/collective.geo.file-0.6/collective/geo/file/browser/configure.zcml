@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:cache="http://namespaces.zope.org/cache"
+    i18n_domain="collective.geo.file">
+
+  <include package="plone.app.contentmenu" />
+  <include package="Products.CMFCore" file="permissions.zcml" />
+  <include package="z3c.caching" file="meta.zcml" />
+
+  <browser:page
+      for="collective.geo.file.interfaces.IGisFile"
+      name="filekml_view"
+      class=".filekmlview.FileKmlView"
+      template="filekmlview.pt"
+      allowed_interface=".filekmlview.IFileKmlView"
+      permission="zope2.View"
+      />
+
+  <cache:ruleset
+      for=".filekmlview.FileKmlView"
+      ruleset="plone.content.itemView"
+      />
+
+  <browser:page
+      for="collective.geo.file.interfaces.IGisFile"
+      name="filekmz_view.kml"
+      class=".filekmlview.KmzFileKmlView"
+      allowed_interface=".filekmlview.IKmzFileKmlView"
+      permission="zope2.View"
+      />
+
+  <cache:ruleset
+      for=".filekmlview.KmzFileKmlView"
+      ruleset="plone.content.file"
+      />
+
+  <adapter
+      for=".filekmlview.IFileKmlView
+           zope.interface.Interface
+           zope.interface.Interface
+           zope.interface.Interface"
+      factory=".maplayer.KMLFileMapLayers"
+      />
+
+
+  <browser:menuItem
+      title="Map view"
+      for="collective.geo.file.interfaces.IGisFile"
+      menu="plone_displayviews"
+      action="filekml_view"
+      description="Set Map as default view."
+      />
+
+
+</configure>
