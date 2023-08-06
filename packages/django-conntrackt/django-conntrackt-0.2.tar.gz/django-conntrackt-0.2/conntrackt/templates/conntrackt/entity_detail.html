@@ -1,0 +1,138 @@
+{% extends "conntrackt/base.html" %}
+
+{# For html_link. #}
+{% load conntrackt_tags %}
+
+{% block content %}
+
+{% if entity %}
+<div class="row">
+  <h1 class="span12">{{entity.name}}</h1>
+</div>
+<hr />
+
+{% if entity.description %}
+<div class="row">
+  <div class="span12">
+    {{entity.description}}
+  </div>
+</div>
+<hr />
+{% endif %}
+
+<div class="row">
+  <div class="span12">
+    {% html_link "Edit" "entity_update" entity.id class="btn btn-primary" %}
+    {% html_link "Remove" "entity_delete" entity.id class="btn btn-primary" %}
+    {% html_link "Get Iptables" 'entity_iptables' entity.id class="btn btn-primary" %}
+  </div>
+</div>
+
+<hr />
+
+<div class="row">
+
+  <div class="span6">
+    <h2>General information</h2>
+    <div class="well">
+      <table class="table table-striped">
+        <tr>
+          <th>Project</th><td style="width:99%">{% html_link project.name 'project'  project.id  %}</td>
+        </tr>
+        <tr>
+          <th>Location</th><td>{{location}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="span6">
+    <h2>Interfaces</h2>
+    <div class="well">
+      {% if interfaces %}
+      <table class="table table-striped">
+        {% for interface in interfaces %}
+        <tr>
+          <td style="width:99%"><p>{{interface.name}} ({{interface.address}}/{{interface.netmask}})</p></td>
+          <td>{% html_link '<i class="icon-edit"></i>' 'interface_update' interface.id class="btn btn-link"  %}</td>
+          <td>{% html_link '<i class="icon-remove"></i>' 'interface_delete' interface.id class="btn btn-link"  %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p>No interfaces are defined for this entity.</p>
+      {% endif %}
+      <div>
+        {% with entity_id=entity.id|slugify %}
+        {% html_link "Add interface" "interface_create" class="btn btn-primary btn-mini" get="entity="|add:entity_id %}
+        {% endwith %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span6">
+    <h2>Incoming communications</h2>
+    <div class="well">
+      {% if incoming_communications %}
+      <table class="table table-striped">
+        {% for comm in incoming_communications %}
+        <tr>
+          <td style="width:99%">{% html_link comm.source_representation "entity" comm.source.entity.id class="btn btn-link" %}</td>
+          <td>{% html_link '<i class="icon-edit"></i>' 'communication_update' comm.id class="btn btn-link"  %}</td>
+          <td>{% html_link '<i class="icon-remove"></i>' 'communication_delete' comm.id class="btn btn-link"  %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p>No incoming communications towards this entity.</p>
+      {% endif %}
+      <div>
+        {% with entity_id=entity.id|slugify %}
+        {% url "entity" entity.id as next %}
+        {% html_link "Add communication" "communication_create" class="btn btn-primary btn-mini" get="to_entity="|add:entity_id|add:"&amp;next="|add:next %}
+        {% endwith %}
+      </div>
+    </div>
+  </div>
+
+  <div class="span6">
+    <h2>Outgoing communications</h2>
+    <div class="well">
+      {% if outgoing_communications %}
+      <table class="table table-striped">
+        {% for comm in outgoing_communications %}
+        <tr>
+          <td style="width:99%">{% html_link comm.destination_representation "entity" comm.destination.entity.id class="btn btn-link" %}</td>
+          <td>{% html_link '<i class="icon-edit"></i>' 'communication_update' comm.id class="btn btn-link"  %}</td>
+          <td>{% html_link '<i class="icon-remove"></i>' 'communication_delete' comm.id class="btn btn-link"  %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p>No outgoing communications from this entity.</p>
+      {% endif %}
+      <div>
+        {% with entity_id=entity.id|slugify %}
+        {% url "entity" entity.id as next %}
+        {% html_link "Add communication" "communication_create" class="btn btn-primary btn-mini" get="from_entity="|add:entity_id|add:"&amp;next="|add:next %}
+        {% endwith %}
+      </div>
+    </div>
+  </div>
+
+  <div class="span12">
+    <h2>Iptables rules</h2>
+    <div class="well">
+      <pre>{{ entity_iptables }}</pre>
+      <div>
+        {% html_link "Download" 'entity_iptables' entity.id class="btn btn-primary" %}
+      </div>
+    </div>
+  </div>
+  
+</div>
+{% endif %}
+{% endblock %}
+

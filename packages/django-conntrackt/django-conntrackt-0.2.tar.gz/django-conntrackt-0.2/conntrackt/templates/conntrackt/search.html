@@ -1,0 +1,50 @@
+{% extends "conntrackt/base.html" %}
+
+{% block content %}
+
+<div class="row">
+  <div class="span12">
+    {% if search_term %}
+      <h1>Search results for: <strong>{{ search_term }}</strong></h1>
+    {% else %}
+      <h1>Search</h1>
+    {% endif %}
+  </div>
+
+  <div class="span12">
+    <hr />
+    <form action="{% url "search" %}" class="form-search" method="GET">
+      <input class="search-query" type="text" name="q"  placeholder="Search" value="{{ search_term }}"/>
+      <button type="submit" class="btn"><span class="icon-search"></span> Search</button>
+    </form>
+    <hr />
+
+    {% if projects %}
+      <h2><small>Matched projects</small></h2>
+      <ul class="unstyled">
+        {% for project in projects %}
+          <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+        {% endfor %}
+      </ul>
+      <hr />
+    {% elif search_term %}
+      <p>There are no projects matching your query.</p>
+      <hr />
+    {% endif %}
+
+    {% if entities %}
+      <h2><small>Matched Entities</small></h2>
+      <ul class="unstyled">
+        {% for entity in entities %}
+          <li><a href="{{ entity.get_absolute_url }}">{{ entity.name }}</a> (from {{ entity.project.name }})</li>
+        {% endfor %}
+      </ul>
+      <hr />
+    {% elif search_term %}
+      <p>There are no entities matching your query.</p>
+      <hr />
+    {% endif %}
+
+  </div>
+</div>
+{% endblock content %}
