@@ -1,0 +1,41 @@
+{% extends "sanza/base.html" %}
+{% load i18n %}{% load url from future %}
+
+{% block extra_head %}
+  {{block.super}}
+  <script type="text/javascript" src="{{STATIC_URL}}js/js18n.js"></script>
+  <script type="text/javascript" src="{{STATIC_URL}}admin/js/jquery.min.js"></script>
+  <script type="text/javascript" src="{{STATIC_URL}}admin/js/jquery.init.js"></script>
+  {{form.media}}
+  <style>
+    table.edit-group-fields th {
+      width: 20%;
+    }
+    
+    table.edit-group-fields td, table.edit-group-fields th {
+      border: solid thin #ccc;
+    }
+  </style>
+{% endblock %}
+
+{% block document_content %}
+  <h2>{% if group %}
+    {% blocktrans %}Edit the '{{group}}' group{% endblocktrans %}
+  {% else %}
+    {% trans "Create group" %}
+  {% endif %}</h2>
+  <form method="POST" action="">{% csrf_token %}
+    <div class="buttons">
+    <input type="submit" value="{%if group %}{% trans "Save"%}{% else %}{% trans "Add" %}{% endif %}" />
+    {% if group %}
+      <a class="colorbox-form" href="{% url "crm_delete_group" group.id %}">{% trans "Delete" %}</a>
+      <a href="{{ next_url }}">{% trans "Cancel" %}</a>
+    {% else %}
+      <a href="{% url "crm_see_my_groups" %}">{% trans "Cancel" %}</a>
+    {% endif %}
+    </div>
+    <table class="edit-group-fields">
+      {{form.as_table}}
+    </ul>
+  </form>
+{% endblock %}
