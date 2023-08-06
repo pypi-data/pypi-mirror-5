@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Usage &mdash; Cron Monitor 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Cron Monitor 1.0 documentation" href="index.html" />
+    <link rel="next" title="Configuring Cron Monitor" href="config.html" />
+    <link rel="prev" title="Introduction" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="config.html" title="Configuring Cron Monitor"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Cron Monitor 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>It is recommended to use pip to install django-cron-monitor. This will automatically download all required packages.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>The provided script <tt class="docutils literal"><span class="pre">monitor</span></tt> relies on the <em>stdbuf</em> utility. This in all likelihood means that this will only work on a UNIX system.</p>
+<dl class="docutils">
+<dt>You will need the following packages. Although pip should download these automatically, they are listed here for completion&#8217;s sake.</dt>
+<dd><ul class="first last simple">
+<li>Django</li>
+<li>requests</li>
+<li>pycrypto</li>
+<li>times</li>
+<li>tzlocal</li>
+<li>mock (only if you want to run the test code.)</li>
+</ul>
+</dd>
+<dt>Cron Monitor was tested on the following package versions. If you have problems running Cron Monitor, try using the versions listed below.</dt>
+<dd><ul class="first last simple">
+<li>Django 1.5.1</li>
+<li>requests 1.2.3</li>
+<li>pycrypto 2.6</li>
+<li>times 0.6.1</li>
+<li>tzlocal 1.0</li>
+<li>mock 1.0.1</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="setting-up-cron-monitor">
+<h2>Setting Up Cron Monitor<a class="headerlink" href="#setting-up-cron-monitor" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">Create a Django project, if you do not have one already. Make sure that your project has a superuser.</p>
+</li>
+<li><p class="first">Add &#8220;cron_monitor&#8221; to your INSTALLED_APPS setting in <em>settings.py</em>.</p>
+</li>
+<li><p class="first">Add these urls in your project urls.py:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">url</span><span class="p">(</span><span class="s">r&#39;^cron-monitor/&#39;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s">&#39;cron_monitor.urls&#39;</span><span class="p">)),</span>
+</pre></div>
+</div>
+<p>Although you do not need to use <em>cron-monitor</em> for the url, it is recommended that you do so. If you choose not to use <em>cron-monitor</em>, you will need to modify the config file. See <a class="reference internal" href="config.html#config"><em>Configuring Cron Monitor</em></a></p>
+<p>If you do not have a login view and template in your project, add the following url as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">url</span><span class="p">(</span><span class="s">r&#39;^accounts/login/$&#39;</span><span class="p">,</span> <span class="s">&#39;django.contrib.auth.views.login&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;login&#39;</span><span class="p">),</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">syncdb</span></tt> to create the display models.</p>
+</li>
+<li><p class="first">Start the server. Accessing <a class="reference external" href="http://localhost:8000/cron-monitor/">http://localhost:8000/cron-monitor/</a> will show you a list of all jobs and their runs. (Assuming you&#8217;ve just finished running syncdb, this should be blank, aside for a login link)</p>
+</li>
+</ol>
+</div>
+<div class="section" id="using-cron-monitor">
+<h2>Using Cron Monitor<a class="headerlink" href="#using-cron-monitor" title="Permalink to this headline">¶</a></h2>
+<p>In your crontab, for every job that you want to track, replace:</p>
+<div class="highlight-python"><pre>* * * * * echo hello</pre>
+</div>
+<p>with:</p>
+<div class="highlight-python"><pre>* * * * * monitor echo hello</pre>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">monitor</span></tt> script will automatically send requests to the Django server specified in the configuration file. Status on those jobs will be displayed on the main page.</p>
+<p>By default, monitor will send an email if a job has a non-zero exit code. To change this behavior, see <a class="reference internal" href="config.html#config"><em>Configuring Cron Monitor</em></a></p>
+</div>
+<div class="section" id="using-the-web-dashboard">
+<h2>Using The Web Dashboard<a class="headerlink" href="#using-the-web-dashboard" title="Permalink to this headline">¶</a></h2>
+<p>Assuming the Django server is hosted locally with the default url, the main page should be at <a class="reference external" href="http://localhost:8000/cron-monitor/">http://localhost:8000/cron-monitor/</a>. On job runs, this page will be updated with more records of cron runs.</p>
+<div class="section" id="clearing-clutter">
+<h3>Clearing Clutter<a class="headerlink" href="#clearing-clutter" title="Permalink to this headline">¶</a></h3>
+<p>If there are many cron jobs, the main page can get cluttered with multiple run records. To help combat this, there are two different removal buttons</p>
+<blockquote>
+<div><ul class="simple">
+<li>Remove Record - This button removes the record for one cron run.</li>
+<li>Remove All - This removes all the records for a given job name. This name defaults to the command run by <tt class="docutils literal"><span class="pre">monitor</span></tt>, but can be specified in the config file.</li>
+</ul>
+</div></blockquote>
+<p>Note that neither of these buttons will stop runs currently in progress. They will only remove the record of the run from the dashboard.</p>
+</div>
+<div class="section" id="login-permissions">
+<h3>Login Permissions<a class="headerlink" href="#login-permissions" title="Permalink to this headline">¶</a></h3>
+<p>Upon creating the Django database, you should have created a superuser. Logging into the superuser gives access to the email configuration settings.
+Only the superuser, or users with permission to update the email settings, will be allowed to access these pages.</p>
+<p>For more details on this, see <a class="reference internal" href="config.html#email-options"><em>Email Options</em></a></p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Usage</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#setting-up-cron-monitor">Setting Up Cron Monitor</a></li>
+<li><a class="reference internal" href="#using-cron-monitor">Using Cron Monitor</a></li>
+<li><a class="reference internal" href="#using-the-web-dashboard">Using The Web Dashboard</a><ul>
+<li><a class="reference internal" href="#clearing-clutter">Clearing Clutter</a></li>
+<li><a class="reference internal" href="#login-permissions">Login Permissions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="config.html"
+                        title="next chapter">Configuring Cron Monitor</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/usage.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="config.html" title="Configuring Cron Monitor"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="index.html">Cron Monitor 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Alex Irpan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

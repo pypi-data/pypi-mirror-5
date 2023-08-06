@@ -1,0 +1,80 @@
+********************
+Usage
+********************
+
+Installation
+============
+It is recommended to use pip to install django-cron-monitor. This will automatically download all required packages.
+
+Requirements
+====================
+The provided script ``monitor`` relies on the *stdbuf* utility. This in all likelihood means that this will only work on a UNIX system.
+
+You will need the following packages. Although pip should download these automatically, they are listed here for completion's sake.
+    * Django
+    * requests
+    * pycrypto
+    * times
+    * tzlocal
+    * mock (only if you want to run the test code.)
+
+Cron Monitor was tested on the following package versions. If you have problems running Cron Monitor, try using the versions listed below.
+    * Django 1.5.1
+    * requests 1.2.3
+    * pycrypto 2.6
+    * times 0.6.1
+    * tzlocal 1.0
+    * mock 1.0.1
+
+Setting Up Cron Monitor
+===========================
+#. Create a Django project, if you do not have one already. Make sure that your project has a superuser.
+#. Add "cron_monitor" to your INSTALLED_APPS setting in *settings.py*.
+#. Add these urls in your project urls.py::
+
+    url(r'^cron-monitor/', include('cron_monitor.urls')),
+
+   Although you do not need to use *cron-monitor* for the url, it is recommended that you do so. If you choose not to use *cron-monitor*, you will need to modify the config file. See :ref:`config`
+
+   If you do not have a login view and template in your project, add the following url as well::
+
+    url(r'^accounts/login/$', 'django.contrib.auth.views.login', name='login'),
+
+#. Run ``python manage.py syncdb`` to create the display models.
+#. Start the server. Accessing http://localhost:8000/cron-monitor/ will show you a list of all jobs and their runs. (Assuming you've just finished running syncdb, this should be blank, aside for a login link)
+
+
+Using Cron Monitor
+===========================
+In your crontab, for every job that you want to track, replace::
+
+    * * * * * echo hello
+
+with::
+
+    * * * * * monitor echo hello
+
+The ``monitor`` script will automatically send requests to the Django server specified in the configuration file. Status on those jobs will be displayed on the main page.
+
+By default, monitor will send an email if a job has a non-zero exit code. To change this behavior, see :ref:`config`
+
+
+Using The Web Dashboard
+===========================
+Assuming the Django server is hosted locally with the default url, the main page should be at http://localhost:8000/cron-monitor/. On job runs, this page will be updated with more records of cron runs.
+
+Clearing Clutter
+------------------
+If there are many cron jobs, the main page can get cluttered with multiple run records. To help combat this, there are two different removal buttons
+
+    * Remove Record - This button removes the record for one cron run.
+    * Remove All - This removes all the records for a given job name. This name defaults to the command run by ``monitor``, but can be specified in the config file.
+
+Note that neither of these buttons will stop runs currently in progress. They will only remove the record of the run from the dashboard.
+
+Login Permissions
+-------------------
+Upon creating the Django database, you should have created a superuser. Logging into the superuser gives access to the email configuration settings.
+Only the superuser, or users with permission to update the email settings, will be allowed to access these pages.
+
+For more details on this, see :ref:`email_options`

@@ -1,0 +1,78 @@
+{% if user.is_authenticated %}
+<p>Currently logged in as {{ user.username }}</p>
+<p><a href="{% url 'logout' %}">Log Out</a></p>
+<a href="{% if update %}
+            {{ settings.get_absolute_url }}
+         {% else %}
+            {% url 'settings_add' %}
+         {% endif %}">
+        Edit email settings
+</a>
+<br>
+<a href="{% url 'global' %}">Edit global emails</a>
+{% else %}
+<a href="{% url 'login' %}">Log In</a>
+{% endif%}
+{% for job in jobs %}
+<table border=1>
+    <tr>
+        <td colspan="5">{{ job.name }}</td>
+        <td>
+            <form action="{% url 'delete_job' %}" method="post">
+            <input type="hidden" name="job_id" value="{{ job.id }}" />
+            {% csrf_token %}
+                <button type="submit">Remove All</button>
+            </form>
+        </td>
+    </tr>
+    <tr>
+        <td>Status</td>
+        <td>Command</td>
+        <td>Start time</td>
+        <td>Run time</td>
+        <td>Log</td>
+    </tr>
+        {% for rec in job.record_set.all %}
+            <tr>
+                <td>
+                    {% if rec.run_time %}
+                        {% if rec.exit_code == 0 %}
+                            <font color="green">Done (exit code {{ rec.exit_code }})</font>
+                        {% else %}
+                            <font color="red">Failed (exit code {{ rec.exit_code }})</font>
+                        {% endif %}
+                    {% else %}
+                        <font color="gold">Running</font>
+                    {% endif %}
+                </td>
+                <td>
+                    {{ rec.command }}
+                </td>
+                <td>
+                    {{ rec.start_time }}
+                </td>
+                <td>
+                    {% if rec.run_time %}
+                        {{ rec.run_time }} seconds
+                    {% else %}
+                        ---
+                    {% endif %}
+                </td>
+                <td>
+                    {% if rec.html_log %}
+                        <a href="{{ rec.html_log.get_absolute_url }}">Log</a>
+                    {% else %}
+                        ---
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{% url 'delete' %}" method="post">
+                    <input type="hidden" name="rec_id" value="{{ rec.id }}" />
+                    {% csrf_token %}
+                        <button type="submit">Remove Record</button>
+                    </form>
+                <td>
+            </tr>
+        {% endfor %}
+</table>
+{% endfor %}

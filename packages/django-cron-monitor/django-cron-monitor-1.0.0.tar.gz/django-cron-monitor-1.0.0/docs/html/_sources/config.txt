@@ -1,0 +1,166 @@
+.. _config:
+
+*******************************
+Configuring Cron Monitor
+*******************************
+
+Cron Monitor comes with a configuration file. By default, this is at ``~/.cronmonrc``. This file will be created by ``monitor`` if it cannot be found.
+
+
+Config Options
+==============
+cronwatch offers many different configuration options that allow the user to
+modify what it reports and where it sends those reports.
+
+cronwatch supports these configuration options:
+
++--------------------------+--------------------------------------------------+
+| Name                     | Default Value                                    |
++==========================+==================================================+
+| :ref:`domain`            | ``http://localhost:8000``                        |
++--------------------------+--------------------------------------------------+
+| :ref:`app_url`           | *cron-monitor*                                   |
++--------------------------+--------------------------------------------------+
+| :ref:`timestamp`         | **False**                                        |
++--------------------------+--------------------------------------------------+
+| :ref:`email_list`        | ``''``                                           |
++--------------------------+--------------------------------------------------+
+| :ref:`email_on_bad_exit` | **True**                                         |
++--------------------------+--------------------------------------------------+
+| :ref:`email_on_stderr`   | **False**                                        |
++--------------------------+--------------------------------------------------+
+
+.. _domain:
+
+domain
+--------
+The domain of the Django server. By default, this is ``http://localhost:8000``.
+
+.. _app_url:
+
+app_url
+---------
+The url path used when including the app's urls. By default, this is *cron-monitor*.
+
+.. _timestamp:
+
+timestamp
+---------
+If **True**, every line of output will be timestamped according to local time. Defaults to **False**.
+
+.. _email_list:
+
+email_list
+----------
+A comma separated list of email addresses. On job failure, an email will be sent to these addresses.
+
+Example::
+
+    email_list = a@a.com, b@b.com, z@z.com
+
+.. _email_on_bad_exit:
+
+email_on_bad_exit
+-----------------
+Specifies whether an email should be sent if the exit code is not *0*. The default is **True**.
+
+.. _email_on_stderr:
+
+email_on_stderr
+-----------------
+Specifies whether an email should be sent if the job prints to stderr. The default is **False**.
+
+
+Example Config File
+====================
+Below is an example of a configuration file.::
+
+    [Server]
+    domain = http://localhost:8000
+    app_url = cron-monitor
+
+    [Logging]
+    timestamp = False
+
+    [Email]
+    email_list = hello@world.com
+    email_on_bad_exit = True
+    email_on_stderr = True
+
+
+Commmand Line Options
+======================
+You may want ``monitor`` to deal with different jobs in a different way. To give more granularity, ``monitor`` accepts command line options as well. These arguments take precedence over the ones in the configuration file, meaning that if an option is specified both on command line and in the config file, the command line option is used.
+
+These options can be seen by running ``monitor --help``, but they are also listed below.
+
+    * ``--name`` - A name for the command. The default is the command itself
+    * ``--config`` - The filename for an alternate config file.
+    * ``--domain`` - The domain to send requests to.
+    * ``--appurl`` - The url path where the app is installed.
+    * ``-t`` or ``--time`` - Prepends a timestamp to every line of output.
+    * ``--emails`` - A comma separated string of email addresses to send email to if the job fails.
+
+.. _email_options:
+
+Email Options
+=====================
+To configure when to send emails, you should use either the config file or the command line options. To configure *how* to send emails, you will need to use the interface provided by the web dashboard.
+
+First, navigate to the dashboard and login with a superuser. This should expose two links, :ref:`email_settings` and :ref:`global`
+
+.. _email_settings:
+
+Edit Email Settings
+---------------------
+Modifies settings on how to send emails.
+
++-------------------+---------------+
+| Name              | Default Value |
++===================+===============+
+| :ref:`email_host` | *localhost*   |
++-------------------+---------------+
+| :ref:`email_port` | *25*          |
++-------------------+---------------+
+| :ref:`host_user`  | ``''``        |
++-------------------+---------------+
+| :ref:`host_pw`    | ``''``        |
++-------------------+---------------+
+| :ref:`use_tls`    | **False**     |
++-------------------+---------------+
+
+.. _email_host:
+
+Email host
+^^^^^^^^^^^
+The host of the SMTP server used to send email. Defaults to *localhost*.
+
+.. _email_port:
+
+Email port
+^^^^^^^^^^^
+The port to use for the host. Default is *25*.
+
+.. _host_user:
+
+Email host user
+^^^^^^^^^^^^^^^
+The username to use for the SMTP server. If left blank, Cron Monitor will not try authentication.
+
+.. _host_pw:
+
+Email host password
+^^^^^^^^^^^^^^^^^^^
+The password to use for authentication. If left blank, Cron Monitor will not try authentication. For security, this password is encrypted before being stored in the database, based on the SECRET_KEY attribute in settings.py
+
+.. _use_tls:
+
+Use TLS
+^^^^^^^^
+Check this box if you want to use TLS.
+
+.. _global:
+
+Edit Global Emails
+------------------
+Whenever any job sends an email, all global email addresses are sent emails as well. By default, there are no such addresses. To add, use the *Add email* link. To delete, check the emails you wish to remove and click the *Delete selected* button.
