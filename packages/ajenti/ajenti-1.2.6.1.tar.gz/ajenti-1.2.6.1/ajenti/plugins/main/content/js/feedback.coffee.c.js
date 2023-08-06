@@ -1,0 +1,1 @@
+(function(){var a;a=(function(){function b(){}b.prototype.configure=function(d,f,c,e){this.enabled=d;this.os=f;this.version=c;this.edition=e};b.prototype.emit=function(c,d){if(this.enabled){if(d==null){d={}}d.os=this.os;d.version=this.version;d.edition=this.edition;return mixpanel.track(c,d)}};return b})();window.Feedback=new a()}).call(this);
