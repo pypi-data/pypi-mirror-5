@@ -1,0 +1,1 @@
+.. automodule:: pybtex_docutils
