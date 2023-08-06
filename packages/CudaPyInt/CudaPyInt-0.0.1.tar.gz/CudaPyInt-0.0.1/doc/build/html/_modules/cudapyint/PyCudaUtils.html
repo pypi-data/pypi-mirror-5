@@ -1,0 +1,138 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cudapyint.PyCudaUtils &mdash; CudaPyInt 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CudaPyInt 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cudapyint.PyCudaUtils</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">pycuda.driver</span> <span class="kn">as</span> <span class="nn">driver</span>
+
+<div class="viewcode-block" id="create_2D_array"><a class="viewcode-back" href="../../api.html#cudapyint.PyCudaUtils.create_2D_array">[docs]</a><span class="k">def</span> <span class="nf">create_2D_array</span><span class="p">(</span> <span class="n">mat</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a 2D array on the GPU which can be used to assign texture memory from 2D numpy array</span>
+<span class="sd">    </span>
+<span class="sd">    :param mat: the 2D array to use</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">descr</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">ArrayDescriptor</span><span class="p">()</span>
+    <span class="n">descr</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">descr</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">descr</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">dtype_to_array_format</span><span class="p">(</span> <span class="n">mat</span><span class="o">.</span><span class="n">dtype</span> <span class="p">)</span>
+    <span class="n">descr</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">descr</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ary</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="n">descr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ary</span>
+</div>
+<div class="viewcode-block" id="copy2D_host_to_array"><a class="viewcode-back" href="../../api.html#cudapyint.PyCudaUtils.copy2D_host_to_array">[docs]</a><span class="k">def</span> <span class="nf">copy2D_host_to_array</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Copies the array from the host to the device</span>
+<span class="sd">    :param arr: the GPU array</span>
+<span class="sd">    :param host: the source on the host</span>
+<span class="sd">    :param width: width of the array</span>
+<span class="sd">    :param height: height of the array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">copy</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">Memcpy2D</span><span class="p">()</span>
+    <span class="n">copy</span><span class="o">.</span><span class="n">set_src_host</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+    <span class="n">copy</span><span class="o">.</span><span class="n">set_dst_array</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+    <span class="n">copy</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+    <span class="n">copy</span><span class="o">.</span><span class="n">width_in_bytes</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">src_pitch</span> <span class="o">=</span> <span class="n">width</span>
+    <span class="n">copy</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+    <span class="n">copy</span><span class="p">(</span><span class="n">aligned</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="copy_host_to_device"><a class="viewcode-back" href="../../api.html#cudapyint.PyCudaUtils.copy_host_to_device">[docs]</a><span class="k">def</span> <span class="nf">copy_host_to_device</span><span class="p">(</span><span class="n">src</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Allocates the memory on the device and copies the data</span>
+<span class="sd">    :param src: the source data structure</span>
+<span class="sd">    :returns: </span>
+<span class="sd">    y: handle to data structure on device</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dst</span> <span class="o">=</span>  <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">src</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dst</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Joel Akeret.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

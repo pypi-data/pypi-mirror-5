@@ -1,0 +1,596 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API &mdash; CudaPyInt 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CudaPyInt 0.0.1 documentation" href="index.html" />
+    <link rel="prev" title="Installation" href="user/install.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="user/install.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="api">
+<span id="id1"></span><h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-cudapyint"></span><p>This page details the methods and classes provided by the <tt class="docutils literal"><span class="pre">cudapyint</span></tt> module.</p>
+<div class="section" id="cudapyint-solver">
+<h2>CudaPyInt Solver<a class="headerlink" href="#cudapyint-solver" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cudapyint.Solver.Solver">
+<em class="property">class </em><tt class="descclassname">cudapyint.Solver.</tt><tt class="descname">Solver</tt><a class="reference internal" href="_modules/cudapyint/Solver.html#Solver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.Solver.Solver" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8216;Abstract&#8217; base class for gpu based solver implementations.</p>
+<dl class="method">
+<dt id="cudapyint.Solver.Solver._getOptimalGPUParam">
+<tt class="descname">_getOptimalGPUParam</tt><big>(</big><em>compiledKernel=None</em><big>)</big><a class="reference internal" href="_modules/cudapyint/Solver.html#Solver._getOptimalGPUParam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.Solver.Solver._getOptimalGPUParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the optimal size of blocks and threads for the given compiled source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>compiledKernel</strong> &#8211; sourceModule
+The kernel to use to determine the optimal param config</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">blocks, threads</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.Solver.Solver.solve">
+<tt class="descname">solve</tt><big>(</big><em>y0</em>, <em>t</em>, <em>args=None</em>, <em>timing=False</em>, <em>info=False</em>, <em>write_code=False</em>, <em>full_output=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/cudapyint/Solver.html#Solver.solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.Solver.Solver.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrate a system of ordinary differential equations.</p>
+<p>Solves the initial value problem for stiff or non-stiff systems
+of first order ode-s:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">dy</span><span class="o">/</span><span class="n">dt</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">t0</span><span class="p">,</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where y can be a vector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>y0</strong> &#8211; array
+Initial condition on y (can be a vector).</li>
+<li><strong>t</strong> &#8211; array
+A sequence of time points for which to solve for y.  The initial
+value point should be the first element of this sequence.</li>
+<li><strong>args</strong> &#8211; array
+Extra arguments to pass to function.</li>
+<li><strong>timing</strong> &#8211; bool
+True if timing output should be printed</li>
+<li><strong>info</strong> &#8211; bool
+True if additional infos should be printed</li>
+<li><strong>write_code</strong> &#8211; bool
+True if the generated code should be written to the disk</li>
+<li><strong>full_output</strong> &#8211; boolean
+True if to return a dictionary of optional outputs as the second output</li>
+<li><strong>use_jacobian</strong> &#8211; bool
+Flag indicating if a jacobian matrix is provided. Requires an 
+implementation in the kernel</li>
+<li><strong>atol</strong> (<em>rtol,</em>) &#8211; float
+The input parameters rtol and atol determine the error
+control performed by the solver.  The solver will control the
+vector, e, of estimated local errors in y, according to an
+inequality of the form <tt class="docutils literal"><span class="pre">max-norm</span> <span class="pre">of</span> <span class="pre">(e</span> <span class="pre">/</span> <span class="pre">ewt)</span> <span class="pre">&lt;=</span> <span class="pre">1</span></tt>,
+where ewt is a vector of positive error weights computed as:
+<tt class="docutils literal"><span class="pre">ewt</span> <span class="pre">=</span> <span class="pre">rtol</span> <span class="pre">*</span> <span class="pre">abs(y)</span> <span class="pre">+</span> <span class="pre">atol</span></tt>
+rtol and atol can be either vectors the same length as y or scalars.
+Defaults to 1.49012e-8.</li>
+<li><strong>h0</strong> &#8211; float, (0: solver-determined)
+The step size to be attempted on the first step.</li>
+<li><strong>mxstep</strong> &#8211; integer, (0: solver-determined)
+Maximum number of (internally defined) steps allowed for each
+integration point in t.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>y <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (len(t), len(y0))</span></dt>
+<dd>Array containing the value of y for each desired time in t,
+with the initial value y0 in the first row.</dd>
+<dt>infodict <span class="classifier-delimiter">:</span> <span class="classifier">dict, only returned if full_output == True</span></dt>
+<dd><p class="first">Dictionary containing additional output information</p>
+<table border="1" class="last docutils">
+<colgroup>
+<col width="13%" />
+<col width="87%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">meaning</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>&#8216;message&#8217;</td>
+<td>message representing state of system</td>
+</tr>
+<tr class="row-odd"><td>&#8216;system&#8217;</td>
+<td>index of system</td>
+</tr>
+<tr class="row-even"><td>&#8216;nst&#8217;</td>
+<td>cumulative number of time steps</td>
+</tr>
+<tr class="row-odd"><td>&#8216;nfe&#8217;</td>
+<td>cumulative number of function evaluations for each time step</td>
+</tr>
+<tr class="row-even"><td>&#8216;nje&#8217;</td>
+<td>cumulative number of jacobian evaluations for each time step</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cudapyint-ode-solvers">
+<h2>CudaPyInt ODE Solvers<a class="headerlink" href="#cudapyint-ode-solvers" title="Permalink to this headline">¶</a></h2>
+<p>Standard usage of <tt class="docutils literal"><span class="pre">CudaPyint</span></tt> involves instantiating an
+<tt class="xref py py-class docutils literal"><span class="pre">ODESolver</span></tt>.</p>
+<dl class="class">
+<dt id="cudapyint.ODESolver.ODESolver">
+<em class="property">class </em><tt class="descclassname">cudapyint.ODESolver.</tt><tt class="descname">ODESolver</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em>, <em>compile_options=None</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolver.html#ODESolver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolver.ODESolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solver implementation to solve ODE using CULSODA. 
+Manages the compilation and execution of the CUDA kernel</p>
+<dl class="method">
+<dt id="cudapyint.ODESolver.ODESolver.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em>, <em>compile_options=None</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolver.html#ODESolver.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolver.ODESolver.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for the ode solver.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cudaCodePath</strong> &#8211; string
+Path to the cuda kernel.</li>
+<li><strong>constants</strong> &#8211; <p>dict
+Dictionary containing constants value used for the integration.
+Supported values are:</p>
+<blockquote>
+<div>int, float, numpy.float32, numpy.float64, numpy.array</div></blockquote>
+</li>
+<li><strong>compile_options</strong> &#8211; list (optional)
+List of options passed to the compiler</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.ODESolver.ODESolver._compile">
+<tt class="descname">_compile</tt><big>(</big><em>write_code</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolver.html#ODESolver._compile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolver.ODESolver._compile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates and compiles the cuda kernel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>write_code</strong> &#8211; bool
+True if the generated code should be written to the disk</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.ODESolver.ODESolver._compileSourceModule">
+<tt class="descname">_compileSourceModule</tt><big>(</big><em>code</em>, <em>options</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolver.html#ODESolver._compileSourceModule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolver.ODESolver._compileSourceModule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compiles the given code with pycuda using the given options.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>code</strong> &#8211; string
+valid CUDA C code to compile</li>
+<li><strong>options</strong> &#8211; list
+List of options passed to the compiler</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.ODESolver.ODESolver._solve_internal">
+<tt class="descname">_solve_internal</tt><big>(</big><em>initValues</em>, <em>args</em>, <em>blocks</em>, <em>threads</em>, <em>full_output=False</em>, <em>use_jacobian=False</em>, <em>in_atol=1e-12</em>, <em>in_rtol=1e-06</em>, <em>mxstep=500</em>, <em>h0=0.0</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolver.html#ODESolver._solve_internal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolver.ODESolver._solve_internal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrates the ODE system for the current blocks. 
+Initializes all required fields on the host and device, executes the gpu computations and returns the integrated values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>initValues</strong> &#8211; array
+Values of y at t0</li>
+<li><strong>args</strong> &#8211; array
+Array of arguments used for the integration.</li>
+<li><strong>blocks</strong> &#8211; int
+Number of threadblocks to launch</li>
+<li><strong>threads</strong> &#8211; int 
+Number of threads to launch per block</li>
+<li><strong>full_output</strong> &#8211; bool (optional)
+True if to return a dictionary of optional infodicts as the second output</li>
+<li><strong>use_jacobian</strong> &#8211; bool (optional)
+True if a jacobian is provided and should be used for the integration</li>
+<li><strong>atol</strong> (<em>rtol,</em>) &#8211; float (optional)
+Used for error control</li>
+<li><strong>mxstep</strong> &#8211; integer, (0: solver-determined)
+Maximum number of (internally defined) steps</li>
+<li><strong>h0</strong> &#8211; float, (0: solver-determined)
+The step size to be attempted on the first step.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.ODESolver.ODESolver._post_process_results">
+<tt class="descname">_post_process_results</tt><big>(</big><em>results</em>, <em>infodicts</em>, <em>nsystems</em>, <em>blocks</em>, <em>threads</em>, <em>full_output</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolver.html#ODESolver._post_process_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolver.ODESolver._post_process_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template method to post process the results</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>results</strong> &#8211; array
+Values of the integrated ODE&#8217;s</li>
+<li><strong>infodicts</strong> &#8211; array
+Additional infodicts</li>
+<li><strong>nsystems</strong> &#8211; int
+Number of ode systems</li>
+<li><strong>blocks</strong> &#8211; int
+Number of executed blocks</li>
+<li><strong>threads</strong> &#8211; int
+Number of executed threads per block</li>
+<li><strong>full_output</strong> &#8211; bool
+True if additional output is required</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.ODESolver.ODESolver._copy_constants">
+<tt class="descname">_copy_constants</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolver.html#ODESolver._copy_constants"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolver.ODESolver._copy_constants" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies the constants from the host to the device using PyCuda</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>To run <tt class="docutils literal"><span class="pre">CudaPyint</span></tt> with CUDA shared memory involves instantiating an
+<tt class="xref py py-class docutils literal"><span class="pre">ODESolverSharedMemory</span></tt>.</p>
+<dl class="class">
+<dt id="cudapyint.ODESolverSharedMemory.ODESolverSharedMemory">
+<em class="property">class </em><tt class="descclassname">cudapyint.ODESolverSharedMemory.</tt><tt class="descname">ODESolverSharedMemory</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em>, <em>compile_options=None</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ODESolverSharedMemory.html#ODESolverSharedMemory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ODESolverSharedMemory.ODESolverSharedMemory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends the ODESolver the enable CUDA shared memory.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="cudapyint-ode-solvers-for-parallel-integration">
+<h2>CudaPyInt ODE Solvers for parallel integration<a class="headerlink" href="#cudapyint-ode-solvers-for-parallel-integration" title="Permalink to this headline">¶</a></h2>
+<p>To run <tt class="docutils literal"><span class="pre">CudaPyInt</span></tt> with parallel computation of equations within a system involves instantiating an
+<tt class="xref py py-class docutils literal"><span class="pre">ParallelODESolver</span></tt>.</p>
+<dl class="class">
+<dt id="cudapyint.ParallelODESolver.ParallelODESolver">
+<em class="property">class </em><tt class="descclassname">cudapyint.ParallelODESolver.</tt><tt class="descname">ParallelODESolver</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em>, <em>compile_options=None</em>, <em>threads=1</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ParallelODESolver.html#ParallelODESolver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ParallelODESolver.ParallelODESolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extension of the ODESolver for parallel computation of the equations within one ODE System</p>
+</dd></dl>
+
+<p>To run <tt class="docutils literal"><span class="pre">CudaPyInt</span></tt> with parallel computation of equations within a system with CUDA shared memory involves instantiating an
+<tt class="xref py py-class docutils literal"><span class="pre">ParallelODESolver</span></tt>.</p>
+<dl class="class">
+<dt id="cudapyint.ParallelODESolverSharedMemory.ParallelODESolverSharedMemory">
+<em class="property">class </em><tt class="descclassname">cudapyint.ParallelODESolverSharedMemory.</tt><tt class="descname">ParallelODESolverSharedMemory</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em>, <em>compile_options=None</em>, <em>threads=1</em><big>)</big><a class="reference internal" href="_modules/cudapyint/ParallelODESolverSharedMemory.html#ParallelODESolverSharedMemory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.ParallelODESolverSharedMemory.ParallelODESolverSharedMemory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends the ParallelODESolver the enable CUDA shared memory.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="cudapyint-generator">
+<h2>CudaPyInt Generator<a class="headerlink" href="#cudapyint-generator" title="Permalink to this headline">¶</a></h2>
+<p>Every CudaPyInt Solver uses an instance of the
+<tt class="xref py py-class docutils literal"><span class="pre">CodeGenerator</span></tt>.</p>
+<dl class="class">
+<dt id="cudapyint.CodeGenerator.CodeGenerator">
+<em class="property">class </em><tt class="descclassname">cudapyint.CodeGenerator.</tt><tt class="descname">CodeGenerator</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em><big>)</big><a class="reference internal" href="_modules/cudapyint/CodeGenerator.html#CodeGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.CodeGenerator.CodeGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract code generator. Provides function for type conversion and file persisting</p>
+<dl class="method">
+<dt id="cudapyint.CodeGenerator.CodeGenerator.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em><big>)</big><a class="reference internal" href="_modules/cudapyint/CodeGenerator.html#CodeGenerator.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.CodeGenerator.CodeGenerator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for the ode solver.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cudaCodePath</strong> &#8211; string
+Path to the cuda kernel.</li>
+<li><strong>constants</strong> &#8211; <p>dict
+Dictionary containing constants value used for the integration.
+Supported values are:</p>
+<blockquote>
+<div>int, float, numpy.float32, numpy.float64, numpy.array</div></blockquote>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.CodeGenerator.CodeGenerator._writeCode">
+<tt class="descname">_writeCode</tt><big>(</big><em>code</em><big>)</big><a class="reference internal" href="_modules/cudapyint/CodeGenerator.html#CodeGenerator._writeCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.CodeGenerator.CodeGenerator._writeCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the given code to the disk</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>code</strong> &#8211; string
+The code to be written</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.CodeGenerator.CodeGenerator._create_constants_fields">
+<tt class="descname">_create_constants_fields</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cudapyint/CodeGenerator.html#CodeGenerator._create_constants_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.CodeGenerator.CodeGenerator._create_constants_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates CUDA C code to store the constants.
+The Python structures are automatically converted in C structures. See _SUPPORTED_DATA_TYPES for the supported data types</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>Generated code for constants</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>The CudaPyInt ODE Solver uses an Instance of the
+<tt class="xref py py-class docutils literal"><span class="pre">CulsodaCodeGenerator</span></tt>.</p>
+<dl class="class">
+<dt id="cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator">
+<em class="property">class </em><tt class="descclassname">cudapyint.CulsodaCodeGenerator.</tt><tt class="descname">CulsodaCodeGenerator</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em>, <em>culsoda_file_name</em>, <em>culsoda_main_file_name</em>, <em>args_tex_name</em><big>)</big><a class="reference internal" href="_modules/cudapyint/CulsodaCodeGenerator.html#CulsodaCodeGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends the cudapyint.CodeGenerator in order to generate Culsoda specific code.</p>
+<dl class="method">
+<dt id="cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>cudaCodePath</em>, <em>constants</em>, <em>culsoda_file_name</em>, <em>culsoda_main_file_name</em>, <em>args_tex_name</em><big>)</big><a class="reference internal" href="_modules/cudapyint/CulsodaCodeGenerator.html#CulsodaCodeGenerator.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for the ode solver.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cudaCodePath</strong> &#8211; string
+Path to the cuda kernel.</li>
+<li><strong>constants</strong> &#8211; <p>dict
+Dictionary containing constants value used for the integration.
+Supported values are:</p>
+<blockquote>
+<div>int, float, numpy.float32, numpy.float64, numpy.array</div></blockquote>
+</li>
+<li><strong>culsoda_file_name</strong> &#8211; string
+name of the culsoda source file</li>
+<li><strong>culsoda_main_file_name</strong> &#8211; string
+name of the culsoda main source file</li>
+<li><strong>args_tex_name</strong> &#8211; string
+name of the arguments texture</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator.generate">
+<tt class="descname">generate</tt><big>(</big><em>neq=1</em>, <em>blocks=1</em>, <em>threads=1</em>, <em>write_code=False</em><big>)</big><a class="reference internal" href="_modules/cudapyint/CulsodaCodeGenerator.html#CulsodaCodeGenerator.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the complete culsoda code</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>blocks</strong> &#8211; int (optional)
+The number of blocks</li>
+<li><strong>threads</strong> &#8211; int (optional)
+The number of threads / block</li>
+<li><strong>write_code</strong> &#8211; bool (optional)
+True if the generated code should be written to the disc</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The generated code</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cudapyint-pycudautils">
+<h2>CudaPyInt PyCudaUtils<a class="headerlink" href="#cudapyint-pycudautils" title="Permalink to this headline">¶</a></h2>
+<p>Simple util class
+<tt class="xref py py-class docutils literal"><span class="pre">Pycuda</span></tt>.</p>
+<dl class="function">
+<dt id="cudapyint.PyCudaUtils.create_2D_array">
+<tt class="descclassname">cudapyint.PyCudaUtils.</tt><tt class="descname">create_2D_array</tt><big>(</big><em>mat</em><big>)</big><a class="reference internal" href="_modules/cudapyint/PyCudaUtils.html#create_2D_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.PyCudaUtils.create_2D_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a 2D array on the GPU which can be used to assign texture memory from 2D numpy array</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mat</strong> &#8211; the 2D array to use</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cudapyint.PyCudaUtils.copy2D_host_to_array">
+<tt class="descclassname">cudapyint.PyCudaUtils.</tt><tt class="descname">copy2D_host_to_array</tt><big>(</big><em>arr</em>, <em>host</em>, <em>width</em>, <em>height</em><big>)</big><a class="reference internal" href="_modules/cudapyint/PyCudaUtils.html#copy2D_host_to_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.PyCudaUtils.copy2D_host_to_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies the array from the host to the device</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>arr</strong> &#8211; the GPU array</li>
+<li><strong>host</strong> &#8211; the source on the host</li>
+<li><strong>width</strong> &#8211; width of the array</li>
+<li><strong>height</strong> &#8211; height of the array</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cudapyint.PyCudaUtils.copy_host_to_device">
+<tt class="descclassname">cudapyint.PyCudaUtils.</tt><tt class="descname">copy_host_to_device</tt><big>(</big><em>src</em><big>)</big><a class="reference internal" href="_modules/cudapyint/PyCudaUtils.html#copy_host_to_device"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cudapyint.PyCudaUtils.copy_host_to_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocates the memory on the device and copies the data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>src</strong> &#8211; the source data structure</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>y: handle to data structure on device</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">API</a><ul>
+<li><a class="reference internal" href="#cudapyint-solver">CudaPyInt Solver</a></li>
+<li><a class="reference internal" href="#cudapyint-ode-solvers">CudaPyInt ODE Solvers</a></li>
+<li><a class="reference internal" href="#cudapyint-ode-solvers-for-parallel-integration">CudaPyInt ODE Solvers for parallel integration</a></li>
+<li><a class="reference internal" href="#cudapyint-generator">CudaPyInt Generator</a></li>
+<li><a class="reference internal" href="#cudapyint-pycudautils">CudaPyInt PyCudaUtils</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="user/install.html"
+                        title="previous chapter">Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/api.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="user/install.html" title="Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Joel Akeret.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

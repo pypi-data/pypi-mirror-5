@@ -1,0 +1,445 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cudapyint.ODESolver &mdash; CudaPyInt 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CudaPyInt 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cudapyint.ODESolver</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">cudapyint.CulsodaCodeGenerator</span> <span class="kn">as</span> <span class="nn">generator</span>
+<span class="kn">import</span> <span class="nn">cudapyint.Solver</span> <span class="kn">as</span> <span class="nn">solver</span>
+<span class="kn">import</span> <span class="nn">cudapyint.PyCudaUtils</span> <span class="kn">as</span> <span class="nn">utils</span>
+
+<span class="c">#import pycuda.driver as driver</span>
+<span class="c">#from pycuda.compiler import SourceModule</span>
+<span class="c">#import pycuda.autoinit</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="ODESolver"><a class="viewcode-back" href="../../api.html#cudapyint.ODESolver.ODESolver">[docs]</a><span class="k">class</span> <span class="nc">ODESolver</span><span class="p">(</span><span class="n">solver</span><span class="o">.</span><span class="n">Solver</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solver implementation to solve ODE using CULSODA. </span>
+<span class="sd">    Manages the compilation and execution of the CUDA kernel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">IN_ISTATE_FIRST_CALL</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">IN_ISTATE_CONTIUNE</span> <span class="o">=</span> <span class="mi">2</span>
+    
+    <span class="n">OUT_ISTATE_NOTHING_DONE</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">OUT_ISTATE_SUCCESSFULL</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">OUT_ISTATE_EXCESSIVE_WORK</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    
+    <span class="n">_MSGS</span> <span class="o">=</span> <span class="p">{</span><span class="n">OUT_ISTATE_NOTHING_DONE</span><span class="p">:</span> <span class="s">&quot;nothing was done; TOUT = T&quot;</span><span class="p">,</span>
+             <span class="n">OUT_ISTATE_SUCCESSFULL</span><span class="p">:</span> <span class="s">&quot;Integration successful.&quot;</span><span class="p">,</span>
+         <span class="n">OUT_ISTATE_EXCESSIVE_WORK</span><span class="p">:</span> <span class="s">&quot;Excess work done on this call (perhaps wrong Dfun type).&quot;</span><span class="p">,</span>
+         <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="s">&quot;Excess accuracy requested (tolerances too small).&quot;</span><span class="p">,</span>
+         <span class="o">-</span><span class="mi">3</span><span class="p">:</span> <span class="s">&quot;Illegal input detected (internal error).&quot;</span><span class="p">,</span>
+         <span class="o">-</span><span class="mi">4</span><span class="p">:</span> <span class="s">&quot;Repeated error test failures (internal error).&quot;</span><span class="p">,</span>
+         <span class="o">-</span><span class="mi">5</span><span class="p">:</span> <span class="s">&quot;Repeated convergence failures (perhaps bad Jacobian or tolerances).&quot;</span><span class="p">,</span>
+         <span class="o">-</span><span class="mi">6</span><span class="p">:</span> <span class="s">&quot;Error weight became zero during problem.&quot;</span><span class="p">,</span>
+         <span class="o">-</span><span class="mi">7</span><span class="p">:</span> <span class="s">&quot;Internal workspace insufficient to finish (internal error).&quot;</span>
+         <span class="p">}</span>
+    
+
+    <span class="n">_CULSODA_FILE_NAME</span> <span class="o">=</span> <span class="s">&quot;cuLsoda_all.cu&quot;</span>
+    <span class="n">_CULSODA_MAIN_FILE_NAME</span> <span class="o">=</span> <span class="s">&quot;cuLsoda_main.cu&quot;</span>
+    
+    <span class="n">_KERNEL_NAME</span> <span class="o">=</span> <span class="s">&quot;cuLsoda&quot;</span>
+    <span class="n">_INIT_KERNEL_NAME</span> <span class="o">=</span> <span class="s">&quot;init_common&quot;</span>
+    <span class="n">_ARGS_TEX_NAME</span> <span class="o">=</span> <span class="s">&quot;args_tex&quot;</span>
+    
+    <span class="n">_SOURCE_FILE_NAME</span> <span class="o">=</span> <span class="s">&quot;CudaPyInt_generated_code.cu&quot;</span>
+    
+<div class="viewcode-block" id="ODESolver.__init__"><a class="viewcode-back" href="../../api.html#cudapyint.ODESolver.ODESolver.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cudaCodePath</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">compile_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the ode solver.</span>
+<span class="sd">    </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cudaCodePath : string</span>
+<span class="sd">            Path to the cuda kernel.</span>
+<span class="sd">        constants : dict</span>
+<span class="sd">            Dictionary containing constants value used for the integration.</span>
+<span class="sd">            Supported values are:</span>
+<span class="sd">                int, float, numpy.float32, numpy.float64, numpy.array</span>
+<span class="sd">        compile_options : list 8optional)</span>
+<span class="sd">            List of options passed to the compiler</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ODESolver</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cudaCodePath</span> <span class="o">=</span> <span class="n">cudaCodePath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constants</span> <span class="o">=</span> <span class="n">constants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile_options</span> <span class="o">=</span> <span class="n">compile_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">CulsodaCodeGenerator</span><span class="p">(</span><span class="n">cudaCodePath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CULSODA_FILE_NAME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CULSODA_MAIN_FILE_NAME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ARGS_TEX_NAME</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="ODESolver._compile"><a class="viewcode-back" href="../../api.html#cudapyint.ODESolver.ODESolver._compile">[docs]</a>    <span class="k">def</span> <span class="nf">_compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">write_code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates and compiles the cuda kernel.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        write_code : bool</span>
+<span class="sd">            True if the generated code should be written to the disk</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: compiling cuda code using {0}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cudaCodePath</span><span class="p">)</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compile_options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="n">options</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_options</span>
+            
+        <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">write_code</span><span class="o">=</span><span class="n">write_code</span><span class="p">)</span>
+        
+        <span class="c"># dummy compile to determine optimal blockSize and gridSize</span>
+        <span class="n">sourceModule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compileSourceModule</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+        
+        <span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getOptimalGPUParam</span><span class="p">(</span><span class="n">sourceModule</span><span class="o">.</span><span class="n">get_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_KERNEL_NAME</span><span class="p">))</span>
+        
+        <span class="c">#real compile</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">neq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_neq</span><span class="p">,</span> <span class="n">blocks</span><span class="o">=</span><span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span><span class="o">=</span><span class="n">threads</span><span class="p">,</span> <span class="n">write_code</span><span class="o">=</span><span class="n">write_code</span><span class="p">)</span>
+        <span class="n">sourceModule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compileSourceModule</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_d_args</span> <span class="o">=</span> <span class="n">sourceModule</span><span class="o">.</span><span class="n">get_texref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ARGS_TEX_NAME</span><span class="p">)</span>
+        
+        <span class="n">lsodaKernel</span> <span class="o">=</span> <span class="n">sourceModule</span><span class="o">.</span><span class="n">get_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_KERNEL_NAME</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: compiling done&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">sourceModule</span><span class="p">,</span> <span class="n">lsodaKernel</span><span class="p">)</span>
+        
+    </div>
+<div class="viewcode-block" id="ODESolver._compileSourceModule"><a class="viewcode-back" href="../../api.html#cudapyint.ODESolver.ODESolver._compileSourceModule">[docs]</a>    <span class="k">def</span> <span class="nf">_compileSourceModule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compiles the given code with pycuda using the given options.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        code : string</span>
+<span class="sd">            valid CUDA C code to compile</span>
+<span class="sd">        options : list</span>
+<span class="sd">            List of options passed to the compiler</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">SourceModule</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">nvcc</span><span class="o">=</span><span class="s">&quot;nvcc&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span> <span class="n">no_extern_c</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="ODESolver._solve_internal"><a class="viewcode-back" href="../../api.html#cudapyint.ODESolver.ODESolver._solve_internal">[docs]</a>    <span class="k">def</span> <span class="nf">_solve_internal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initValues</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">full_output</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">use_jacobian</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">in_atol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">in_rtol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">mxstep</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">h0</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Integrates the ODE system for the current blocks. </span>
+<span class="sd">        Initializes all required fields on the host and device, executes the gpu computations and returns the integrated values.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        initValues : array</span>
+<span class="sd">            Values of y at t0</span>
+<span class="sd">        args : array</span>
+<span class="sd">            Array of arguments used for the integration.</span>
+<span class="sd">        blocks : int</span>
+<span class="sd">            Number of threadblocks to launch</span>
+<span class="sd">        threads : int </span>
+<span class="sd">            Number of threads to launch per block</span>
+<span class="sd">        fulll_output : bool (optional)</span>
+<span class="sd">            True if to return a dictionary of optional outputs as the second output    </span>
+<span class="sd">        use_jacobian : bool (optional)</span>
+<span class="sd">            True if a jacobian is provided and should be used for the integration</span>
+<span class="sd">        rtol, atol : float (optional)</span>
+<span class="sd">            Used for error control</span>
+<span class="sd">        mxstep : integer, (0: solver-determined)</span>
+<span class="sd">            Maximum number of (internally defined) steps</span>
+<span class="sd">        h0 : float, (0: solver-determined)</span>
+<span class="sd">            The step size to be attempted on the first step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">totalThreads</span> <span class="o">=</span> <span class="n">threads</span> <span class="o">*</span> <span class="n">blocks</span>
+        <span class="n">experiments</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        
+        <span class="n">init_common_Kernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_completeCode</span><span class="o">.</span><span class="n">get_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_INIT_KERNEL_NAME</span><span class="p">)</span>
+        <span class="n">init_common_Kernel</span><span class="p">(</span> <span class="n">block</span><span class="o">=</span><span class="p">(</span><span class="n">threads</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">grid</span><span class="o">=</span><span class="p">(</span><span class="n">blocks</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="p">)</span>
+
+        <span class="c"># output array</span>
+        <span class="n">ret_xt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="n">totalThreads</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resultNumber</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neq</span><span class="p">]</span> <span class="p">)</span>
+    
+        <span class="c"># calculate sizes of work spaces</span>
+        <span class="n">isize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">(</span><span class="mi">20</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neq</span><span class="p">)</span>
+        <span class="n">rsize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">(</span><span class="mi">22</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neq</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neq</span> <span class="o">+</span> <span class="mi">9</span><span class="p">))</span>
+            
+        <span class="c"># local variables</span>
+        <span class="n">t</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="n">totalThreads</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">jt</span>     <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">neq</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">itol</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">iopt</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">rtol</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="c">#iout   = np.zeros( [totalThreads], dtype=np.int32)</span>
+        <span class="n">tout</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="n">totalThreads</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">itask</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">istate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="n">totalThreads</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">atol</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_neq</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">*</span><span class="n">in_atol</span>
+    
+        <span class="n">liw</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">lrw</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">iwork</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="n">isize</span><span class="o">*</span><span class="n">totalThreads</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">rwork</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="n">rsize</span><span class="o">*</span><span class="n">totalThreads</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">y</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_neq</span><span class="o">*</span><span class="n">totalThreads</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        
+        
+        <span class="n">neq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neq</span>
+        <span class="n">itol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">rtol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_rtol</span>
+        <span class="n">iopt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="n">liw</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">isize</span>
+        <span class="n">lrw</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">rsize</span>
+        
+        <span class="k">if</span><span class="p">(</span><span class="n">use_jacobian</span><span class="p">):</span>
+            <span class="c">#1=with jacobian, 2 without</span>
+            <span class="n">jt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">jt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+        
+        <span class="n">itask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+        
+        <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">totalThreads</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timepoints</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">istate</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">totalThreads</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">IN_ISTATE_FIRST_CALL</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">totalThreads</span><span class="p">):</span>
+            
+            <span class="n">iwork</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">isize</span><span class="o">+</span><span class="mi">5</span><span class="p">]</span><span class="o">=</span><span class="n">mxstep</span>
+            <span class="n">rwork</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">rsize</span><span class="o">+</span><span class="mi">4</span><span class="p">]</span><span class="o">=</span><span class="n">h0</span>
+            <span class="n">rwork</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">rsize</span><span class="o">+</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timepoints</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timepoints</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+            <span class="c"># initial conditions</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_neq</span><span class="p">):</span>
+                    <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_neq</span> <span class="o">+</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">initValues</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+                    <span class="n">ret_xt</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">initValues</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            
+        
+    
+        <span class="c"># allocate on device</span>
+        <span class="n">d_t</span>      <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">size</span>      <span class="o">*</span> <span class="n">t</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_jt</span>     <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">jt</span><span class="o">.</span><span class="n">size</span>     <span class="o">*</span> <span class="n">jt</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_neq</span>    <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">neq</span><span class="o">.</span><span class="n">size</span>    <span class="o">*</span> <span class="n">neq</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_liw</span>    <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">liw</span><span class="o">.</span><span class="n">size</span>    <span class="o">*</span> <span class="n">liw</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_lrw</span>    <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">lrw</span><span class="o">.</span><span class="n">size</span>    <span class="o">*</span> <span class="n">lrw</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_itol</span>   <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">itol</span><span class="o">.</span><span class="n">size</span>   <span class="o">*</span> <span class="n">itol</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_iopt</span>   <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">iopt</span><span class="o">.</span><span class="n">size</span>   <span class="o">*</span> <span class="n">iopt</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_rtol</span>   <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">rtol</span><span class="o">.</span><span class="n">size</span>   <span class="o">*</span> <span class="n">rtol</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="c">#d_iout   = driver.mem_alloc(iout.size   * iout.dtype.itemsize)</span>
+        <span class="n">d_tout</span>   <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">tout</span><span class="o">.</span><span class="n">size</span>   <span class="o">*</span> <span class="n">tout</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_itask</span>  <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">itask</span><span class="o">.</span><span class="n">size</span>  <span class="o">*</span> <span class="n">itask</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_istate</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">istate</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">istate</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_y</span>      <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">size</span>      <span class="o">*</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_atol</span>   <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">atol</span><span class="o">.</span><span class="n">size</span>   <span class="o">*</span> <span class="n">atol</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_iwork</span>  <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">iwork</span><span class="o">.</span><span class="n">size</span>  <span class="o">*</span> <span class="n">iwork</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_rwork</span>  <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">rwork</span><span class="o">.</span><span class="n">size</span>  <span class="o">*</span> <span class="n">rwork</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+
+        <span class="n">d_isize</span>  <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">isize</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">d_rsize</span>  <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">rsize</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+    
+        <span class="c"># copy to device</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_t</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_jt</span><span class="p">,</span> <span class="n">jt</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_neq</span><span class="p">,</span> <span class="n">neq</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_liw</span><span class="p">,</span> <span class="n">liw</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_lrw</span><span class="p">,</span> <span class="n">lrw</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_itol</span><span class="p">,</span> <span class="n">itol</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_iopt</span><span class="p">,</span> <span class="n">iopt</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_rtol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">)</span>
+        <span class="c">#driver.memcpy_htod(d_iout, iout)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_tout</span><span class="p">,</span> <span class="n">tout</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_itask</span><span class="p">,</span> <span class="n">itask</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_istate</span><span class="p">,</span> <span class="n">istate</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_y</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_atol</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_iwork</span><span class="p">,</span> <span class="n">iwork</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_rwork</span><span class="p">,</span> <span class="n">rwork</span><span class="p">)</span>
+
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_isize</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">(</span><span class="n">isize</span><span class="p">))</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">d_rsize</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">(</span><span class="n">rsize</span><span class="p">))</span>
+    
+        <span class="n">height</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c">#copy arguemnts</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">shape</span>    
+            <span class="n">param</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">totalThreads</span><span class="p">,</span><span class="n">width</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">height</span><span class="p">]</span><span class="o">=</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">height</span><span class="p">]</span>
+            <span class="c"># parameter texture</span>
+            <span class="n">ary</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">create_2D_array</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">copy2D_host_to_array</span><span class="p">(</span><span class="n">ary</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">width</span><span class="o">*</span><span class="mi">4</span><span class="p">,</span> <span class="n">totalThreads</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_d_args</span><span class="o">.</span><span class="n">set_array</span><span class="p">(</span><span class="n">ary</span><span class="p">)</span>
+              
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_constants</span><span class="p">()</span>
+        
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[[]]</span> <span class="o">*</span> <span class="n">height</span>
+        <span class="c">#prepare outputs</span>
+        <span class="k">if</span> <span class="n">full_output</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">height</span><span class="p">):</span>
+                <span class="n">outputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;system&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                              <span class="s">&quot;nst&quot;</span><span class="p">:[],</span>
+                              <span class="s">&quot;nfe&quot;</span><span class="p">:[],</span>
+                              <span class="s">&quot;nje&quot;</span><span class="p">:[],</span>
+                          <span class="p">}</span>
+        
+        <span class="c">#run integrations for every timestep</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_resultNumber</span><span class="p">):</span>
+            <span class="n">tout</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span> <span class="p">[</span><span class="n">totalThreads</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_timepoints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+            <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span> <span class="n">d_tout</span><span class="p">,</span> <span class="n">tout</span> <span class="p">)</span> 
+    
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span><span class="p">(</span> <span class="n">d_neq</span><span class="p">,</span> <span class="n">d_y</span><span class="p">,</span> <span class="n">d_t</span><span class="p">,</span> <span class="n">d_tout</span><span class="p">,</span> <span class="n">d_itol</span><span class="p">,</span> <span class="n">d_rtol</span><span class="p">,</span> <span class="n">d_atol</span><span class="p">,</span> <span class="n">d_itask</span><span class="p">,</span> <span class="n">d_istate</span><span class="p">,</span>
+                        <span class="n">d_iopt</span><span class="p">,</span> <span class="n">d_rwork</span><span class="p">,</span> <span class="n">d_lrw</span><span class="p">,</span> <span class="n">d_iwork</span><span class="p">,</span> <span class="n">d_liw</span><span class="p">,</span> <span class="n">d_jt</span><span class="p">,</span> <span class="n">d_isize</span><span class="p">,</span> <span class="n">d_rsize</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="p">(</span><span class="n">threads</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">grid</span><span class="o">=</span><span class="p">(</span><span class="n">blocks</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="p">);</span>
+
+            <span class="n">driver</span><span class="o">.</span><span class="n">Context</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_dtoh</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">d_t</span><span class="p">)</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_dtoh</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">d_y</span><span class="p">)</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_dtoh</span><span class="p">(</span><span class="n">istate</span><span class="p">,</span> <span class="n">d_istate</span><span class="p">)</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_dtoh</span><span class="p">(</span><span class="n">iwork</span><span class="p">,</span> <span class="n">d_iwork</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">full_output</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)):</span>
+                    <span class="n">outputs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s">&quot;nst&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iwork</span><span class="p">[</span><span class="n">k</span><span class="o">*</span><span class="n">isize</span><span class="o">+</span><span class="mi">10</span><span class="p">])</span>
+                    <span class="n">outputs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s">&quot;nfe&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iwork</span><span class="p">[</span><span class="n">k</span><span class="o">*</span><span class="n">isize</span><span class="o">+</span><span class="mi">11</span><span class="p">])</span>
+                    <span class="n">outputs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s">&quot;nje&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iwork</span><span class="p">[</span><span class="n">k</span><span class="o">*</span><span class="n">isize</span><span class="o">+</span><span class="mi">12</span><span class="p">])</span>
+                    <span class="c">#print &quot;Stop at t=&quot;,t[k],&quot; Number of Steps:  &quot;,iwork[k*isize+10], &quot;state is:&quot;, istate[k]</span>
+    
+                <span class="c">#print &quot;---------&quot;</span>
+            
+            <span class="c">#1=nothing was done, 2 int done</span>
+            <span class="k">if</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">istate</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">OUT_ISTATE_NOTHING_DONE</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span><span class="n">istate</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">OUT_ISTATE_SUCCESSFULL</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">totalThreads</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_neq</span><span class="p">):</span>
+                        <span class="n">ret_xt</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">j</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_neq</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span>
+
+            <span class="c">#means an excessive amount of work</span>
+            <span class="k">if</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">istate</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">OUT_ISTATE_EXCESSIVE_WORK</span><span class="p">)):</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">full_output</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">height</span><span class="p">):</span>
+                <span class="n">outputs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&quot;message&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MSGS</span><span class="p">[</span><span class="n">istate</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_process_results</span><span class="p">(</span><span class="n">ret_xt</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">experiments</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">full_output</span><span class="p">)</span>
+        <span class="c">#return ret_xt[0:experiments], outputs</span>
+</div>
+<div class="viewcode-block" id="ODESolver._post_process_results"><a class="viewcode-back" href="../../api.html#cudapyint.ODESolver.ODESolver._post_process_results">[docs]</a>    <span class="k">def</span> <span class="nf">_post_process_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ret_xt</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">experiments</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">full_output</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Template method to post process the results</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ret_xt : array</span>
+<span class="sd">            Values of the integrated ODE&#39;s</span>
+<span class="sd">        output : array</span>
+<span class="sd">            Additional outputs</span>
+<span class="sd">        experiments : int</span>
+<span class="sd">            Number of ode systems</span>
+<span class="sd">        blocks : int</span>
+<span class="sd">            Number of executed blocks</span>
+<span class="sd">        threads : int</span>
+<span class="sd">            Number of executed threads per block</span>
+<span class="sd">        full_output : bool</span>
+<span class="sd">            True if additional output is required</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ret_xt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">experiments</span><span class="p">],</span> <span class="n">outputs</span>
+</div>
+<div class="viewcode-block" id="ODESolver._copy_constants"><a class="viewcode-back" href="../../api.html#cudapyint.ODESolver.ODESolver._copy_constants">[docs]</a>    <span class="k">def</span> <span class="nf">_copy_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Copies the constants from the host to the device using PyCuda</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">:</span>
+            <span class="n">field</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_completeCode</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            
+            <span class="k">if</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">float</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float_</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">elif</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                
+            <span class="n">driver</span><span class="o">.</span><span class="n">memcpy_htod</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Joel Akeret.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

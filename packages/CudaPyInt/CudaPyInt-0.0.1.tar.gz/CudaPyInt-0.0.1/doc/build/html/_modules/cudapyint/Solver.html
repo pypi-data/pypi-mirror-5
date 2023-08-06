@@ -1,0 +1,315 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cudapyint.Solver &mdash; CudaPyInt 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CudaPyInt 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cudapyint.Solver</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">math</span><span class="o">,</span><span class="nn">os</span>
+
+<span class="c">#import pycuda.tools as tools</span>
+<span class="c">#import pycuda.driver as driver</span>
+
+<div class="viewcode-block" id="Solver"><a class="viewcode-back" href="../../api.html#cudapyint.Solver.Solver">[docs]</a><span class="k">class</span> <span class="nc">Solver</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &#39;Abstract&#39; base class for gpu based solver implementations.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_MAXBLOCKSPERDEVICE</span> <span class="o">=</span> <span class="mi">500</span>
+    <span class="n">_MAXTHREADSPERBLOCK</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">_WARP_SIZE</span> <span class="o">=</span> <span class="mi">32</span>
+
+    <span class="n">_info</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="c"># private variables</span>
+    <span class="n">_compiledKernel</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_completeCode</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="n">_timepoints</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="n">_neq</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_nsystems</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_resultNumber</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="c"># device used</span>
+    <span class="c"># ToDo enable more than default device to be used</span>
+    <span class="n">_device</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="c">#     _maxThreadsPerMP = None</span>
+<span class="c">#     _maxBlocksPerMP = None</span>
+
+    <span class="n">generator</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the Solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">device</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">&quot;CUDA_DEVICE&quot;</span><span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">device</span><span class="o">==</span><span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        
+            
+<span class="c">#         compability = driver.Device(self._device).compute_capability()</span>
+<span class="c">#         self._maxThreadsPerMP =  utils.getMaxThreadsPerMP(compability)</span>
+<span class="c">#         self._maxBlocksPerMP = utils.getMaxBlocksPerMP(compability)</span>
+        
+            
+    
+    <span class="c"># method for calculating optimal number of blocks and threads per block</span>
+<div class="viewcode-block" id="Solver._getOptimalGPUParam"><a class="viewcode-back" href="../../api.html#cudapyint.Solver.Solver._getOptimalGPUParam">[docs]</a>    <span class="k">def</span> <span class="nf">_getOptimalGPUParam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compiledKernel</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the optimal size of blocks and threads for the given compiled source</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        compiledKernel : sourceModule</span>
+<span class="sd">            The kernel to use to determine the optimal param config</span>
+<span class="sd">            </span>
+<span class="sd">        :returns: blocks, threads</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">compiledKernel</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">compiledKernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span>
+        
+        <span class="c"># general parameters</span>
+<span class="c">#         maxThreadsPerBlock = driver.Device(self._device).max_threads_per_block</span>
+        
+        <span class="c"># calculate number of threads per block; assuming that registers are the limiting factor</span>
+        <span class="c">#maxThreads = min(driver.Device(self._device).max_registers_per_block/compiledKernel.num_regs,maxThreadsPerBlock)</span>
+        
+        <span class="c"># assume smaller blocksize creates less overhead; ignore occupancy..</span>
+        <span class="n">maxThreads</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">driver</span><span class="o">.</span><span class="n">Device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span><span class="o">.</span><span class="n">max_registers_per_block</span><span class="o">/</span><span class="n">compiledKernel</span><span class="o">.</span><span class="n">num_regs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MAXTHREADSPERBLOCK</span><span class="p">)</span>
+        
+        <span class="n">maxWarps</span> <span class="o">=</span> <span class="n">maxThreads</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_WARP_SIZE</span>
+        
+        <span class="c"># warp granularity up to compability 2.0 is 2. Therefore if maxWarps is uneven only maxWarps-1 warps</span>
+        <span class="c"># can be run</span>
+        <span class="c">#if(maxWarps % 2 == 1):</span>
+            <span class="c">#maxWarps -= 1</span>
+        
+        <span class="c"># maximum number of threads per block</span>
+        <span class="n">threads</span> <span class="o">=</span> <span class="n">maxWarps</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_WARP_SIZE</span>
+        
+        <span class="c"># assign number of blocks</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsystems</span><span class="o">%</span><span class="n">threads</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsystems</span><span class="o">/</span><span class="n">threads</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsystems</span><span class="o">/</span><span class="n">threads</span> <span class="o">+</span> <span class="mi">1</span>
+        
+        <span class="k">return</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span>
+    
+    </div>
+<div class="viewcode-block" id="Solver.solve"><a class="viewcode-back" href="../../api.html#cudapyint.Solver.Solver.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">write_code</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">full_output</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Integrate a system of ordinary differential equations.</span>
+
+<span class="sd">        Solves the initial value problem for stiff or non-stiff systems</span>
+<span class="sd">        of first order ode-s::</span>
+<span class="sd">    </span>
+<span class="sd">            dy/dt = func(y,t0,...)</span>
+<span class="sd">    </span>
+<span class="sd">        where y can be a vector.</span>
+<span class="sd">    </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        y0 : array</span>
+<span class="sd">            Initial condition on y (can be a vector).</span>
+<span class="sd">        t : array</span>
+<span class="sd">            A sequence of time points for which to solve for y.  The initial</span>
+<span class="sd">            value point should be the first element of this sequence.</span>
+<span class="sd">        args : array</span>
+<span class="sd">            Extra arguments to pass to function.</span>
+<span class="sd">        full_output : boolean</span>
+<span class="sd">            True if to return a dictionary of optional outputs as the second output    </span>
+<span class="sd">        use_jacobian: bool</span>
+<span class="sd">            Flag indicating if a jacobian matrix is provided. Requires an </span>
+<span class="sd">            implementation in the kernel</span>
+<span class="sd">        rtol, atol : float</span>
+<span class="sd">            The input parameters rtol and atol determine the error</span>
+<span class="sd">            control performed by the solver.  The solver will control the</span>
+<span class="sd">            vector, e, of estimated local errors in y, according to an</span>
+<span class="sd">            inequality of the form ``max-norm of (e / ewt) &lt;= 1``,</span>
+<span class="sd">            where ewt is a vector of positive error weights computed as:</span>
+<span class="sd">            ``ewt = rtol * abs(y) + atol``</span>
+<span class="sd">            rtol and atol can be either vectors the same length as y or scalars.</span>
+<span class="sd">            Defaults to 1.49012e-8.</span>
+<span class="sd">        h0 : float, (0: solver-determined)</span>
+<span class="sd">            The step size to be attempted on the first step.</span>
+<span class="sd">        mxstep : integer, (0: solver-determined)</span>
+<span class="sd">            Maximum number of (internally defined) steps allowed for each</span>
+<span class="sd">            integration point in t.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns:</span>
+<span class="sd">        y : array, shape (len(t), len(y0))</span>
+<span class="sd">            Array containing the value of y for each desired time in t,</span>
+<span class="sd">            with the initial value y0 in the first row.</span>
+<span class="sd">    </span>
+<span class="sd">        infodict : dict, only returned if full_output == True</span>
+<span class="sd">            Dictionary containing additional output information</span>
+<span class="sd">    </span>
+<span class="sd">            =========  ============================================================</span>
+<span class="sd">            key        meaning</span>
+<span class="sd">            =========  ============================================================</span>
+<span class="sd">            &#39;message&#39;  message representing state of system</span>
+<span class="sd">            &#39;system&#39;   index of system</span>
+<span class="sd">            &#39;nst&#39;      cumulative number of time steps</span>
+<span class="sd">            &#39;nfe&#39;      cumulative number of function evaluations for each time step</span>
+<span class="sd">            &#39;nje&#39;      cumulative number of jacobian evaluations for each time step</span>
+<span class="sd">            =========  ============================================================</span>
+<span class="sd">    </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_info</span> <span class="o">=</span> <span class="n">info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nsystems</span><span class="o">=</span><span class="n">y0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_neq</span> <span class="o">=</span> <span class="n">y0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timepoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resultNumber</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="c">#compile to determine blocks and threads</span>
+            <span class="k">if</span> <span class="n">timing</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">_completeCode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compile</span><span class="p">(</span><span class="n">write_code</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">timing</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: compiling kernel took: {0} s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">),</span><span class="mi">4</span><span class="p">))</span>
+            
+        
+        <span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getOptimalGPUParam</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">info</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: threads: {0}, blocks: {1}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">threads</span><span class="p">,</span> <span class="n">blocks</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: kernel mem local: {0}, shared: {1}, registers: {2}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span><span class="o">.</span><span class="n">local_size_bytes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span><span class="o">.</span><span class="n">shared_size_bytes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span><span class="o">.</span><span class="n">num_regs</span><span class="p">)</span>
+
+            <span class="n">occ</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">OccupancyRecord</span><span class="p">(</span> <span class="n">tools</span><span class="o">.</span><span class="n">DeviceData</span><span class="p">(),</span> <span class="n">threads</span><span class="o">=</span><span class="n">threads</span><span class="p">,</span> <span class="n">shared_mem</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span><span class="o">.</span><span class="n">shared_size_bytes</span><span class="p">,</span> <span class="n">registers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_compiledKernel</span><span class="o">.</span><span class="n">num_regs</span> <span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: threadblocks per mp: {0}, limit: {1}, occupancy:{2}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">occ</span><span class="o">.</span><span class="n">tb_per_mp</span><span class="p">,</span> <span class="n">occ</span><span class="o">.</span><span class="n">limited_by</span><span class="p">,</span> <span class="n">occ</span><span class="o">.</span><span class="n">occupancy</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">timing</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="c"># number of device calls</span>
+        <span class="n">runs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">blocks</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_MAXBLOCKSPERDEVICE</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">runs</span><span class="p">):</span>
+            <span class="c"># for last device call calculate number of remaining threads to run</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="n">runs</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">runblocks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">blocks</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MAXBLOCKSPERDEVICE</span><span class="p">)</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">runblocks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">runblocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MAXBLOCKSPERDEVICE</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">runblocks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_MAXBLOCKSPERDEVICE</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">info</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: Run {0} blocks.&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">runblocks</span><span class="p">)</span>
+
+            <span class="n">minIndex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MAXBLOCKSPERDEVICE</span><span class="o">*</span><span class="n">i</span><span class="o">*</span><span class="n">threads</span>
+            <span class="n">maxIndex</span> <span class="o">=</span> <span class="n">minIndex</span> <span class="o">+</span> <span class="n">threads</span><span class="o">*</span><span class="n">runblocks</span>
+            <span class="n">runParameters</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">minIndex</span><span class="p">:</span><span class="n">maxIndex</span><span class="p">]</span>
+            <span class="n">runInitValues</span> <span class="o">=</span> <span class="n">y0</span><span class="p">[</span><span class="n">minIndex</span><span class="p">:</span><span class="n">maxIndex</span><span class="p">]</span>
+            
+            <span class="n">values</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve_internal</span><span class="p">(</span><span class="n">runInitValues</span><span class="p">,</span> <span class="n">runParameters</span><span class="p">,</span> <span class="n">runblocks</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">full_output</span><span class="o">=</span><span class="n">full_output</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+                <span class="n">returnValue</span> <span class="o">=</span> <span class="n">values</span>
+                <span class="n">returnOutputs</span> <span class="o">=</span> <span class="n">outputs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">returnValue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">returnValue</span><span class="p">,</span><span class="n">values</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">returnOutputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">returnOutputs</span><span class="p">,</span><span class="n">outputs</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">timing</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;CudaPyInt: GPU blocks: {0}, threads: {1}, systems: {2}, running time: {3}s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blocks</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsystems</span><span class="p">,</span> <span class="nb">round</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">),</span><span class="mi">4</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">full_output</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">returnValue</span><span class="p">,</span> <span class="n">returnOutputs</span>
+        
+        <span class="k">return</span> <span class="n">returnValue</span>
+    
+    </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Joel Akeret.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

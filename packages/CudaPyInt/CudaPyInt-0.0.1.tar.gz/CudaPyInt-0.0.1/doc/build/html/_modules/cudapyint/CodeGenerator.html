@@ -1,0 +1,170 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cudapyint.CodeGenerator &mdash; CudaPyInt 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CudaPyInt 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cudapyint.CodeGenerator</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="n">_SUPPORTED_SIMPLE_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span>
+<span class="n">_SUPPORTED_ARRAY_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))]</span>
+<span class="n">_SUPPORTED_DATA_TYPES</span> <span class="o">=</span> <span class="n">_SUPPORTED_SIMPLE_TYPES</span> <span class="o">+</span> <span class="n">_SUPPORTED_ARRAY_TYPES</span>
+
+<span class="n">_CONSTANT_KEY_WORD</span> <span class="o">=</span> <span class="s">&quot;__constant__ &quot;</span>
+<span class="n">_DEVICE_KEY_WORD</span> <span class="o">=</span> <span class="s">&quot;__device__ &quot;</span>
+
+<div class="viewcode-block" id="CodeGenerator"><a class="viewcode-back" href="../../api.html#cudapyint.CodeGenerator.CodeGenerator">[docs]</a><span class="k">class</span> <span class="nc">CodeGenerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract code generator. Provides function for type conversion and file persisting</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">_SOURCE_FILE_NAME</span> <span class="o">=</span> <span class="s">&quot;CudaPyInt_generated_code.cu&quot;</span>
+    
+    <span class="n">_DATA_TYPES</span> <span class="o">=</span><span class="p">{</span><span class="nb">int</span><span class="p">:</span> <span class="s">&quot;int&quot;</span><span class="p">,</span>
+                  <span class="nb">float</span><span class="p">:</span> <span class="s">&quot;double&quot;</span><span class="p">,</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span> <span class="s">&quot;float&quot;</span><span class="p">,</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span> <span class="s">&quot;double&quot;</span><span class="p">,</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">):</span> <span class="s">&quot;float&quot;</span><span class="p">,</span> 
+                  <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span> <span class="s">&quot;double&quot;</span><span class="p">}</span>
+    
+    
+<div class="viewcode-block" id="CodeGenerator.__init__"><a class="viewcode-back" href="../../api.html#cudapyint.CodeGenerator.CodeGenerator.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cudaCodePath</span><span class="p">,</span> <span class="n">constants</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the ode solver.</span>
+<span class="sd">    </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cudaCodePath : string</span>
+<span class="sd">            Path to the cuda kernel.</span>
+<span class="sd">        constants : dict</span>
+<span class="sd">            Dictionary containing constants value used for the integration.</span>
+<span class="sd">            Supported values are:</span>
+<span class="sd">                int, float, numpy.float32, numpy.float64, numpy.array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constants</span> <span class="o">=</span> <span class="n">constants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cudaCode</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">cudaCodePath</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        
+    </div>
+<div class="viewcode-block" id="CodeGenerator._writeCode"><a class="viewcode-back" href="../../api.html#cudapyint.CodeGenerator.CodeGenerator._writeCode">[docs]</a>    <span class="k">def</span> <span class="nf">_writeCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes the given code to the disk</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        code : string</span>
+<span class="sd">            The code to be written</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_SOURCE_FILE_NAME</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="k">print</span> <span class="o">&gt;&gt;</span><span class="n">out</span><span class="p">,</span> <span class="n">code</span>
+        </div>
+<div class="viewcode-block" id="CodeGenerator._create_constants_fields"><a class="viewcode-back" href="../../api.html#cudapyint.CodeGenerator.CodeGenerator._create_constants_fields">[docs]</a>    <span class="k">def</span> <span class="nf">_create_constants_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates CUDA C code to store the constants.</span>
+<span class="sd">        The Python structures are automatically converted in C structures. See _SUPPORTED_DATA_TYPES for the supported data types</span>
+<span class="sd">        </span>
+<span class="sd">        :returns:</span>
+<span class="sd">        Generated code for constants</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">constants</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_SUPPORTED_DATA_TYPES</span><span class="p">,</span> <span class="s">&quot;The provided data type is not supported. Type &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot; supported &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">_SUPPORTED_DATA_TYPES</span><span class="p">)</span>
+            <span class="k">if</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_SUPPORTED_SIMPLE_TYPES</span><span class="p">):</span>
+                <span class="n">constants</span> <span class="o">+=</span> <span class="n">_CONSTANT_KEY_WORD</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DATA_TYPES</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">)]</span> <span class="o">+</span><span class="s">&quot; &quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot;;</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">constants</span> <span class="o">+=</span> <span class="n">_CONSTANT_KEY_WORD</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DATA_TYPES</span><span class="p">[</span><span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">+</span><span class="s">&quot; &quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot;[&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot;];</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="n">constants</span> <span class="o">+=</span> <span class="n">_DEVICE_KEY_WORD</span> <span class="o">+</span> <span class="s">&quot;int &quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot;_len = &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot;;</span><span class="se">\n\n</span><span class="s">&quot;</span>
+        
+        <span class="n">constants</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="k">return</span> <span class="n">constants</span>
+            </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Joel Akeret.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

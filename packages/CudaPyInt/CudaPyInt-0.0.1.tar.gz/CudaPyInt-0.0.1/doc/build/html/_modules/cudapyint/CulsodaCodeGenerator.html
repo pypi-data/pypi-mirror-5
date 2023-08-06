@@ -1,0 +1,171 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cudapyint.CulsodaCodeGenerator &mdash; CudaPyInt 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="CudaPyInt 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cudapyint.CulsodaCodeGenerator</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">cudapyint.CodeGenerator</span> <span class="kn">as</span> <span class="nn">generator</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<div class="viewcode-block" id="CulsodaCodeGenerator"><a class="viewcode-back" href="../../api.html#cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator">[docs]</a><span class="k">class</span> <span class="nc">CulsodaCodeGenerator</span><span class="p">(</span><span class="n">generator</span><span class="o">.</span><span class="n">CodeGenerator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extends the cudapyint.CodeGenerator in order to generate Culsoda specific code.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="CulsodaCodeGenerator.__init__"><a class="viewcode-back" href="../../api.html#cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cudaCodePath</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">culsoda_file_name</span><span class="p">,</span> <span class="n">culsoda_main_file_name</span><span class="p">,</span> <span class="n">args_tex_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the ode solver.</span>
+<span class="sd">    </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cudaCodePath : string</span>
+<span class="sd">            Path to the cuda kernel.</span>
+<span class="sd">        constants : dict</span>
+<span class="sd">            Dictionary containing constants value used for the integration.</span>
+<span class="sd">            Supported values are:</span>
+<span class="sd">                int, float, numpy.float32, numpy.float64, numpy.array</span>
+<span class="sd">        culsoda_file_name : string</span>
+<span class="sd">            name of the culsoda source file</span>
+<span class="sd">        culsoda_main_file_name : string</span>
+<span class="sd">            name of the culsoda main source file</span>
+<span class="sd">        args_tex_name : string</span>
+<span class="sd">            name of the arguments texture</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CulsodaCodeGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">cudaCodePath</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">culsoda_file_name</span> <span class="o">=</span> <span class="n">culsoda_file_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">culsoda_main_file_name</span> <span class="o">=</span> <span class="n">culsoda_main_file_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args_tex_name</span> <span class="o">=</span> <span class="n">args_tex_name</span>
+        </div>
+<div class="viewcode-block" id="CulsodaCodeGenerator.generate"><a class="viewcode-back" href="../../api.html#cudapyint.CulsodaCodeGenerator.CulsodaCodeGenerator.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neq</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">blocks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">write_code</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates the complete culsoda code</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        </span>
+<span class="sd">        blocks : int (optional)</span>
+<span class="sd">            The number of blocks</span>
+<span class="sd">            </span>
+<span class="sd">        threads : int (optional)</span>
+<span class="sd">            The number of threads / block</span>
+<span class="sd">        write_code : bool (optional)</span>
+<span class="sd">            True if the generated code should be written to the disc</span>
+<span class="sd">            </span>
+<span class="sd">        :returns:</span>
+<span class="sd">        The generated code</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fc</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">culsoda_file_name</span><span class="p">),</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">coulsoda_source</span> <span class="o">=</span> <span class="n">fc</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        
+        <span class="n">fc</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">culsoda_main_file_name</span><span class="p">),</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">culsoda_main_source</span> <span class="o">=</span> <span class="n">fc</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        
+        <span class="n">isize_def</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="c">#define ISIZE &quot; + repr( 20 + self._neq ) + &quot;\n&quot;</span>
+        <span class="n">rsize_def</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="c">#define RSIZE &quot; + repr( 22 + self._neq * max(16, self._neq + 9) ) + &quot;\n\n&quot;</span>
+        <span class="n">block_size_def</span> <span class="o">=</span> <span class="s">&quot;#define BLOCK_SIZE &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">threads</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">neq_def</span> <span class="o">=</span> <span class="s">&quot;#define NEQ &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">neq</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        
+        <span class="n">definitions</span> <span class="o">=</span> <span class="n">isize_def</span> <span class="o">+</span> <span class="n">rsize_def</span> <span class="o">+</span> <span class="n">block_size_def</span> <span class="o">+</span> <span class="n">neq_def</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    
+        <span class="n">args_array_def</span> <span class="o">=</span> <span class="s">&quot;texture&lt;float, 2, cudaReadModeElementType&gt; &quot;</span><span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">args_tex_name</span> <span class="o">+</span><span class="s">&quot;;</span><span class="se">\n\n</span><span class="s">&quot;</span>
+
+        <span class="n">constants_def</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_constants_fields</span><span class="p">()</span>
+
+        <span class="n">common_block_def</span> <span class="o">=</span> <span class="s">&quot;__device__ struct cuLsodaCommonBlock common[&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">blocks</span><span class="o">*</span><span class="n">threads</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;];</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">code_def</span> <span class="o">=</span>  <span class="n">definitions</span> <span class="o">+</span> <span class="n">args_array_def</span> <span class="o">+</span> <span class="n">constants_def</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cudaCode</span> <span class="o">+</span> <span class="n">coulsoda_source</span> <span class="o">+</span> <span class="n">common_block_def</span> <span class="o">+</span> <span class="n">culsoda_main_source</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">write_code</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writeCode</span><span class="p">(</span><span class="n">code_def</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">code_def</span>
+    </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CudaPyInt 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Joel Akeret.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
