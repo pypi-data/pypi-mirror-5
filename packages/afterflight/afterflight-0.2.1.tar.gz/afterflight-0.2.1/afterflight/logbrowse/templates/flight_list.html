@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+{% providers_media_js %}
+{% block head %}
+<link rel="stylesheet" type="text/css" href="/media/css/flightList.css">
+<script>
+var WGS84 = new OpenLayers.Projection('EPSG:4326');
+var MERCATOR = new OpenLayers.Projection('EPSG:900913');
+var size = new OpenLayers.Size(21, 25);
+var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
+var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png', size, offset);
+var apiKey = "An9cxmMkbbjVOwKKGr8hCIl6N6W30F7VChJdplng1Y12rOJIucGfYMoG5hk6lTct";
+</script>
+{% endblock head %}
+{% block nav-status%}Listing {{object_list.count}} flights {% endblock %}
+{% block content %}
+<div id="info">
+
+<table id="flights-table">
+    <tr class="table-header">
+        <th>Name</th>
+        <th>Start</th>
+        <th>Length</th>
+        <th>Comments</th>
+        <th>Slug</th>
+        <th>Pilot</th>
+
+    {% for flight in object_list %}
+        <tr logpk="{{flight.pk}}" onclick="document.location = '/flight/{{flight.slug}}';">
+            <td>{{flight.pk}}</td>
+            <td>{{flight.start_time}}</td>
+            <td>{{flight.length_str}}</td>
+            <td>{{flight.comments|truncatewords:10}}</td>
+            <td>{{flight.slug}}</td>
+            <td>{{flight.pilot}}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+</div>
+
+<div id="allFlightsMap"><h2>Map of all flights</h2></div>
+
+<div id="allFlightsTimeline">
+<h2>Timeline of all flights</h2>
+<div id="timeline">Timeline loading...</div>
+</div>
+
+    <script type="text/javascript">
+        var timeline;
+        var data;
+        function drawTimeline() {
+            //Drawing the timeline of all flights
+            data = {{timeline_data|safe}}
+            var options = {
+                'editable': false,
+                'style': 'box',
+                'width':  '100%',
+                'height': '100%',
+                'style': 'dot',
+            };
+            timeline = new links.Timeline(document.getElementById('timeline'));
+            timeline.draw(data, options);
+        };
+        function highlightFlightInTable(event){
+            $("#flights-table>tbody>tr").removeClass('highlighted')
+            flightsTableEntry=$("#flights-table tr[logpk="+event.target.textContent+"]")
+            flightsTableEntry.addClass('highlighted')
+            flightsTableEntry.scrollIntoView(100)
+        };
+
+        function highlightFlightOnTL(event){
+            //TODO. Should be some more direct connection between flights on the table and in the timeline.
+            //Maybe draw the table from the timeline using JS.
+            //Also, should only create selectors once, and then re-use them.
+            event.stopPropagation();
+            flightSeqNum=$("#flights-table>tbody>tr").index(event.currentTarget)
+            timeline.items[flightSeqNum].select()
+            return false;
+        };
+        function unHighlightFlightOnTL(event){
+            event.stopPropagation();
+            flightSeqNum=$("#flights-table>tbody>tr").index(event.currentTarget)
+            timeline.items[flightSeqNum].unselect()
+            return false;
+        };
+// Draw map of flight path
+function initMap() {
+
+
+    flightMap = new OpenLayers.Map('allFlightsMap',{projection: MERCATOR});
+    flightMap.addControl(new OpenLayers.Control.LayerSwitcher());
+    flightMap.addControl(new OpenLayers.Control.ScaleLine());
+    var flightStartLocsJSON = {{flightStartLocs|safe}}
+    var geojson_format = new OpenLayers.Format.GeoJSON({
+                    'internalProjection': MERCATOR,
+                    'externalProjection': WGS84
+                });
+    vector_layer = new OpenLayers.Layer.Vector("Flights",{
+                styleMap: new OpenLayers.StyleMap({
+                    "default": new OpenLayers.Style(OpenLayers.Util.applyDefaults({
+                        graphicOpacity:1,
+                        fontSize: "15px",
+                        fontColor:"#00FF00",
+                        fontWeight:"bold",
+                        fill:false
+                        }
+                    , OpenLayers.Feature.Vector.style["default"])),
+                    "selected": new OpenLayers.Style(OpenLayers.Util.applyDefaults({
+                        label : " ${number} ",
+                        labelAlign:"lb",
+                        graphicOpacity:1,
+                        fontColor:"#000000", 
+                        fontWeight:"bold",                        
+                        fill: true}
+                        , OpenLayers.Feature.Vector.style["highlight"])),
+                    "clicked": new OpenLayers.Style(OpenLayers.Util.applyDefaults({
+                        label : "Opening in new window",
+                        fontSize: "15px",
+                        fontColor:"#000000",
+                        fontWeight:"bold",                        
+                        fill: true}
+                        , OpenLayers.Feature.Vector.style["select"]))
+                })})
+    flightStartLocs=geojson_format.read(flightStartLocsJSON);
+    // Bing's Road imagerySet
+    var broad = new OpenLayers.Layer.Bing({
+        key: apiKey,
+        type: "Road"
+    });
+    // Bing's Aerial imagerySet
+    var baerial = new OpenLayers.Layer.Bing({
+        key: apiKey,
+        type: "Aerial"
+    });
+    // Bing's AerialWithLabels imagerySet
+    var bhybrid = new OpenLayers.Layer.Bing({
+        key: apiKey,
+        type: "AerialWithLabels",
+        name: "Bing Aerial With Labels",
+        // Ugly custom resolutions are for allowing client zoom. May be a better way.
+        resolutions: [156543.03390625, 78271.516953125, 39135.7584765625,
+                      19567.87923828125, 9783.939619140625, 4891.9698095703125,
+                      2445.9849047851562, 1222.9924523925781, 611.4962261962891,
+                      305.74811309814453, 152.87405654907226, 76.43702827453613,
+                      38.218514137268066, 19.109257068634033, 9.554628534317017,
+                      4.777314267158508, 2.388657133579254, 1.194328566789627,
+                      0.5971642833948135, 0.25, 0.1, 0.05],
+        serverResolutions: [156543.03390625, 78271.516953125, 39135.7584765625,
+                            19567.87923828125, 9783.939619140625,
+                            4891.9698095703125, 2445.9849047851562,
+                            1222.9924523925781, 611.4962261962891,
+                            305.74811309814453, 152.87405654907226,
+                            76.43702827453613, 38.218514137268066,
+                            19.109257068634033, 9.554628534317017,
+                            4.777314267158508, 2.388657133579254,
+                            1.194328566789627, 0.5971642833948135],
+        transitionEffect: 'resize'
+    });
+    vector_layer.addFeatures(flightStartLocs);
+    flightMap.addLayers([bhybrid, vector_layer]);
+    flightMap.zoomToExtent(vector_layer.getDataExtent());
+
+    function flightSelected(feature){
+    //window.open(evt.feature.attributes.slug,"Window1");
+    //selectCtrl.unselectAll();
+    // would be nice to use the highlightFlightInTable function here, but it takes the wrong kind of event...
+    
+    
+    selectOnWidgets(feature.attributes.number)
+    
+    return false;
+    }
+    
+    // Adding hover and click events
+    highlightCtrl = new OpenLayers.Control.SelectFeature(vector_layer, {
+    hover: true,
+    //highlightOnly: true,
+    renderIntent: "selected",
+    onSelect: flightSelected
+    });
+
+    flightMap.addControl(highlightCtrl);
+    highlightCtrl.activate();
+    //flightMap.addControl(selectCtrl);
+    //selectCtrl.activate();
+    
+
+    //vector_layer.events.register("beforeselected", vector_layer, flightSelected);
+    
+};
+    // Select all things that represent one log, given its ID
+    function selectOnWidgets(logpk){
+    
+        //map
+        //check that it's not already selected, to avoid infinite recursion
+        res=vector_layer.getFeaturesByAttribute("number",logpk)[0]
+        try{
+            if ($.inArray(res,vector_layer.selectedFeatures)==-1) {
+                highlightCtrl.unselectAll()
+                highlightCtrl.select(res)
+                flightMap.setCenter(new OpenLayers.LonLat(res.geometry.x,res.geometry.y))
+            }
+        }
+        catch(e){}
+        //table
+        flightsTableEntry=$('#flights-table>tbody>tr[logpk='+logpk+']')
+        flightsTableEntry.scrollIntoView(100)        
+        flightsTableEntry.addClass('highlighted')  
+        //timeline
+        $('.timeline-event a[logpk='+logpk+']').parent().addClass('highlighted')
+    }
+    // Unselect all things
+    function unselectOnWidgets(evt){
+    //table
+    $("#flights-table>tbody>tr").removeClass('highlighted')
+    $(".timeline-event").removeClass('highlighted')
+    //timeline
+    //map
+    
+    };
+    function timelineMouseOver(evt){
+        unselectOnWidgets(evt)
+        logpk=evt.target.textContent
+        selectOnWidgets(logpk)
+        return false
+    }
+    function tableMouseOver(evt){
+        unselectOnWidgets(evt)
+        logpk=$(this).attr('logpk')
+        selectOnWidgets(logpk)
+        return false
+    }
+    $(document).ready(function() {
+    initMap();
+    drawTimeline();
+    $(".timeline-event").hover(timelineMouseOver,unselectOnWidgets)
+    $("#flights-table tr").hover(tableMouseOver,unselectOnWidgets)
+    
+    }
+);    
+    </script>
+
+{% endblock content %}
