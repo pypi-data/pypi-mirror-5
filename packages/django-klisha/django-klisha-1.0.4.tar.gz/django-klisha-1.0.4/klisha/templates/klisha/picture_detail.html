@@ -1,0 +1,67 @@
+{% extends "klisha/base.html" %}
+{% load i18n %}
+{% block head.title %}{{ object.title }}{% endblock %}
+
+{% load thumbnail %}
+{% block head.description %}{{ object.description }}{% endblock %}
+
+{% block body.content %}
+
+<div class="row">
+    <div class="span12">
+        {% if object.picture|is_portrait%}
+            {% thumbnail object.picture "x930" crop="center" as im %}
+                <img src="{{ im.url }}" alt="{{ object.title }}">
+            {% endthumbnail %}
+        {% else %}
+            {% thumbnail object.picture "930" crop="center" as im %}
+                <img src="{{ im.url }}" alt="{{ object.title }}">
+            {% endthumbnail %}
+        {% endif %}
+    </div>
+    <div class="span8">
+        <div class="picture-title">
+            {{ object.title }}
+        </div>
+    </div>
+    <div class="span12">
+        {% if object.description %}
+            {{ object.description|safe }}
+            <br/>
+        {% endif %}
+        <br/>
+    </div>
+    <div class="span8">
+        <div class="picture-publication-info">
+            {% trans "Publication date:" %}
+            <a href="{% url "picture-list-year-month" object.year object.month %}">{{ object.published_at }}</a>
+            <br/>
+            {%  trans "Category:" %} <a href="{% url "category-detail" object.category.slug %}">{{ object.category }}</a>
+            {% if object.tags.all %}
+            <br/>
+            {%  trans "Tags:" %}
+            {% for tag in object.tags.all %}
+                {% if forloop.revcounter == 1 and object.tags.all|length > 1 %} and {% endif %}
+                <a href="{% url "tag-detail" tag.slug %}">{{ tag.title }}</a>{% if forloop.revcounter > 2 %},{% endif %}{% if forloop.last %}.{% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
+    </div>
+    <div class="span4">
+        <div class="navigation pagination">
+            {% if object.previous %}
+                <a href="{% url 'picture-detail' object.previous.slug %}" class="prev">&lsaquo;&lsaquo; {% trans "previous" %}</a>
+            {% endif %}
+            {% if object.next %}
+                <a href="{% url 'picture-detail' object.next.slug %}" class="next">{% trans "next" %} &rsaquo;&rsaquo;</a>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+    {% include "klisha/include/thumbnails.html" with url_name="picture-detail" subclass="no-bottom-margin" %}
+</div>
+
+{% endblock %}
