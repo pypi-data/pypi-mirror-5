@@ -1,0 +1,1 @@
+This program is one implementation of an exercise crafted for a course on rubylearning.org.  It provides two simple functions.  The exercise is to learn to submit to PyPI.
