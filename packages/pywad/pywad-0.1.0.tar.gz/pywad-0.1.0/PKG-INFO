@@ -1,0 +1,90 @@
+Metadata-Version: 1.1
+Name: pywad
+Version: 0.1.0
+Summary: The Python Web Auto Drive framework using selenium.webdriver.
+Home-page: https://bitbucket.org/takesxi_sximada/pywad
+Author: TakesxiSximada
+Author-email: takesxi.sximada@gmail.com
+License: BSD
+Download-URL: https://bitbucket.org/takesxi_sximada/pywad
+Description: The Python Web Auto Drive Framework.
+        
+        The pywad is framework for driving the web browser automatically,
+        using selenium. Need Selenium and python binding of it(selenium-2.35.0 or later).
+        And need the Chrome Driver if you want to be use Google Chrome.
+        But we have not been able to support it not yet.
+        Now, Firefox only.
+        
+        install
+        ===========
+        
+        Need Selenium,
+        see http://www.seleniumhq.org/
+        
+        Next, execute command.::
+        
+            $ pip install pywad
+        
+        
+        How to use
+        ===========
+        
+        The pywad.Part control the browser when pywad.Part.is_target() return True.
+        :term:`browser` is a selenium's WebDriver object. :term:`status` is a dictionaly,
+        but anything ok. The mission of it is to communicate datas for other part object.
+        
+        For example,
+        ::
+        
+            from pywad import Part
+            from pywad.decorator import url_match
+            
+            class GoogleTop(Part):
+        
+                @url_match('www\.google\.')
+                def is_target(self, browser, status):
+                    return True
+        
+                def run(self, browser, status):
+                    entries = browser.find_elements_by_css_selector('input')
+                    for entry in entries:
+                        if entry.get_attribute('type') == 'text':
+                            entry.send_keys('test\n\n')
+        
+                def _is_search_button(self, text):
+                    for word in self.search_words:
+                        if word in text:
+                            return True
+        
+        Next, let running it using Runner object. The Runner object is list-like object.
+        It expects that the Part object enters. Run the parts objects if execute Runner.run().
+        
+        ::
+        
+            def main():
+                url = 'http://www.google.com'
+                runner = Runner()
+                runner.append(GoogleTop())
+                runner.run(url)
+        
+            if __name__ == '__main__':
+                main()
+        
+Platform: any
+Classifier: Development Status :: 1 - Planning
+Classifier: Environment :: Web Environment :: Mozilla
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Natural Language :: English
+Classifier: Natural Language :: Esperanto
+Classifier: Natural Language :: Japanese
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Internet :: WWW/HTTP :: Browsers
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
+Classifier: Topic :: Software Development :: Quality Assurance
+Classifier: Topic :: Software Development :: Testing
