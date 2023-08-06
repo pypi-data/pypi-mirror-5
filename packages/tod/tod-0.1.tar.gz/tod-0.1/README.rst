@@ -1,0 +1,67 @@
+Tod
+============
+
+Central management of your personal configs using a git repository and symlinks.
+
+
+Installation
+============
+
+Install the client::
+
+    python setup.py install
+
+
+Point to your configuration repo::
+
+    # Environment variables will be expanded.
+    export $TOD_FILE_REPO='/path/to/your/repo'
+
+
+Config Repo Layout
+==================
+
+The Config Repo format is as follows::
+
+    Root Config Directory
+    ├── files
+    │   ├── file_a
+    │   ├── ...
+    │   └── file_z
+    └── mapping.ini
+
+The `mapping.ini` file maps configs from the `files` directory to their installation path.
+Currently everything lives under a `default` section, and all mappings are of the form `CONFIG_FILE: INSTALL_PATH`.
+An example config is shown below.  It would map `$REPO/files/vimrc` to `~/.vimrc`, and `REPO/files/tmux.conf` to `~/.tmux.conf`::
+
+    [default]
+    vimrc: ~/.vimrc
+    tmux.conf: ~/.tmux.conf.
+
+
+Usage
+=====
+
+
+See the current status of the the config mapping::
+
+    tod status
+
+
+Link a single config into the system::
+
+    tod link vimrc
+
+
+Unlink a single config from the system::
+
+    tod unlink vimrc
+
+
+TODO
+====
+
+* Remove dependancy on git
+* Add multi-environment linking
+  * specify new config sections. (ie, osx, ubuntu, etc.)
+  * base off of defualt config?

@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+from tod import commands
+from tod.repo import parse_repo_mapping
+
+CONFIG_LOCATIONS = [
+    '$TOD_CONFIG',
+    '$HOME/.tod',
+    '/etc/tod'
+]
+
+REPO_LOCATION = '$TOD_FILE_REPO'
+
+
+def find_config(locations):
+    for loc in locations:
+        loc = os.path.expanduser(os.path.expandvars(loc))
+        if os.path.isfile(loc):
+            return loc
+
+
+def is_git_dir(path):
+    if not os.path.isdir(os.path.join(path, '.git')):
+        return False
+    return True
+
+
+def valid_repo(path):
+    path = os.path.expanduser(os.path.expandvars(path))
+    if not path:
+        raise argparse.ArgumentTypeError("No configuration repo specified.")
+    if not os.path.isdir(path):
+        raise argparse.ArgumentTypeError("Repository location is not a directory")
+    if not is_git_dir(path):
+        raise argparse.ArgumentTypeError("Repository location is not a git repo")
+    return path
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.set_defaults(repo=REPO_LOCATION)
+    parser.add_argument('-r', '--repo')
+
+    subparsers = parser.add_subparsers()
+
+    cmd_status = subparsers.add_parser('status')
+    cmd_status.set_defaults(func=commands.status)
+
+    cmd_link = subparsers.add_parser('link')
+    cmd_link.add_argument('name')
+    cmd_link.add_argument('-s', '--section', default='default', nargs='?')
+    cmd_link.set_defaults(func=commands.link)
+
+    cmd_unlink = subparsers.add_parser('unlink')
+    cmd_unlink.add_argument('name')
+    cmd_unlink.add_argument('-s', '--section', default='default', nargs='?')
+    cmd_unlink.set_defaults(func=commands.unlink)
+
+    cmd_diff = subparsers.add_parser('diff')
+    cmd_diff.set_defaults(func=commands.diff)
+
+    cmd_link_all = subparsers.add_parser('link-all')
+    cmd_link_all.add_argument('-s', '--section', default='default', nargs='?')
+    cmd_link_all.set_defaults(func=commands.link_all)
+
+    args = parser.parse_args()
+    try:
+        args.repo = valid_repo(args.repo)
+    except argparse.ArgumentTypeError as e:
+        parser.error(e.message)
+
+    args.mapping = parse_repo_mapping(args.repo)
+
+    args.func(args)
