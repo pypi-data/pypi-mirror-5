@@ -1,0 +1,96 @@
+
+# This is a YAML copy of tourney-dice.json.
+
+# YAML is a more human-readable syntax and supports comments like this!
+
+# You may wish to browse both versions of this tournament side-by-side
+# to understand the differences and similarities in the syntax.
+
+tournament:
+    
+    name: "Basic dice tournament"
+    
+    desc: >
+        Several people roll dice and compete for highest score.
+    
+    input:
+
+        fn: Text_Lines
+
+        config:
+            src: "example/names.txt"
+    
+    output:
+
+        fn: Text_CSV
+
+        config:
+            csv_header: ids
+            dest: "-"
+
+        fields:
+
+            -   fn: Entrant
+                config:
+                    id: name
+                    name: "Name"
+
+            -   fn: Criterion
+                config:
+                    criterion: score_dice
+
+    select:
+        fn: TopNCriteria
+        config:
+            n: 3
+            sort: desc
+            criteria:
+                - score_dice
+
+    criteria:
+
+        -   id: score_dice
+            name: "Best Dice score"
+            desc: "Total of best dice scores"
+            init: 0
+
+    judges:
+
+        -   name: "Dice Rolling Judge"
+            desc: "Adds rolls of two dice (2d6) but for each die takes best of 3 rolls"
+
+            heuristics:
+
+                -   &dice_roller
+                    name: "Best of 3 dice"
+                    desc: "Chooses best value (1-6) of 3 random dice rolls"
+
+                    criterion: "score_dice"
+
+                    lens:
+                        fn: Random
+                        config:
+                            count: 3
+
+                    maps:
+
+                        -   fn: Scale
+                            config: 
+                                factor: 6
+
+                        -   fn: Round
+                            config: 
+                                mode: floor
+
+                        -   fn: Add
+                            config: 
+                                offset: 1
+
+                    reduce:
+                        fn: Max
+
+                -   *dice_roller
+
+                # Note: this *reference to the &alias above is a YAML shortcut
+                # to duplicate the section
+                

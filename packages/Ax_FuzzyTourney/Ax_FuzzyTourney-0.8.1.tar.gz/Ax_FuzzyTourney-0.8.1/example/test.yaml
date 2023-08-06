@@ -1,0 +1,155 @@
+
+tournament: 
+    
+    name: CheddarGetter 2013-07 Audit for possibly lost CHARGE_* tracked items
+
+    desc: >
+      We observed CHARGE_LESS (non-periodic) disappearing
+      from several invoices around 2013-06 / 2013-07.
+      This audit scans for these cases.
+
+    input:
+        
+        fn: RecentlyModifiedPaySub
+        module: textmarks.backutil.tools.fuzzytourney.axft_extend.input
+
+        config:
+            days: 60
+            limit: 100000
+            trial: false
+
+    output:
+        
+        fn: Text_CSV
+
+        config:
+            csv_header: names
+            dest: "cg-201307-audit-trkitem-loss-results.csv"
+
+        fields:
+            
+            -   fn: Criterion
+                config:
+                    name: "Risk: Lost CHARGE_LESS"
+                    criterion: risk_lost_charge_less
+                    format: "{0:0.0f}"
+
+            -   fn: Criterion
+                config:
+                    name: "Risk: Lost CHARGE_MORE"
+                    criterion: risk_lost_charge_more
+                    format: "{0:0.0f}"
+
+            -   fn: TMUser_Fields
+                module: textmarks.backutil.tools.fuzzytourney.axft_extend.field
+                config:
+                    fields:
+                        - user_key
+                        - upsb_isActive
+                        - upsb_isTrial
+                        - user_nick
+                        - user_name
+
+            -   fn: TMUser_Fields
+                module: textmarks.backutil.tools.fuzzytourney.axft_extend.field
+                config:
+                    fields:
+                        - upsb_money_lastPaid
+                        - upsb_money_nextInvoice
+                    scale: 0.01
+                    format: "{0:0.02f}"
+
+            -   fn: TMUser_DateFields
+                module: textmarks.backutil.tools.fuzzytourney.axft_extend.field
+                config:
+                    fields: 
+                        - upsb_timeNextInvoice
+                        - upsb_timeFirstPaid
+                        - upsb_timeLastPaid
+
+            -   fn: TMUser_Links
+                module: textmarks.backutil.tools.fuzzytourney.axft_extend.field
+
+    
+    select:
+        
+        fn: TopNCriteria
+        
+        config:
+            sort: desc
+            n: 500
+            criteria:
+                - risk_lost_charge_less
+                - risk_lost_charge_more
+            min: 1
+    
+    criteria:
+        
+        -   id: risk_lost_charge_more
+            name: "Risk: lost CHARGE_MORE data"
+            desc: "Likelihood CHARGE_MORE data was lost between invoices"
+            init: 0.0
+            
+        -   id: risk_lost_charge_less
+            name: "Risk: lost CHARGE_LESS data"
+            desc: "Likelihood CHARGE_LESS data was lost between invoices"
+            init: 0.0
+    
+    judges:
+
+        -   name: "Lost CHARGE_* Monitor"
+            desc: "Detect CHARGE_* tracked items lost between invoices."
+
+            heuristics:
+                
+                -   name: "Detect CHARGE_LESS drops in last 4 invoices including current"
+                    desc: ""
+
+                    criterion: "risk_lost_charge_less"
+
+                    lens:
+                        fn: Invoices_ItemOverage
+                        module: textmarks.backutil.tools.fuzzytourney.axft_extend.lens_cg
+                        config:
+                            item: CHARGE_LESS
+                            invoices: [-3, -2, -1, 0]
+
+                    maps: []
+
+                    reduce:
+                        fn: MaxChangeRate
+                        config:
+                            filter: dec
+
+                    reduced_maps:
+
+                        -   fn: Scale
+                            config: 
+                                factor: 100.0
+                            comment: "to approx 100=all gone"
+                
+                -   name: "Detect CHARGE_MORE drops in last 4 invoices including current"
+                    desc: ""
+
+                    criterion: "risk_lost_charge_more"
+
+                    lens:
+                        fn: Invoices_ItemOverage
+                        module: textmarks.backutil.tools.fuzzytourney.axft_extend.lens_cg
+                        config:
+                            item: CHARGE_MORE
+                            invoices: [-3, -2, -1, 0]
+
+                    maps: []
+
+                    reduce:
+                        fn: MaxChangeRate
+                        config:
+                            filter: dec
+
+                    reduced_maps:
+                        -   fn: Scale
+                            config: 
+                                factor: 100.0
+                            comment: "to approx 100=all gone"
+
