@@ -1,0 +1,134 @@
+Metadata-Version: 1.1
+Name: jusText
+Version: 1.2.0
+Summary: Heuristic based boilerplate removal tool
+Home-page: https://github.com/miso-belica/jusText
+Author: Michal Belica
+Author-email: miso.belica@gmail.com
+License: Copyright (c) 2011, Jan Pomikalek <jan.pomikalek@gmail.com>
+Copyright (c) 2013, Michal Belica
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Description: .. _jusText: http://code.google.com/p/justext/
+        .. _Python: http://www.python.org/
+        .. _lxml: http://lxml.de/
+        
+        jusText
+        =======
+        jusText is a tool for removing boilerplate content, such as navigation links,
+        headers, and footers from HTML pages. It is designed to preserve mainly text
+        containing full sentences and it is therefore well suited for creating
+        linguistic resources such as Web corpora. You can `try it online <http://nlp.fi.muni.cz/projects/justext/>`_.
+        
+        This is the a fork of original code of jusText_ hosted on Google code. Below are some "forks" that I found on GitHub:
+        
+        - https://github.com/chbrown/justext
+        - https://github.com/says/justext
+        - https://github.com/says/justext-app
+        
+        Instalation
+        -----------
+        1. Make sure you have Python_ installed.
+        2. Download the sources::
+        
+             $ wget https://github.com/miso-belica/jusText/archive/master.zip
+        
+        3. Extract the downloaded file::
+        
+             $ unzip master.zip
+        
+        4. Install the package (you may need sudo or a root shell for the latter
+           command)::
+        
+             $ cd jusText-master/
+             $ python setup.py install
+        
+        Or simply::
+        
+          pip install git+git@github.com:miso-belica/jusText.git
+        
+        Dependecies
+        -----------
+        ::
+        
+          lxml>=2.2.4
+        
+        Usage
+        -----
+        .. code-block:: bash
+        
+          $ python -m justext -s english_page.html > plain_text.txt
+          $ python -m justext --help # for more info
+        
+        Python API
+        ----------
+        .. code-block:: python
+        
+          import requests
+          import justext
+        
+          response = requests.get('http://planet.python.org/')
+          paragraphs = justext.justext(response.content, justext.get_stoplist('English'))
+          for paragraph in paragraphs:
+            if paragraph['class'] == 'good':
+              print paragraph['text']
+        
+        Acknowledgements
+        ----------------
+        .. _`Natural Language Processing Centre`: http://nlp.fi.muni.cz/en/nlpc
+        .. _`Masaryk University in Brno`: http://nlp.fi.muni.cz/en
+        .. _PRESEMT: http://presemt.eu/
+        .. _`Lexical Computing Ltd.`: http://lexicalcomputing.com/
+        .. _`PhD research`: http://is.muni.cz/th/45523/fi_d/phdthesis.pdf
+        
+        This software is developed at the `Natural Language Processing Centre`_ of `Masaryk University in Brno`_ with a financial support from PRESEMT_ and `Lexical Computing Ltd.`_ It also relates to `PhD research`_ of Jan Pomikalek.
+        
+        
+        .. :changelog:
+        
+        Changelog for jusText
+        =====================
+        - *FEATURE:* It is possible to pass unicode string directly.
+        
+        1.2 (2011-08-08)
+        -----------------
+        - *FEATURE:* Character counts used instead of word counts where possible in
+          order to make the algorithm work well in the language independent
+          mode (without a stoplist) for languages where counting words is
+          not easy (Japanese, Chinese, Thai, etc).
+        - *BUG FIX:* More robust parsing of meta tags containing the information about
+          used charset.
+        - *BUG FIX:* Corrected decoding of HTML entities &#128; to &#159;
+        
+        1.1 (2011-03-09)
+        ----------------
+        - First public release.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Topic :: Text Processing :: Filters
