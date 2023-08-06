@@ -1,0 +1,190 @@
+<vc>
+    <body>
+        <pad xmlns:bind="bind">
+            <tabs>
+                <tab title="Users" id="users-config">
+                    <bind:collection 
+                            id="users"
+                            bind="users" 
+                            values="lambda c: c.values()"
+                            add_item="lambda i,c: c.update({i.name: i})"
+                            delete_item="lambda i,c: c.pop(i.name) if i.name != 'root' else None">
+                        <vc>
+                            <dt bind="__items">
+                                <dtr>
+                                    <dth text="Username" />
+                                    <dth text="Password" />
+                                    <dth text="Status" />
+                                    <dth text="On projects" />
+                                    <dth />
+                                </dtr>
+                            </dt>
+                            <bind:template>
+                                <dtr>
+                                    <dtd>
+                                        <hc>
+                                            <icon icon="user" />
+                                            <editable bind="name" style="mini" id="name-edit" />
+                                            <label bind="name" style="mini" id="name-label" />
+                                        </hc>
+                                    </dtd>
+                                    <dtd>
+                                        <editable id="password" placeholder="{Change password}" icon="lock" />
+                                    </dtd>
+                                    <dtd><label id="status"/></dtd>
+                                    <dtd><label id="projects"/></dtd>
+                                    <dtd>
+                                        <button bind="__delete" icon="remove" style="mini" warning="{Confirm deletion}" />
+                                    </dtd>
+                                </dtr>
+                            </bind:template>
+                            <button bind="__add" icon="plus" text="{Create}" />
+                        </vc>
+                    </bind:collection>
+                </tab>
+
+                <tab title="Projects">
+                    <vc>
+                        <bind:collection bind="projects" id="projects">
+                            <vc>
+                                <dt bind="__items" />
+                                <bind:template>
+                                    <collapserow>
+                                        <box>
+                                            <right>
+                                                <button bind="__delete" icon="remove" style="icon" warning="Confirm deletion" />
+                                            </right>
+                                            <hc>
+                                                <icon icon="suitcase" />
+                                                <box width="300">
+                                                    <label bind="name" />
+                                                </box>
+                                                <label bind="description" />
+                                            </hc>   
+                                        </box>
+                                        
+                                        <indent>
+                                            <tabs>
+                                                <tab title="Basic">
+                                                    <vc>
+                                                        <formgroup text="Options">
+                                                            <formline text="Name">
+                                                                <textbox bind="name" />
+                                                            </formline>
+                                                            <formline text="Description">
+                                                                <textbox bind="description" />
+                                                            </formline>
+                                                            <formline text="Long description">
+                                                                <codearea bind="long_description" width="300" />
+                                                            </formline>
+                                                        </formgroup>
+                                                        <formgroup text="Access control">
+                                                            <bind:collection id="permissions" bind="permissions">
+                                                                <formline text="Allow users">
+                                                                    <vc>
+                                                                        <vc bind="__items" />
+                                                                        <button bind="__add" icon="plus" text="Add" />
+                                                                    </vc>
+                                                                </formline>
+                                                                <bind:template>
+                                                                    <vc>
+                                                                        <box>
+                                                                            <right>
+                                                                                <button bind="__delete" icon="remove" style="icon" />
+                                                                            </right>
+                                                                            <hc>
+                                                                                <icon icon="key" />
+                                                                                <dropdown bind="user" id="user-dropdown" />
+                                                                            </hc>   
+                                                                        </box>
+                                                                    </vc>
+                                                                </bind:template>
+                                                            </bind:collection>
+                                                        </formgroup>
+                                                    </vc>
+                                                </tab>
+
+                                                <tab title="Advanced">
+                                                    <vc>
+                                                        <formgroup text="Sharing">
+                                                            <formline text="Share using">
+                                                                <checkbox bind="share_nfs" text="NFS" />
+                                                                <checkbox bind="share_smb" text="Samba" />
+                                                                <checkbox bind="share_afp" text="AFP" />
+                                                            </formline>
+                                                        </formgroup>
+                                                        <formgroup text="Emulation">
+                                                            <formline text="Emulate">
+                                                                <checkbox bind="emulate_avid" text="Avid Workspace" />
+                                                            </formline>
+                                                        </formgroup>
+                                                    </vc>
+                                                </tab>
+
+                                                <tab title="Quotas">
+                                                    <vc>
+                                                        <formline text="Soft limit (Gb)">
+                                                            <textbox bind="quota_size_soft" type="integer" />
+                                                        </formline>
+                                                        <formline text="Hard limit (Gb)">
+                                                            <textbox bind="quota_size_hard" type="integer" />
+                                                        </formline>
+                                                    </vc>
+                                                </tab>
+                                            </tabs>
+                                        </indent>
+                                    </collapserow>
+                                </bind:template>
+                                    
+                                <hc>
+                                    <label text="Project name:" />
+                                    <textbox id="new-project-name" />
+                                    <button id="new-project" icon="plus" text="Create" />
+                                </hc>
+                            </vc>
+                        </bind:collection>
+
+
+                        <label style="bold" text="Quota usage" />
+                        <bind:collection bind="projects" id="projects">
+                            <dt bind="__items">
+                                <dtr>
+                                    <dth text="Name" />
+                                    <dth text="Status" />
+                                    <dth text="Used (Gb)" />
+                                    <dth text="Soft Limit (Gb)" />
+                                    <dth text="Hard Limit (Gb)" />
+                                    <dth text="Usage" />
+                                </dtr>
+                            </dt>
+                            <bind:template>
+                                <dtr>
+                                    <dtd>
+                                        <label bind="name" />
+                                    </dtd>
+                                    <dtd>
+                                        <label bind="quota_size_status" />
+                                    </dtd>
+                                    <dtd>
+                                        <label bind="quota_size_current" />
+                                    </dtd>
+                                    <dtd>
+                                        <label bind="quota_size_soft" />
+                                    </dtd>
+                                    <dtd>
+                                        <label bind="quota_size_hard" />
+                                    </dtd>
+                                    <dtd>
+                                        <progressbar bind="quota_size_usage" width="200" />
+                                    </dtd>
+                                </dtr>
+                            </bind:template>
+                        </bind:collection>
+                    </vc>
+                </tab>
+            </tabs>
+        </pad> 
+    </body>
+
+    <button id="save" text="Save" icon="ok" />
+</vc>
