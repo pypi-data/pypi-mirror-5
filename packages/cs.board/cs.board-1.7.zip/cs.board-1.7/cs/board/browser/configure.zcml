@@ -1,0 +1,97 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:soap="http://namespaces.zope.org/soap"
+    i18n_domain="cs.board">
+
+  <include package="plone.app.contentmenu" />
+
+  <!-- -*- extra stuff goes here -*- -->
+
+  <browser:page
+      for="..interfaces.IBoard"
+      name="view"
+      class=".boardview.BoardView"
+      template="boardview.pt"
+      allowed_interface=".boardview.IBoardView"
+      permission="zope.Public"
+      />
+
+
+  <browser:page
+      for="..interfaces.IBoardDocument"
+      name="view"
+      class=".documentview.DocumentView"
+      template="documentview.pt"
+      allowed_interface=".documentview.IDocumentView"
+      permission="zope.Public"
+      />
+
+
+  <!-- WS API -->
+  <!--
+  <browser:pages
+      for="..interfaces.IBoard"
+      class=".api.BoardAPI"
+      permission="cmf.ModifyPortalContent">
+
+    <browser:page
+        name="publish_document"
+        attribute="publish_document" />
+
+    <browser:page
+        name="get_filetype_info"
+        attribute="get_filetype_info" />
+
+    <browser:page
+        name="get_file_info"
+        attribute="get_file_info" />
+
+  </browser:pages>
+  -->
+
+  <soap:view
+      for="..interfaces.IBoard"
+      class=".api.BoardAPI"
+      permission="zope2.View"
+      methods="publish_document"
+      />
+
+  <soap:view
+      for="..interfaces.IBoard"
+      class=".api.BoardAPI"
+      permission="zope2.View"
+      methods="get_file_info"
+      />
+
+  <soap:view
+      for="..interfaces.IBoard"
+      class=".api.BoardAPI"
+      permission="zope2.View"
+      methods="get_filetype_info"
+      />
+
+
+  <!-- WSDL description -->
+  <browser:page
+      for="..interfaces.IBoard"
+      name="wsdl"
+      class=".api.BoardAPI"
+      attribute="wsdl"
+      permission="zope2.View"
+      />
+
+
+<!--
+...   <soap:view
+...       for="OFS.interfaces.IFolder"
+...       methods="echoString echoStringArray echoInteger echoIntegerArray
+...                echoFloat echoFloatArray echoStruct echoVoid echoBase64
+...                echoDate echoDecimal echoBoolean ValidateEmailRequest
+...                testFault"
+...       class="z3c.soap.README.EchoView"
+...       permission="zope2.SOAPAccess"
+...       />
+...
+-->
+</configure>
