@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+##
+# @package     py-pdf-collate
+# @author      Matt Koskela <mattkoskela@gmail.com>
+# @copyright   2013 Matt Koskela
+##
+
+"""
+pdf_collate
+
+This script collates your PDF document.
+"""
+
+import os
+import sys
+import argparse
+from pdf_collate import pdf
+from pdf_collate.version import __version__
+
+def main(args):
+    """Script runner.
+
+    @param args: script arguments
+    """
+
+    source = ""
+    output = ""
+
+    description = "Updates all editorial site monthly_uniques_us values."
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("source", type=str)
+    parser.add_argument("output", type=str, nargs="?")
+    parser.add_argument("--version",
+                        action="version",
+                        version="%(prog)s {}".format(__version__))
+    pargs = parser.parse_args(args)
+
+    if os.path.isfile(os.getcwd() + "/" + pargs.source):
+        source = os.getcwd() + "/" + pargs.source
+        if pargs.output:
+            output = os.getcwd() + "/" + pargs.output
+    elif os.path.exists(pargs.source):
+        source = pargs.source
+        if pargs.output:
+            output = pargs.output
+    else:
+        source = "BROKEN"
+
+    p = pdf.PDF()
+
+    if output:
+        p.collate_pages(source, output)
+    else:
+        p.collate_pages(source)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
