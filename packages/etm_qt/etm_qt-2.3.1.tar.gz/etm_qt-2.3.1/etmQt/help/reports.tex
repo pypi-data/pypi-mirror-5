@@ -1,0 +1,442 @@
+\documentclass[]{article}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifxetex
+  \usepackage{fontspec,xltxtra,xunicode}
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\else
+  \ifluatex
+    \usepackage{fontspec}
+    \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+    \newcommand{\euro}{€}
+  \else
+    \usepackage[utf8]{inputenc}
+  \fi
+\fi
+\usepackage{graphicx}
+% We will generate all images so they have a width \maxwidth. This means
+% that they will get their normal width if they fit onto the page, but
+% are scaled down if they would overflow the margins.
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+\else\Gin@nat@width\fi}
+\makeatother
+\let\Oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=\maxwidth]{#1}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex,
+              bookmarks=true,
+              pdfauthor={},
+              pdftitle={Reports},
+              colorlinks=true,
+              urlcolor=blue,
+              linkcolor=blue]{hyperref}
+\else
+  \usepackage[unicode=true,
+              bookmarks=true,
+              pdfauthor={},
+              pdftitle={Reports},
+              colorlinks=true,
+              urlcolor=blue,
+              linkcolor=blue]{hyperref}
+\fi
+\hypersetup{breaklinks=true, pdfborder={0 0 0}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Reports}
+
+\begin{document}
+\maketitle
+
+<style>
+body {
+    margin: auto;
+    padding-right: 1em;
+    padding-left: 1em;
+    max-width: 44em;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    color: black;
+    font-family: Verdana, sans-serif;
+    font-size: 100%;
+    line-height: 140%;
+    color: #333;
+}
+pre, tt{
+    font-family: monospace;
+    background-color:#f8f8f8;
+    padding: 2px 4px;
+}
+code{
+    background-color:#f8f8f8;
+    white-space: pre-wrap;
+    font-size: 110%;
+    padding: 1px 1px;
+}
+h1 a, h2 a, h3 a, h4 a, h5 a, li a {
+    text-decoration: none;
+    color: #7a5ada;
+}
+h1, h2, h3, h4, h5 { font-family: verdana;
+                     font-weight: bold;
+                     /*border-bottom: 1px dotted black;*/
+                     color: #7a5ada; }
+h1 {
+        font-size: 130%;
+}
+
+h2 {
+        font-size: 110%;
+                     border-bottom: 1px dotted black;
+}
+
+h3 {
+        font-size: 100%;
+                     border-bottom: 1px dotted black;
+}
+
+h4 {
+        font-size: 90%;
+        font-style: italic;
+                     border-bottom: 1px dotted black;
+}
+
+h5 {
+        font-size: 85%;
+        font-style: italic;
+                     border-bottom: 1px dotted black;
+}
+
+h1.title {
+        font-size: 200%;
+        font-weight: bold;
+        padding-top: 0.2em;
+        padding-bottom: 0.2em;
+        text-align: left;
+        border: none;
+}
+
+dt code {
+        font-weight: bold;
+}
+dd p {
+        margin-top: 0;
+}
+
+#footer {
+        padding-top: 1em;
+        font-size: 70%;
+        color: gray;
+        text-align: center;
+}
+</style>
+
+
+\tableofcontents
+
+\emph{etm} supports creating, printing and exporting reports. Either
+click on the report icon in the main window or press \emph{Control-R} to
+open the report dialog:
+
+\includegraphics{images/report_view.png}
+A \emph{report specification} is created by entering a report type
+character followed, perhaps, by one or more report options. Together,
+the type character and options determine which items will appear in the
+report and how they will be organized and displayed.
+
+You can select a report specification from a list of saved
+specifications, modify an existing specification or create an entirely
+new specification. Clicking on the \emph{create report} icon or pressing
+\emph{Control-R} will create a report based on the current
+specification.
+
+When you edit an existing specification, the background color of the
+entry field will change to yellow to indicate that this is a new, as yet
+unsaved specification. Pressing \emph{Return} will add the new
+specification temporarily to the list without affecting the original
+specification.
+
+If the current specification has been modified, then deleting it by
+clicking on the \emph{delete} icon or pressing \emph{Control-D} will
+replace the modified specification with the original. If the current
+specification has not been modified, then deleting it will temporarily
+remove it from the list.
+
+When temporary changes have been made to the list, the \emph{save}
+button will be enabled and you can either click on this button or press
+\emph{Control-S} to save the changes. If you attempt to close the
+reports dialog while there are unsaved changes, you will be given the
+opportunity to save them.
+
+\emph{Hint:} Entries in the specification field are subject to keystroke
+validation. This means, for example, that if you want to change
+
+\begin{verbatim}
+c -g ddd MMM d yyyy
+\end{verbatim}
+
+to
+
+\begin{verbatim}
+r -g ddd MMM d yyyy
+\end{verbatim}
+
+you will not be able to do it either by first deleting the `c' or by
+first inserting the `r'. Instead, you will need to first
+\emph{highlight} the `c' and then type `r' to replace it.
+
+There are three possible report type characters:
+
+\begin{description}
+\item[\emph{a}: actions]
+actions with arbitrary organization and time and/or value totals for
+time billing using the setting for \texttt{action\_template} in
+\texttt{etm.cfg}. see the \emph{Preferences} tab for details about
+\texttt{action\_template}.
+\item[\emph{c}: comprehensive datetimes]
+arbitrary item types and organization. Subject to optional filters,
+include undated items and all non-repeating, dated items. Additionally
+include all repetitions of repeating items with a finite number of
+repetitions. This includes repeating items with frequency \texttt{l}
+(list) and items with \texttt{\&u} (until) or \texttt{\&t} (total number
+of repetitions) entries. For repeating items with an infinite number of
+repetitions, include those repetitions that occur within the first
+\texttt{weeks\_after} weeks after the current week along with the first
+repetition after this interval. See the \emph{Preferences} tab for
+details about \texttt{weeks\_after}.
+\item[\emph{r}: relevant datetimes]
+arbitrary item types and organization. Subject to optional filters,
+include only undated items and instances of dated items that correspond
+to the \emph{relevant datetime} of the item, i.e., the past due date for
+any past due tasks, the starting datetime for any non-repeating items
+and the datetime of the next instance for any repeating items.
+\end{description}
+
+Report options are listed below. Report types \emph{c} and \emph{r}
+support all options. Report type \emph{a} supports all options except
+\emph{-o}.
+
+\subsubsection{-b BEGIN\_DATE}
+
+Fuzzy parsed date. Limit the display of dated items to those with
+datetimes falling \emph{on or after} this datetime. Relative day and
+month expressions can also be used so that, for example, \texttt{-b -14}
+would begin 14 days before the current date and \texttt{-b -1/1} would
+begin on the first day of the previous month. Default: None.
+
+\subsubsection{-c CONTEXT}
+
+Regular expression. Limit the display to items with contexts matching
+CONTEXT (ignoring case). Prepend an exclamation mark, i.e., use !CONTEXT
+rather than CONTEXT, to limit the display to items which do NOT have
+contexts matching CONTEXT.
+
+\subsubsection{-d DEPTH}
+
+Integer. Controls the depth of the outline display. With \texttt{-d 0},
+all levels would be displayed. With \texttt{-d 1}, only the top level
+would be displayed. With \texttt{-d 2} the first and second levels would
+be displayed and so forth. This is illustrated below:
+
+\begin{verbatim}
+-d 0
+    27.5h) England (3)
+        4.9h) Liverpool (1)
+        15h) London (1)
+        7.6h) Manchester (1)
+    0.7h) Iceland (1)
+    24.2h) Scotland (3)
+        3.1h) Edinburgh (1)
+        21.1h) Glasgow (2)
+            5.1h) North (1)
+            16h) South (1)
+    8.7h) Wales (2)
+        2.1h) Bangor (1)
+        6.6h) Cardiff (1)
+
+-d 1
+    27.5h) England (3)
+    0.7h) Iceland (1)
+    24.2h) Scotland (3)
+    8.7h) Wales (2)
+
+-d 2
+    27.5h) England (3)
+        4.9h) Liverpool (1)
+        15h) London (1)
+        7.6h) Manchester (1)
+    0.7h) Iceland (1)
+    24.2h) Scotland (3)
+        3.1h) Edinburgh (1)
+        21.1h) Glasgow (2)
+    8.7h) Wales (2)
+        2.1h) Bangor (1)
+        6.6h) Cardiff (1)
+\end{verbatim}
+
+\subsubsection{-e END\_DATE}
+
+Fuzzy parsed date. Limit the display of dated items to those with
+datetimes falling \emph{before} this datetime. As with BEGIN\_DATE
+relative month expressions can be used so that, for example,
+\texttt{-b -1/1  -e +1} would include all items from the previous month.
+Default: None.
+
+\subsubsection{-f FILE}
+
+Regular expression. Limit the display to items from files whose paths
+match FILE (ignoring case). Prepend an exclamation mark, i.e., use !FILE
+rather than FILE, to limit the display to items from files whose path
+does NOT match FILE.
+
+\subsubsection{-g GROUPBY}
+
+A comma separated list that determines how items will be grouped and
+sorted.
+
+\paragraph{date elements (can be combined within a single groupby list
+element)}
+
+\begin{description}
+\item[d]
+month day: 1 - 31
+\item[dd]
+month day: 01 - 31
+\item[ddd]
+locale specific abbreviated week day: Mon - Sun
+\item[dddd]
+locale specific week day: Monday - Sunday
+\item[M]
+month: 1 - 12
+\item[MM]
+month: 01 - 12
+\item[MMM]
+locale specific abbreviated month name: Jan - Dec
+\item[MMMM]
+locale specifice month name: January - December
+\item[yy]
+2-digit year
+\item[yyyy]
+4-digit year
+\end{description}
+
+\paragraph{non date elements (cannot be combined within a single list
+element)}
+
+\begin{description}
+\item[c]
+context
+\item[f]
+file path
+\item[k]
+keyword
+\item[l]
+location
+\item[u]
+user
+\end{description}
+
+For example, \texttt{-g ddd MMM d yyyy} would group by year, month and
+day together to give output such as
+
+\begin{verbatim}
+Fri Apr 1 2011
+    items for April 1
+Sat Apr 2 2011
+    items for April 2
+...
+\end{verbatim}
+
+Note that the groupby list \texttt{ddd MMM d yyyy} has a single element
+in which date elements are combined.
+
+With the heirarchial elements, file path and keyword, it is possible to
+use parts of the element as well as the whole. Consider, for example,
+the file path \texttt{A/B/C} with the components \texttt{{[}A, B, C{]}}.
+Then for this file path:
+
+\begin{verbatim}
+f[0] = A
+f[:2] = A/B
+k[2:] = C
+\end{verbatim}
+
+As another example suppose that keywords have the format
+\texttt{client:project:category}. Then
+\texttt{-g MMM yyyy, k{[}0{]}, k{[}1{]}} would group by year and month,
+then the first component of keyword and finally the second component of
+keyword to give output such as
+
+\begin{verbatim}
+Apr 2011
+    client a
+        project 1
+            items for client a project 1
+        project 2
+            items for client a project 2
+...
+\end{verbatim}
+
+Note that the groupby list \texttt{MMM yyyy, k{[}0{]}, k{[}1{]}} has
+three elements. In the first, date elements are combined. In the second
+and third, non date elements are used individually.
+
+Within groups, items are automatically sorted by date, type and time.
+
+\subsubsection{-k KEYWORD}
+
+Regular expression. Limit the display to items with contexts matching
+KEYWORD (ignoring case). Prepend an exclamation mark, i.e., use !KEYWORD
+rather than KEYWORD, to limit the display to items which do NOT have
+keywords matching KEYWORD.
+
+\subsubsection{-l LOCATION}
+
+Regular expression. Limit the display to items with location matching
+LOCATION (ignoring case). Prepend an exclamation mark, i.e., use
+!LOCATION rather than LOCATION, to limit the display to items which do
+NOT have a location that matches LOCATION.
+
+\subsubsection{-o OMIT}
+
+String. Show/hide a)ctions, all d)ay events, scheduled e)vents, p)ast
+due tasks, f)inished tasks, n)otes, r)eminders, all t)asks, u)ndated
+tasks and/or w)aiting tasks depending upon whether omit contains `a',
+`d', `e', `f', `p', `n', `r', 't', `u' and/or `w' and begins with '!'
+(show) or not (hide). For example, \texttt{-o a} would show everything
+except actions and \texttt{-o !a} would show only actions.
+
+\subsubsection{-s SEARCH}
+
+Regular expression. Limit the display to items containing SEARCH
+(ignoring case) in either the summary or in the description. Prepend an
+exclamation mark, i.e., use !SEARCH rather than SEARCH, to limit the
+display to items which do NOT contain SEARCH in either the summary or
+the description.
+
+\subsubsection{-t TAGS}
+
+Comma separated list of case insensitive regular expressions. E.g., use
+
+\begin{verbatim}
+-t tag1, !tag2
+\end{verbatim}
+
+to display items with one or more tags that match `tag1' but none that
+match `tag2'.
+
+\subsubsection{-u USER}
+
+Regular expression. Limit the display to items with user matching USER
+(ignoring case). Prepend an exclamation mark, i.e., use !USER rather
+than USER, to limit the display to items which do NOT have a user that
+matches USER.
+
+\end{document}

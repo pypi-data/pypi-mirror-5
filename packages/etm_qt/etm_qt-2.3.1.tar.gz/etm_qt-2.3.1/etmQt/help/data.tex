@@ -1,0 +1,829 @@
+\documentclass[]{article}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifxetex
+  \usepackage{fontspec,xltxtra,xunicode}
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\else
+  \ifluatex
+    \usepackage{fontspec}
+    \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+    \newcommand{\euro}{€}
+  \else
+    \usepackage[utf8]{inputenc}
+  \fi
+\fi
+\usepackage{graphicx}
+% We will generate all images so they have a width \maxwidth. This means
+% that they will get their normal width if they fit onto the page, but
+% are scaled down if they would overflow the margins.
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+\else\Gin@nat@width\fi}
+\makeatother
+\let\Oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=\maxwidth]{#1}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex,
+              bookmarks=true,
+              pdfauthor={},
+              pdftitle={Data},
+              colorlinks=true,
+              urlcolor=blue,
+              linkcolor=blue]{hyperref}
+\else
+  \usepackage[unicode=true,
+              bookmarks=true,
+              pdfauthor={},
+              pdftitle={Data},
+              colorlinks=true,
+              urlcolor=blue,
+              linkcolor=blue]{hyperref}
+\fi
+\hypersetup{breaklinks=true, pdfborder={0 0 0}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Data}
+
+\begin{document}
+\maketitle
+
+<style>
+body {
+    margin: auto;
+    padding-right: 1em;
+    padding-left: 1em;
+    max-width: 44em;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    color: black;
+    font-family: Verdana, sans-serif;
+    font-size: 100%;
+    line-height: 140%;
+    color: #333;
+}
+pre, tt{
+    font-family: monospace;
+    background-color:#f8f8f8;
+    padding: 2px 4px;
+}
+code{
+    background-color:#f8f8f8;
+    white-space: pre-wrap;
+    font-size: 110%;
+    padding: 1px 1px;
+}
+h1 a, h2 a, h3 a, h4 a, h5 a, li a {
+    text-decoration: none;
+    color: #7a5ada;
+}
+h1, h2, h3, h4, h5 { font-family: verdana;
+                     font-weight: bold;
+                     /*border-bottom: 1px dotted black;*/
+                     color: #7a5ada; }
+h1 {
+        font-size: 130%;
+}
+
+h2 {
+        font-size: 110%;
+                     border-bottom: 1px dotted black;
+}
+
+h3 {
+        font-size: 100%;
+                     border-bottom: 1px dotted black;
+}
+
+h4 {
+        font-size: 90%;
+        font-style: italic;
+                     border-bottom: 1px dotted black;
+}
+
+h5 {
+        font-size: 85%;
+        font-style: italic;
+                     border-bottom: 1px dotted black;
+}
+
+h1.title {
+        font-size: 200%;
+        font-weight: bold;
+        padding-top: 0.2em;
+        padding-bottom: 0.2em;
+        text-align: left;
+        border: none;
+}
+
+dt code {
+        font-weight: bold;
+}
+dd p {
+        margin-top: 0;
+}
+
+#footer {
+        padding-top: 1em;
+        font-size: 70%;
+        color: gray;
+        text-align: center;
+}
+</style>
+
+
+\tableofcontents
+
+\emph{etm} data entries (events, tasks, and so forth) are kept in text
+files with the extension \texttt{.txt} in the directory \texttt{datadir}
+specified in your \texttt{etm.cfg} file. Items begin with a type
+character such as \texttt{*} (event) and continue on one or more lines
+either until the end of the file is reached or another line is found
+that begins with a type character. The beginning type character for each
+item is followed by the item summary and then, perhaps, by one or more
+\texttt{@key value} pairs.
+
+The discussion of possible entry types below is followed by a discussion
+of the possible \texttt{@key value} pairs.
+
+\subsection{Entry types}
+
+\subsubsection{Action}
+
+A record of the time-consuming action required to complete a task or
+participate in an event. Actions are not reminders, they are instead
+records of how time was actually spent. Action lines begin with a tilde,
+\texttt{\textasciitilde{}}.
+
+\begin{verbatim}
+    ~ work on sales presentation @s mon 3p @e 1h15m
+\end{verbatim}
+
+Entries such as \texttt{@s mon 3p} and \texttt{@e 1h15m} are discussed
+below under \emph{Item details}.
+
+\subsubsection{Event}
+
+Something that will happen on particular day(s) and time(s). Event lines
+begin with an asterick, \texttt{*}.
+
+\begin{verbatim}
+    * dinner with Karen and Al @s sat 7p @e 3h
+\end{verbatim}
+
+Events have a starting datetime, \texttt{@s} and an extent, \texttt{@e}.
+The ending datetime is given implicitly as the sum of the starting
+datetime and the extent. Events that span more than one day are
+possible, e.g.,
+
+\begin{verbatim}
+    * Sales meeting @s 9a wed @e 2d8h
+\end{verbatim}
+
+begins at 9am on Wednesday and ends at 5pm on Friday.
+
+\subsubsection{All day event}
+
+For holidays, anniversaries, birthdays and the like. Like an event with
+a date but no starting time and no extent. All day events begin with a
+caret sign, \texttt{\^{}}.
+
+\begin{verbatim}
+    ^ The !1776! Independence Day @s 2010-07-04 @r y &M 7 &m 4
+\end{verbatim}
+
+On July 4, 2013, this would appear as
+\texttt{The 237th Independence Day}.
+
+\subsubsection{Note}
+
+A record of some useful information. Note lines begin with an
+exclamation point, \texttt{!}.
+
+\begin{verbatim}
+! xyz software @d user: dnlg, pw: abd123gef
+\end{verbatim}
+
+\subsubsection{Task}
+
+Something that needs to be done. It may or may not have a due date. Task
+lines begin with a minus sign, \texttt{-}.
+
+\begin{verbatim}
+- pay bills @s Oct 25
+\end{verbatim}
+
+A task with an \texttt{@s} entry becomes due on that date and past due
+when that date has passed.
+
+\subsubsection{Delegated task}
+
+A task that is assigned to someone else, usually the person(s)
+designated in an \texttt{@u} entry. Delegated tasks begin with a percent
+sign, \texttt{\%}.
+
+\begin{verbatim}
+    % make reservations for trip @u joe @s fri
+\end{verbatim}
+
+\subsubsection{Task group}
+
+A collection of related tasks, some of which may be prerequities for
+others. Task groups begin with a plus sign, \texttt{+}.
+
+\begin{verbatim}
+    + dog house
+      @j pickup lumber      &q 1
+      @j cut pieces         &q 2
+      @j assemble           &q 3
+      @j pickup paint       &q 1
+      @j paint              &q 4
+\end{verbatim}
+
+Note that a task group is a single item and is treated as such. E.g., if
+any job is selected for editing then the entire group is displayed.
+
+Individual jobs are given by the \texttt{@j} entries. The \emph{queue}
+entries, \texttt{\&q}, set the order --- tasks with smaller \&q values
+are prerequisites for subsequent tasks with larger \&q values. In the
+example above, neither ``pickup lumber'' nor ``pickup paint'' have any
+prerequisites. ``Pickup lumber'', however, is a prerequisite for ``cut
+pieces'' which, in turn, is a prerequisite for ``assemble''. Both
+``assemble'' and ``pickup paint'' are prerequisites for ``paint''.
+
+The way a task group is displayed is illustrated below. Note that jobs
+are numbered and that jobs with unfinished prerequisites are labeled
+with a different icon.
+\includegraphics{images/doghouse1.png}
+When a job is completed, its icon is changed and it is displayed on the
+date the job was completed. Note that completing ``pickup lumber'' makes
+``cut pieces'' available for completion.
+\includegraphics{images/doghouse2.png}
+\subsubsection{In basket}
+
+A quick, don't worry about the details item to be edited later when you
+have the time. In basket entries begin with a dollar sign, \texttt{\$}.
+
+\begin{verbatim}
+    $ joe 919 123-4567
+\end{verbatim}
+
+If you create an item using \emph{etm} and forget to provide a type
+character, an \texttt{\$} will automatically be inserted.
+
+\subsubsection{Someday maybe}
+
+Something are you don't want to forget about altogether but don't want
+to appear on your next or scheduled lists. Someday maybe items begin
+with a question mark, \texttt{?}.
+
+\begin{verbatim}
+    ? lose weight and exercise more
+\end{verbatim}
+
+\subsubsection{Hidden}
+
+Hidden items begin with a hash mark, \texttt{\#}. Such items are ignored
+by etm save for appearing in the folder view. Stick a hash mark in front
+of any item that you don't want to delete but don't want to see in your
+other views.
+
+\subsubsection{Defaults}
+
+Default entries begin with an equal sign, \texttt{=}. These entries
+consist of \texttt{@key value} pairs which then become the defaults for
+subsequent entries in the same file until another \texttt{=} entry is
+reached.
+
+Suppose, for example, that a particular file contains items relating to
+``project\_a'' for ``client\_1''. Then entering
+
+\begin{verbatim}
+= @k client_1:project_a
+\end{verbatim}
+
+on the first line of the file and
+
+\begin{verbatim}
+=
+\end{verbatim}
+
+on the twentieth line of the file would set the default keyword for
+entries between the first and twentieth line in the file.
+
+\subsection{@key-value pairs}
+
+Note in the following that when the required value in an
+\texttt{@key value} pair is a either a \emph{datetime} or an \emph{time
+period}, special formats are used.
+
+\emph{etm} supports fuzzy parsing of datetimes. Suppose, for example,
+that it is currently Wednesday, November 14, 2012. Then, in
+\texttt{@keys} calling for a datetime, values would expand as
+illustrated below.
+
+\begin{itemize}
+\item
+  \texttt{mon 2p}: 2:00pm Monday, November 19
+\item
+  \texttt{fri}: 12:00am Friday, November 16
+\item
+  \texttt{9a -1/1}: 9:00am Monday, October 1
+\item
+  \texttt{+2/15}: 12:00am Tuesday, January 15 2013
+\item
+  \texttt{8p +7}: 8:00pm Monday, November 26
+\item
+  \texttt{-14}: 12:00am Monday, November 5
+\end{itemize}
+
+In \texttt{@keys} calling for a time period, values would expand as
+follows:
+
+\begin{itemize}
+\item
+  \texttt{2h30m}: 2 hours, 30 minutes
+\item
+  \texttt{7d}: 7 days
+\item
+  \texttt{45m} or \texttt{45}: 45 minutes
+\end{itemize}
+
+\subsubsection{@a alert}
+
+The specification of the alert(s) to use with the item. One or more
+alerts can be specified in an item. E.g.,
+
+\begin{verbatim}
+@a 10m, 5m
+@a 1h: s
+\end{verbatim}
+
+would trigger the alert(s) specified by \texttt{default\_alert} in your
+\texttt{etm.cfg} at 10 and 5 minutes before the starting time and a
+(s)ound alert one hour before the starting time.
+
+Similary, the alert
+
+\begin{verbatim}
+@a 2d: e; who@what.com, where2@when.org; filepath1, filepath2
+\end{verbatim}
+
+would send emails to the two listed recipients exactly 2 days (48 hours)
+before the starting time of the item with the item summary as the
+subject, with file1 and file2 as attachments and with the body of the
+message composed using \texttt{email\_template} from your
+\texttt{etm.cfg}.
+
+Finally,
+
+\begin{verbatim}
+@a 0: p; program_path
+\end{verbatim}
+
+would execute \texttt{program\_path} at the starting time of the item.
+
+The format for each of these:
+
+\begin{verbatim}
+@a <trigger times> [: action [; arguments]]
+\end{verbatim}
+
+In addition to the default action used when the optional
+\texttt{: action} is not given, there are five possible values for
+\texttt{action}:
+
+\begin{itemize}
+\item
+  \texttt{d} Execute the setting for \texttt{display} in
+  \texttt{etm.cfg}.
+\item
+  \texttt{v} Execute the setting for \texttt{voice} in the
+  \texttt{etm.cfg}.
+\item
+  \texttt{s} Execute the setting for \texttt{sound} in the
+  \texttt{etm.cfg}.
+\item
+  \texttt{e; recipients{[};attachments{]}} Send an email to
+  \texttt{recipients} (a comma separated list of email addresses or a
+  template that expands to a list of email addresses) optionally
+  attaching \texttt{attachments} (a comma separated list of file paths).
+  The item summary is used as the subject of the email and the expanded
+  value of \texttt{email\_template} from \texttt{etm.cfg} as the body.
+\item
+  \texttt{p; process} Execute the command given by \texttt{process}.
+\end{itemize}
+
+Note: either \texttt{e} or \texttt{p} can be combined with other actions
+in a single alert but not with one another.
+
+\subsubsection{@b beginby}
+
+An integer number of days before the starting date time at which to
+begin displaying \emph{begin by} notices.
+
+\subsubsection{@c context}
+
+Intended primarily for tasks to indicate the context in which the task
+can be completed. Common contexts include home, office, phone, computer
+and errands. The ``next view'' supports this usage by showing undated
+tasks, grouped by context. If you're about to run errands, for example,
+you can open the ``next view'', look under ``errands'' and be sure that
+you will have no ``wish I had remembered'' regrets.
+
+\subsubsection{@d description}
+
+An elaboration of the details of the item to complement the summary.
+
+\subsubsection{@e extent}
+
+A time period string such as \texttt{1d2h} (1 day 2 hours). For an
+action, this would be the elapsed time. For a task, this could be an
+estimate of the time required for completion. For an event, this would
+be the duration. The ending time of the event would be this much later
+than the starting datetime.
+
+\subsubsection{@f done; due}
+
+Datetimes; tasks, delegated tasks and task groups only. When a task is
+completed an \texttt{@f done; due} entry is added to the task.
+Similarly, when a job from a task group is completed in etm, an
+\texttt{\&f done; due} entry is appended to the job and it is removed
+from the list of prerequisites for the other jobs. In both cases
+\texttt{done} is the completion datetime and \texttt{due} is the
+datetime that the task or job was due. The completed task or job is
+shown as finished on the completion date. When the last job in a task
+group is finished an \texttt{@f done; due} entry is added to the task
+group itself reflecting the datetime that the last job was done and, if
+the task group is repeating, the \texttt{\&f} entries are removed from
+the individual jobs.
+
+Another step is taken for repeating task groups. When the first job in a
+task group is completed, the \texttt{@s} entry is updated using the
+setting for \texttt{@o} (above) to show the next datetime the task group
+is due and the \texttt{@f} entry is removed from the task group. This
+means when some, but not all of the jobs for the current repetition have
+been completed, only these job completions will be displayed. Otherwise,
+when none of the jobs for the current repetition have been completed,
+then only that last completion of the task group itself will be
+displayed.
+
+Consider, for example, the following repeating task group which repeats
+monthly on the last weekday on or before the 25th.
+
+\begin{verbatim}
++ pay bills @s 11/23 @f 10/24;10/25
+  @r m &w MO,TU,WE,TH,FR &m 23,24,25 &s -1
+  @j organize bills &q 1
+  @j pay on-line bills &q 3
+  @j get stamps, envelopes, checkbook &q 1
+  @j write checks &q 2
+  @j mail checks &q 3
+\end{verbatim}
+
+Here ``organize bills'' and ``get stamps, envelopes, checkbook'' have no
+prerequisites. ``Organize bills'', however, is a prerequisite for ``pay
+on-line bills'' and both ``organize bills'' and ``get stamps, envelops,
+checkbook'' are prerequisites for ``write checks'' which, in turn, is a
+prerequisite for ``mail checks''.
+
+The repetition that was due on 10/25 was completed on 10/24. The next
+repetition was due on 11/23 and, since none of the jobs for this
+repetition have been completed, the completion of the group on 10/24 and
+the list of jobs due on 11/23 will be displayed initially. The following
+sequence of screen shots show the effect of completing the jobs for the
+11/23 repetition one by one on 11/27.
+
+\includegraphics{images/paybills1.png}
+\includegraphics{images/paybills2.png}
+\includegraphics{images/paybills3.png}
+\includegraphics{images/paybills4.png}
+\includegraphics{images/paybills5.png}
+\includegraphics{images/paybills6.png}
+\subsubsection{@g goto}
+
+The path to a file or a URL to be opened using the system default
+application when the user presses \emph{Control-G} in the GUI.
+
+\subsubsection{@j job}
+
+Component tasks or jobs within a task group are given by \texttt{@j job}
+entries. \texttt{@key value} entries prior to the first \texttt{@j}
+become the defaults for the jobs that follow. \texttt{\&key value}
+entries given in jobs use \texttt{\&} rather than \texttt{@} and apply
+only to the specific job.
+
+Many key-value pairs can be given either in the group task using
+\texttt{@} or in the component jobs using \texttt{\&}:
+
+\begin{itemize}
+\item
+  \texttt{@c} or \texttt{\&c}: context
+\item
+  \texttt{@d} or \texttt{\&d}: description
+\item
+  \texttt{@e} or \texttt{\&e}: extent
+\item
+  \texttt{@f} or \texttt{\&f}: done; due (datetimes)
+\item
+  \texttt{@k} or \texttt{\&k}: keyword
+\item
+  \texttt{@l} or \texttt{\&l}: location
+\end{itemize}
+
+The key-value pair \texttt{\&q} (queue position) can \emph{only} be
+given in component jobs where it is required. Key-values other than
+\texttt{\&q} and those listed above, can \emph{only} be given in the
+initial group task entry and their values are inherited by the component
+jobs.
+
+\subsubsection{@k keyword}
+
+A heirarchical classifier for the item. Intended for actions to support
+time billing where a common format would be
+\texttt{client:job:category}. \emph{etm} treats such a keyword as a
+heirarchy so that an action report grouped by month and then keyword
+might appear as follows
+
+\begin{verbatim}
+    27.5h) Client 1 (3)
+        4.9h) Project A (1)
+        15h) Project B (1)
+        7.6h) Project C (1)
+    24.2h) Client 2 (3)
+        3.1h) Project D (1)
+        21.1h) Project E (2)
+            5.1h) Category a (1)
+            16h) Category b (1)
+    4.2h) Client 3 (1)
+    8.7h) Client 4 (2)
+        2.1h) Project F (1)
+        6.6h) Project G (1)
+\end{verbatim}
+
+An arbitrary number of heirarchical levels in keywords is supported.
+
+\subsubsection{@l location}
+
+The location at which, for example, an event will take place.
+
+\subsubsection{@m memo}
+
+Further information about the item not included in the summary or the
+description. Since the summary is used as the subject of an email alert
+and the descripton is commonly included in the body of an email alert,
+this field could be used for information not to be included in the
+email.
+
+\subsubsection{@o overdue}
+
+Repeating tasks only. One of the following choices: k) keep, r) restart,
+or s) skip. Details below.
+
+\subsubsection{@p priority}
+
+Either 0 (no priority) or an intger between 1 (highest priority) and 9
+(lowest priority). Primarily used with undated tasks.
+
+\subsubsection{@r repetition rule}
+
+The specification of how an item is to repeat. Repeating items
+\textbf{must} have an \texttt{@s} entry as well as one or more
+\texttt{@r} entries. Generated datetimes are those satisfying any of the
+\texttt{@r} entries and falling \textbf{on or after} the datetime given
+in \texttt{@s}.
+
+A repetition rule begins with
+
+\begin{verbatim}
+@r frequency
+\end{verbatim}
+
+where \texttt{frequency} is one of the following characters:
+
+\begin{itemize}
+\item
+  \texttt{y}: yearly
+\item
+  \texttt{m}: monthly
+\item
+  \texttt{m}: weekly
+\item
+  \texttt{d}: daily
+\item
+  \texttt{l}: list (a list of datetimes will be provided using
+  \texttt{\&+})
+\end{itemize}
+
+The \texttt{@r frequency} entry can, optionally, be followed by one or
+more \texttt{\&key value} pairs:
+
+\begin{itemize}
+\item
+  \texttt{\&i}: interval (positive integer, default = 1) E.g, with
+  frequency \texttt{w}, interval 3 would repeat every three weeks.
+\item
+  \texttt{\&t}: total (positive integer) Include no more than this total
+  number of repetitions.
+\item
+  \texttt{\&s}: bysetpos (integer) See the payday example below for an
+  illustration of bysetpos.
+\item
+  \texttt{\&u}: until (datetime) Only include repetitions falling
+  \emph{before} (not including) this datetime.
+\item
+  \texttt{\&M}: bymonth (1, 2, \ldots{}, 12)
+\item
+  \texttt{\&m}: bymonthday (1, 2, \ldots{}, 31)
+\item
+  \texttt{\&W}: byweekno (1, 2, \ldots{}, 53)
+\item
+  \texttt{\&w}: byweekday (integer 0, 1, \ldots{}, 6 or English weekday
+  abbreviation SU \ldots{} SA)
+\item
+  \texttt{\&h}: byhour (0 \ldots{} 23)
+\item
+  \texttt{\&n}: byminute (0 \ldots{} 59)
+\end{itemize}
+
+Repetition examples:
+
+\begin{itemize}
+\item
+  Payday (an all day event) on the last week day of each month. (The
+  \texttt{\&s -1} entry extracts the last date which is both a weekday
+  and falls within the last three days of the month.)
+
+\begin{verbatim}
+^ payday @s 2010-07-01
+  @r m &w MO, TU, WE, TH, FR &m -1, -2, -3 &s -1
+\end{verbatim}
+\item
+  Take a prescribed medication daily (an event) from the 23rd through
+  the 27th of the current month at 10am, 2pm, 6pm and 10pm and trigger
+  an alert zero minutes before each event.
+
+\begin{verbatim}
+* take Rx @d 10a 23  @r d &u 11p 27 &h 10, 14 18, 22 @a 0
+\end{verbatim}
+\item
+  Vote for president (an all day event) every four years on the first
+  Tuesday after a Monday in November. (The \texttt{\&m range(2,9)}
+  requires the month day to fall within 2 \ldots{} 8 and thus, combined
+  with \texttt{\&w TU} to be the first Tuesday following a Monday.)
+
+\begin{verbatim}
+^ Vote for president @s 2012-11-06
+  @r y &i 4 &M 11 &m range(2,9) &w TU
+\end{verbatim}
+\end{itemize}
+
+Optionally, \texttt{@+} and \texttt{@-} entries can be given.
+
+\begin{itemize}
+\item
+  \texttt{@+}: include (comma separated list to datetimes to be
+  \emph{added} to those generated by the \texttt{@r} entries)
+\item
+  \texttt{@-}: exclude (comma separated list to datetimes to be
+  \emph{removed} from those generated by the \texttt{@r} entries)
+\end{itemize}
+
+A repeating \emph{task} may optionally also include an
+\texttt{@o \textless{}k\textbar{}s\textbar{}r\textgreater{}} entry
+(default = k):
+
+\begin{itemize}
+\item
+  \texttt{@o k}: Keep the current due date if it becomes overdue and use
+  the next due date from the recurrence rule if it is finished early.
+  This would be appropriate, for example, for the task `file tax
+  return'. The return due April 15, 2009 must still be filed even if it
+  is overdue and the 2010 return won't be due until April 15, 2010 even
+  if the 2009 return is finished early.
+\item
+  \texttt{@o s}: Skip overdue due dates and set the due date for the
+  next repetition to the first due date from the recurrence rule on or
+  after the current date. This would be appropriate, for example, for
+  the task `put out the trash' since there is no point in putting it out
+  on Tuesday if it's picked up on Mondays. You might just as well wait
+  until the next Monday to put it out. There's also no point in being
+  reminded until the next Monday.
+\item
+  \texttt{@o r}: Restart the repetitions based on the last completion
+  date. Suppose you want to mow the grass once every ten days and that
+  when you mowed yesterday, you were already nine days past due. Then
+  you want the next due date to be ten days from yesterday and not
+  today. Similarly, if you were one day early when you mowed yesterday,
+  then you would want the next due date to be ten days from yesterday
+  and not ten days from today.
+\end{itemize}
+
+\subsubsection{@s starting datetime}
+
+When an action is started, an event begins or a task is due.
+
+\subsubsection{@t tags}
+
+A tag or list of tags for the item.
+
+\subsubsection{@u user}
+
+Intended to specify the person to whom a delegated task is assigned.
+Could also be used in actions to indicate the person performing the
+action.
+
+\subsubsection{@v value}
+
+A key from \texttt{values} in your \texttt{etm.cfg}. Used in actions to
+apply a billing rate to time spent in an action. E.g., with
+
+\begin{verbatim}
+    values:
+        br1: 45.0
+        br2: 60.0
+\end{verbatim}
+
+then entries of \texttt{@v br1} and \texttt{@e 2h30m} in an action would
+entail a value of \texttt{45.0 * 2.5 = 112.50}.
+
+\subsubsection{@z time zone}
+
+The time zone of the item, e.g., US/Eastern. The starting and other
+datetimes in the item will be interpreted as belonging to this time
+zone.
+
+\subsubsection{@+ include}
+
+A datetime or list of datetimes to be added to the repetitions generated
+by the \texttt{@r rrule} entry.
+
+\subsubsection{@- exclude}
+
+A datetime or list of datetimes to be removed from the repetitions
+generated by the \texttt{@r rrule} entry.
+
+\subsection{File paths}
+
+\emph{etm} offers two heirarchical ways of organizing your data: by file
+path and by keyword. There are no hard and fast rules about how to use
+these heirarchies but the goal is a system that makes complementary uses
+of file path and keyword and fits your needs. As with any filing system,
+planning and consistency are paramount.
+
+For example, one pattern of use for a business would be to use file path
+for people and keyword for client-project-category.
+
+Similarly, a family could use file path to separate personal and shared
+items for family members, for example:
+
+\begin{verbatim}
+root etm data directory
+    dag
+    erp
+    shared
+        holidays
+        birthdays
+        events
+\end{verbatim}
+
+Here
+
+\begin{verbatim}
+~dag/.etm/etm.cfg
+~erp/.etm/etm.cfg
+\end{verbatim}
+
+would both contain \texttt{datadir} entries specifying the common root
+data directory. Additionally, if these configuration files contained,
+respectively, the entries
+
+\begin{verbatim}
+calendars
+- [dag, true, dag]
+- [erp, false, erp]
+- [shared, true, shared]
+\end{verbatim}
+
+and
+
+\begin{verbatim}
+calendars
+- [erp, true, erp]
+- [dag, false, dag]
+- [shared, true, shared]
+\end{verbatim}
+
+then, by default, both dag and erp would see the entries from their
+personal files as well as the shared entries and each could optionally
+view the entries from the other's personal files as well. See the
+\emph{Preferences} tab for details on the \texttt{calendars} entry.
+
+\end{document}

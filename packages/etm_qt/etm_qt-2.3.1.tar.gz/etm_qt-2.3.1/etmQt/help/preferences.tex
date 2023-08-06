@@ -1,0 +1,661 @@
+\documentclass[]{article}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifxetex
+  \usepackage{fontspec,xltxtra,xunicode}
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\else
+  \ifluatex
+    \usepackage{fontspec}
+    \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+    \newcommand{\euro}{€}
+  \else
+    \usepackage[utf8]{inputenc}
+  \fi
+\fi
+\usepackage{graphicx}
+% We will generate all images so they have a width \maxwidth. This means
+% that they will get their normal width if they fit onto the page, but
+% are scaled down if they would overflow the margins.
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+\else\Gin@nat@width\fi}
+\makeatother
+\let\Oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=\maxwidth]{#1}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex,
+              bookmarks=true,
+              pdfauthor={},
+              pdftitle={Preferences},
+              colorlinks=true,
+              urlcolor=blue,
+              linkcolor=blue]{hyperref}
+\else
+  \usepackage[unicode=true,
+              bookmarks=true,
+              pdfauthor={},
+              pdftitle={Preferences},
+              colorlinks=true,
+              urlcolor=blue,
+              linkcolor=blue]{hyperref}
+\fi
+\hypersetup{breaklinks=true, pdfborder={0 0 0}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Preferences}
+
+\begin{document}
+\maketitle
+
+<style>
+body {
+    margin: auto;
+    padding-right: 1em;
+    padding-left: 1em;
+    max-width: 44em;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    color: black;
+    font-family: Verdana, sans-serif;
+    font-size: 100%;
+    line-height: 140%;
+    color: #333;
+}
+pre, tt{
+    font-family: monospace;
+    background-color:#f8f8f8;
+    padding: 2px 4px;
+}
+code{
+    background-color:#f8f8f8;
+    white-space: pre-wrap;
+    font-size: 110%;
+    padding: 1px 1px;
+}
+h1 a, h2 a, h3 a, h4 a, h5 a, li a {
+    text-decoration: none;
+    color: #7a5ada;
+}
+h1, h2, h3, h4, h5 { font-family: verdana;
+                     font-weight: bold;
+                     /*border-bottom: 1px dotted black;*/
+                     color: #7a5ada; }
+h1 {
+        font-size: 130%;
+}
+
+h2 {
+        font-size: 110%;
+                     border-bottom: 1px dotted black;
+}
+
+h3 {
+        font-size: 100%;
+                     border-bottom: 1px dotted black;
+}
+
+h4 {
+        font-size: 90%;
+        font-style: italic;
+                     border-bottom: 1px dotted black;
+}
+
+h5 {
+        font-size: 85%;
+        font-style: italic;
+                     border-bottom: 1px dotted black;
+}
+
+h1.title {
+        font-size: 200%;
+        font-weight: bold;
+        padding-top: 0.2em;
+        padding-bottom: 0.2em;
+        text-align: left;
+        border: none;
+}
+
+dt code {
+        font-weight: bold;
+}
+dd p {
+        margin-top: 0;
+}
+
+#footer {
+        padding-top: 1em;
+        font-size: 70%;
+        color: gray;
+        text-align: center;
+}
+</style>
+
+
+\tableofcontents
+
+Each configuration option is listed below with an illustrative entry and
+a brief discussion. These entries are stored in your \texttt{etm.cfg}
+file. When this file is edited int \emph{etm}, your changes become
+effective as soon as they are saved --- you do not need to restart
+\emph{etm}.
+
+The following template expansions can be used in \texttt{displaycmd},
+\texttt{voicecmd} and \texttt{email\_template} below.
+
+\begin{itemize}
+\item
+  \texttt{!summary!}: the item's summary (this will be used as the
+  subject of the email)
+\item
+  \texttt{!start\_date!}: the starting date of the event
+\item
+  \texttt{!start\_time!}: the starting time of the event
+\item
+  \texttt{!time\_span!}: the time span of the event (see below)
+\item
+  \texttt{!alert\_time!}: the time the alert is triggered
+\item
+  \texttt{!time\_left!}: the time remaining until the event starts
+\item
+  \texttt{!when!}: the time remaining until the event starts as a
+  sentence (see below)
+\item
+  \texttt{!d!}: the item's \texttt{@d} (description)
+\item
+  \texttt{!l!}: the item's \texttt{@l} (location)
+\end{itemize}
+
+The value of \texttt{!time\_span!} depends on the starting and ending
+datetimes. Here are some examples:
+
+\begin{itemize}
+\item
+  if the start and end \emph{datetimes} are the same (zero extent):
+  \texttt{10am Wed, Aug 4}
+\item
+  else if the times are different but the \emph{dates} are the same:
+  \texttt{10am - 2pm Wed, Aug 4}
+\item
+  else if the dates are different:
+  \texttt{10am Wed, Aug 4 - 9am Thu, Aug 5}
+\item
+  additionally, the year is appended if a date falls outside the current
+  year:
+
+\begin{verbatim}
+10am - 2pm Thu, Jan 3 2013
+10am Mon, Dec 31 - 2pm Thu, Jan 3 2013
+\end{verbatim}
+\end{itemize}
+
+Here are values of \texttt{!time\_left!} and \texttt{!when!} for some
+illustrative values of extent:
+
+\begin{itemize}
+\item
+  \texttt{@e 2d3h15m}
+
+\begin{verbatim}
+time_left : '2 days 3 hours 15 minutes'
+when      : 'begins 2 days 3 hours 15 minutes from now'
+\end{verbatim}
+\item
+  \texttt{@e 20m}
+
+\begin{verbatim}
+time_left : '20 minutes'
+when      : 'begins 20 minutes from now'
+\end{verbatim}
+\item
+  \texttt{@e 0m}
+
+\begin{verbatim}
+time_left : ''
+when      : 'begins now'
+\end{verbatim}
+\end{itemize}
+
+Note that `begins', `begins now', `from now', `days', `day', `hours' and
+so forth are determined by the translation file in use.
+
+Available template expansions for \texttt{action\_template} (below)
+include:
+
+\begin{itemize}
+\item
+  \texttt{!label!} the item or group label.
+\item
+  \texttt{!time!} the total time using the setting for
+  \texttt{action\_minutes} (below).
+\item
+  \texttt{!value!} the billing value of the total time. Requires action
+  entries such as \texttt{@v br1} and settings for
+  \texttt{action\_minutes} and \texttt{action\_rates} (below).
+\item
+  \texttt{!count!} the number of children represented in the time and
+  value totals.
+\end{itemize}
+
+\subsubsection{action\_labels}
+
+\begin{verbatim}
+action_labels:
+    time: ['', 'h) ']
+    value: ['$', ' ']
+\end{verbatim}
+
+A prefix and suffix to attach when expanding action templates if the
+corresponding value is not zero. When the value is zero, the prefix, the
+zero and the suffix are all omitted.
+
+\subsubsection{action\_minutes}
+
+\begin{verbatim}
+action_minutes: 6
+\end{verbatim}
+
+Round action times up to the nearest \texttt{minutes} minutes in
+reports. Possible choices are 0, 6, 12, 15, 30 and 60. With 0, no
+rounding is done and times are reported as integer minutes. Otherwise,
+the prescribed rounding is done and times are reported as floating point
+hours.
+
+\subsubsection{action\_rates}
+
+\begin{verbatim}
+action_rates:
+    br1: 45.0
+    br2: 60.0
+\end{verbatim}
+
+Possible billing rates to use for times in actions. An arbitrary number
+of rates can be entered using whatever labels you like. These labels can
+then be used in actions so that, e.g., with \texttt{action\_minutes: 6}
+and the setting for \texttt{action\_labels} above:
+
+\begin{verbatim}
+... @e 75m @v br1 ...
+\end{verbatim}
+
+in an action would give these expansions in an action template:
+
+\begin{verbatim}
+!total! = 1.3h)
+!value! = $58.50
+\end{verbatim}
+
+Note that etm accumulates group totals from the \texttt{time} and
+\texttt{value} of individual actions. Thus
+
+\begin{verbatim}
+... @e 75m @v br1 ...
+... @e 60m @v br2 ...
+\end{verbatim}
+
+would aggregate to
+
+\begin{verbatim}
+!time!  = 2.3h)     (= 1.3 + 1)
+!value! = $118.50   (= 1.3 * 45.0 + 1 * 60.0)
+\end{verbatim}
+
+\subsubsection{action\_template}
+
+\begin{verbatim}
+action_template: '!time!!label! (!count!)'
+\end{verbatim}
+
+Used for action reports. With the above settings for
+\texttt{action\_minutes}, \texttt{action\_labels} and
+\texttt{action\_template}, a report might appear as follows:
+
+\begin{verbatim}
+27.5h) Client 1 (3)
+    4.9h) Project A (1)
+    15h) Project B (1)
+    7.6h) Project C (1)
+24.2h) Client 2 (3)
+    3.1h) Project D (1)
+    21.1h) Project E (2)
+        5.1h) Category a (1)
+        16h) Category b (1)
+4.2h) Client 3 (1)
+8.7h) Client 4 (2)
+    2.1h) Project F (1)
+    6.6h) Project G (1)
+\end{verbatim}
+
+Note that the \texttt{'h) '} suffix for each \texttt{!time!} entry is
+provided by the \texttt{action\_labels} entry.
+
+\subsubsection{action\_timer}
+
+\begin{verbatim}
+action_timer: 6
+\end{verbatim}
+
+Play an audible alert every \texttt{action\_timer} minutes when a timer
+is running. Choose zero to disable playing the alert.
+
+\subsubsection{alert\_labels}
+
+\begin{verbatim}
+alert_labels:
+    time_span: ['Time: ', '\n']
+    l:         ['Location: ', '\n']
+\end{verbatim}
+
+A prefix and suffix to attach when expanding alert templates if the
+corresponding value is not zero. When the value is zero, the prefix, the
+zero and the suffix are all omitted.
+
+\subsubsection{ampm}
+
+\begin{verbatim}
+ampm: true
+\end{verbatim}
+
+Use ampm times if true and twenty-four hour times if false. E.g., 2:30pm
+(true) or 14:30 (false).
+
+\subsubsection{auto\_completions}
+
+\begin{verbatim}
+    auto_completions: /Users/dag/.etm/completions.cfg
+\end{verbatim}
+
+The absolute path to the file to be used for autocompletions. Each line
+in the file provides a possible completion. E.g.
+
+\begin{verbatim}
+@c computer
+@c home
+@c errands
+@c office
+@c phone
+@z US/Eastern
+@z US/Central
+@z US/Mountain
+@z US/Pacific
+dnlgrhm@gmail.com
+\end{verbatim}
+
+As soon as you enter, for example, ``@c'' in the editor, a list of
+possible completions will pop up and then, as you type further
+characters, the list will shrink to show only those that still match:
+
+\includegraphics{images/completion.png}
+Up and down arrow keys change the selection and either \emph{Tab} or
+\emph{Return} inserts the selection.
+
+\subsubsection{calendars}
+
+\begin{verbatim}
+calendars:
+- [dag, true, personal]
+- [erp, false, personal]
+- [shared, true, shared]
+\end{verbatim}
+
+These are (label, default, path relative to \texttt{datadir}) tuples to
+be interpreted as separate calendars. Those for which default is
+\texttt{true} will be displayed as default calendars. E.g., with the
+\texttt{datadir} below, \texttt{dag} would be a default calendar and
+would correspond to the absolute path
+\texttt{/Users/dag/.etm/data/personal/dag}. With this setting, the
+calendar selection dialog would appear as follows:
+
+\includegraphics{images/calendar_selection.png}
+When non-default calendars are selected, busy times in the ``week view''
+will appear in one color for events from default calendars and in
+another color for events from non-default calendars.
+
+\subsubsection{colors}
+
+\begin{verbatim}
+colors: 2
+\end{verbatim}
+
+Font color to use for tree view leaves. 0: use no colors; 1: use only
+red (past due); 2: use all colors for item types.
+
+\subsubsection{datadir}
+
+\begin{verbatim}
+datadir: /Users/dag/.etm/data
+\end{verbatim}
+
+All etm data files are in this directory.
+
+\subsubsection{default\_alert}
+
+\begin{verbatim}
+default_alert: [d, v]
+\end{verbatim}
+
+The alert or list of alerts to be used when an alert is specified for an
+item but the type is not given. Possible values for the list include: -
+d: display (requires \texttt{displaycmd} below) - s: sound - v: voice
+(requires \texttt{voicecmd} below)
+
+\subsubsection{displaycmd}
+
+\begin{verbatim}
+displaycmd: /usr/local/bin/growlnotify -t !summary! -m '!time_span!'
+\end{verbatim}
+
+The command to be executed when \texttt{d} is included in an alert.
+Possible template expansions are discussed at the beginning of this tab.
+
+\subsubsection{email\_template}
+
+\begin{verbatim}
+email_template: '!time_span!!l!
+
+
+!d!'
+\end{verbatim}
+
+Note that two newlines are required to get one newline when the template
+is expanded. With the setting above for \texttt{alert\_labels}, this
+template might expand as follows:
+
+\begin{verbatim}
+    Time: 1pm - 2:30pm Wed, Aug 4
+    Location: Conference Room
+
+    Agenda:
+    ...
+\end{verbatim}
+
+Note that \texttt{Time:}, \texttt{Location:} and the line breaks that
+follow come from \texttt{alert\_labels}. Because the line break
+following location is provided by the \texttt{alert\_labels} suffix, the
+entire line would be omitted if there were no entry for \texttt{@l}.
+
+See the discussion of template expansions at the beginning of this tab
+for other possible expansion items.
+
+\subsubsection{hg\_commit}
+
+\begin{verbatim}
+hg_commit: /usr/local/bin hg commit -A -R %s -m '%s'
+\end{verbatim}
+
+If \emph{Mercurial} is installed on your system, then \texttt{hg} will
+be found in the system path and the default should reflect this
+location. If you want to use another version control system, then enter
+the command used to commit all changes. The first \texttt{\%s} will be
+replaced with the internally generated name of the repository and the
+second \texttt{\%s} with the internally generated commit message.
+
+\subsubsection{hg\_history}
+
+\begin{verbatim}
+hg_history: '/usr/local/bin/hg log --style compact \
+    --template `{rev}: {desc}\n` \
+    -R %s -p -r `tip`:0 %s'
+\end{verbatim}
+
+If \emph{Mercurial} is installed on your system, then \texttt{hg} will
+be found in the system path and the default should reflect this
+location. If you want to use another version control system, then enter
+the command used to show the history of changes. The first \texttt{\%s}
+will be replaced with the internally generated name of the repository
+and the second \texttt{\%s} with the internally generated file name.
+
+\subsubsection{local\_timezone}
+
+\begin{verbatim}
+local_timezone: US/Eastern
+\end{verbatim}
+
+This timezone will be used as the default when a value for \texttt{@z}
+is not given in an item.
+
+\subsubsection{monthly}
+
+\begin{verbatim}
+monthly: personal/dan/monthly
+\end{verbatim}
+
+Relative path from \texttt{datadir}. With the settings above and for
+\texttt{datadir} the suggested location for saving new items in, say,
+October 2012, would be the file:
+
+\begin{verbatim}
+/Users/dag/.etm/data/personal/dan/monthly/2012/10.txt
+\end{verbatim}
+
+The directories \texttt{monthly} and \texttt{2012} and the file
+\texttt{12.txt} would, if necessary, be created. The user could either
+accept this default or choose a different file.
+
+If \texttt{monthly} is not given, the the suggested location for saving
+new items would be the in the directory specified in \texttt{datadir}.
+
+\subsubsection{report\_specifications}
+
+\begin{verbatim}
+    report_specifications: /Users/dag/.etm/reports.cfg
+\end{verbatim}
+
+The absolute path to the file to be used for report specifications. Each
+line in the file provides a possible specification for a report. E.g.
+
+\begin{verbatim}
+a -g MMM yyyy, k[0], k[1:] -b -1/1 -e 1
+a -g k, MMM yyyy -b -1/1 -e 1
+b -b +0 -e +7 -i Bf -w 15 -m 30 -O 8am -C 5pm
+c -g ddd MMM d yyyy
+c -g f
+c -g k
+\end{verbatim}
+
+In the reports dialog these appear in the report specifications pop-up
+list. A specification from the list can be selected and, perhaps,
+modified or an entirely new specification can be entered. See the
+\emph{Reports} tab for details.
+
+\subsubsection{smtp}
+
+\begin{verbatim}
+smtp:
+    from: dnlgrhm@gmail.com
+    id: dnlgrhm
+    pw: **********
+    server: smtp.gmail.com
+\end{verbatim}
+
+Required settings for the smtp server to be used for email alerts.
+
+\subsubsection{sundayfirst}
+
+\begin{verbatim}
+sundayfirst: false
+\end{verbatim}
+
+The setting affects only the twelve month calendar display. The first
+column in each month is Sunday if \texttt{true} and Monday otherwise.
+Both the week and month views list Monday first regardless of this
+setting since both reflect the iso standard for week numbering in which
+weeks begin with Monday.
+
+\subsubsection{sunmoon\_location}
+
+\begin{verbatim}
+sunmoon_location: [Chapel Hill, NC]
+\end{verbatim}
+
+The USNO location for sun/moon data. Either a US city-state 2-tuple such
+as \texttt{{[}Chapel Hill, NC{]}} or a placename-longitude-latitude
+7-tuple such as \texttt{{[}Home, W, 79, 0, N, 35, 54{]}}.
+
+Enter a blank value to disable sunmoon information.
+
+\subsubsection{voicecmd}
+
+\begin{verbatim}
+voicecmd: /usr/bin/say -v 'Alex' '!summary! !when!.''
+\end{verbatim}
+
+The command to be executed when \texttt{v} is included in an alert.
+Possible expansions are the same as with \texttt{email\_template}.
+
+\subsubsection{wakecmd}
+
+\begin{verbatim}
+wakecmd: /Users/dag/bin/SleepDisplay -w
+\end{verbatim}
+
+If given, this command will be issued to ``wake up the display'' before
+executing \texttt{displaycmd}.
+
+\subsubsection{weather\_location}
+
+\begin{verbatim}
+weather_location: USNC0105&u=f
+\end{verbatim}
+
+The yahoo weather location code and temperature scale for your area. Go
+to http://weather.yahoo.com/, enter your location and hit return. When
+the weather page for your location opens, choose view source (under the
+View menu), search for \texttt{forecastrss} and copy the location code
+that follows `p=', e.g., for
+
+\begin{verbatim}
+...forecastrss?p=USNC0120&u=f
+\end{verbatim}
+
+the location code would be \texttt{USNC0120\&u=f}. Note: the
+\texttt{\&u=f} gives fahrenheit readings while \texttt{\&u=c} would give
+celcius/centigrade.
+
+Enter a blank value to disable weather information.
+
+\subsubsection{weeks\_after}
+
+\begin{verbatim}
+weeks_after: 52
+\end{verbatim}
+
+In the day view, all non-repeating, dated items are shown. Additionally
+all repetitions of repeating items with a finite number of repetitions
+are shown. This includes `list-only' repeating items and items with
+\texttt{\&u} (until) or \texttt{\&t} (total number of repetitions)
+entries. For repeating items with an infinite number of repetitions,
+those repetitions that occur within the first \texttt{weeks\_after}
+weeks after the current week are displayed along with the first
+repetition after this interval. This assures that for infrequently
+repeating items such as voting for president, at least one repetition
+will be displayed.
+
+\end{document}
