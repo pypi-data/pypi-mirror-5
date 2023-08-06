@@ -1,0 +1,154 @@
+Metadata-Version: 1.1
+Name: django-mbtiles
+Version: 1.1
+Summary: Serve maps from MBTiles files using Django
+Home-page: https://github.com/makinacorpus/django-mbtiles
+Author: Mathieu Leplatre
+Author-email: mathieu.leplatre@makina-corpus.com
+License: UNKNOWN
+Download-URL: http://pypi.python.org/pypi/django-mbtiles/
+Description: *django-mbtiles* serve maps from MBTiles files using Django. 
+        It mainly relies on `landez <https://github.com/makinacorpus/landez/>`_.
+        
+        =======
+        INSTALL
+        =======
+        
+        Last stable version:
+        
+        ::
+        
+            pip install django-mbtiles
+        
+        
+        Last development version:
+        
+        ::
+        
+            pip install -e git+https://github.com/makinacorpus/django-mbtiles.git#egg=django-mbtiles
+        
+        
+        
+        =====
+        USAGE
+        =====
+        
+        * Add ``mbtilesmap`` to your ``INSTALLED_APPS``
+        * Make sure you have ``'django.core.context_processors.static'`` in your `context processors <https://docs.djangoproject.com/en/dev/howto/static-files/#with-a-context-processor>`_
+        
+        * Include mbtilesmap urls into your project
+        
+        ::
+        
+            urlpatterns = patterns('',
+                ...
+                ...
+                url(r'^', include('mbtilesmap.urls', namespace='mb', app_name='mbtilesmap')),
+            )
+        
+        * Add the HTML header and call the template tag
+        
+        ::
+        
+            {% load mbtilesmap_tags %}
+            ...
+            {% block head %}
+            {% mbtilesmap_head %}
+            {{ block.super }}
+            {% endblock head %}
+            
+            ...
+            ...
+            {% mbtilesmap filename %}
+        
+        
+        MBTiles files can be loaded with relative paths, based on ``MBTILES_ROOT`` setting.
+        
+        ::
+        
+           MBTILES_APP_CONFIG = {
+               'MBTILES_ROOT': '/data/files:/home/maps'
+           }
+        
+        
+        Example
+        =======
+        
+        You can find a working demo project (MBTiles maps browser *livembtiles*) 
+        in the ``example/`` folder of the source tree (see dedicated ``README.rst`` file).
+        
+        
+        Cache with nginx
+        ================
+        
+        * Declare a cache zone in the ``http`` section :
+        
+        ::
+        
+            http {
+                ...
+                proxy_cache_path  /var/cache/nginx levels=1:2 keys_zone=master:10m inactive=7d max_size=1g;
+                proxy_temp_path /var/tmp/nginx;
+            }
+        
+        Cache name will be ``master``, index will be ``10m``, will last ``7d`` and have a maximum size of ``1g``.
+        
+        * Serve from cache for a specific location :
+        
+        ::
+        
+            location @proxy {
+                ...
+                proxy_cache             master;
+                proxy_cache_key         $$scheme$$host$$uri$$is_args$$args;
+                proxy_cache_valid       200  7d;
+                proxy_cache_use_stale   error timeout invalid_header;
+            }
+        
+        See *example* project's buildout for deployment automation.
+        
+        
+        =======
+        AUTHORS
+        =======
+        
+            * Mathieu Leplatre <mathieu.leplatre@makina-corpus.com>
+            * `Andreas Trawoeger <https://github.com/atrawog>`_ 
+            
+        |makinacom|_
+        
+        .. |makinacom| image:: http://depot.makina-corpus.org/public/logo.gif
+        .. _makinacom:  http://www.makina-corpus.com
+        
+        
+        =======
+        LICENSE
+        =======
+        
+            * Lesser GNU Public License
+        
+        
+        =========
+        CHANGELOG
+        =========
+        
+        1.1 (2013-09-11)
+        ----------------
+        
+        * Add ability to load MBTiles files from several folders
+        
+        1.0
+        ---
+        
+        * Initial version
+        
+        
+Platform: UNKNOWN
+Classifier: Topic :: Utilities
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Developers
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Programming Language :: Python :: 2.5
