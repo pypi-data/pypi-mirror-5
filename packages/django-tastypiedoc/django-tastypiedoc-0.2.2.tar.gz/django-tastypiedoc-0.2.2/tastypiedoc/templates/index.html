@@ -1,0 +1,99 @@
+{% extends "core.html" %}
+
+
+{% block title %}
+<div class="col-lg-8">
+	<h1>
+		All Entities
+	</h1>
+</div>
+<div class="col-lg-4 login">
+	<input type="text" id="username-input" placeholder="Username"/>
+	<input type="password" id="password-input" placeholder="Password"/>
+	<a href="javascript:void(0)"
+		id="login-btn"
+		class="btn btn-default"
+		>
+		Get Key
+	</a>
+</div>
+{% endblock %}
+
+{% block container %}
+<div class="row">
+	<div class="col-lg-3">
+		<ul class="nav nav-stacked nav-pills">
+			{% for ent in entities %}
+				<h3>{{ ent.entity_type }}</h3>
+				{% for action in ent.methods %}
+					<li>						
+						<a 
+							data-url="{{ action.url }}"
+							href="javascript:void(0)"
+							{% if action.kwargs|length < 1 %}
+								class="call-endpoint"
+							{% else %}
+								class="show-kwargs"
+							{% endif %}
+							data-namespace="{{action.namespace}}"
+							data-entitytype="{{action.entity_type}}"
+							data-method="{{action.method}}"
+
+							>
+							<span class="label label-{{action.method}}">
+							{{ action.method }} </span> {{ action.namespace }}
+						</a>
+
+						{% if action.kwargs|length > 0 %}
+						<div class="kwargs" id="{{action.entity_type}}-{{action.method}}-kwargs">
+							{% for k in action.kwargs %}
+								<input type="text" name="{{ k }}_kwarg" placeholder="{{ k }}"/>
+							{% endfor %}
+							<a href="javascript:void(0)"
+								class="btn btn-primary call-endpoint"
+								data-entitytype="{{action.entity_type}}"
+								data-method="{{action.method}}"
+								data-namespace="{{action.namespace}}"
+								data-url="{{action.url}}">
+
+								Submit
+							</a>
+						</div>
+						{% endif %}
+					</li>
+				{% endfor %}
+			{% endfor %}
+		</ul>
+	</div>
+
+	<div class="col-lg-9">
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="page-header">
+					<h2 id="action-url"></h2>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="row">
+			<div class="col-lg-12">
+					<div id="action-error" class="alert alert-danger">
+						<div id="action-error-code">
+
+						</div>
+						<div id="action-error-text">
+
+						</div>
+					</div>
+
+				<pre id="action-result">
+					<h4 style="text-align:center">Choose an entity on the left to see the result</h4>
+				</pre>
+			</div>
+		</div>
+
+
+	</div>
+</div>
+{% endblock %}
