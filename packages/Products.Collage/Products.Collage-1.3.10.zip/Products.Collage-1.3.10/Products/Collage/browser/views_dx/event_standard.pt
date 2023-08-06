@@ -1,0 +1,139 @@
+<tal:manager replace="structure provider:collage.ContentManager" />
+
+<metal:block use-macro="context/global_defines/macros/defines" />
+
+<tal:event define="test view/test;
+                   site_properties view/site_properties;
+                   plone_view nocall:context/@@plone;
+                   context_url context/@@absolute_url" i18n:domain="plone">
+
+  <div class="vevent">
+
+    <h2 metal:define-macro="title"
+        tal:condition="context/Title">
+      <span metal:define-slot="inside"
+            tal:replace="context/Title">title</span>
+    </h2>
+      
+    <p class="description"
+       tal:condition="context/Description">
+      <span metal:define-macro="description"
+            tal:condition="context/Description">
+        <span metal:define-slot="inside"
+              tal:replace="context/Description">description</span>
+      </span>
+    </p>
+
+    <div class="eventDetails vcard">
+      <table class="vertical listing"
+             summary="Event details" i18n:attributes="summary summary_event_details;">
+
+	<tbody>
+          <tr>
+            <th i18n:translate="event_what">What</th>
+            <td tal:content="python:modules['string'].join(context.Subject(), ' ')">
+              Conference
+            </td>
+          </tr>
+          <tr>
+            <th i18n:translate="event_when">When</th>
+            <td>
+              <tal:differentday tal:condition="python:not context.start_date == context.end_date">
+		<abbr class="dtstart"
+                      tal:attributes="title python:context.start_date"
+                      tal:content="python:plone_view.toLocalizedTime(context.start_date, long_format=1)">
+                  Start Date Time
+		</abbr>
+		<span i18n:translate="event_to">to</span> <br />
+		<abbr class="dtend"
+                      tal:attributes="title python:context.end_date"
+                      tal:content="python:plone_view.toLocalizedTime(context.end_date, long_format=1)">
+                  End Date Time
+		</abbr>
+              </tal:differentday>
+
+              <tal:sameday tal:condition="python:context.start_date == context.end_date"
+                           tal:define="ampm python:site_properties.getProperty('localLongTimeFormat') >= 0">
+		<abbr class="dtstart"
+                      style="display: none;"
+                      tal:attributes="title python:context.start_date"
+                      tal:content="python:plone_view.toLocalizedTime(context.start_date, long_format=1)">
+                  Start Date Time
+		</abbr>
+		<abbr class="dtend"
+                      style="display: none;"
+                      tal:attributes="title python:context.end_date"
+                      tal:content="python:plone_view.toLocalizedTime(context.end_date, long_format=1)">
+                  End Date Time
+		</abbr>
+		<span tal:replace="python:plone_view.toLocalizedTime(context.start_date)">Start Date Time</span> <br />
+		<span i18n:translate="event_from">from</span>
+		<span tal:replace="python:test(ampm, context.start_date.AMPMMinutes(), context.start_date.TimeMinutes())">Start Time</span>
+		<span i18n:translate="event_to">to</span>
+		<span tal:replace="python:test(ampm, context.end_date.AMPMMinutes(), context.end_date.TimeMinutes())">End Time</span>
+              </tal:sameday>
+
+            </td>
+          </tr>
+          <tr tal:condition="context/location">
+            <th i18n:translate="event_wcontext">Wcontext</th>
+            <td class="location" tal:content="context/location">Oslo, Norway</td>
+          </tr>
+          <tr tal:condition="context/contact_name">
+            <th i18n:translate="contact_name">Contact Name</th>
+            <td class="fn"
+		tal:content="context/contact_name">John Smith</td>
+          </tr>
+          <tr tal:define="contact_email context/contact_email"
+              tal:condition="context/contact_email">
+            <th i18n:translate="contact_email">Contact Email</th>
+            <td class="email">
+              <a tal:replace="structure python: context.spamProtect(contact_email)" />
+            </td>
+          </tr>
+          <tr tal:condition="context/contact_phone">
+            <th i18n:translate="contact_phone">Contact Phone</th>
+            <td class="tel"
+		tal:content="context/contact_phone">555-GET-PLONE</td>
+          </tr>
+          <tr tal:condition="context/getAttendees|nothing">
+            <th i18n:translate="contact_attendees">Attendees</th>
+            <td tal:content="python: ', '.join(context.getAttendees())">Person 1, Person 2</td>
+          </tr>
+          <tr>
+            <th i18n:translate="heading_add_to_calendar">Add event to calendar</th>
+            <td>
+              <a href="#"
+		 tal:attributes="href string:$context_url/vcs_view"
+		 title="Add this item to your vCal calendar"
+		 i18n:attributes="title title_add_to_vcal;">
+		<img tal:replace="structure context/icon_export_vcal.png" src="" alt="" />
+		<span i18n:translate="label_add_to_vcal">vCal</span></a><br />
+              <a href="#"
+		 tal:attributes="href string:$context_url/ics_view"
+		 title="Add this item to your iCal calendar"
+		 i18n:attributes="title title_add_to_ical;">
+		<img tal:replace="structure context/icon_export_ical.png" src="" alt="" />
+		<span i18n:translate="label_add_to_ical">iCal</span></a>
+            </td>
+          </tr>
+	</tbody>
+      </table>
+    </div>
+
+    <div tal:condition="context/getText|nothing">
+      <div tal:replace="structure context/getText" />
+    </div>
+
+    <p tal:condition="context/event_url|nothing">
+      <a class="url"
+         href="event_url"
+         tal:attributes="href context/event_url"
+         i18n:translate="event_more_information">More information about this event&hellip;</a>
+    </p>
+
+  </div>
+
+  <div class="visualClear" id="clear-space-after-relatedItems"><!-- --></div>
+
+</tal:event>

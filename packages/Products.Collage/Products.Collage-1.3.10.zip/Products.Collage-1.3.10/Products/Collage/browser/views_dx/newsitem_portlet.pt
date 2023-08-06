@@ -1,0 +1,56 @@
+<tal:manager replace="structure provider:collage.ContentManager" />
+
+
+<div metal:define-macro="portlet">
+
+  <dl class="portlet"
+      tal:attributes="class string:portlet ${view/getSkin}">
+      
+    <dt class="portletHeader">
+      <span class="portletTopLeft"></span>
+      <span metal:define-macro="title"
+            tal:condition="context/Title">
+        <span metal:define-slot="inside" 
+              tal:replace="context/Title">title</span>
+      </span>
+      <span class="portletTopRight"></span>
+    </dt>
+
+    <dd class="portletItem odd">
+      <p class="description"
+         tal:condition="context/Description">
+        <span metal:define-macro="description"
+              tal:condition="context/Description">
+          <span metal:define-slot="inside"
+                tal:replace="context/Description">description</span>
+        </span>
+      </p>
+
+       <div class="newsImageContainer"
+            tal:condition="python:context.image">                  
+         <a href="#"
+            tal:attributes="href string:${context/absolute_url}/@@images/image"
+            id="parent-fieldname-image">
+           <img tal:attributes="src string:${context/absolute_url}/@@images/image/mini" />
+         </a>                          
+       </div>
+ 
+      <div metal:define-macro="text"
+           tal:define="text python: context.text"
+           tal:condition="text">
+        <span metal:define-slot="inside"
+              tal:replace="structure python:text.output">text</span>
+      </div>
+     
+    </dd>
+    <dd class="portletFooter">
+      <span class="portletBottomLeft"></span>
+      <span class="discreet">
+        <span tal:replace="python:context.toLocalizedTime(context.Date(), long_format=1)">Date</span>
+        <tal:rights tal:condition="context/Rights">- <span tal:replace="context/Rights">Rights</span></tal:rights>
+      </span>
+      <span class="portletBottomRight"></span>
+    </dd>
+  </dl>
+
+</div>

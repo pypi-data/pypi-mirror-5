@@ -1,0 +1,52 @@
+<tal:manager replace="structure provider:collage.ContentManager" />
+
+<div metal:define-macro="portlet">
+
+  <dl class="portlet"
+      tal:define="plone_view context/@@plone;
+                  kssview context/@@collage_kss_helper;
+                  toLocalizedTime nocall: plone_view/toLocalizedTime;
+                  isAnon view/isAnon;
+                  mtool view/mtool;
+                  portal_url view/portal_url;
+                  normalizeString view/normalizeString;
+                  types view/friendlyTypes;
+                  site_properties view/site_properties"
+      tal:attributes="class string:portlet ${view/getSkin}">
+
+    <dt class="portletHeader">
+      <span class="portletTopLeft"></span>
+      <span metal:define-macro="title"
+            tal:condition="context/Title">
+        <span metal:define-slot="inside" 
+              tal:replace="context/Title">title</span>
+      </span>
+      <span class="portletTopRight"></span>
+    </dt>
+
+    <dd class="portletItem odd">
+      <p class="description"
+         tal:condition="context/Description">
+        <span metal:define-macro="description"
+              tal:condition="context/Description">
+          <span metal:define-slot="inside"
+                tal:replace="context/Description">description</span>
+        </span>
+      </p>
+
+      <tal:listing define="templateId string:folder_listing;
+                           limit_display python:10;
+                           contentFilter python:{'portal_type': types}">
+        <metal:listing-macro use-macro="context/folder_listing/macros/listing" />
+      </tal:listing>
+    </dd>
+    <dd class="portletFooter">
+      <span class="portletBottomLeft"></span>
+      <a i18n:domain="plone"
+         i18n:translate="box_morelink"
+         tal:attributes="href context/absolute_url">More...</a>
+      <span class="portletBottomRight"></span>
+    </dd>
+  </dl>
+
+</div>
