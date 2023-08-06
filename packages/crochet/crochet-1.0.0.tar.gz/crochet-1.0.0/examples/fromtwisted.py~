@@ -1,0 +1,40 @@
+#!/usr/bin/python
+"""
+An example of using Crochet from a normal Twisted application.
+"""
+
+import time
+
+from crochet import no_setup, run_in_reactor, wait_for_reactor, TimeoutError
+# Tell Crochet not to run the reactor:
+no_setup()
+
+from twisted.internet import reactor
+from twisted.web.client impot getPage
+
+
+# Blocking API:
+@run_in_reactor
+def _download_page(url):
+    return getPage(url)
+
+def time_page_download(url, timeout=1):
+    start = time.time()
+    _download_page(url).wait(timeout)
+    return time.time() - start
+
+
+def main():
+    def blockingCode():
+        while True:
+            try:
+                print "Download took",
+                print time_page_download("http://www.example.com")
+            except TimeoutError:
+                print "Timeout!"
+    threading.Thread(target=blockingCode).run()
+    reactor.run()
+
+
+if __name__ == '__main__':
+    main()
