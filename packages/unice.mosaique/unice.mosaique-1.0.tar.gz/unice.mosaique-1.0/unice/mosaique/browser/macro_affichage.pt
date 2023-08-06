@@ -1,0 +1,60 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="plone">
+
+    <body>
+
+        <metal:content-core fill-slot="content-core">
+            <metal:block define-macro="mosaique">
+
+                <tal:block define="item_object item/getObject;
+                                    details python:view.itemDetails(item_object);
+                                    col python:12/cols;
+                                    index repeat/item/index;
+                                    row python: index // cols">
+
+                    <tal:block condition="python:index % cols == 0">
+                        <tal:block replace="structure string:&lt;div class='row mosaique-cols-${cols} mosaique-row mosaique-row-${row}'&gt;"/>
+                    </tal:block>
+
+                    <div tal:attributes="class string:col-md-${col} mosaique-col mosaique-col-${index} panel panel-default">
+
+                        <div class="panel-body">
+
+                            <a class="list-group-item-" tal:attributes="href item_object/absolute_url">
+
+                                <span class="mosaique-image carre- img-circle- img-cerclee- pull-left-" data-width="60" tal:condition="details/image">
+                                    <tal:block replace="structure details/image"/>
+                                </span>
+
+                                <h4 class="mosaique-title list-group-item-heading-" tal:content="item_object/Title"/>
+                                <p class="mosaique-date list-group-item-text-" tal:condition="details/date">
+                                    <span class="text-muted">
+                                        <i class="icon-calendar-empty"></i> <tal:block content="details/date"/>
+                                        <tal:block condition="details/location">
+                                            <i class="icon-map-marker"></i> <tal:block content="details/location"/>
+                                        </tal:block>
+                                    </span>
+                                </p>
+                                <p class="mosaique-description list-group-item-text-" tal:content="item_object/Description"/>
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                    <tal:block condition="python:index % cols == cols-1">
+                        <tal:block replace="structure string:&lt;/div&gt;"/>
+                    </tal:block>
+
+                </tal:block>
+
+            </metal:block>
+        </metal:content-core>
+
+    </body>
+
+</html>
