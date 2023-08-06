@@ -1,0 +1,21 @@
+<tal:block tal:define="dummy python:context.getAdapter('updateactualurl')(context.absolute_url()+'/mediasearch_view');
+                       mediasearch nocall:here/@@mediasearch;
+                       brains mediasearch/search;
+                       batch python:context.getAdapter('batch')(brains,50)"
+           i18n:domain="mediasearch">
+
+    <div class="alert alert-info"
+         i18n:translate="mediasearch_entries_found">
+        <tal:block tal:content="python:len(brains)"
+                   i18n:name="value"/> entries found.
+    </div>
+
+    <metal:block metal:use-macro="here/batch_macros/macros/navigation"/>
+
+    <tal:block tal:repeat="brain batch">
+        <tal:block tal:define="template python:context.restrictedTraverse('js_mediasearch_'+brain.portal_type.lower(),None)"
+            tal:condition="nocall:template"
+            tal:content="structure python:template(brain=brain)"/>
+    </tal:block>
+
+</tal:block>

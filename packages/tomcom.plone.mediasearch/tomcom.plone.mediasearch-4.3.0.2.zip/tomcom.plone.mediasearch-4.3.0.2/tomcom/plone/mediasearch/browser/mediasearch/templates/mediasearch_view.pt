@@ -1,0 +1,70 @@
+<metal:block metal:use-macro="context/main_template/macros/master"
+             i18n:domain="mediasearch">
+
+<metal:block metal:fill-slot="column_two_slot"/>
+<metal:block metal:fill-slot="column_one_slot"/>
+
+<metal:block metal:fill-slot="head_slot">
+
+    <script type="text/javascript"
+            src="/++resource++mediasearch/mediasearch_view.js"></script>
+
+    <link href="/++resource++mediasearch/mediasearch_view.css" type="text/css" rel="stylesheet">
+
+</metal:block>
+
+
+<metal:block metal:fill-slot="main">
+    <metal:block metal:define-macro="main"
+                        tal:define="dummy here/@@tpcheck/auth_mediasearch_view;
+                                    form nocall:request/form">
+
+        <h1 class="documentFirstHeading"
+            i18n:translate="">
+            Media search
+        </h1>
+
+        <form method="post" action="#" id="search-form">
+
+            <div class="well clearfix" id="search">
+                <h3 i18n:translate="">Search</h3>
+
+                <div class="field">
+                    <label i18n:translate="">Text</label>
+                    <input type="text" name="SearchableText"
+                           tal:attributes="value form/SearchableText | nothing"/>
+                </div>
+
+                <div class="field">
+                    <label i18n:translate="">Type</label>
+                    <select name="portal_type">
+                        <option tal:repeat="pair here/@@mediasearch/get_portal_types"
+                                tal:attributes="value python:pair[0];
+                                                selected python:pair[0]==form.get('portal_type','') and 'selected' or None"
+                                tal:content="python:pair[1]"
+                                i18n:translate=""/>
+                    </select>
+                </div>
+
+                <input type="hidden" name="b_start:int" id="b_start"
+                       tal:attributes="value form/b_start | python:0"/>
+                <div class="field">
+                    <label i18n:translate="">&nbsp;</label>
+                    <input type="button" class="btn" value="Search" id="search"
+                           i18n:attributes="value"
+                           i18n:domain="plone"/>
+                </div>
+
+
+            </div>
+
+        </form>
+
+        <div id="mediasearch-results">
+        </div>
+
+    </metal:block>
+</metal:block>
+
+</metal:block>
+

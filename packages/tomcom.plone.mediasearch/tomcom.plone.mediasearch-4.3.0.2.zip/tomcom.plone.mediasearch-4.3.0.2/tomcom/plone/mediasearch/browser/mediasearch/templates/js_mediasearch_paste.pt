@@ -1,0 +1,46 @@
+<tal:block tal:define="form nocall:request/form;
+                       getbrain python:context.getAdapter('getbrain');
+                       current python:getbrain(form.get('uid'));
+                       mediasearch nocall:context/@@mediasearch"
+           i18n:domain="mediasearch">
+
+    <div class="breadcrumb">
+        <h4>
+            <tal:block tal:content="form/input_type"
+                       i18n:translate=""/>
+            "<tal:block tal:content="current/Title"/>"
+        </h4>
+    </div>
+
+    <div id="js-breadcrumb">
+        <ul class="breadcrumb">
+            <li tal:repeat="item mediasearch/get_parents">
+                <a class="click-paste-reload"
+                   tal:attributes="href string:${item/absolute_url}/js_mediasearch_paste?input_type=${form/input_type}&uid=${form/uid}"
+                   tal:content="item/Title"/>
+                <span class="divider"
+                      tal:condition="not:repeat/item/end">/</span>
+                <span class="divider"
+                      tal:condition="repeat/item/end"><i class="icon-arrow-right"/></span>
+            </li>
+            <li>
+                <a class="btn-small btn-info btn confirm-general"
+                   tal:attributes="href string:${here/absolute_url}/@@mediasearch/paste?input_type=${form/input_type}&uid=${form/uid}"
+                   i18n:translate="">
+                    Paste
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="children">
+        <ul class="nav nav-tabs nav-stacked">
+            <li tal:repeat="brain python:context.getAdapter('getlevel')(filter=False,portal_types=['Folder'])">
+                <a class="click-paste-reload"
+                   tal:attributes="href string:${brain/getURL}/js_mediasearch_paste?input_type=${form/input_type}&uid=${form/uid}"
+                   tal:content="brain/Title"/>
+            </li>
+        </ul>
+    </div>
+
+</tal:block>
