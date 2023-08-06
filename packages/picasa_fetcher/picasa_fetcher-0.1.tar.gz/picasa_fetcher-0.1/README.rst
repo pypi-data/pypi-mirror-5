@@ -1,0 +1,23 @@
+This script allows you to download images from Picasa and optionally delete
+them.
+
+Usage:
+
+    $ picasa_fetcher --username=<username> --password=<password> images/
+
+This will download all images for the given user into the images/ folder (which
+you must create).
+
+This will leave images on the server. To delete images older than N days, do:
+
+    $ picasa_fetcher --username=<username> --password=<password> --delete 1 images/
+
+By default, the script will stop as soon as it finds an image with a timestamp
+it has seen before (it fetches images in reverse date order). To keep going,
+potentially overriding local files, use the ``--force`` parameter.
+
+To limit the number of downloads, use the ``--limit`` parameter.
+
+To get more usage information:
+
+    $ picasa_fetcher --help
