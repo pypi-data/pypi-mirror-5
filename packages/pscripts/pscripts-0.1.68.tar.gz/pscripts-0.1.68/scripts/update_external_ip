@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+import argparse, pdb
+import pscripts.external_ip_address as eia
+import sys
+
+yaml_urls='/etc/external_ip_updater/urls.yaml'
+
+class ExtIpUpdaterDaemon(simpledaemon.Daemon):
+    default_conf = '/etc/external_ip_updater/config.conf'
+    section = 'external_ip_updater'
+
+
+    def run(self):
+        refresh_period_seconds = int(eia.get_refresh_period(yaml_urls))
+        while True:
+            eia.update_ddns_server(updater_urls = yaml_urls, update=False)
+            time.sleep(refresh_period_seconds)
+
+if __name__ == '__main__':
+    ExtIpUpdaterDaemon().main()
