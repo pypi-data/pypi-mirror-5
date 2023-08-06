@@ -1,0 +1,145 @@
+Metadata-Version: 1.0
+Name: xuru.recipe.android
+Version: 0.10.0
+Summary: A zc.buildout recipe that will install the android sdk and install tools, apis, and images
+Home-page: https://github.com/xuru/xuru.recipe.android
+Author: Eric Plaster
+Author-email: plaster@gmail.com
+License: MIT License
+Description: .. contents:: :depth: 1
+        
+        Introduction
+        ============
+        
+        **xuru.recipe.android** allows you to install the android sdk as part of your parts list.
+        For example::
+        
+            [my_android_sdk]
+            recipe = xuru.recipe.android
+            apis = 16 17
+            system_images = intel mips
+            sdk = http://dl.google.com/android/android-sdk_r22.0.4-macosx.zip
+            other_packages = 
+                Google Play APK Expansion Library
+                Google Web Driver
+        
+        This will install the android sdk into the parts directory, along with
+        platform-tools, build-tools, and tools.  It will then install version
+        16 and 17 apis.  In addition, it will install the intel and mips system images
+        for each of those apis.
+        
+        The format of entries in the buidout section (my_android_sdk in this example)
+        is::
+        
+            [section_name]
+            recipe = xuru.recipe.android
+        
+        Where options are:
+        
+        ``apis``
+            The list of api versions on one line seperated by spaces.
+        
+        ``system_images``
+            The list of system images types for each of the apis specified above.  Valid
+            values are intel, mips or arm.
+        
+        ``sdk``
+            The full url to the downloadable zip file for the android sdk.
+        
+        ``install_dir``
+            Optional absolute directory to install the sdk instead of the default <buidout parts
+            directory>/android
+        
+        ``other_packages``
+            Optional list (on seperate lines) of extra packages to install.  To see what
+            packages there are to install type ``android list sdk -a`` on the command
+            line after the sdk has been installed.  The name must be a unique sub-string
+            of the names listed.
+        
+        ``dryrun``
+            Set this to any of True, False, true, false, 1, 0 to set the boolean value.
+            This determines whether or not to include the command line switch
+            --dry-mode.
+        
+        ``force``
+            Set this to any of True, False, true, false, 1, 0 to set the boolean value.
+            Forces replacement of a package or its parts, even if something has been modified. 
+        
+        Binaries Installed
+        ------------------
+        
+        A script will be generated in the bin directory for each of the following binaries:
+        - adb
+        - android
+        - emulator
+        - uiautomationviewer
+        - lint
+        
+        What This Does Not Install
+        --------------------------
+        
+        If you installed the **Intel x86 Emulator Accelerator (HAXM)** package, you will 
+        find the installer in:
+        
+        ``parts/android/android-sdk-macosx/extras/intel/Hardware_Accelerated_Execution_Manager/IntelHAXM.dmg``
+        
+        This recipe will not run any installers at this time.
+        
+        
+        Changelog
+        =========
+        
+        0.10.0 - 2013-08-02
+        -------------------
+        * Rewrote everything to inspect the file system instead of relying on the android app to tell use what needs installing and what doesn't.
+        * Fixed verbose settings: -vv for verbose -vvvv to see the license agreements
+        * Added two settings: "dryrun" and "force"
+        * Corrected script generation (and now correctly detects if something isn't
+          installed based on those).
+        * Fixed install order for dependencies.
+        * Now much more consistant.
+        
+        0.9.1 - Unreleased
+        ------------------
+        
+        * Nothing yet...
+        
+        0.9.0 - 2013-06-12
+        ------------------
+        
+        * Cleaned up the source code.
+        * Now sets the buildout variable for the sdk_dir that other parts can access
+          like ${android:sdk_dir}
+        * Added support for verboseness
+        
+        0.8.9 - 2013-06-11
+        ------------------
+        
+        * Fixed an error that caused it to never exit the install loop if the api 17
+          image was being installed, and other packages after that one.
+        * Terminates the child when it times out after 30 seconds.
+        
+        0.8.8 - 2013-06-10
+        ------------------
+        
+        * Added new option ``install_dir`` to install it in a seperate directory other
+          then the parts directory.
+        
+        0.8.7 - 2013-06-05
+        ------------------
+        
+        * Rewrote how it finds packages and installs them.
+        
+        0.8.6 - 2013-06-05
+        ------------------
+        
+        * Initial push to pypi
+        
+Keywords: android buildout
+Platform: UNKNOWN
+Classifier: Framework :: Buildout
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
