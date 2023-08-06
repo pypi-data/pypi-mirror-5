@@ -1,0 +1,49 @@
+{{ fullname }}
+{{ underline }}
+
+.. currentmodule:: {{ module }}
+
+.. autoclass:: {{ objname }}
+
+   {% set excludeList = ["__init__", "__str__", "__doc__", "__class__",
+                       "__delattr__", "__dict__", "__format__",
+                       "__getattribute__", "__hash__", "__module__", "__new__",
+                       "__reduce__", "__reduce_ex__", "__repr__", "__setattr__",
+                       "__sizeof__", "__subclasshook__", "__weakref__"] %}
+
+   {% block attributes %}
+   {% if attributes %}
+   .. rubric:: Attributes
+
+   .. autosummary::
+   {% for item in attributes %}
+      ~{{ name }}.{{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
+
+   {% block methods %}
+   {% if methods %}
+   .. rubric:: Methods
+
+   .. autosummary::
+   {% for item in members %}
+   {%- if item not in excludeList and item not in attributes %}
+     ~{{ name }}.{{ item }}
+   {%- endif -%}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
+
+{% block details %}
+.. rubric:: Detailed description
+
+.. autoclass:: {{ objname }}
+    :members: {% for item in members -%}
+    {%- if item not in excludeList -%}
+      {{ item }},
+    {%- endif -%}
+    {%- endfor %}
+
+.. include:: ../bib.rst
+{% endblock %}

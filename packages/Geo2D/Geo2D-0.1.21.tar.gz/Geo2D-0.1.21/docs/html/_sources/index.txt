@@ -1,0 +1,64 @@
+.. Geo2D documentation master file, created by
+   sphinx-quickstart on Sat Jun 15 18:49:32 2013.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to Geo2D's documentation!
+=================================
+
+This is the documentation for Geo2D `Python <http://python.org>`_ 3 compatible
+package. I made this package because I started a pet-project, a little game that
+I'm working on and I didn't find a suitable 2D geometry `Python
+<http://python.org>`_ package. This and also because I wanted to learn a new few
+things... practice makes perfect... well or at least fools you into thinking you
+can become perfect.
+
+So this is by no means a complete package, but it does the job I'm after at
+least. Hope you'll find it as useful as I did.
+
+.. include:: api/modules.rst
+
+Since I feel so generous here is a little something you can do with this
+package::
+
+    import geo2d.geometry as g
+    import matplotlib.pyplot as plt
+
+    p = g.Polygon(((0, 0), (0, 5), (5, 5), (5, 0)))
+    amin = 1
+    amax = 4
+    rmax = 14
+    pL = [p]
+    s = []
+    while len(pL) > 0:
+        pW = pL.pop()
+        tmp_p, tmp_s = pW.divide(relative_phi=90)
+        a = min((p.area for p in tmp_p))
+        r = max((p.bbox_width/p.bbox_height for p in tmp_p))
+        while (a < amin) or (r > rmax):
+            tmp_p, tmp_s = pW.divide(relative_phi=90)
+            a = min((p.area for p in tmp_p))
+            r = max((p.bbox_width/p.bbox_height for p in tmp_p))
+        s += tmp_s
+        for i in tmp_p:
+            if i.area > amax:
+                pL += [i]
+    plt.plot([i.x for i in p], [i.y for i in p])
+    for i in s:
+        plt.plot([j.x for j in i], [j.y for j in i], 'r-')
+    plt.xlim((-1, 6))
+    plt.ylim((-1, 6))
+    plt.show()
+
+*Note you have to have matplotlib installed for this to work*.
+(http://matplotlib.org - I'm sure you do).
+
+Try to run it and figure it out... well you have to, since I won't give any
+documentation on it :D.
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
