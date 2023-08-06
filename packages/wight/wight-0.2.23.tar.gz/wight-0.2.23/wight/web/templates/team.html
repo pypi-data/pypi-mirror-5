@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if "name" in team %}
+        {{ team['name'] }} - Wight v{{ version }}
+    {% else %}
+        Team {{ team }} not found - Wight v{{ version }}
+    {% end %}
+{% end %}
+
+{% block contents %}
+<div class="trend container">
+{% if "name" in team %}
+    <div class="hero-unit">
+        <h1>{{ team['name'] }}</h1>
+        <p><small>This report details the trend results for the last bench runs for the <span class="text-info">{{ team['name'] }}</span> projects.</small></p>
+        <div class="toolbar">
+            <div><a href="/team/{{ team['name'] }}/"><i class="icon-file"></i>Permalink for this page</a></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="page-header">
+          <h1>Last <small>finished reports:</small></h1>
+        </div>
+        <div class="report-list">
+            {% for result in team['last_finished'] %}
+            <a href="/report/{{ result["uuid"] }}">For {{ result['project'] }} at {{ format_date(result["created"]) }}</a>
+            {% end %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="page-header">
+          <h1>Scheduled <small>reports:</small></h1>
+        </div>
+        <div class="report-list">
+            {% for result in team['scheduled'] %}
+            <a href="/report/{{ result["uuid"] }}">For {{ result['project'] }} at {{ format_date(result["created"]) }}</a>
+            {% end %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="page-header">
+          <h1>Results <small>by project</small></h1>
+        </div>
+        {% for project in team['projects'] %}
+        <div class="col-12">
+            <div class="page-header">
+                <h2>{{ project['name'] }}</h2>
+            </div>
+            <div class="report-list">
+                {% for result in project['results'] %}
+                <a href="/report/{{ result["uuid"] }}">Created at {{ format_date(result["created"]) }}</a>
+                {% end %}
+            </div>
+        </div>
+        {% end %}
+    </div>
+
+
+    <p class="text-center"><small>Report generated at {{ report_date }} - Wight v{{ version }}</small></p>
+{% else %}
+    <div class="hero-unit">
+        <h1>No team found</h1>
+        <p>We are unable to find a team with name {{ team }}.</p>
+    </div>
+{% end %}
+</div>
+{% end %}
