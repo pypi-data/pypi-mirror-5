@@ -1,0 +1,69 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="plone.contentratings">
+
+    <browser:viewlet
+        name="plone.contentratings.userratings"
+        manager="plone.app.layout.viewlets.interfaces.IBelowContentTitle"
+        class=".viewlets.UserRatingViewlet"
+        permission="zope2.View"
+        />
+
+    <!-- Resource directory for stylesheets -->
+    <browser:resourceDirectory
+        name="plone.contentratings.stylesheets"
+        directory="stylesheets"
+        />
+    <!-- Resource directory for images etc. -->
+    <browser:resourceDirectory
+        name="plone.contentratings.resources"
+        directory="resources"
+        />
+    <adapter factory=".controlpanel.AssignmentsAdapter" />
+
+    <adapter factory=".category_manage.CategoryContainerAdapter" />
+
+    <!-- Control panel for plone.contentratings -->
+
+    <browser:page
+        name="contentratings-controlpanel"
+        for="Products.CMFCore.interfaces.ISiteRoot"
+        class=".controlpanel.ContentRatingsControlPanel"
+        permission="cmf.ManagePortal"
+        />
+
+    <configure zcml:condition="installed kss.core">
+    <browser:pages
+        for="Products.CMFCore.interfaces.ISiteRoot"
+        class=".kss_ratings.ControlPanelKSSView"
+        permission="cmf.ManagePortal">
+      <page name="refreshCategories"
+            attribute="refresh_categories"/>
+      <page name="saveRatingAssignments"
+            attribute="save_rating_assignments" />
+    </browser:pages>
+
+    <browser:pages
+        for="*"
+        class=".kss_ratings.RatingKSSView"
+        permission="zope.Public">
+      <page name="updateRating"
+            attribute="update_rating" />
+      <page name="deleteRating"
+            attribute="delete_rating" />
+    </browser:pages>
+
+    <browser:pages
+        for="*"
+        class=".kss_ratings.EditorialKSSView"
+        permission="zope.Public">
+      <page name="updateEditorRating"
+            attribute="update_rating" />
+      <page name="deleteEditorRating"
+            attribute="delete_rating" />
+    </browser:pages>
+    </configure>
+
+</configure>
