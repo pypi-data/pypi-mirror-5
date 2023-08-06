@@ -1,0 +1,98 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@author: Wu Liang
+@contact: garcia.wul@alibaba-inc.com
+@date: 13-8-8
+@version: 0.0.0
+"""
+
+from argparse import ArgumentParser
+import os
+
+import demjson
+from flask import Flask
+
+
+app = Flask(__name__)
+
+userData = None
+
+@app.route("/helloWorld")
+def helloWorld():
+    return "hello world!"
+
+@app.route("/add/<host>/<int:port>/<username>/<password>/")
+def add(host, port, username, password):
+    if os.path.exists(userData):
+        f = open(userData)
+        content = f.read().rstrip(os.linesep)
+        content = demjson.decode(content, strict=False, encoding="utf-8")
+        f.close()
+    else:
+        content = []
+    loginData = {
+        "host": host,
+        "port": port,
+        "username": username,
+        "password": password
+    }
+    for existedData in content:
+        if existedData["host"] == loginData["host"] and \
+            existedData["username"] == loginData["username"] and \
+            existedData["port"] == loginData["port"]:
+            content.remove(existedData)
+    content.append(loginData)
+    handler = open(userData, "w")
+    handler.write(demjson.encode(content, strict=False, encoding="utf-8", compactly=True))
+    handler.close()
+    return demjson.encode({"status": True}, encoding="utf-8")
+
+@app.route("/get/")
+def get():
+    if os.path.exists(userData):
+        f = open(userData)
+        content = f.read().rstrip(os.linesep)
+        content = demjson.decode(content, strict=False, encoding="utf-8")
+        f.close()
+    else:
+        content = []
+    return demjson.encode(content, encoding="utf-8", strict=False)
+
+@app.route("/delete/<host>/<int:port>/<username>/")
+def delete(host, port, username):
+    if os.path.exists(userData):
+        f = open(userData)
+        content = f.read().rstrip(os.linesep)
+        content = demjson.decode(content, strict=False, encoding="utf-8")
+        f.close()
+    else:
+        content = []
+
+    for existedData in content:
+        if existedData["host"] == host and \
+            existedData["username"] == username and \
+            existedData["port"] == port:
+            content.remove(existedData)
+    handler = open(userData, "w")
+    handler.write(demjson.encode(content, strict=False, encoding="utf-8", compactly=True))
+    handler.close()
+    return demjson.encode({"status": True}, encoding="utf-8")
+
+if __name__ == '__main__':
+    argumentParser = ArgumentParser()
+    argumentParser.add_argument("--host", dest="host",
+        help="default is 0.0.0.0",
+        type=str, default="0.0.0.0")
+    argumentParser.add_argument("--port", dest="port", help="default is 9015",
+        type=int, default=9015)
+    argumentParser.add_argument("--user-data", dest="userData",
+        help="user data path",
+        default=os.path.join(os.getenv("HOME"), ".xlogin", "user-data.json"))
+    argument = argumentParser.parse_args()
+
+    if not os.path.exists(os.path.dirname(argument.userData)):
+        os.makedirs(os.path.dirname(argument.userData))
+    userData = argument.userData
+
+    app.run(host=argument.host, port=argument.port, debug=False)
