@@ -1,0 +1,55 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="collective.pdfpeek">
+
+    <include package="plone.behavior" file="meta.zcml"/>
+
+    <plone:behavior
+        title="PDF thumbnails and metadata"
+        for="plone.dexterity.interfaces.IDexterityContent"
+        description="Generate asynchrounously thumbnails of pdf stored into primary field. "
+        provides=".behaviors.IPDFDataExtractable"
+        />
+
+    <browser:page
+        for=".behaviors.IPDFDataExtractable"
+        name="check-pdf"
+        class="..browser.pdf.IsPdfView"
+        permission="zope2.View"
+        />
+
+    <!-- Use zope clockserver -->
+    <subscriber
+        for="collective.pdfpeek.dx.behaviors.IPDFDataExtractable
+             zope.lifecycleevent.IObjectModifiedEvent"
+        handler="..events.queue_document_conversion"
+        zcml:condition="not-installed collective.zamqp"
+        />
+
+    <!-- Use zope zamqp -->
+    <subscriber
+        for="collective.pdfpeek.dx.behaviors.IPDFDataExtractable
+             zope.lifecycleevent.IObjectModifiedEvent"
+        handler="..zamqp.utils.zamqp_queue_document_conversion"
+        zcml:condition="installed collective.zamqp"
+        />
+
+    <adapter
+        for=".behaviors.IPDFDataExtractable"
+        factory=".conversion.DexterityPDFExtractor"
+        />
+
+    <genericsetup:registerProfile
+        name="dx"
+        title="collective.pdfpeek.dx"
+        directory="profiles/default"
+        description="Installs the Dexterity adapters and event handlers."
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        zcml:condition="installed plone.app.contenttypes"
+        />
+
+</configure>

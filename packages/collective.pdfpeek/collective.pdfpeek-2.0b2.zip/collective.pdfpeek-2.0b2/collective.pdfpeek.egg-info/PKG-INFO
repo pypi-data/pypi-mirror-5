@@ -1,0 +1,532 @@
+Metadata-Version: 1.1
+Name: collective.pdfpeek
+Version: 2.0b2
+Summary: A Plone 4 product that generates image thumbnail previews of PDF files stored on ATFile based objects.
+Home-page: https://github.com/collective/collective.pdfpeek
+Author: David Brenneman
+Author-email: db@davidbrenneman.com
+License: GPL
+Description: ..  image:: https://travis-ci.org/collective/collective.pdfpeek.png?branch=master
+            :target: https://travis-ci.org/collective/collective.pdfpeek
+        
+        ..  image:: https://coveralls.io/repos/collective/collective.pdfpeek/badge.png
+            :target: https://coveralls.io/r/collective/collective.pdfpeek
+        
+        Introduction
+        ============
+        
+        PdfPeek is a Plone 4 add-on product that utilizes GNU Ghostscript to generate
+        image thumbnail previews of PDF files uploaded to ATFile based content
+        objects. Dexterity (and ``plone.app.contenttypes``) support was added in 2.0.
+        
+        * This product, when installed in a Plone 4.x site, will automatically generate
+          preview and thumbnail images of each page of uploaded PDF files and store
+          them annotated onto the content object containing the PDF file.
+        
+        * Image generation from the PDF file is processed asynchronously so that the
+          user does not have to wait for the images to be created in order to continue
+          using the site, as the processing of large PDF files can take many minutes to
+          complete.
+        
+          Since 2.0 pdfpeek supports *rabbitmq* message queuing to generate thumbnails,
+          see Installation_ section for more details
+        
+        * When a file object is initialized or edited, PdfPeek checks to see if a PDF
+          file was uploaded. If so, a ghostscript image conversion job is added to the
+          pdfpeek job queue (or rabbitmq in case of ``collective.zamqp`` usage).
+        
+        * If the file uploaded is not of content type 'application/pdf', an image
+          removal job is added to the pdfpeek job queue. This job queue is processed
+          periodically by a cron job or a zope clock server process. The image
+          conversion jobs add the IPDF interface to the content object and store the
+          resulting image preview and thumbnail for each page of the PDF annotated on
+          to the content object itself. The image removal jobs remove the image
+          annotations and the IPDF interface from the content object.
+        
+        * If a job fails, it is removed from the processing queue and appended to a
+          list of failed jobs. If a job succeeds, it is removed from the processing
+          queue and appended to a list of successfully completed jobs.
+        
+        
+        Viewlet
+        -------
+        
+        PdfPeek ships with an example user interface that is turned on by default. This
+        UI displays the thumbnail images of each page of the PDF file when a user views
+        the content object in their browser. This example UI is not quite working yet,
+        and is meant to be just that, an example. I don't claim to be a javascript
+        master.
+        
+        A custom traverser is available to make it easy to access the images and
+        previews directly, as well as to build custom views incorporating image
+        previews of file content.
+        
+        
+        Configuration
+        -------------
+        
+        PdfPeek ships with a configlet that allows the site administrator to adjust the
+        size of the generated preview and thumbnail images, as well as toggle the
+        example user interface and default event handlers on and off.
+        
+        
+        Requirements
+        ------------
+        
+        * Plone 4.1+
+        
+        * Requires the GNU ghostscript gs binary to be available on the $PATH!
+        
+        * Tested on POSIX compliant systems such as LINUX and MacOS 10.8.
+        
+        * Untested on Windows systems. (Wouldn't be surprised if it works, as long as
+          you can install gs.)*
+        
+        * As of version 0.17, Plone 3.x is no longer officially supported.
+        
+        
+        Code, Issues, Comments
+        ----------------------
+        
+        * Code repository: https://github.com/collective/collective.pdfpeek
+        
+        * Report bugs on github: https://github.com/collective/collective.pdfpeek/issues
+        
+        * Questions and comments to db@davidbrenneman.com
+        
+        
+        TODO
+        ====
+        
+        - Implement a processing queue model that can process files asyncronously,
+          more than one at a time (Should be work using RabbitMQ, but will cause
+          conflict errors).
+        
+        - Implement control panel for adding and removing image previews on file
+          objects containing PDF files.
+        
+        
+        Installation
+        ============
+        
+        Via zc.buildout
+        ---------------
+        
+        The recommended method of using collective.pdfpeek is by installing via
+        zc.buildout using the plone.recipe.zope2instance recipe.
+        PdfPeek uses z3c.autoinclude to load it's zcml, so you don't need a zcml slug.
+        
+        Add collective.pdfpeek to the list of eggs in the instance section of your
+        buildout.cfg like so::
+        
+            [instance]
+            ...
+            eggs =
+                ...
+                collective.pdfpeek
+                ...
+        
+        Then re-run your buildout like so to activate the installation::
+        
+           $ bin/buildout
+        
+        Via setuptools
+        --------------
+        
+        To install collective.pdfpeek into the global Python environment (or a virtualenv),
+        using a traditional Zope 2 instance, you can do this:
+        
+        * When you're reading this you have probably already run
+          ``easy_install collective.pdfpeek``. Find out how to install setuptools
+          (and EasyInstall) here:
+          http://peak.telecommunity.com/DevCenter/EasyInstall
+        
+        * If you are using Zope 2.9 (not 2.10), get `pythonproducts`_ and install it
+          via::
+        
+            python setup.py install --home /path/to/instance
+        
+        into your Zope instance.
+        
+        * Create a file called ``collective.pdfpeek-configure.zcml`` in the
+          ``/path/to/instance/etc/package-includes`` directory.  The file
+          should only contain this::
+        
+            <include package="collective.pdfpeek" />
+        
+        .. _pythonproducts: http://plone.org/products/pythonproducts
+        
+        
+        Configuration
+        =============
+        
+        
+        Via zc.buildout
+        ---------------
+        
+        For automatic processing of the PdfPeek job queue, a simple cron script using
+        curl or wget would suffice. It is nice to keep all of the configuration for a
+        project in your buildout, however. For this reason, a zope clock server process
+        is the recommended way to automatically process the job queue. You can do so by
+        adding the following snippet to your [instance] part in your buildout
+        configuration::
+        
+            [instance]
+            ...
+            zope-conf-additional=
+                # process the job queue every 5 seconds
+                <clock-server>
+                   method /Plone/@@pdfpeek.utils/process_conversion_queue
+                   period 5
+                   user admin
+                   password admin
+                   host localhost
+                </clock-server>
+            ...
+        
+        You will have to edit the above snippet to customize the name of the plone site,
+        the admin username and password, and the hostname the instance is running on.
+        You can also adjust the interval at which the queue is processed by the clock
+        server.
+        
+        Then re-run your buildout like so to activate the clock server::
+        
+           $ bin/buildout
+        
+        
+        Via cron
+        --------
+        
+        Install ``wget``. \
+        
+        Edit your crontab file and append the following line::
+        
+             5 * * * * wget --user=admin --password=admin http://localhost:8080/Plone/@@pdfpeek.utils/process_conversion_queue
+        
+        You will have to customize the above line with the hostname, port number, username, password and path to your plone instance.
+        
+        Save your crontab file and wget will now call the view method that triggers the
+        processing of the pdf conversion queue every five minutes.
+        
+        
+        Via RabbitMQ
+        ------------
+        
+        Install rabbitmq-server on your machine. There are very good documentations
+        on the rabbitmq website, see: http://www.rabbitmq.com/download.html
+        
+        Instead of configuring a clockserver, you should configure collective.zamqp to
+        work, see following example::
+        
+            [buildout]
+            parts =
+                instance
+                worker
+        
+            ...
+        
+            [instance]
+            recipe = plone.recipe.zope2instance
+            http-address = 8080
+            eggs =
+                ...
+                collective.pdfpeek [zamqp]
+        
+            ...
+            zope-conf-additional =
+                %import collective.zamqp
+                <amqp-broker-connection>
+                    connection_id   superuser
+                    hostname        my.rabbithostname.com
+                    port            5672
+                    username        guest
+                    password        guest
+                    heartbeat       120
+                    keepalive       60
+                </amqp-broker-connection>
+        
+            [worker]
+            <= instance
+            http-address = 8081
+            zserver-threads = 1
+            environment-vars =
+                ZAMQP_LOGLEVEL INFO
+            zope-conf-additional =
+                ${instance:zope-conf-additional}
+                <amqp-consuming-server>
+                    connection_id   superuser
+                    site_id         Plone
+                    user_id         admin
+                </amqp-consuming-server>
+        
+        For advanced configuration see ``collective.zamqp`` documentation here:
+        https://pypi.python.org/pypi/collective.zamqp
+        
+        
+        Changelog
+        =========
+        
+        2.0b2 (2013-10-17)
+        ------------------
+        
+        - Fix missing README.rst in package.
+          [saily]
+        
+        
+        2.0b1 (2013-10-17)
+        ------------------
+        
+        - Add a basic behavior to allow users to create PDF thumbnails for their own
+          dexterity content types.
+          [saily]
+        
+        - Add ``collective.zamqp`` integration to allow queuing PDF thumbnail jobs into
+          RabbitMQ message queuing server.
+          [saily]
+        
+        - Switch to PyPDF2 which is maintained compared to pyPdf and can be used as
+          a drop-in replacement.
+          [saily]
+        
+        - Add travis-ci for Plone 4.1, Plone 4.2 and Plone 4.3.
+          [saily]
+        
+        - Use ``plone.app.testing`` and layers for tests. Add more tests for dexterity
+          and ATContentTypes.
+          [saily]
+        
+        - Huge refactoring to replace transformers and functions with more flexible
+          adapters.
+          [saily]
+        
+        - Plone 4.3 compatibility by removing deprecated imports from
+          ``zope.app.component``.
+          [saily]
+        
+        - Add a new ``.gitignore`` file.
+          [saily]
+        
+        - Add egg-contained buildout. Rename ``*.txt`` to ``*.rst`` to support github
+          markup directly.
+          [saily]
+        
+        - Dexterity types integration with field retrieval using IPrimaryFieldInfo
+          adapter. This brings full functionality for ``plone.app.contenttypes``.
+          [saily]
+        
+        - Updated docs.
+          [saily]
+        
+        
+        1.3 (2011-05-31)
+        ----------------
+        
+         - Switched to PNG from JPEG.
+           [dbrenneman]
+        
+        1.2 (2010-12-7)
+        ----------------
+        
+         - Fixed issue where local utilities would clash if pdfpeek was installed on
+           multiple Plone instances within the same zope.
+           [dbrenneman]
+        
+         - Fixed uninstall profile so that local persistent utilities are removed and
+           image annotations are removed on uninstall of product.
+           [dbrenneman]
+        
+        1.0 (2010-5-27)
+        ----------------
+        
+         - Fixed jQuery UI.
+           [reedobrien]
+        
+        0.19 (2010-4-8)
+        ----------------
+        
+         - Modified transform to use cStringIO instead of StringIO, in the hopes of making things more efficient.
+           [dbrenneman]
+        
+         - Modified conversion function to grab file data from object using getFile method, as this is the *proper* way of doing things...
+           [dbrenneman]
+        
+        0.18 (2010-2-26)
+        ----------------
+        
+         - Fixed bug in reST rendering of changelog.
+           [dbrenneman]
+        
+        0.17 (2010-2-26)
+        -----------------
+        
+         - Added wide variety of pdf files to run through the unit tests for the
+           ghostscript image transform.
+           [dbrenneman]
+        
+         - Added unit tests for low level ghostscript transform.
+           [dbrenneman]
+        
+         - Refactored transform code to make class and method names make more sense.
+           [dbrenneman]
+        
+         - Updated README, including instructions for configuring the clock server.
+           [dbrenneman]
+        
+         - Added asyncronous processing queue for ghostscript transform jobs.
+           [dbrenneman]
+        
+         - Updated functional doctests to work on Plone 4 with blobfile storage.
+           [dbrenneman]
+        
+         - Updated functional doctests to test transform queue.
+           [dbrenneman]
+        
+         - Updated documentation.
+           [dbrenneman]
+        
+         - Added unit testing harness.
+           [dbrenneman]
+        
+        0.16 (2009-12-12)
+        -----------------
+        
+         - Bugfix release.
+           [dbrenneman]
+        
+        0.15 (2009-12-12)
+        -----------------
+        
+         - Added configurable preview and thumbnail sizes.
+           [claytron]
+        
+         - reST police! Fixing up the docs so that they might get rendered
+           correctly.
+           [claytron]
+        
+        0.13 (2009-11-12)
+        -----------------
+        
+         - Refactored transform code to deal with encrypted pdf files better.
+           [dbrenneman]
+        
+         - Made transform code more robust.
+           [dbrenneman]
+        
+         - Added ability to toggle default event handler on and off.
+           [dbrenneman]
+        
+        0.12 (2009-10-25)
+        -----------------
+        
+         - Bugfix release.
+           [dbrenneman]
+        
+        0.11 (2009-10-25)
+        -----------------
+        
+         - Bugfix release.
+           [dbrenneman]
+        
+        0.10 (2009-10-25)
+        -----------------
+        
+         - Added code to check for EOF at the end of the pdf file data string and to
+           insert one if it is not there. Fixes many corrupt pdf files.
+           [dbrenneman]
+        
+        0.9 (2009-10-13)
+        ----------------
+        
+         - Fixed another bug in the transform code to allow functioning with any
+           filefield, as long as it is called file.
+           [dbrenneman]
+        
+        0.8 (2009-10-13)
+        ----------------
+        
+         - Fixed a bug in the transform code to allow functioning with any filefield,
+           as long as it is called file.
+           [dbrenneman]
+        
+        0.7 (2009-10-13)
+        ----------------
+        
+         - Streamlined transform code.
+           [dbrenneman]
+        
+         - Added ability to toggle the pdfpeek viewlet display on and off via configlet.
+           [dbrenneman]
+        
+        0.6 (2009-10-05)
+        ----------------
+        
+         - Bugfix release.
+           [dbrenneman]
+        
+        0.5 (2009-10-05)
+        ----------------
+        
+         - Added control panel configlet.
+           [dbrenneman]
+        
+         - Removed unneeded xml files from uninstall profile.
+           [dbrenneman]
+        
+         - Optimized transform.
+           [dbrenneman]
+        
+         - Added storage of image thumbnail along with image, generated with PIL.
+           [dbrenneman]
+        
+         - Changed annotation to store images in a dict instead of a list.
+           [dbrenneman]
+        
+         - Changed event handler to listen on all AT based objects instead of ATFile.
+           [dbrenneman]
+        
+         - Added custom pdfpeek icon for configlet.
+           [dbrenneman]
+        
+         - Added custom traverser to allow easy access to the OFS.Image.Image()
+           objects stored on IPDF objects.
+           [dbrenneman]
+        
+         - Modified pdfpeek viewlet code to display images using the custom traverser.
+           [dbrenneman]
+        
+         - Added custom scrollable gallery with tooltips using jQuery Tools to the
+           pdfpeek viewlet for display.
+           [dbrenneman]
+        
+        0.4 (2009-10-01)
+        ----------------
+        
+         - Refactored storage to use OFS.Image.Image() objects instead of storing the
+           raw binary data in string format.
+           [dbrenneman]
+        
+         - Refactored event handler object variable name.
+           [dbrenneman]
+        
+         - Removed unneeded files from default GS Ext. profile.
+           [dbrenneman]
+        
+         - Removed unneeded javascript files and associated images and css.
+           [dbrenneman]
+        
+        0.3 - 2009-08-03
+        ----------------
+        
+        - fixed parsing of pdf files with multiple pages
+          [piv]
+        
+        0.1 - Unreleased
+        ----------------
+        
+        - Initial release
+        
+Keywords: Plone Zope Python PDF
+Platform: UNKNOWN
+Classifier: Framework :: Plone
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules

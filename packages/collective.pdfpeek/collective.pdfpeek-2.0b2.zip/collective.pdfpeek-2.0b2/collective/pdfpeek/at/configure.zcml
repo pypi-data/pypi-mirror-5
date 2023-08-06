@@ -1,0 +1,58 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="collective.pdfpeek">
+
+    <browser:page
+        for="Products.ATContentTypes.interface.file.IATFile"
+        name="check-pdf"
+        class="..browser.pdf.IsPdfView"
+        permission="zope2.View"
+        />
+
+    <!-- Use zope clockserver -->
+    <configure zcml:condition="not-installed collective.zamqp">
+        <subscriber
+            for="Products.ATContentTypes.interface.file.IATFile
+                 Products.Archetypes.interfaces.IObjectEditedEvent"
+            handler="..events.queue_document_conversion"
+            />
+
+        <subscriber
+            for="Products.ATContentTypes.interface.file.IATFile
+                 Products.Archetypes.interfaces.IObjectInitializedEvent"
+            handler="..events.queue_document_conversion"
+            />
+    </configure>
+
+    <!-- Use zope zamqp -->
+    <configure zcml:condition="installed collective.zamqp">
+        <subscriber
+            for="Products.ATContentTypes.interface.file.IATFile
+                 Products.Archetypes.interfaces.IObjectEditedEvent"
+            handler="..zamqp.utils.zamqp_queue_document_conversion"
+            />
+
+        <subscriber
+            for="Products.ATContentTypes.interface.file.IATFile
+                 Products.Archetypes.interfaces.IObjectInitializedEvent"
+            handler="..zamqp.utils.zamqp_queue_document_conversion"
+            />
+    </configure>
+
+    <adapter
+        for="Products.ATContentTypes.interface.file.IATFile"
+        factory=".conversion.ArchetypePDFExtractor"
+        />
+
+    <genericsetup:registerProfile
+        name="at"
+        title="collective.pdfpeek.at"
+        directory="profiles/default"
+        description="Installs the Archetypes adapters and event handlers."
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        />
+
+</configure>
