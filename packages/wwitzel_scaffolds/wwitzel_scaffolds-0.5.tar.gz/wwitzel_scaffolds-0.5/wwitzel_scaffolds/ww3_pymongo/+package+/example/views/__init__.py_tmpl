@@ -1,0 +1,37 @@
+from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPFound
+
+import deform
+
+from {{package}}.example.schema import Example
+from {{package}}.example.model import get_example
+
+@view_config(route_name='example',
+             renderer='{{package}}:example/templates/example.mako')
+def example(request):
+    return {
+        'example': get_example(request),
+    }
+
+@view_config(route_name='example_index',
+             renderer='{{package}}:example/templates/index.mako')
+def index(request):
+    name = request.POST.get('name','')
+    schema = Example()
+    form = deform.Form(schema,
+                       action=request.route_url('example_index'),
+                       buttons=('submit',))
+
+    if '__formid__' in request.params:
+        try:
+            appstruct = form.validate(request.POST.items())
+            request.db.{{package}}_example.insert(appstruct)
+            return HTTPFound(location=request.route_url('example',
+                                                        name=appstruct.get('name')))
+        except deform.ValidationFailure as e:
+            pass
+
+    return {
+        'form':form.render(),
+    }
+
